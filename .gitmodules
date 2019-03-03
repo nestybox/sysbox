@@ -1,6 +1,6 @@
 [submodule "sysvisor-fs"]
 	path = sysvisor-fs
-	url = https://github.com/nestybox/sysvisor-fs.git
+	url = git@github.com:nestybox/sysvisor-fs.git
 [submodule "sysvisor-runc"]
 	path = sysvisor-runc
-	url = https://github.com/nestybox/sysvisor-runc.git
+	url = git@github.com:nestybox/sysvisor-runc.git
