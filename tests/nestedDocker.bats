@@ -1,4 +1,4 @@
-# Basic tests running docker inside a system container
+# Basic tests running docker *inside* a system container
 
 load helpers
 

@@ -5,7 +5,11 @@
 # - Add test targets (all-unit, all-integration, sysvisor-runc unit, sysvisor-runc integration, sysvisor-fs unit)
 # - Add installation package target
 
-.PHONY: all sysvisor sysvisor-runc install
+.PHONY: all sysvisor sysvisor-runc install integration
+
+SHELL:=bash
+
+CWD := $(CURDIR)
 
 RUNC_DIR := $(GOPATH)/src/github.com/opencontainers/runc
 BIN_DIR := /usr/local/sbin
@@ -37,6 +41,12 @@ install:
 uninstall:
 	rm -f $(BIN_DIR)/sysvisor-runc
 	rm -f $(BIN_DIR)/sysvisor-fs
+
+# sysvisor-tests runs tests that verify sysvisor as a whole (i.e., sysvisor-runc + sysvisor-fs).
+#
+# NOTE: before running this target, see the requirements in file nestybox/sysvisor/tests/README
+sysvisortest: all
+	bats --tap tests${TESTPATH}
 
 clean:
 	cd $(GOPATH)/src/github.com/opencontainers/runc && make clean
