@@ -33,6 +33,8 @@ $(SYSFS_TARGET): $(SYSFS_SRC)
 
 $(SYSFS_PROTO_GO): sysvisor-protobuf/sysvisor_protobuf.proto
 	protoc -I sysvisor-protobuf/ -I /usr/local/include/ sysvisor-protobuf/sysvisor_protobuf.proto --go_out=plugins=grpc:sysvisor-protobuf
+	cp $(SYSFS_PROTO_GO) sysvisor-runc/libsysvisor/sysvisor_protobuf/.
+	cp $(SYSFS_PROTO_GO) sysvisor-fs/sysvisor_protobuf/.
 
 install:
 	install -D -m0755 sysvisor-runc/sysvisor-runc $(BIN_DIR)/sysvisor-runc
