@@ -1,10 +1,10 @@
 # What is this directory?
 
-This directory contains tests to verify sysvisor as a whole
-(i.e., sysvisor-runc + sysvisor-fs).
+This directory contains tests to verify sysvisor as a whole (i.e.,
+sysvisor-runc + sysvisor-fs).
 
-Some test invoke sysvisor directly, some invoke it via
-higher level tools (e.g., Docker, K8s, etc.)
+Some test invoke sysvisor directly, some invoke it via higher level
+tools (e.g., Docker, K8s, etc.)
 
 These test differ from the integration tests in the sysvisor-runc
 source tree in that those tests focus on sysvisor-runc and test it in
@@ -38,10 +38,9 @@ Docker must be installed and configured with:
 * The sysvisor-runc runtime
 * An image store on a partition with btrfs.
 
-For example, in my host I created a user called `sysvisor`
-for the user namespace remapping. I also have a disk
-with btrfs mounted at `/mnt/extra1/`. My docker daemon
-config file looks as follows:
+For example, in my host I created a user called `sysvisor` for the
+user namespace remapping. I also have a disk with btrfs mounted at
+`/mnt/extra1/`. My docker daemon config file looks as follows:
 
 ```
 $ more /etc/docker/daemon.json
@@ -76,7 +75,6 @@ Some of the tests use Docker system container images in that repo.
 $ docker login nestybox
 ```
 
-
 # Running Tests
 
 After the above requirements are met, run tests using the Makefile in
@@ -91,3 +89,35 @@ Or run a specific test file as follows:
 ```
 make sysvisortest TESTPATH=/nestedDocker.bats
 ```
+
+# Running sysvisor-runc Tests
+
+The sysvisor-runc only tests are not in this directory, but rather in
+directory `sysvisor/sysvisor-runc`.
+
+Those tests focus on sysvisor-runc by itself and configure
+sysvisor-runc to not interact with sysvisor-fs (via the
+`--no-sysvisorfs` command line option).
+
+**NOTE:** Running those requires that Docker be configured without
+`userns-remap`. In other words, the configuration described in step
+(3) above must be changed:
+
+```
+$ more /etc/docker/daemon.json
+{
+   "userns-remap": "",
+   "data-root": "/mnt/extra1/var/lib/docker",
+   "runtimes": {
+        "sysvisor-runc": {
+            "path": "/usr/local/sbin/sysvisor-runc"
+        }
+    }
+}
+
+$ sudo systemctl restart docker.service
+```
+
+The reason for this is that sysvisor-runc tests run inside a
+privileged Docker container (i.e., `docker run --privileged`), and
+such containers are not compatible with `userns-remap`.
