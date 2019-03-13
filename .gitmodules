@@ -4,6 +4,4 @@
 [submodule "sysvisor-runc"]
 	path = sysvisor-runc
 	url = git@github.com:nestybox/sysvisor-runc.git
-[submodule "sysvisor-protobuf"]
-	path = sysvisor-protobuf
-	url = git@github.com:nestybox/sysvisor-protobuf.git
+
