@@ -31,7 +31,7 @@ sysvisor-fs: $(SYSFS_SRC) $(SYSFS_PROTO_GO)
 	go build -o sysvisor-fs/sysvisor-fs ./sysvisor-fs
 
 $(SYSFS_PROTO_GO): sysvisor-protobuf/sysvisor-protobuf.proto
-	mkdir sysvisor-runc/libsysvisor/sysvisor-protobuf && mkdir sysvisor-fs/sysvisor-protobuf
+	mkdir -p sysvisor-runc/libsysvisor/sysvisor-protobuf && mkdir -p sysvisor-fs/sysvisor-protobuf
 	protoc -I sysvisor-protobuf/ -I /usr/local/include/ sysvisor-protobuf/sysvisor-protobuf.proto --go_out=plugins=grpc:sysvisor-protobuf
 	cp $(SYSFS_PROTO_GO) sysvisor-runc/libsysvisor/sysvisor-protobuf/.
 	cp $(SYSFS_PROTO_GO) sysvisor-fs/sysvisor-protobuf/.
