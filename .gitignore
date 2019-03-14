@@ -3,3 +3,8 @@ sysvisor-protobuf/*.pb.go
 
 # Ignore virtual-studio-code metadata
 .vscode
+
+# GNU Global Tags
+GPATH
+GRTAGS
+GTAGS
