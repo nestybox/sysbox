@@ -13,3 +13,10 @@ To run single test:
 ```
 $ root@3aa9dca439e2:/go/src/nestybox/sysvisor-runc# bats -t tests/integration/cgroups.bats
 ```
+
+## Kill a process group
+
+```
+pstree -g | less -i
+pkill -9 -g <process-group>
+```
