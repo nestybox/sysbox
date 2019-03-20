@@ -78,9 +78,15 @@ service ContainerStateChannel {
 
     // Generates a container-unregistration message
     rpc ContainerUnregistration (ContainerData) returns (Response) {}
+
+    // Generates a container-update message
+    rpc ContainerUpdate (ContainerData) returns (Response) {}
 }
 
-// The request message sent by runC to sysvisorfs process.
+//
+// Request message sent by runC to sysvisorfs process during container
+// registration, unregistration and update phases.
+//
 message ContainerData {
   string Id                       = 1;
   int32 InitPid                   = 2;
@@ -92,7 +98,7 @@ message ContainerData {
   int32 GidSize                   = 8;
 }
 
-// The response message send from sysvisorfs to runC process.
+// Response message sent from sysvisorfs to runC process.
 message Response {
   bool Success = 1;
 }
