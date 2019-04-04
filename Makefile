@@ -5,7 +5,7 @@
 # - Add test targets (all-unit, all-integration, sysvisor-runc unit, sysvisor-runc integration, sysvisor-fs unit)
 # - Add installation package target
 
-.PHONY: all sysvisor sysvisor-runc sysvisor-fs install integration
+.PHONY: all sysvisor sysvisor-static sysvisor-runc sysvisor-runc-static sysvisor-fs sysvisor-fs-static install integration
 
 SHELL:=bash
 
@@ -22,13 +22,23 @@ SYSFS_SRC := $(shell find sysvisor-fs 2>&1 | grep -E '.*\.(c|h|go)$$')
 
 all: sysvisor
 
+static: sysvisor-static
+
 sysvisor: $(SYSFS_PROTO_GO) sysvisor-runc sysvisor-fs
+
+sysvisor-static: $(SYSFS_PROTO_GO) sysvisor-runc-static sysvisor-fs-static
 
 sysvisor-runc: $(SYSFS_PROTO_GO)
 	cd $(RUNC_DIR) && make
 
+sysvisor-runc-static: $(SYSFS_PROTO_GO)
+	cd $(RUNC_DIR) && make static
+
 sysvisor-fs: $(SYSFS_SRC) $(SYSFS_PROTO_GO)
 	go build -o sysvisor-fs/sysvisor-fs ./sysvisor-fs
+
+sysvisor-fs-static: $(SYSFS_SRC) $(SYSFS_PROTO_GO)
+	CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs/sysvisor-fs ./sysvisor-fs
 
 $(SYSFS_PROTO_GO): sysvisor-protobuf/sysvisor-protobuf.proto
 	mkdir -p sysvisor-runc/libsysvisor/sysvisor-protobuf && mkdir -p sysvisor-fs/sysvisor-protobuf
