@@ -81,13 +81,13 @@ After the above requirements are met, run tests using the Makefile in
 `nestybox/sysvisor` as follows:
 
 ```
-make sysvisortest
+make sysvisor-test
 ```
 
 Or run a specific test file as follows:
 
 ```
-make sysvisortest TESTPATH=/nestedDocker.bats
+make sysvisor-test TESTPATH=/nestedDocker.bats
 ```
 
 # Running sysvisor-runc Tests
