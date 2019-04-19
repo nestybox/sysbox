@@ -7,3 +7,6 @@
 [submodule "sysvisor-protobuf"]
 	path = sysvisor-protobuf
 	url = git@github.com:nestybox/sysvisor-protobuf.git
+[submodule "sysvisor-mgr"]
+	path = sysvisor-mgr
+	url = git@github.com:nestybox/sysvisor-mgr.git
