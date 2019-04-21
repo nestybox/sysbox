@@ -28,14 +28,14 @@ function teardown() {
 
   run docker exec "$SYSCONT_NAME" sh -c "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
-  [ "$output" = "1" ]
+  [ "$output" == "1" ]
 
   run docker exec "$SYSCONT_NAME" sh -c "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
 
   run docker exec "$SYSCONT_NAME" sh -c "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
-  [ "$output" = "0" ]
+  [ "$output" == "0" ]
 
   run cat /proc/sys/net/ipv6/conf/all/disable_ipv6
   [ "$status" -eq 0 ]
@@ -46,7 +46,7 @@ function teardown() {
 
   run docker exec "$SYSCONT_NAME" sh -c "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
-  [ "$output" = "1" ]
+  [ "$output" == "1" ]
 
   run cat /proc/sys/net/ipv6/conf/all/disable_ipv6
   [ "$status" -eq 0 ]
