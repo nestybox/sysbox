@@ -40,10 +40,10 @@ sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysm
 	cd $(RUNC_DIR) && make static
 
 sysvisor-fs: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	go build -o sysvisor-fs/sysvisor-fs ./sysvisor-fs
+	go build -o sysvisor-fs/sysvisor-fs ./sysvisor-fs/cmd/sysvisor-fs
 
 sysvisor-fs-static: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs/sysvisor-fs ./sysvisor-fs
+	CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs/sysvisor-fs ./sysvisor-fs/cmd/sysvisor-fs
 
 sysvisor-mgr: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
 	go build -o sysvisor-mgr/sysvisor-mgr ./sysvisor-mgr
