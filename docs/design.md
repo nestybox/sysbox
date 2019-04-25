@@ -94,27 +94,48 @@ container (with an appropriate log message).
 
 ## uid/gid mappings
 
-* The system container's spec must have uid/gid mappings.
+* If the container spec specifies uid/gid mapping, sysvisor honors it
 
-* The uid mappings must map a range >= 65536, an map system
-  container uid 0->(rangeSize-1) to a suitable range of host uids
-  (i.e., one of those found in /etc/subuid). The same applies
-  to gid mappings.
+  - sysvisor does not record the mapping in this case
 
-  - This is necessary to support running most Linux distros inside a
-    system container (e.g., Debian uses uid 65534 as "nobody").
+  - sysvisor requires that the mapping be for a range of >= 64K uid/gids per container.
 
-* Note: Sysvisor does not require that system container instances have
-  non-overlapping uid/gid ranges. It's up to the higher layer to
-  allocate these ranges. If strong isolation is required between
-  system container instances, the higher layer should allocate
-  non-overlapping ranges and configure the ownership of the
-  container's rootfs associated with each instance accordingly.
+    - This is necessary to support running most Linux distros inside a
+      system container (e.g., Debian uses uid 65534 as "nobody").
 
-* Note: Sysvisor does not require that the container's rootfs
-  uid/gid owner match the host uid/gid in the spec. If these don't
-  match, some files will show up as "nobody:nogroup" inside the system
-  container.
+    - Note: docker userns-remap satisfies this.
+
+  - sysvisor does not require that the mappings between containers be non-overlapping
+    in this case; sysvisor honors the given map, regardless of whether it overlaps
+    with other containers.
+
+    - It's up to the higher layer to provide non-overlapping uid
+      mappings between containers for strong container->container
+      isolation.
+
+* Otherwise, sysvisor generates the uid/gid mapping
+
+  - the mapping is generated from the subuid/subgid range for user "sysvisor"
+
+  - each sys container is given an exclusive portion of the subuid/gid range (for strong isolation)
+
+  - if the subuid/gid range is exhausted, action is determined by subuid/gid
+    range exhaust policy setting.
+
+  - sysvisor allocations are always for 64K uid/gids
+
+### subuid/gid range exhaust policy
+
+This setting dictates how sysvisor reacts to subuid/gid range
+exhaustion when uid/gid auto allocation is enabled.
+
+- Re-use: re-use uid/gid mappings; this may cause multiple sys
+  containers to map to the same subuid/gid range on the host, reducing
+  isolation.
+
+- No-Reuse: do not launch sys container.
+
+Note: currently the setting is hardwired to "Reuse" in sysvisor-mgr.
 
 ## Namespaces
 
