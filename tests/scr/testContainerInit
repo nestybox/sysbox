@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#
+# Test container initialization script
+#
+# TODO:
+#
+# - How do we capture errors and bail in case any of the above steps fail?
+# - Docker login to the nestybox repo so it can get test images; alternatively embed the image in the privileged test container.
+#
+
+# Cmd Line Options
+# - uid-shift
+
+# Build & install sysvisor (make clean && make && make install)
+make clean && make && make install
+
+# Build & install shiftfs (if uid-shift option set)
+
+# Configure dockerd
+# - If uid-shift, configure without docker userns remap; otherwise config with docker userns remap.
+mkdir -p /etc/docker
+cat <<EOF > /etc/docker/daemon.json
+{
+    "debug": false,
+    "userns-remap": "sysvisor",
+    "runtimes": {
+        "sysvisor-runc": {
+            "path": "/usr/local/sbin/sysvisor-runc"
+        }
+    }
+}
+EOF
+
+# Start sysvisor
+sysvisor
+
+# Start docker
+dockerd > /var/log/dockerd.log 2>&1 &
