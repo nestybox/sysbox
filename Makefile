@@ -6,12 +6,20 @@
 # - Add test targets (all-unit, all-integration, sysvisor-runc unit, sysvisor-runc integration, sysvisor-fs unit)
 # - Add installation package target
 
-.PHONY: all sysvisor sysvisor-static sysvisor-runc sysvisor-runc-static sysvisor-fs sysvisor-fs-static sysfs-grpc-proto install integration
+.PHONY: sysvisor sysvisor-static \
+	sysvisor-runc sysvisor-runc-static \
+	sysvisor-fs sysvisor-fs-static \
+	sysvisor-mgr sysvisor-mgr-static \
+	sysfs-grpc-proto sysmgr-grpc-proto \
+	install integration \
+	test-img test-shell \
+	test-int test-int-local \
+	test
 
 SHELL := bash
 
 RUNC_GO_DIR := $(GOPATH)/src/github.com/opencontainers/runc
-RUNC_BUILDTAGS := 'seccomp apparmor'
+RUNC_BUILDTAGS := seccomp apparmor
 
 INSTALL_DIR := /usr/local/sbin
 PROJECT := github.com/nestybox/sysvisor
@@ -26,18 +34,28 @@ SYSMGR_SRC := $(shell find sysvisor-mgr 2>&1 | grep -E '.*\.(c|h|go)$$')
 SYSMGR_GRPC_DIR := sysvisor-protobuf/sysvisorMgrGrpc
 SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
 
+TEST_DIR := $(CURDIR)/tests
+TEST_IMAGE := sysvisor-test
+
+# test volumes to mount into the test container
+# NOTE: must not be on tmpfs directory, as docker's overlayfs may not work well on top of tmpfs.
+TEST_VOL1 := /var/tmp/sysvisor-test-l1-var-lib-docker
+TEST_VOL2 := /var/tmp/sysvisor-test-l2-var-lib-docker
+
+#
+# build targets
+#
+# TODO: parallelize building of runc, fs, and mgr; note that grpc must be build before these.
+#
+
 .DEFAULT: sysvisor
-
-all: sysvisor
-
-static: sysvisor-static
 
 sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
 
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
 sysvisor-runc: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_GO_DIR) && make BUILDTAGS=$(RUNC_BUILDTAGS)
+	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)"
 
 sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make static
@@ -60,21 +78,77 @@ sysfs-grpc-proto:
 sysmgr-grpc-proto:
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
+#
+# install targets (require root privileges)
+#
+
 install:
-	install -D -m0755 sysvisor-runc/sysvisor-runc $(INSTALL_DIR)/sysvisor-runc
 	install -D -m0755 sysvisor-fs/sysvisor-fs $(INSTALL_DIR)/sysvisor-fs
 	install -D -m0755 sysvisor-mgr/sysvisor-mgr $(INSTALL_DIR)/sysvisor-mgr
+	install -D -m0755 sysvisor-runc/sysvisor-runc $(INSTALL_DIR)/sysvisor-runc
+	install -D -m0755 bin/sysvisor $(INSTALL_DIR)/sysvisor
 
 uninstall:
-	rm -f $(INSTALL_DIR)/sysvisor-runc
+	rm -f $(INSTALL_DIR)/sysvisor
 	rm -f $(INSTALL_DIR)/sysvisor-fs
 	rm -f $(INSTALL_DIR)/sysvisor-mgr
+	rm -f $(INSTALL_DIR)/sysvisor-runc
 
-# sysvisor-test runs tests that verify sysvisor as a whole (i.e., sysvisor-runc + sysvisor-fs).
 #
-# NOTE: before running this target, see the requirements in file nestybox/sysvisor/tests/README
-sysvisor-test: all
-	bats --tap tests${TESTPATH}
+# test targets
+#
+# NOTE: targets test-sysvisor and test-shell require root privileges (otherwise they will
+# fail to remove TEST_VOL*)
+#
+# TODO: bind mount TEST_VOL2 to an appropriate dir in the (level-1) sysvisor-test container; the
+# expectation is that sysvisor instance inside the container will then bind-mount that
+# directory into the (level-2) sys containers. This will then allow each level-2 docker
+# instance (docker inside the sys container) to create the (level-3) app container.
+#
+
+test: test-mgr test-runc test-sysvisor test-fs
+
+test-sysvisor: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+test-sysvisor-local:
+	bats --tap tests$(TESTPATH)
+
+test-runc: sysfs-grpc-proto sysmgr-grpc-proto
+	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
+
+test-fs: sysfs-grpc-proto
+	cd $(SYSFS_GO_DIR) && go test -timeout 3m -v $(fsPkgs)
+
+test-mgr: sysmgr-grpc-proto
+	cd $(SYSMGR_GO_DIR) && go test -timeout 3m -v $(mgrPkgs)
+
+test-shell: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+test-img:
+	cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
+
+#
+# Misc targets
+#
+
+listRuncPkgs:
+	@echo $(runcPkgs)
+
+listFsPkgs:
+	@echo $(fsPkgs)
+
+listMgrPkgs:
+	@echo $(mgrPkgs)
+
+#
+# cleanup targets
+#
 
 clean:
 	cd $(GOPATH)/src/github.com/opencontainers/runc && make clean
@@ -82,3 +156,14 @@ clean:
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make clean
 	rm -f sysvisor-fs/sysvisor-fs
 	rm -f sysvisor-mgr/sysvisor-mgr
+
+# memoize all packages once
+
+_runcPkgs = $(shell cd $(RUNC_GO_DIR) && go list ./... | grep -v vendor)
+runcPkgs = $(if $(__runcPkgs),,$(eval __runcPkgs := $$(_runcPkgs)))$(__runcPkgs)
+
+_fsPkgs = $(shell cd $(SYSFS_GO_DIR) && go list ./... | grep -v vendor)
+fsPkgs = $(if $(__fsPkgs),,$(eval __fsPkgs := $$(_fsPkgs)))$(__fsPkgs)
+
+_mgrPkgs = $(shell cd $(SYSMGR_GO_DIR) && go list ./... | grep -v vendor)
+mgrPkgs = $(if $(__mgrPkgs),,$(eval __mgrPkgs := $$(_mgrPkgs)))$(__mgrPkgs)

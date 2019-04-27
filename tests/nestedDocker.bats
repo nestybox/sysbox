@@ -7,6 +7,9 @@ SYSCONT_NAME=""
 function setup_syscont() {
   run docker run --runtime=sysvisor-runc --rm -d --hostname syscont nestybox/sys-container:debian-plus-docker tail -f /dev/null
   [ "$status" -eq 0 ]
+
+  run docker ps --format "{{.ID}}"
+  [ "$status" -eq 0 ]
   SYSCONT_NAME="$output"
 }
 
@@ -23,8 +26,8 @@ function teardown() {
   teardown_syscont
 }
 
-function wait_for_dockerd {
-  retry 5 1 eval "docker exec $SYSCONT_NAME ps"
+function wait_for_nested_dockerd {
+  retry 5 2 eval "docker exec $SYSCONT_NAME docker ps"
 }
 
 @test "basic sys container" {
@@ -34,10 +37,10 @@ function wait_for_dockerd {
 }
 
 @test "basic nested docker" {
-  run docker exec "$SYSCONT_NAME" dockerd&
+  run docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
-  wait_for_dockerd
+  wait_for_nested_dockerd
 
   run docker exec "$SYSCONT_NAME" sh -c 'docker run hello-world | grep "Hello from Docker!"'
   [ "$status" -eq 0 ]

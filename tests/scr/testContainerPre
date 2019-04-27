@@ -1,0 +1,10 @@
+#!/bin/bash
+
+TEST_VOL1=$1
+TEST_VOL2=$2
+
+# Create a temp directory to bind mount into the level-1 container's /var/lib/docker
+mkdir -p $TEST_VOL1
+
+# Create a temp directory to bind mount into the level-2 container's /var/lib/docker
+mkdir -p $TEST_VOL2

@@ -3,7 +3,10 @@
 load helpers
 
 function setup_syscont() {
-  run docker run --runtime=sysvisor-runc --rm -d --hostname syscont debian:latest tail -f /dev/null
+  run docker run --runtime=sysvisor-runc --rm -d --hostname syscont nestybox/sys-container:debian-plus-docker tail -f /dev/null
+  [ "$status" -eq 0 ]
+
+  run docker ps --format "{{.ID}}"
   [ "$status" -eq 0 ]
   SYSCONT_NAME="$output"
 }
