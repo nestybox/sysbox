@@ -10,15 +10,18 @@
 
 SHELL := bash
 
-CWD := $(CURDIR)
+RUNC_GO_DIR := $(GOPATH)/src/github.com/opencontainers/runc
+RUNC_BUILDTAGS := 'seccomp apparmor'
 
-RUNC_DIR := $(GOPATH)/src/github.com/opencontainers/runc
-BIN_DIR := /usr/local/sbin
+INSTALL_DIR := /usr/local/sbin
+PROJECT := github.com/nestybox/sysvisor
 
+SYSFS_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-fs
 SYSFS_SRC := $(shell find sysvisor-fs 2>&1 | grep -E '.*\.(c|h|go)$$')
 SYSFS_GRPC_DIR := sysvisor-protobuf/sysvisorFsGrpc
 SYSFS_GRPC_SRC := $(shell find $(SYSFS_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
 
+SYSMGR_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-mgr
 SYSMGR_SRC := $(shell find sysvisor-mgr 2>&1 | grep -E '.*\.(c|h|go)$$')
 SYSMGR_GRPC_DIR := sysvisor-protobuf/sysvisorMgrGrpc
 SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
@@ -34,22 +37,22 @@ sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
 sysvisor-runc: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_DIR) && make
+	cd $(RUNC_GO_DIR) && make BUILDTAGS=$(RUNC_BUILDTAGS)
 
 sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_DIR) && make static
+	cd $(RUNC_GO_DIR) && make static
 
 sysvisor-fs: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	go build -o sysvisor-fs/sysvisor-fs ./sysvisor-fs/cmd/sysvisor-fs
+	cd $(SYSFS_GO_DIR) && go build -o sysvisor-fs ./cmd/sysvisor-fs
 
 sysvisor-fs-static: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs/sysvisor-fs ./sysvisor-fs/cmd/sysvisor-fs
+	cd $(SYSFS_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs ./cmd/sysvisor-fs
 
 sysvisor-mgr: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
-	go build -o sysvisor-mgr/sysvisor-mgr ./sysvisor-mgr
+	cd $(SYSMGR_GO_DIR) && go build -o sysvisor-mgr
 
 sysvisor-mgr-static: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
-	CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-mgr/sysvisor-mgr ./sysvisor-mgr
+	cd $(SYSMGR_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-mgr
 
 sysfs-grpc-proto:
 	cd $(SYSFS_GRPC_DIR)/protobuf && make
@@ -58,14 +61,14 @@ sysmgr-grpc-proto:
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
 install:
-	install -D -m0755 sysvisor-runc/sysvisor-runc $(BIN_DIR)/sysvisor-runc
-	install -D -m0755 sysvisor-fs/sysvisor-fs $(BIN_DIR)/sysvisor-fs
-	install -D -m0755 sysvisor-mgr/sysvisor-mgr $(BIN_DIR)/sysvisor-mgr
+	install -D -m0755 sysvisor-runc/sysvisor-runc $(INSTALL_DIR)/sysvisor-runc
+	install -D -m0755 sysvisor-fs/sysvisor-fs $(INSTALL_DIR)/sysvisor-fs
+	install -D -m0755 sysvisor-mgr/sysvisor-mgr $(INSTALL_DIR)/sysvisor-mgr
 
 uninstall:
-	rm -f $(BIN_DIR)/sysvisor-runc
-	rm -f $(BIN_DIR)/sysvisor-fs
-	rm -f $(BIN_DIR)/sysvisor-mgr
+	rm -f $(INSTALL_DIR)/sysvisor-runc
+	rm -f $(INSTALL_DIR)/sysvisor-fs
+	rm -f $(INSTALL_DIR)/sysvisor-mgr
 
 # sysvisor-test runs tests that verify sysvisor as a whole (i.e., sysvisor-runc + sysvisor-fs).
 #
