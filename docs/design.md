@@ -13,43 +13,33 @@ runtime environment.
 
 # System Containers
 
-A system container is a container whose main purpose is to package and
-deploy a full operating system environment (e.g., init process, system
-daemons, libraries, utilities, etc.)
-
-A system container provides enviroment inside of which application
-containers can be deployed (e.g., by running Docker and Kubernetes
-inside the system container).
-
-Compared to regular containers which are currently used to package and
-deploy application micro-services, system containers expose Linux
-OS/kernel resources commonly used by cloud infrastructure tools such
-as those mentioned above.
-
-Compared to virtual machines, a system container is lighter-weight,
-more efficient, and faster to deploy, but provides less isolation from
-the underlying host as it shared the kernel with other system
-containers.
+A system container is a container whose main purpose is to package and deploy a full operating system environment; see [here](https://github.com/nestybox/nestybox#system-containers) for more info.
 
 # Architecture
 
-Sysvisor is comprised on 2 main components:
+Sysvisor is comprised on 3 main components:
 
 * sysvisor-runc: fork of the OCI runc, customized for running system containers.
 
 * sysvisor-fs: FUSE-based filesystem, handles emulation of ceratain
-  files in the system container's rootfs.
+  files in the system container's rootfs, in particular those under
+  "/proc/sys".
+
+* sysvisor-mgr: a daemon that provides services to sysvisor-runc and
+  sysvisor-fs. For example, it manages assignment of exclusive user
+  namespace subuid mappings to system containers.
 
 sysvisor-runc is the frontend for sysvisor; higher layers (e.g.,
 Docker or Kubernetes via containerd) invoke sysvisor-runc to
 launch system containers.
 
-sysvisor-fs is the backend for sysvisor; it handles emulation of
-certain files in the system container's rootfs, in particular
-some files under /proc and /sys.
+sysvisor-runc is a fork of the [OCI runc](https://github.com/opencontainers/runc),
+but has been modified to run system containers. It's mostly but not
+totally OCI compatible (see section on System Container Spec
+Requirements below for details).
 
-Communication between sysvisor-runc and sysvisor-fs is done
-via gRPC.
+sysvisor-fs and sysvisor-mgr are the backends for sysvisor. Communication
+between sysvisor components is done via gRPC.
 
 # System Container Spec Requirements & Overrides
 
@@ -228,6 +218,10 @@ In the future we should consider adding this to allow regular
 users on a host to launch system containers.
 
 
-# Systme container security
+# System container security
+
+## Seccomp
 
 ## AppArmor
+
+## SELinux
