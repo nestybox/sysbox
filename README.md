@@ -5,8 +5,41 @@ Nestybox Sysvisor
 
 Sysvisor is a container runtime that enables creation of system containers.
 
+A system container is a container whose main purpose is to package and deploy a full operating system environment; see [here](https://github.com/nestybox/nestybox#system-containers) for more info.
 
-## Components
+Sysvisor system containers use all Linux namespaces (including the user-namespace) and cgroups for strong isolation from the underlying host and other containers.
+
+
+## Key Features
+
+* Designed to integrate with Docker
+
+  - Users launch and manage system containers with Docker (i.e., `docker run ...`), just as with any other container.
+
+  - Leverages Docker's container image caching & sharing technology (storage efficient).
+
+* Strong container-to-host isolation via use of **all** Linux namespaces
+
+  - Including the user namespace (i.e., root in the system container maps to a non-root "nobody:nogroup" user in the host).
+
+* Supports Docker daemon configured with "userns-remap" or without it.
+
+  - With userns-remap, Docker manages the container's user namespace; however, Docker currently assigns all containers the same user-id/group-id mapping, reducing container-to-container isolation.
+
+  - Without userns-remap, Sysvisor manages the container's user namespace; sysvisor assigns **exclusive** user-id/group-id mappings to each container, for improved container-to-container isolation.
+
+* Supports running Docker **inside** the system container.
+
+  - Securely, without using Docker privileged containers.
+
+* Supports shared storage between system containers
+
+  - Without requiring lax permissions on the shared storage.
+
+The following sections describe how to use each of these features.
+
+
+## Sysvisor Components
 
 Sysvisor is made up of the following components:
 
@@ -17,28 +50,50 @@ Sysvisor is made up of the following components:
 * sysvisor-mgr
 
 
-## Building & Installing
+sysvisor-runc is the program that creates containers; it's a fork of the [OCI runc](https://github.com/opencontainers/runc), but has been modified to run system containers. It's mostly but not totally OCI compatible. Docker interacts with sysvisor-runc.
 
-First, sysvisor requires that user "sysvisor" be created in the system:
+sysvisor-fs is a file-system-in-user-space (FUSE) that emulates portions of the container's filesystem, in particular the "/proc/sys" directory. It's purpose is to expose system resources inside the system container with proper isolation from the host.
+
+sysvisor-mgr is a daemon that provides services to sysvisor-runc and sysvisor-fs. For example, it manages assignment of exclusive user namespace subuid mappings to system containers.
+
+
+## Supported Linux Distros
+
+* Ubuntu 18.10 (codename Cosmic)
+
+
+## Host Requirements
+
+* Docker must be installed on the host machine.
+
+* The host's kernel should be configured to allow unprivileged users to create namespaces. This config likely varies by distro.
+
+  Ubuntu:
+
+  ```
+  sudo sh -c "echo 1 > /proc/sys/kernel/unprivileged_userns_clone"
+  ```
+
+* User "sysvisor" must be created in the system:
 
 ```
 $ sudo useradd sysvisor
 ```
 
-Then build and install with:
+## Building & Installing
 
 ```
 $ make
 $ sudo make install
 ```
 
-Launch the sysvisor-fs and sysvisor-mgr daemons with:
+Launch sysvisor with:
 
 ```
 $ sudo sysvisor &
 ```
 
-The daemons will log into `/var/log/sysvisor-fs.log` and `/var/log/sysvisor-mgr.log` (these logs are useful for troubleshooting).
+This launches the sysvisor-fs and sysvisor-mgr daemons. The daemons will log into `/var/log/sysvisor-fs.log` and `/var/log/sysvisor-mgr.log` (these logs are useful for troubleshooting).
 
 
 ## Usage
@@ -47,7 +102,7 @@ The easiest way to create system containers is to use Docker in conjunction with
 
 ### Docker + Sysvisor
 
-First, configure the Docker daemon by creating or editing the `/etc/docker/daemon.json` file:
+Start by onfiguring the Docker daemon by creating or editing the `/etc/Docker/daemon.json` file:
 
 ```
 {
@@ -60,10 +115,10 @@ First, configure the Docker daemon by creating or editing the `/etc/docker/daemo
 }
 ```
 
-Then re-start the Docker daemon; for example:
+Then re-start the Docker daemon. In hosts with systemd:
 
 ```
-$ sudo systemctl restart docker.service
+$ sudo systemctl restart Docker.service
 ```
 
 Finally, launch system containers with Docker:
@@ -76,27 +131,19 @@ root@syscont:/#
 Inside the system container, you can install and launch system software such as another Docker daemon to spawn app containers. See section System Container below for further info on this.
 
 
-### Docker without userns-remap
+### Docker + Sysvisor (without userns-remap)
 
-In the prior section, the docker daemon was configured with the `userns-remap` option. This causes Docker to manage user namespace of the container as well as its user-id (uid) and group-id (gid) mappings.
+In the prior section, the Docker daemon was configured with the `userns-remap` option. This causes Docker to enable the user namespace for containers and manage the associated user-id (uid) and group-id (gid) mappings.
 
-Unfortunately, Docker uses the same uid(gid) mapping for all containers. That is, with docker `userns-remap`, all system containers will map to the same non-root uid(gids) on the host.
+Docker `userns-remap` offers strong container-to-host isolation by virtue of mapping root in the container to a non-root user in the host.
 
-Thus, Docker `userns-remap` offers strong container-to-host isolation (compared to Docker without userns-remap), but weak container-to-container isolation.
+However, Docker userns-remap offers weak container-to-container isolation. The reason is that Docker uses the same uid(gid) mapping for all containers. That is, all containers will map to the **same** non-root uid(gids) on the host. A process that escapes the container would have permission to access the data of other containers.
 
-To improve on this, Sysvisor supports running system containers *without* Docker `userns-remap`. This causes Sysvisor (not Docker) to manage the user-namespace as well as uid(gid) mappings on the host. This results in strong container-to-host and container-to-container isolation.
+To improve on this, Sysvisor supports running system containers *without* Docker `userns-remap`. In this mode, Sysvisor (rather than Docker) manages the user-namespace uid(gid) mappings on the host. This results in strong container-to-host and container-to-container isolation. A process that escapes the container would have no permission to access the data of other containers.
 
-However, doing so requires that a filesystem overlay module called `shiftfs` be loaded in the kernel.
+To work without `userns-remap`, Sysvisor requires that a filesystem overlay module called `shiftfs` be loaded in the kernel. See section "Shiftfs Module" below for details on how to do this.
 
-Build and load the `shiftfs` module with:
-
-```
-cd shiftfs/<distro>/
-sudo make
-sudo insmod shiftfs.ko
-```
-
-Configure the `/etc/docker/daemon.json` file without `userns-remap`:
+Once shiftfs is loaded in the kernel, simply configure the `/etc/Docker/daemon.json` file without `userns-remap`:
 
 ```
 {
@@ -111,7 +158,7 @@ Configure the `/etc/docker/daemon.json` file without `userns-remap`:
 Re-start the Docker daemon:
 
 ```
-$ sudo systemctl restart docker.service
+$ sudo systemctl restart Docker.service
 ```
 
 And launch system containers with Docker:
@@ -130,7 +177,7 @@ root@syscont:/#
 
   - May be installed inside a system container using the instructions in the Docker website.
 
-  - Alternatively, use a system container image that containers a pre-installed dockerd (e.g., `nestybox/sys-container:debian-plus-docker`)
+  - Alternatively, use a system container image that containers a pre-installed Dockerd (e.g., `nestybox/sys-container:debian-plus-Docker`)
 
 
 ## Shared Volumes
@@ -169,6 +216,23 @@ $ docker run --runtime=sysvisor-runc \
 After this, all system containers will have root access to the shared volume.
 
 
+## Shiftfs Module
+
+shiftfs is a Linux kernel module that provides a thin overlay filesystem that performs uid and gid shifting betweeen user namespaces.
+
+shiftfs was originally written by James Bottomley and has been modified slightly by Nestybox (bug fixes, adaptation to supported sysvisor distros, etc.). See [here](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) for details on shiftfs.
+
+### Installation
+
+Build and load the `shiftfs` module with:
+
+```
+cd shiftfs/<distro>/
+sudo make
+sudo insmod shiftfs.ko
+```
+
+
 ## Testing
 
 To run the full sysvisor test suite (integration + unit tests):
@@ -200,6 +264,10 @@ In order to debug, it's sometimes useful to launch the Docker privileged contain
 ```
 $ make test-shell
 ```
+
+## Sysvisor-runc OCI Compatibility
+
+**TODO**: write this section
 
 
 ## Troubleshooting
