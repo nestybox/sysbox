@@ -50,11 +50,13 @@ Sysvisor is made up of the following components:
 * sysvisor-mgr
 
 
-sysvisor-runc is the program that creates containers; it's a fork of the [OCI runc](https://github.com/opencontainers/runc), but has been modified to run system containers. It's mostly but not totally OCI compatible (see section OCI compatibiity below for details). Docker interacts with sysvisor-runc.
+sysvisor-runc is the program that creates containers. It's the frontend of sysvisor: higher layers (e.g., Docker) invoke sysvisor-runc to launch system containers.
 
 sysvisor-fs is a file-system-in-user-space (FUSE) that emulates portions of the container's filesystem, in particular the `/proc/sys` directory. It's purpose is to expose system resources inside the system container with proper isolation from the host.
 
 sysvisor-mgr is a daemon that provides services to sysvisor-runc and sysvisor-fs. For example, it manages assignment of exclusive user namespace subuid mappings to system containers.
+
+Together, sysvisor-fs and sysvisor-mgr are the backends for sysvisor. Communication between sysvisor components is done via gRPC.
 
 
 ## Supported Linux Distros
@@ -272,10 +274,6 @@ In order to debug, it's sometimes useful to launch the Docker privileged contain
 ```
 $ make test-shell
 ```
-
-## Sysvisor-runc OCI Compatibility
-
-**TODO**: write this section
 
 
 ## Troubleshooting
