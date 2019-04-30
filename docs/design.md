@@ -1,19 +1,10 @@
 Sysvisor Design Notes
 =====================
 
-The document describes the design of sysvisor.
+The document describes the design of sysvisor, capturing primarily low
+level design issues.
 
-# General
-
-Sysvisor is a container runtime specifically built to run system
-containers.
-
-Sysvisor's main role is to setup and manage the system container's
-runtime environment.
-
-# System Containers
-
-A system container is a container whose main purpose is to package and deploy a full operating system environment; see [here](https://github.com/nestybox/nestybox#system-containers) for more info.
+Refer to the [sysvisor README file](https://github.com/nestybox/sysvisor/blob/master/README.md) for a general intro into sysvisor.
 
 # Architecture
 
