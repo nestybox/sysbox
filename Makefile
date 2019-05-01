@@ -26,12 +26,12 @@ PROJECT := github.com/nestybox/sysvisor
 
 SYSFS_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-fs
 SYSFS_SRC := $(shell find sysvisor-fs 2>&1 | grep -E '.*\.(c|h|go)$$')
-SYSFS_GRPC_DIR := sysvisor-protobuf/sysvisorFsGrpc
+SYSFS_GRPC_DIR := sysvisor-ipc/sysvisorFsGrpc
 SYSFS_GRPC_SRC := $(shell find $(SYSFS_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
 
 SYSMGR_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-mgr
 SYSMGR_SRC := $(shell find sysvisor-mgr 2>&1 | grep -E '.*\.(c|h|go)$$')
-SYSMGR_GRPC_DIR := sysvisor-protobuf/sysvisorMgrGrpc
+SYSMGR_GRPC_DIR := sysvisor-ipc/sysvisorMgrGrpc
 SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
 
 TEST_DIR := $(CURDIR)/tests
