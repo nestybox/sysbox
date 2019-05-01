@@ -267,9 +267,17 @@ $ make test-mgr
 
 ### Sysvisor integration tests
 
-The Sysvisor integration Makefile target (`test-sysvisor`) spawns a Docker privileged container, installs Sysvisor *inside* of it, and runs the tests in directory `tests/`.
+The Sysvisor integration Makefile target (`test-sysvisor`) spawns a Docker privileged container using the image in tests/Dockerfile.
 
-In order to debug, it's sometimes useful to launch the Docker privileged container and get a shell in it. This can be done with:
+It then mounts the developer's Sysvisor directory into the privileged container, builds and installs Sysvisor *inside* of it, and runs the tests in directory `tests/`.
+
+These tests use the ["bats"](https://github.com/nestybox/sysvisor/blob/master/README.md) test framework, which is pre-installed in the privileged container image.
+
+In order to launch the privileged container, Docker must be present in the host and configured without userns-remap (as userns-remap is not compatible with privileged containers).
+
+Make sure the `/etc/docker/daemon.json` file is not configured with the `userns-remap` option prior to running the Sysvisor integration tests.
+
+Also, in order to debug, it's sometimes useful to launch the Docker privileged container and get a shell in it. This can be done with:
 
 ```
 $ make test-shell
