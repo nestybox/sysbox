@@ -104,7 +104,7 @@ The easiest way to create system containers is to use Docker in conjunction with
 
 ### Docker + Sysvisor
 
-Start by onfiguring the Docker daemon by creating or editing the `/etc/Docker/daemon.json` file:
+Start by configuring the Docker daemon by creating or editing the `/etc/Docker/daemon.json` file:
 
 ```
 {
@@ -173,6 +173,28 @@ $ docker run --runtime=sysvisor-runc \
     debian:latest
 root@syscont:/#
 ```
+
+### Docker + Sysvisor Debug
+
+Sysvisor-runc takes several debug flags in its command line. When invoking sysvisor via Docker, these
+options can be passed down by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
+For example, to disable strict checking of distro compatiblity, use:
+
+```
+{
+   "runtimes": {
+        "sysvisor-runc": {
+            "path": "/usr/local/sbin/sysvisor-runc",
+            "runtimeArgs": [
+                "--no-distro-check"
+            ]
+        }
+    }
+}
+```
+
+Type `sysvisor-runc --help` for further info on command line flags.
+
 
 ### Sysvisor (without Docker)
 
