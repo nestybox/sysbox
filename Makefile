@@ -52,7 +52,7 @@ TEST_VOL2 := /var/tmp/sysvisor-test-l2-var-lib-docker
 
 sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
 
-sysvisor-debug: sysvisor-runc-debug sysvisor-fs sysvisor-mgr
+sysvisor-debug: sysvisor-runc-debug sysvisor-fs-debug sysvisor-mgr-debug
 
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
@@ -68,11 +68,17 @@ sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysm
 sysvisor-fs: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
 	cd $(SYSFS_GO_DIR) && go build -o sysvisor-fs ./cmd/sysvisor-fs
 
+sysvisor-fs-debug: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
+	cd $(SYSFS_GO_DIR) && go build -gcflags="all=-N -l" -o sysvisor-fs ./cmd/sysvisor-fs
+
 sysvisor-fs-static: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
 	cd $(SYSFS_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs ./cmd/sysvisor-fs
 
 sysvisor-mgr: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
 	cd $(SYSMGR_GO_DIR) && go build -o sysvisor-mgr
+
+sysvisor-mgr-debug: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
+	cd $(SYSMGR_GO_DIR) && go build -gcflags="all=-N -l" -o sysvisor-mgr
 
 sysvisor-mgr-static: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
 	cd $(SYSMGR_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-mgr
