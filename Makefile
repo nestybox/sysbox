@@ -52,10 +52,15 @@ TEST_VOL2 := /var/tmp/sysvisor-test-l2-var-lib-docker
 
 sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
 
+sysvisor-debug: sysvisor-runc-debug sysvisor-fs sysvisor-mgr
+
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
 sysvisor-runc: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)"
+
+sysvisor-runc-debug: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
+	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" sysvisor-runc-debug
 
 sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make static
