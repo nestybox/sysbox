@@ -176,9 +176,9 @@ root@syscont:/#
 
 ### Docker + Sysvisor Debug
 
-Sysvisor-runc takes several debug flags in its command line. When invoking sysvisor via Docker, these
-options can be passed down by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
-For example, to disable strict checking of distro compatiblity, use:
+sysvisor-runc takes several debug flags in its command line. When invoking sysvisor-runc via Docker, these options can be passed down from Docker to sysvisor-runc by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
+
+For example, to disable strict checking for kernel version compatiblity, use:
 
 ```
 {
@@ -186,7 +186,7 @@ For example, to disable strict checking of distro compatiblity, use:
         "sysvisor-runc": {
             "path": "/usr/local/sbin/sysvisor-runc",
             "runtimeArgs": [
-                "--no-distro-check"
+                "--no-kernel-check"
             ]
         }
     }
