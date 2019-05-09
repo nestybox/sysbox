@@ -8,8 +8,8 @@
 
 .PHONY: sysvisor sysvisor-static \
 	sysvisor-runc sysvisor-runc-static \
-	sysvisor-fs sysvisor-fs-static \
-	sysvisor-mgr sysvisor-mgr-static \
+	sysvisor-fs sysvisor-fs-static sysvisor-fs-debug \
+	sysvisor-mgr sysvisor-mgr-static sysvisor-mgr-debug \
 	sysfs-grpc-proto sysmgr-grpc-proto \
 	install integration \
 	test-img test-shell \
