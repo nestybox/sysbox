@@ -66,7 +66,7 @@ ln -s /go/src/github.com/opencontainers/runc/sysvisor-runc /bin/runc
 5) go to the test directory where the sys container bundle is located:
 
 ```
-cd /tmp/busyboxtest
+cd /root/busyboxtest
 ```
 
 6) Execute runc manually as needed to repro. E.g.,:

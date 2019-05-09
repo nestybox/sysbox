@@ -149,8 +149,6 @@ container (with an appropriate log message).
 
 ## Pre-start hooks
 
-## Seccomp
-
 ## uid/gid mappings
 
 * If the container spec specifies uid/gid mapping, sysvisor honors it
@@ -251,9 +249,18 @@ no need to).
 ## Shiftfs on Bind Mount Sources
 
 In addition to mounting shiftfs on the container's rootfs,
-sysvisor-runc also mounts shiftfs on the source directory of all bind
-mounts specified in the container's runc spec (and only when the
-source of the bind mount is outside of the container's rootfs).
+sysvisor-runc also mounts shiftfs on the source directory of bind
+mounts specified in the container's runc spec, if they meet
+the following conditions:
+
+* The bind mount source is not under of the container's rootfs (to
+  avoid shiftfs-on-shiftfs mounts).
+
+* The bind mount source is not directly above the container's rootfs
+  (to avoid shiftfs-on-shifts mounts).
+
+* The bind mount source is not on tmpfs (to avoid github issue #123),
+  with the exception of Docker `/dev/shm` mounts.
 
 This way, sysvisor-runc supports uid(gid) shifting on Docker
 volume or bind mounts.
@@ -303,9 +310,9 @@ to Docker userns remap:
 |                     | Storage efficient (shared Docker images). |
 |                     | Does not require shiftfs module in kernel. |
 
-
 # sysvisor-fs File Emulation
 
+**TODO** Complete this section
 
 # Rootless mode
 
@@ -314,7 +321,6 @@ without root permissions on the host).
 
 In the future we should consider adding this to allow regular
 users on a host to launch system containers.
-
 
 # System container security
 
