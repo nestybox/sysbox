@@ -174,28 +174,6 @@ $ docker run --runtime=sysvisor-runc \
 root@syscont:/#
 ```
 
-### Docker + Sysvisor Debug
-
-sysvisor-runc takes several debug flags in its command line. When invoking sysvisor-runc via Docker, these options can be passed down from Docker to sysvisor-runc by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
-
-For example, to disable strict checking for kernel version compatiblity, use:
-
-```
-{
-   "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc",
-            "runtimeArgs": [
-                "--no-kernel-check"
-            ]
-        }
-    }
-}
-```
-
-Type `sysvisor-runc --help` for further info on command line flags.
-
-
 ### Sysvisor (without Docker)
 
 **TODO**: write this section
@@ -305,7 +283,31 @@ Also, in order to debug, it's sometimes useful to launch the Docker privileged c
 $ make test-shell
 ```
 
-
 ## Troubleshooting
 
-**TODO**: write this section
+**TODO**: complete this section
+
+### Passing debug flags to Sysvisor from Docker
+
+sysvisor-runc takes several debug flags in its command line. When invoking sysvisor-runc via Docker, these options can be passed down from Docker to sysvisor-runc by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
+
+For example, to disable strict checking for kernel version compatiblity, use:
+
+```
+{
+   "runtimes": {
+        "sysvisor-runc": {
+            "path": "/usr/local/sbin/sysvisor-runc",
+            "runtimeArgs": [
+                "--no-kernel-check"
+            ]
+        }
+    }
+}
+```
+
+Type `sysvisor-runc --help` for further info on command line flags.
+
+### Debug tips
+
+The Sysvisor [debug notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md) have further info on this topic.
