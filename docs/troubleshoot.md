@@ -1,7 +1,7 @@
-Notes on Sysvisor Debugging
-===========================
+Notes on Sysvisor Troubleshooting
+=================================
 
-# Debug a failing sysvisor-runc integration test
+# Troubleshoot a failing sysvisor-runc integration test
 
 * sysvisor-runc integration tests use `bats` inside a privileged docker container.
 
