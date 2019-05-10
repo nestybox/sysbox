@@ -117,7 +117,7 @@ uninstall:
 # instance (docker inside the sys container) to create the (level-3) app container.
 #
 
-test: test-mgr test-runc test-sysvisor test-fs
+test: test-fs test-mgr test-runc test-sysvisor
 
 test-sysvisor: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
