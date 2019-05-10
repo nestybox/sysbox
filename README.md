@@ -308,6 +308,11 @@ For example, to disable strict checking for kernel version compatiblity, use:
 
 Type `sysvisor-runc --help` for further info on command line flags.
 
-### Debug tips
+### Troubleshooting tips
 
-The Sysvisor [debug notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md) have further info on this topic.
+The Sysvisor [troubleshooting notes](https://github.com/nestybox/sysvisor/blob/master/docs/troubleshoot.md) have further info on this topic.
+
+
+## Debugging
+
+Refer to Sysvisor [debugging notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md) for detailed information on the sequence of steps required to debug Sysvisor modules.
