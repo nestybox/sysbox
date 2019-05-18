@@ -38,15 +38,17 @@ SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysvisor-test
 
-# test volumes to mount into the test container
-# NOTE: must not be on tmpfs directory, as docker's overlayfs may not work well on top of tmpfs.
+# test volume to mount into the privileged test container's /var/lib/docker; this is
+# required so that the docker and sysvisor-runc instances inside the privileged container
+# do not run on top of overlayfs. This directory must not be on a tmpfs directory, as the
+# docker instance inside the privileged test container will mount overlayfs on top, and
+# overlayfs can't be mounted on top of tmpfs.
 TEST_VOL1 := /var/tmp/sysvisor-test-l1-var-lib-docker
-TEST_VOL2 := /var/tmp/sysvisor-test-l2-var-lib-docker
 
 #
 # build targets
 #
-# TODO: parallelize building of runc, fs, and mgr; note that grpc must be build before these.
+# TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
 #
 
 .DEFAULT: sysvisor
@@ -110,20 +112,15 @@ uninstall:
 # test targets
 #
 # NOTE: targets test-sysvisor and test-shell require root privileges (otherwise they will
-# fail to remove TEST_VOL*)
-#
-# TODO: bind mount TEST_VOL2 to an appropriate dir in the (level-1) sysvisor-test container; the
-# expectation is that sysvisor instance inside the container will then bind-mount that
-# directory into the (level-2) sys containers. This will then allow each level-2 docker
-# instance (docker inside the sys container) to create the (level-3) app container.
+# fail to remove TEST_VOL1)
 #
 
 test: test-fs test-mgr test-runc test-sysvisor
 
 test-sysvisor: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1)
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
@@ -138,9 +135,9 @@ test-mgr:
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
 
 test-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1)
 
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_GO_DIR) && go test -timeout 3m -v $(fsPkgs)
