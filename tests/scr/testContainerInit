@@ -12,8 +12,8 @@
 # Cmd Line Options
 # - uid-shift
 
-# Build & install sysvisor (make clean && make && make install)
-make clean && make && make install
+# Build & install sysvisor (make && make install)
+make && make install
 
 # TODO: Build & install shiftfs (if uid-shift option set)
 
