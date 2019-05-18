@@ -13,8 +13,9 @@
 	sysfs-grpc-proto sysmgr-grpc-proto \
 	install integration \
 	test-img test-shell \
-	test-int test-int-local \
-	test
+	test test-sysvisor test-sysvisor-local \
+	test-runc test-fs test-mgr \
+	test-fs-local test-mgr-local
 
 SHELL := bash
 
@@ -130,16 +131,22 @@ test-sysvisor-local:
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
 
-test-fs: sysfs-grpc-proto
-	cd $(SYSFS_GO_DIR) && go test -timeout 3m -v $(fsPkgs)
+test-fs:
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
 
-test-mgr: sysmgr-grpc-proto
-	cd $(SYSMGR_GO_DIR) && go test -timeout 3m -v $(mgrPkgs)
+test-mgr:
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
 
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+test-fs-local: sysfs-grpc-proto
+	cd $(SYSFS_GO_DIR) && go test -timeout 3m -v $(fsPkgs)
+
+test-mgr-local: sysmgr-grpc-proto
+	cd $(SYSMGR_GO_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
 test-img:
 	cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .

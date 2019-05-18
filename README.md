@@ -265,6 +265,12 @@ $ make test-fs
 $ make test-mgr
 ```
 
+These unit tests run inside a privileged container, as some of them
+require running as root. There are also "local" targets for the `mgr`
+and `fs` unit tests which run directly on the host (e.g., `make
+test-fs-local`, `make test-mgr-local`). These local targets run faster,
+but will skip tests that require root permissions.
+
 ### Sysvisor integration tests
 
 The Sysvisor integration Makefile target (`test-sysvisor`) spawns a Docker privileged container using the image in tests/Dockerfile.
