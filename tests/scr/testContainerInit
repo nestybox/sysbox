@@ -5,8 +5,8 @@
 #
 # TODO:
 #
-# - How do we capture errors and bail in case any of the above steps fail?
-# - Docker login to the nestybox repo so it can get test images; alternatively embed the image in the privileged test container.
+# - If uid-shift, configure without docker userns remap; otherwise config with docker userns remap.
+# - How do we capture errors and bail in case any of the script steps fail?
 #
 
 # Cmd Line Options
@@ -15,10 +15,9 @@
 # Build & install sysvisor (make clean && make && make install)
 make clean && make && make install
 
-# Build & install shiftfs (if uid-shift option set)
+# TODO: Build & install shiftfs (if uid-shift option set)
 
 # Configure dockerd
-# - If uid-shift, configure without docker userns remap; otherwise config with docker userns remap.
 mkdir -p /etc/docker
 cat <<EOF > /etc/docker/daemon.json
 {
