@@ -32,8 +32,10 @@ function teardown() {
   # verify things look good inside the sys container
   #
 
-  # "/var/lib/docker" should be mounted to "/var/lib/sysvisor/docker/<syscont-name>"
-  run docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"/var/lib/sysvisor/docker/$SYSCONT_NAME\""
+  # "/var/lib/docker" should be mounted to "/var/lib/sysvisor/docker/<syscont-name>"; note
+  # that in the privileged test container the "/var/lib/sysvisor" is itself a mount-point,
+  # so it won't show up in findmnt; thus we just grep for "docker/<syscont-name>"
+  run docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"docker/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
 
   # ownership of "/var/lib/docker" should be root:root
