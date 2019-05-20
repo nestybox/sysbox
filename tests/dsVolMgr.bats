@@ -32,7 +32,7 @@ function teardown() {
   # verify things look good inside the sys container
   #
 
-  # "/var/lib/docker" should mounted to "/var/lib/sysvisor/docker/<syscont-name>"
+  # "/var/lib/docker" should be mounted to "/var/lib/sysvisor/docker/<syscont-name>"
   run docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"/var/lib/sysvisor/docker/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
 
@@ -42,7 +42,7 @@ function teardown() {
   [[ ${lines[0]} == "Access: (0700/drwx------)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
 
   #
-  # verify things look good outside the sys container
+  # verify things look good on the host
   #
 
   # there should be a dir with the container's name under /var/lib/sysvisor/docker
@@ -63,6 +63,7 @@ function teardown() {
   #
   # TODO: verify dsVolMgr copy-up by creating a sys container image with contents in /var/lib/docker
   # and checking that the contents are copied to the /var/lib/sysvisor/docker/<syscont-name> and
-  # that they have the correct ownership.
+  # that they have the correct ownership. There is a dsVolMgr unit test that verifies this already,
+  # but an integration test would be good too.
   #
 #}

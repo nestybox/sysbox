@@ -1,5 +1,7 @@
 #!/bin/bash
 
 TEST_VOL1=$1
+TEST_VOL2=$2
 
 rm -rf $TEST_VOL1
+rm -rf $TEST_VOL2
