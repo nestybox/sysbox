@@ -6,10 +6,14 @@
 #
 # The image does not contain sysvisor itself; the sysvisor repo
 # must be bind mounted into the image. It can then be built,
-# installed, and run within the container.
+# installed, and executed within the container.
 #
 # It is based on the Dockerfile in the OCI runc github repo, but
 # adapted to sysvisor testing.
+#
+# Instructions:
+#
+# docker build -t sysvisor-test .
 #
 
 FROM golang:1.12-stretch
