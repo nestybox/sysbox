@@ -116,7 +116,7 @@ container (with an appropriate log message).
   Sysvisor gives the root user in the system container full access to
   it (i.e., mounts it read-write as the system container's cgroup root, and
   changes the ownership on the host to match the system container's
-  root process uid/gid).
+  root process uid(gid)).
 
 * In addition, Sysvisor uses the cgroup namespace to hide the host
   path for the cgroup root inside the system container.
@@ -149,13 +149,13 @@ container (with an appropriate log message).
 
 ## Pre-start hooks
 
-## uid/gid mappings
+## uid(gid) mappings
 
-* If the container spec specifies uid/gid mapping, sysvisor honors it
+* If the container spec specifies uid(gid) mapping, sysvisor honors it
 
   - sysvisor does not record the mapping in this case
 
-  - sysvisor requires that the mapping be for a range of >= 64K uid/gids per container.
+  - sysvisor requires that the mapping be for a range of >= 64K uid(gid)s per container.
 
     - This is necessary to support running most Linux distros inside a
       system container (e.g., Debian uses uid 65534 as "nobody").
@@ -170,29 +170,30 @@ container (with an appropriate log message).
       mappings between containers for strong container->container
       isolation.
 
-* Otherwise, sysvisor generates the uid/gid mapping
+* Otherwise, sysvisor generates the uid(gid) mapping
 
   - the mapping is generated from the subuid/subgid range for user "sysvisor"
 
-  - each sys container is given an exclusive portion of the subuid/gid range (for strong isolation)
+  - each sys container is given an exclusive portion of the subuid(gid) range (for strong isolation)
 
-  - if the subuid/gid range is exhausted, action is determined by subuid/gid
+  - if the subuid(gid) range is exhausted, action is determined by subuid(gid)
     range exhaust policy setting.
 
-  - sysvisor allocations are always for 64K uid/gids
+  - sysvisor allocations are always for 64K uid(gid)s
 
-### subuid/gid range exhaust policy
+### subuid(gid) range exhaust policy
 
-This setting dictates how sysvisor reacts to subuid/gid range
-exhaustion when uid/gid auto allocation is enabled.
+This policy dictates how sysvisor reacts to subuid(gid) range
+exhaustion when uid(gid) auto allocation is enabled.
 
-- Re-use: re-use uid/gid mappings; this may cause multiple sys
-  containers to map to the same subuid/gid range on the host, reducing
+- Re-use: re-use uid(gid) mappings; this may cause multiple sys
+  containers to map to the same subuid(gid) range on the host, reducing
   isolation.
 
 - No-Reuse: do not launch sys container.
 
-Note: currently the setting is hardwired to "Reuse" in sysvisor-mgr.
+This policy can be configured via sysvisor-mgr's `subid-policy`
+command line option.
 
 # uid(gid) shifting
 
@@ -259,8 +260,11 @@ the following conditions:
 * The bind mount source is not directly above the container's rootfs
   (to avoid shiftfs-on-shifts mounts).
 
-* The bind mount source is not on tmpfs (to avoid github issue #123),
-  with the exception of Docker `/dev/shm` mounts.
+* The bind mount source is not on tmpfs with the exception of Docker
+  `/dev/shm` mounts (to avoid github issue #123).
+
+* The bind mount source uid:gid do not match the uid:gid assigned
+  to the container's root process.
 
 This way, sysvisor-runc supports uid(gid) shifting on Docker
 volume or bind mounts.
@@ -301,7 +305,7 @@ to Docker userns remap:
 |                     | Strong container-to-host isolation. |
 |                     | Strong container-to-container isolation. |
 |                     | Storage efficient (shared Docker images). |
-|                     | Requires shiftfs module in kernel (must be loaded by sysvisor installer). |
+|                     | Requires shiftfs module in kernel. |
 |                     |
 | enabled             | sysvisor will honor Docker's uid(gid) mappings. |
 |                     | uid(gid) shifting won't be used because container uid(gid) mappings match rootfs owner. |
@@ -309,6 +313,67 @@ to Docker userns remap:
 |                     | Reduced container-to-container isolation (same uid(gid) range). |
 |                     | Storage efficient (shared Docker images). |
 |                     | Does not require shiftfs module in kernel. |
+
+# System container /var/lib/docker mount
+
+Sysvisor automatically creates and bind-mounts a host volume inside the
+system container's `/var/lib/docker` directory.
+
+This functionality is needed in order to:
+
+* Remove the need to place sysvisor system container images in a
+  filesystem that supports Docker-in-Docker (e.g., btrfs).
+
+* Allow Docker-in-Docker when the outer Docker system container is
+  using uid-shifting (via the shiftfs module). This is needed because
+  the inner Docker mounts overlayfs on top of the container images on
+  `/var/lib/docker/`, but overlayfs does not work when mounted on top
+  of shiftfs, so shiftfs can't be mounted on `/var/lib/docker`.
+
+See sysvisor github issue #46 (https://github.com/nestybox/sysvisor/issues/46) for
+further details.
+
+The host volume that is bind mounted on the system container's
+`/var/lib/docker` is simply a directory inside sysvisor-mgr's
+data-root (`/var/lib/sysvisor`). This directory is created by sysvisor
+when the container launches, and deleted when the container stops. In
+other words, the volume / directory only exists for the life of the
+system container.
+
+This ensures that each instance of a container image gets a dedicated
+`/var/lib/docker` directory and thus each Docker daemon inside the
+system container(s) has an exclusive docker-storage area (as sharing
+of a docker-storage area among Docker daemons does not work per
+Docker).
+
+A couple of details:
+
+* When creating the host volume directory, Sysvisor sets the directory's
+  uid:gid ownership to match the uid:gid of the root inside the system
+  container. This way system container root processes can access
+  `/var/lib/docker` inside the system container.
+
+* Sysvisor deals with the case where the system container image has
+  contents in `/var/lib/docker` prior to launching the system
+  container.  In this case, sysvisor copies those contents to the
+  newly created volume and sets the uid:gid ownership appropriately
+  before performing the bind mount of the volume on top of the
+  container's `/var/lib/docker/`.
+
+## Implementation
+
+The creation and deletion of the host volume to be mounted on `/var/lib/docker`
+is done by sysvisor-mgr.
+
+When a system container starts, sysvisor-runc requests a supplementary
+mount config from sysvisor-mgr. sysvisor-mgr then creates the host
+volume in its data-root (`/var/lib/sysvisor`) and returns a mount
+config to sysvisor-runc. sysvisor-runc then applies the mount config
+(i.e., bind mounts the host volume to the container's `/var/lib/docker`).
+
+When a system container stops, sysvisor-runc requests that sysvisor-mgr
+release any resources associated with the container. sysvisor-mgr proceeds
+to remove the host volume associated with the container.
 
 # sysvisor-fs File Emulation
 
