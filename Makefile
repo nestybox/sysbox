@@ -38,12 +38,14 @@ SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysvisor-test
 
-# test volume to mount into the privileged test container's /var/lib/docker; this is
-# required so that the docker and sysvisor-runc instances inside the privileged container
-# do not run on top of overlayfs. This directory must not be on a tmpfs directory, as the
-# docker instance inside the privileged test container will mount overlayfs on top, and
-# overlayfs can't be mounted on top of tmpfs.
-TEST_VOL1 := /var/tmp/sysvisor-test-l1-var-lib-docker
+# volumes to mount into the privileged test container's `/var/lib/docker` and
+# `/var/lib/sysvisor`; this is required so that the docker and sysvisor-runc instances
+# inside the privileged container do not run on top of overlayfs as this is not
+# supported. The volumes must not be on a tmpfs directory, as the docker instance inside
+# the privileged test container will mount overlayfs on top, and overlayfs can't be
+# mounted on top of tmpfs.
+TEST_VOL1 := /var/tmp/sysvisor-test-var-lib-docker
+TEST_VOL2 := /var/tmp/sysvisor-test-var-lib-sysvisor
 
 #
 # build targets
@@ -112,15 +114,15 @@ uninstall:
 # test targets
 #
 # NOTE: targets test-sysvisor and test-shell require root privileges (otherwise they will
-# fail to remove TEST_VOL1)
+# fail to remove TEST_VOL1 and TEST_VOL2)
 #
 
 test: test-fs test-mgr test-runc test-sysvisor
 
 test-sysvisor: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1)
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
@@ -129,15 +131,15 @@ test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
 
 test-fs:
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
 
 test-mgr:
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
 
 test-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1)
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_GO_DIR) && go test -timeout 3m -v $(fsPkgs)
