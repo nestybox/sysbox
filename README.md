@@ -262,7 +262,7 @@ The Sysvisor test suite is made up of the following:
 To run the entire Sysvisor test suite:
 
 ```
-$ sudo make test
+$ make test
 ```
 
 This command runs all test targets (i.e., unit and integration
@@ -277,13 +277,13 @@ to running this command. See above for info on loading shiftfs.
 Without uid-shifting:
 
 ```
-$ sudo make test-sysvisor
+$ make test-sysvisor
 ```
 
 With uid-shifting:
 
 ```
-$ sudo make test-sysvisor-shiftuid
+$ make test-sysvisor-shiftuid
 ```
 
 ### Run the unit tests
