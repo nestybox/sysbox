@@ -139,11 +139,11 @@ test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
 
 test-fs: test-img
-	printf "\nRunning sysvisor-fs unit unit tests\n\n"
+	printf "\nRunning sysvisor-fs unit tests\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
 
 test-mgr: test-img
-	printf "\nRunning sysvisor-mgr unit unit tests\n\n"
+	printf "\nRunning sysvisor-mgr unit tests\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
 
 test-shell: test-img
