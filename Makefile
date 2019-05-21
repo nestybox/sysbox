@@ -117,28 +117,43 @@ uninstall:
 # fail to remove TEST_VOL1 and TEST_VOL2)
 #
 
-test: test-fs test-mgr test-runc test-sysvisor
+test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
 test-sysvisor: test-img
+	printf "\nRunning sysvisor integration tests\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+test-sysvisor-shiftuid: test-img
+	printf "\nRunning sysvisor integration tests (with uid shifting)\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
 
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
+	printf "\nRunning sysvisor-runc unit & integration tests\n\n"
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
 
 test-fs: test-img
+	printf "\nRunning sysvisor-fs unit unit tests\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
 
 test-mgr: test-img
+	printf "\nRunning sysvisor-mgr unit unit tests\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
 
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+test-shell-shiftuid: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "SHIFT_UIDS=true testContainerInit && /bin/bash"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
 test-fs-local: sysfs-grpc-proto
