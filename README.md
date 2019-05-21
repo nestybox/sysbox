@@ -242,20 +242,51 @@ sudo make
 sudo insmod shiftfs.ko
 ```
 
+Remove the module with:
+
+```
+sudo rmmod shiftfs
+```
 
 ## Sysvisor Testing
 
-To run the full Sysvisor test suite (integration + unit tests):
+The Sysvisor test suite is made up of the following:
+
+* sysvisor-mgr unit tests
+* sysvisor-fs unit tests
+* sysvisor-runc unit and integration tests
+* sysvisor integration tests (these test sysvisor runc, mgr, and fs together).
+
+### Run the entire suite
+
+To run the entire Sysvisor test suite:
 
 ```
 $ sudo make test
 ```
 
-To run the Sysvisor integration tests only:
+This command runs all test targets (i.e., unit and integration
+tests).
+
+*Note*: This includes sysvisor integration tests with and without
+uid-shifting. Thus the shiftfs module be loaded in the kernel *prior*
+to running this command. See above for info on loading shiftfs.
+
+### Run the sysvisor integration tests only
+
+Without uid-shifting:
 
 ```
 $ sudo make test-sysvisor
 ```
+
+With uid-shifting:
+
+```
+$ sudo make test-sysvisor-shiftuid
+```
+
+### Run the unit tests
 
 To run unit tests for one of the Sysvisor components (e.g., sysvisor-fs, sysvisor-mgr, etc.)
 
@@ -279,46 +310,32 @@ It then mounts the developer's Sysvisor directory into the privileged container,
 
 These tests use the ["bats"](https://github.com/nestybox/sysvisor/blob/master/README.md) test framework, which is pre-installed in the privileged container image.
 
-In order to launch the privileged container, Docker must be present in the host and configured without userns-remap (as userns-remap is not compatible with privileged containers).
+In order to launch the privileged container, Docker must be present in
+the host and configured without userns-remap (as userns-remap is not
+compatible with privileged containers). Make sure the
+`/etc/docker/daemon.json` file is not configured with the
+`userns-remap` option prior to running the Sysvisor integration tests.
 
-Make sure the `/etc/docker/daemon.json` file is not configured with the `userns-remap` option prior to running the Sysvisor integration tests.
-
-Also, in order to debug, it's sometimes useful to launch the Docker privileged container and get a shell in it. This can be done with:
+Also, in order to debug, it's sometimes useful to launch the Docker
+privileged container and get a shell in it. This can be done with:
 
 ```
 $ make test-shell
 ```
 
+or
+
+```
+$ make test-shell-shiftuid
+```
+
+The latter command configures docker inside the privileged test container without
+userns remap, thus forcing sysvisor to use uid-shifting.
+
 ## Troubleshooting
 
-**TODO**: complete this section
-
-### Passing debug flags to Sysvisor from Docker
-
-sysvisor-runc takes several debug flags in its command line. When invoking sysvisor-runc via Docker, these options can be passed down from Docker to sysvisor-runc by adding the `runtimeArgs` clause in the `/etc/docker/daemon.json` file.
-
-For example, to disable strict checking for kernel version compatiblity, use:
-
-```
-{
-   "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc",
-            "runtimeArgs": [
-                "--no-kernel-check"
-            ]
-        }
-    }
-}
-```
-
-Type `sysvisor-runc --help` for further info on command line flags.
-
-### Troubleshooting tips
-
-The Sysvisor [troubleshooting notes](https://github.com/nestybox/sysvisor/blob/master/docs/troubleshoot.md) have further info on this topic.
-
+Refer to the Sysvisor [troubleshooting notes](https://github.com/nestybox/sysvisor/blob/master/docs/troubleshoot.md).
 
 ## Debugging
 
-Refer to Sysvisor [debugging notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md) for detailed information on the sequence of steps required to debug Sysvisor modules.
+Refer to the Sysvisor [debugging notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md) for detailed information on the sequence of steps required to debug Sysvisor modules.
