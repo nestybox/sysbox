@@ -19,7 +19,9 @@ make && make install
 
 # Configure dockerd
 mkdir -p /etc/docker
-cat <<EOF > /etc/docker/daemon.json
+
+if [ -z "$SHIFT_UIDS" ]; then
+    cat <<EOF > /etc/docker/daemon.json
 {
     "debug": false,
     "userns-remap": "sysvisor",
@@ -30,6 +32,19 @@ cat <<EOF > /etc/docker/daemon.json
     }
 }
 EOF
+else
+    cat <<EOF > /etc/docker/daemon.json
+{
+    "debug": false,
+    "userns-remap": "",
+    "runtimes": {
+        "sysvisor-runc": {
+            "path": "/usr/local/sbin/sysvisor-runc"
+        }
+    }
+}
+EOF
+fi
 
 # Start sysvisor
 sysvisor
