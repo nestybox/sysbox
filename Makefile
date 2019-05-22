@@ -2,20 +2,22 @@
 # Sysvisor Makefile
 #
 # TODO:
-# - fix grpc source deps for sysvisor targets; they are not working (which forces user to make clean & rebuild when grpc files change)
-# - Add test targets (all-unit, all-integration, sysvisor-runc unit, sysvisor-runc integration, sysvisor-fs unit)
 # - Add installation package target
 
 .PHONY: sysvisor sysvisor-static \
-	sysvisor-runc sysvisor-runc-static \
+	sysvisor-runc sysvisor-runc-static sysvisor-runc-debug \
 	sysvisor-fs sysvisor-fs-static sysvisor-fs-debug \
 	sysvisor-mgr sysvisor-mgr-static sysvisor-mgr-debug \
 	sysfs-grpc-proto sysmgr-grpc-proto \
-	install integration \
-	test-img test-shell \
-	test test-sysvisor test-sysvisor-local \
+	install uninstall \
+	test \
+	test-sysvisor test-sysvisor-shiftuid test-sysvisor-local \
 	test-runc test-fs test-mgr \
-	test-fs-local test-mgr-local
+	test-shell test-shell-shiftuid \
+	test-fs-local test-mgr-local \
+	test-img test-cleanup \
+	listRuncPkgs listFsPkgs listMgrPkgs \
+	clean
 
 SHELL := bash
 
@@ -26,14 +28,9 @@ INSTALL_DIR := /usr/local/sbin
 PROJECT := github.com/nestybox/sysvisor
 
 SYSFS_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-fs
-SYSFS_SRC := $(shell find sysvisor-fs 2>&1 | grep -E '.*\.(c|h|go)$$')
-SYSFS_GRPC_DIR := sysvisor-ipc/sysvisorFsGrpc
-SYSFS_GRPC_SRC := $(shell find $(SYSFS_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
-
 SYSMGR_GO_DIR := $(GOPATH)/src/$(PROJECT)/sysvisor-mgr
-SYSMGR_SRC := $(shell find sysvisor-mgr 2>&1 | grep -E '.*\.(c|h|go)$$')
+SYSFS_GRPC_DIR := sysvisor-ipc/sysvisorFsGrpc
 SYSMGR_GRPC_DIR := sysvisor-ipc/sysvisorMgrGrpc
-SYSMGR_GRPC_SRC := $(shell find $(SYSMGR_GRPC_DIR) 2>&1 | grep -E '.*\.(c|h|go)$$')
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysvisor-test
@@ -61,38 +58,38 @@ sysvisor-debug: sysvisor-runc-debug sysvisor-fs-debug sysvisor-mgr-debug
 
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
-sysvisor-runc: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)"
+sysvisor-runc: sysfs-grpc-proto sysmgr-grpc-proto
+	@cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)"
 
-sysvisor-runc-debug: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" sysvisor-runc-debug
+sysvisor-runc-debug: sysfs-grpc-proto sysmgr-grpc-proto
+	@cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" sysvisor-runc-debug
 
-sysvisor-runc-static: $(SYSFS_GRPC_SRC) $(SYSMGR_GRPC_SRC) sysfs-grpc-proto sysmgr-grpc-proto
-	cd $(RUNC_GO_DIR) && make static
+sysvisor-runc-static: sysfs-grpc-proto sysmgr-grpc-proto
+	@cd $(RUNC_GO_DIR) && make static
 
-sysvisor-fs: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	cd $(SYSFS_GO_DIR) && go build -o sysvisor-fs ./cmd/sysvisor-fs
+sysvisor-fs: sysfs-grpc-proto
+	@cd $(SYSFS_GO_DIR) && make
 
-sysvisor-fs-debug: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	cd $(SYSFS_GO_DIR) && go build -gcflags="all=-N -l" -o sysvisor-fs ./cmd/sysvisor-fs
+sysvisor-fs-debug: sysfs-grpc-proto
+	@cd $(SYSFS_GO_DIR) && make sysvisor-fs-debug
 
-sysvisor-fs-static: $(SYSFS_SRC) $(SYSFS_GRPC_SRC) sysfs-grpc-proto
-	cd $(SYSFS_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-fs ./cmd/sysvisor-fs
+sysvisor-fs-static: sysfs-grpc-proto
+	@cd $(SYSFS_GO_DIR) && make sysvisor-fs-static
 
-sysvisor-mgr: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
-	cd $(SYSMGR_GO_DIR) && go build -o sysvisor-mgr
+sysvisor-mgr: sysmgr-grpc-proto
+	@cd $(SYSMGR_GO_DIR) && make
 
-sysvisor-mgr-debug: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
-	cd $(SYSMGR_GO_DIR) && go build -gcflags="all=-N -l" -o sysvisor-mgr
+sysvisor-mgr-debug: sysmgr-grpc-proto
+	@cd $(SYSMGR_GO_DIR) && make sysvisor-mgr-debug
 
-sysvisor-mgr-static: $(SYSMGR_SRC) $(SYSMGR_GRPC_SRC) sysmgr-grpc-proto
-	cd $(SYSMGR_GO_DIR) && CGO_ENABLED=1 go build -tags "netgo osusergo static_build" -installsuffix netgo -ldflags "-w -extldflags -static" -o sysvisor-mgr
+sysvisor-mgr-static: sysmgr-grpc-proto
+	@cd $(SYSMGR_GO_DIR) && make sysvisor-mgr-static
 
 sysfs-grpc-proto:
-	cd $(SYSFS_GRPC_DIR)/protobuf && make
+	@cd $(SYSFS_GRPC_DIR)/protobuf && make
 
 sysmgr-grpc-proto:
-	cd $(SYSMGR_GRPC_DIR)/protobuf && make
+	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
 #
 # install targets (require root privileges)
@@ -120,12 +117,12 @@ uninstall:
 test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
 test-sysvisor: test-img
-	printf "\n** Running sysvisor integration tests **\n\n"
+	@printf "\n** Running sysvisor integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
 test-sysvisor-shiftuid: test-img
-	printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
+	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
@@ -133,16 +130,16 @@ test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
 
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
-	printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
+	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
 	cd $(RUNC_GO_DIR) && make BUILDTAGS="$(RUNC_BUILDTAGS)" test
 
 test-fs: test-img
-	printf "\n** Running sysvisor-fs unit tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-fs-local"
+	@printf "\n** Running sysvisor-fs unit tests **\n\n"
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make --no-print-directory test-fs-local"
 
 test-mgr: test-img
-	printf "\n** Running sysvisor-mgr unit tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-mgr-local"
+	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make --no-print-directory test-mgr-local"
 
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
@@ -159,12 +156,12 @@ test-mgr-local: sysmgr-grpc-proto
 	cd $(SYSMGR_GO_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
 test-img:
-	printf "\n** Building test container **\n\n"
-	cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
+	@printf "\n** Building the test container **\n\n"
+	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
 
 # must run as sudo
 test-cleanup: test-img
-	printf "\n** Cleaning up sysvisor integration tests **\n\n"
+	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 #
@@ -185,11 +182,11 @@ listMgrPkgs:
 #
 
 clean:
-	cd $(GOPATH)/src/github.com/opencontainers/runc && make clean
+	cd $(RUNC_GO_DIR) && make clean
+	cd $(SYSFS_GO_DIR) && make clean
+	cd $(SYSMGR_GO_DIR) && make clean
 	cd $(SYSFS_GRPC_DIR)/protobuf && make clean
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make clean
-	rm -f sysvisor-fs/sysvisor-fs
-	rm -f sysvisor-mgr/sysvisor-mgr
 
 # memoize all packages once
 
