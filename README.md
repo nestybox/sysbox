@@ -134,7 +134,7 @@ cumbersome to use.
 ### Docker + Sysvisor
 
 Start by configuring the Docker daemon by creating or editing the
-`/etc/Docker/daemon.json` file:
+`/etc/docker/daemon.json` file:
 
 ```
 {
@@ -147,10 +147,17 @@ Start by configuring the Docker daemon by creating or editing the
 }
 ```
 
+Create a 'sysvisor' user that matches the one configured above in
+"userns-remap" section.
+
+```
+$ sudo useradd sysvisor
+```
+
 Then re-start the Docker daemon. In hosts with systemd:
 
 ```
-$ sudo systemctl restart Docker.service
+$ sudo systemctl restart docker.service
 ```
 
 Finally, launch system containers with Docker:
@@ -211,7 +218,7 @@ Once shiftfs is loaded in the kernel, simply configure the
 Re-start the Docker daemon:
 
 ```
-$ sudo systemctl restart Docker.service
+$ sudo systemctl restart docker.service
 ```
 
 And launch system containers with Docker:
