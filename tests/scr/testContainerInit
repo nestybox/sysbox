@@ -5,12 +5,8 @@
 #
 # TODO:
 #
-# - If uid-shift, configure without docker userns remap; otherwise config with docker userns remap.
-# - How do we capture errors and bail in case any of the script steps fail?
+# - Capture errors and bail in case any of the script steps fail?
 #
-
-# Cmd Line Options
-# - uid-shift
 
 # Build & install sysvisor (make && make install)
 make && make install

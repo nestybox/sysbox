@@ -257,7 +257,7 @@ The Sysvisor test suite is made up of the following:
 * sysvisor-runc unit and integration tests
 * sysvisor integration tests (these test sysvisor runc, mgr, and fs together).
 
-### Run the entire suite
+### Running the entire suite
 
 To run the entire Sysvisor test suite:
 
@@ -272,7 +272,7 @@ tests).
 uid-shifting. Thus the shiftfs module be loaded in the kernel *prior*
 to running this command. See above for info on loading shiftfs.
 
-### Run the sysvisor integration tests only
+### Running the sysvisor integration tests only
 
 Without uid-shifting:
 
@@ -286,7 +286,15 @@ With uid-shifting:
 $ make test-sysvisor-shiftuid
 ```
 
-### Run the unit tests
+It's also possible to run a specific integration test with:
+
+```
+$ TESTPATH=/<test-name> make test-sysvisor
+```
+
+where `<test-name>` is one of the `*.bats` files in the Sysvisor `tests/` directory.
+
+### Running the unit tests
 
 To run unit tests for one of the Sysvisor components (e.g., sysvisor-fs, sysvisor-mgr, etc.)
 
@@ -302,7 +310,7 @@ and `fs` unit tests which run directly on the host (e.g., `make
 test-fs-local`, `make test-mgr-local`). These local targets run faster,
 but will skip tests that require root permissions.
 
-### Sysvisor integration tests
+### More on Sysvisor integration tests
 
 The Sysvisor integration Makefile target (`test-sysvisor`) spawns a Docker privileged container using the image in tests/Dockerfile.
 
@@ -331,6 +339,21 @@ $ make test-shell-shiftuid
 
 The latter command configures docker inside the privileged test container without
 userns remap, thus forcing sysvisor to use uid-shifting.
+
+### Test cleanup
+
+The test suite creates directories on the host which it mounts into
+the privileged test container. The programs running inside the privileged
+container (e.g., docker, sysvisor, etc) place data in these directories.
+
+Cleanup of these directories must be done via the following make target:
+
+```
+$ sudo make test-cleanup
+```
+
+The target must be run as root, because some of the files being cleaned
+up were created by root processes inside the privileged test container.
 
 ## Troubleshooting
 

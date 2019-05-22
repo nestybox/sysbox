@@ -101,5 +101,7 @@ RUN useradd sysvisor \
 COPY .docker/config.json /root/.docker/config.json
 
 COPY scr/testContainerInit /usr/bin
+COPY scr/testContainerCleanup /usr/bin
+
 WORKDIR /go/src/github.com/nestybox/sysvisor
 CMD /bin/bash
