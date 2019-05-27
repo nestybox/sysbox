@@ -128,6 +128,7 @@ test-sysvisor-shiftuid: test-img
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
+	bats --tap tests/handlers$(TESTPATH)
 
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
