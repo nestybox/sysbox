@@ -5,6 +5,8 @@
 #
 
 set -e
+
 mkdir -p /var/lib/sysvisorfs
-sysvisor-fs /var/lib/sysvisorfs > /var/log/sysvisor-fs.log 2>&1 &
+
+sysvisor-fs --log /dev/stdout > /var/log/sysvisor-fs.log 2>&1 &
 sysvisor-mgr --log /dev/stdout > /var/log/sysvisor-mgr.log 2>&1 &
