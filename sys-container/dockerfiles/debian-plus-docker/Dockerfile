@@ -11,7 +11,8 @@ RUN apt-get update
 # Useful utilities
 RUN apt-get install -y \
        procps \
-       nano
+       nano \
+       strace
 
 # Docker install
 RUN apt-get install -y \
