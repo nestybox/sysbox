@@ -110,9 +110,6 @@ uninstall:
 #
 # test targets
 #
-# NOTE: targets test-sysvisor and test-shell require root privileges (otherwise they will
-# fail to remove TEST_VOL1 and TEST_VOL2)
-#
 
 test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
@@ -142,6 +139,14 @@ test-mgr: test-img
 	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make --no-print-directory test-mgr-local"
 
+test-shiftfs: test-img
+	@printf "\n** Running shiftfs posix compliance tests **\n\n"
+	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
+
+# must run as root; requires pjdfstest to be installed at $(SUITEPATH); $(TESTPATH) is the directory where shiftfs is mounted.
+test-shiftfs-local:
+	tests/scr/testShiftfs $(SUITEPATH) $(TESTPATH)
+
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
@@ -160,7 +165,7 @@ test-img:
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
 
-# must run as sudo
+# must run as root
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
 	docker run -it --privileged --rm --hostname sysvisor-test -v $(CURDIR):/go/src/$(PROJECT) -v /lib/modules:/lib/modules:ro -v $(TEST_VOL1):/var/lib/docker -v $(TEST_VOL2):/var/lib/sysvisor $(TEST_IMAGE) /bin/bash -c "testContainerCleanup"

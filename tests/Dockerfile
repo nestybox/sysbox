@@ -1,15 +1,18 @@
 #
 # Sysvisor Test Container Dockerfile
 #
-# This Dockerfile creates the sysvisor test container image.  The
-# image contains all dependencies needed to build and run sysvisor.
+# This Dockerfile creates the sysvisor test container image. The image
+# contains all dependencies needed to build, run, and test sysvisor.
 #
 # The image does not contain sysvisor itself; the sysvisor repo
 # must be bind mounted into the image. It can then be built,
 # installed, and executed within the container.
 #
-# It is based on the Dockerfile in the OCI runc github repo, but
-# adapted to sysvisor testing.
+# The image must be run as a privileged container (i.e., docker run --privileged ...)
+# Refer to the sysvisor Makefile test targets.
+#
+# This Dockerfile is based on a similar Dockerfile in the OCI runc
+# github repo, but adapted to sysvisor testing.
 #
 # Instructions:
 #
@@ -84,6 +87,16 @@ RUN add-apt-repository \
        stable"
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# install pjdfstest suite (used to test shiftfs posix compliance)
+RUN apt-get install -y autoconf
+RUN cd /root \
+    && git clone https://github.com/pjd/pjdfstest.git \
+    && cd pjdfstest \
+    && autoreconf -ifs \
+    && ./configure \
+    && make pjdfstest \
+    && cp pjdfstest /usr/local/bin
 
 # nestybox repo setup requires that opencontainers/runc be linked to sysvisor-runc
 RUN mkdir -p /go/src/github.com/opencontainers \
