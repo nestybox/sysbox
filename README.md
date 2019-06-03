@@ -420,6 +420,24 @@ The latter command configures docker inside the privileged test
 container without userns remap, thus forcing sysvisor to use
 uid-shifting.
 
+### Testing Shiftfs
+
+We use the [pjdfstest suite](https://github.com/pjd/pjdfstest) to test
+shiftfs POSIX compliance.
+
+To run the tests, use:
+
+```
+make test-shiftfs
+```
+
+This target launches the privileged test container, creates a test
+directory, mounts shiftfs on this directory, and runs the pjdfstest
+suite.
+
+Make sure to run the test target only on Linux distros in which
+shiftfs is supported.
+
 ### Test cleanup
 
 The test suite creates directories on the host which it mounts into
