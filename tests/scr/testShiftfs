@@ -38,17 +38,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "Running shiftfs posix compliance suite ... "
-echo "Target dir = $TDIR"
-echo "Suite = $SUITE"
-
 # create a test dir
 mkdir -p $TDIR/mountpoint
 cd $TDIR
 
-# when running on ext4, we mount overlayfs first to test shiftfs on
-# top of overlayfs (as this is how a sys container would be
-# configured).
+# test shiftfs on top of overlayfs (as this is how a sys container would be
+# configured)
 
 fs=$(findmnt | grep /var/lib/sysvisor | grep -v sysvisorfs | awk '{ print $3 }')
 if [ $fs != "btrfs" ]; then
@@ -64,8 +59,10 @@ mount -t shiftfs -o userns=/proc/1/ns/user mountpoint mountpoint
 
 # run pjdfstest suite
 if [ -n $ovl ]; then
+  printf "\nPASS #1: Testing shiftfs on top of overlayfs ...\n"
   cd mountpoint/common
 else
+  printf "\nPASS #1: Testing shiftfs on top of $fs ... \n"
   cd mountpoint
 fi
 
@@ -77,6 +74,21 @@ if [ -n $ovl ]; then
   umount $TDIR/mountpoint
 fi
 
+umount $TDIR/mountpoint
+
+# Test shiftfs on top of tmpfs (as this is how sys container
+# volumes may be configured by Docker)
+
+printf "\nPASS #2: Testing shiftfs on top of tmpfs ... \n"
+
+cd $TDIR
+mount -t tmpfs tmpfs mountpoint
+mount -t shiftfs -o userns=/proc/1/ns/user mountpoint mountpoint
+cd mountpoint
+prove -rv $SUITE/tests
+
+cd
+umount $TDIR/mountpoint
 umount $TDIR/mountpoint
 
 # cleanup
