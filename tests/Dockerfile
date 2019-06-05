@@ -49,6 +49,13 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && apt-get clean
 
+# Activate golang's modules functionality and install its latest (top-of-tree) binary.
+# These instructions may be eliminated upon arrival of 1.13 release (ETA: Aug-2019).
+ENV GO111MODULE=on
+RUN go get golang.org/dl/gotip \
+    && gotip download \
+    && gotip env -w GONOSUMDB=github.com/nestybox
+
 # Add a dummy user for the rootless integration tests; needed by the
 # `git clone` operations below.
 RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
@@ -98,9 +105,6 @@ RUN cd /root \
     && make pjdfstest \
     && cp pjdfstest /usr/local/bin
 
-# nestybox repo setup requires that opencontainers/runc be linked to sysvisor-runc
-RUN mkdir -p /go/src/github.com/opencontainers \
-    && ln -s /go/src/github.com/nestybox/sysvisor/sysvisor-runc /go/src/github.com/opencontainers/runc
 
 # sysvisor deps
 RUN apt-get update && apt-get install -y \
@@ -116,5 +120,6 @@ COPY .docker/config.json /root/.docker/config.json
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 
-WORKDIR /go/src/github.com/nestybox/sysvisor
+RUN mkdir -p /github.com/nestybox
+WORKDIR /github.com/nestybox/sysvisor
 CMD /bin/bash
