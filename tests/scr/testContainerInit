@@ -1,11 +1,7 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Test container initialization script
-#
-# TODO:
-#
-# - Capture errors and bail in case any of the script steps fail?
 #
 
 # Build & install sysvisor (make && make install)
@@ -35,7 +31,10 @@ else
     "userns-remap": "",
     "runtimes": {
         "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc"
+            "path": "/usr/local/sbin/sysvisor-runc",
+            "runtimeArgs": [
+                "--no-kernel-check"
+            ]
         }
     }
 }
