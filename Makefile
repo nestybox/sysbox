@@ -33,7 +33,7 @@ SYSMGR_GRPC_DIR := sysvisor-ipc/sysvisorMgrGrpc
 SYSRUNC_BUILDTAGS := seccomp apparmor
 
 INSTALL_DIR := /usr/local/sbin
-PROJECT := /github.com/nestybox/sysvisor
+PROJECT := /root/nestybox/sysvisor
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysvisor-test
@@ -136,37 +136,30 @@ test-sysvisor: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
-
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
-
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
 	bats --tap tests/handlers$(TESTPATH)
-
 
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
-
 test-fs: test-img
 	@printf "\n** Running sysvisor-fs unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
-
 
 test-mgr: test-img
 	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
 
-
 test-shiftfs: test-img
 	@printf "\n** Running shiftfs posix compliance tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
-
 
 # must run as root; requires pjdfstest to be installed at $(SUITEPATH); $(TESTPATH) is the directory where shiftfs is mounted.
 test-shiftfs-local:
@@ -176,31 +169,25 @@ test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
 
-
 test-shell-shiftuid: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && /bin/bash"
 
-
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
-
 
 test-mgr-local: sysmgr-grpc-proto
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
-
 test-img:
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
-
 
 # must run as root
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
-
 
 #
 # Misc targets

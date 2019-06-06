@@ -54,7 +54,7 @@ RUN apt-get update && apt-get install -y \
 ENV GO111MODULE=on
 RUN go get golang.org/dl/gotip \
     && gotip download \
-    && gotip env -w GONOSUMDB=github.com/nestybox
+    && gotip env -w GONOSUMDB=/root/nestybox
 
 # Add a dummy user for the rootless integration tests; needed by the
 # `git clone` operations below.
@@ -120,6 +120,6 @@ COPY .docker/config.json /root/.docker/config.json
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 
-RUN mkdir -p /github.com/nestybox
-WORKDIR /github.com/nestybox/sysvisor
+RUN mkdir -p /root/nestybox
+WORKDIR /root/nestybox/sysvisor
 CMD /bin/bash
