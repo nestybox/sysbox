@@ -7,9 +7,9 @@ TEST_VOL2=$2
 # requirements (this can be checked from within the test container
 # since its docker image may be based from another distro)
 
-if [ -n $SHIFT_UIDS ]; then
+if [[ "$SHIFT_UIDS" == "true" ]]; then
   DISTRO=$(lsb_release -i | awk '{print $3}')
-  if [ $DISTRO != "Ubuntu" ]; then
+  if [ "$DISTRO" != "Ubuntu" ]; then
     printf "\nError: Sysvisor uid shifting is only supported on Ubuntu hosts.\n\n"
     exit 1
   fi
