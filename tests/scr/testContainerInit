@@ -5,7 +5,7 @@
 #
 
 # Build & install sysvisor (make && make install)
-make --no-print-directory && make install
+make clean && make --no-print-directory && make install
 
 # TODO: Build & install shiftfs (if uid-shift option set)
 

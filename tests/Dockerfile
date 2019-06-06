@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -y \
     uidmap \
     kmod \
     unzip \
+    time \
     --no-install-recommends \
     && apt-get clean
 
