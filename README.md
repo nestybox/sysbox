@@ -83,7 +83,15 @@ sysvisor. Communication between sysvisor components is done via gRPC.
 
 ## Supported Linux Distros
 
-* Ubuntu 18.10 (codename Cosmic)
+With Docker userns-remap
+
+* Ubuntu 18.04 (Bionic)
+* Ubuntu 18.10 (Cosmic)
+* Ubuntu 19.04 (Disco)
+
+Without Docker userns-remap:
+
+* Ubuntu 19.04 (Disco)
 
 
 ## Host Requirements
@@ -302,9 +310,8 @@ filesystem that performs uid and gid shifting betweeen user
 namespaces.
 
 shiftfs was originally written by James Bottomley and has been
-modified slightly by Nestybox (bug fixes, adaptation to supported
-Sysvisor distros, etc.). See [here](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md)
-for details on shiftfs.
+modified by Nestybox (bug fixes, adaptation to supported Sysvisor
+distros, etc.). See [here](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) for details on shiftfs.
 
 ### Installation
 
