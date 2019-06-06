@@ -114,15 +114,7 @@ uninstall:
 # test targets
 #
 
-test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
-
-
-# Docker-run common instruction
-DOCKER_RUN = docker run                                     \
-			-it                                 \
-			--privileged                        \
-			--rm                                \
-			--hostname sysvisor-test            \
+DOCKER_RUN := docker run -it --privileged --rm --hostname sysvisor-test \
 			-v $(CURDIR):$(PROJECT)             \
 			-v /lib/modules:/lib/modules:ro     \
 			-v $(TEST_VOL1):/var/lib/docker     \
@@ -130,6 +122,7 @@ DOCKER_RUN = docker run                                     \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod    \
 			$(TEST_IMAGE)
 
+test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
 test-sysvisor: test-img
 	@printf "\n** Running sysvisor integration tests **\n\n"
@@ -139,7 +132,7 @@ test-sysvisor: test-img
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-        $(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
