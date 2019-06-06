@@ -22,7 +22,7 @@
 SHELL := bash
 
 
-# Sysvisor's execution-target locations.
+# Sysvisor's build-target locations.
 SYSRUNC_DIR     := sysvisor-runc
 SYSFS_DIR       := sysvisor-fs
 SYSMGR_DIR      := sysvisor-mgr
@@ -116,65 +116,57 @@ uninstall:
 
 test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
+
+# Docker-run common instruction
+DOCKER_RUN = docker run                                     \
+			-it                                 \
+			--privileged                        \
+			--rm                                \
+			--hostname sysvisor-test            \
+			-v $(CURDIR):$(PROJECT)             \
+			-v /lib/modules:/lib/modules:ro     \
+			-v $(TEST_VOL1):/var/lib/docker     \
+			-v $(TEST_VOL2):/var/lib/sysvisor   \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod    \
+			$(TEST_IMAGE)
+
+
 test-sysvisor: test-img
 	@printf "\n** Running sysvisor integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+
 
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+
 
 test-sysvisor-local:
 	bats --tap tests$(TESTPATH)
 	bats --tap tests/handlers$(TESTPATH)
 
+
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
+
 test-fs: test-img
 	@printf "\n** Running sysvisor-fs unit tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "make --no-print-directory test-fs-local"
+	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
+
 
 test-mgr: test-img
 	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "make --no-print-directory test-mgr-local"
+	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
+
 
 test-shiftfs: test-img
 	@printf "\n** Running shiftfs posix compliance tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
+	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
+
 
 # must run as root; requires pjdfstest to be installed at $(SUITEPATH); $(TESTPATH) is the directory where shiftfs is mounted.
 test-shiftfs-local:
@@ -182,47 +174,34 @@ test-shiftfs-local:
 
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "testContainerInit && /bin/bash"
+	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
+
 
 test-shell-shiftuid: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "SHIFT_UIDS=true testContainerInit && /bin/bash"
+	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && /bin/bash"
+
 
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
 
+
 test-mgr-local: sysmgr-grpc-proto
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
+
 
 test-img:
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
 
+
 # must run as root
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
-	docker run -it --privileged --rm --hostname sysvisor-test \
-		-v $(CURDIR):$(PROJECT)                           \
-		-v /lib/modules:/lib/modules:ro                   \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		-v $(TEST_VOL1):/var/lib/docker                   \
-		-v $(TEST_VOL2):/var/lib/sysvisor                 \
-		-v $(GOPATH)/pkg/mod:/go/pkg/mod                  \
-		$(TEST_IMAGE) /bin/bash -c "testContainerCleanup"
+	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+
 #
 # Misc targets
 #
@@ -235,6 +214,7 @@ listFsPkgs:
 
 listMgrPkgs:
 	@echo $(mgrPkgs)
+
 
 #
 # cleanup targets
