@@ -83,13 +83,13 @@ sysvisor. Communication between sysvisor components is done via gRPC.
 
 ## Supported Linux Distros
 
-With Docker userns-remap
+When using Sysvisor with Docker userns-remap:
 
 * Ubuntu 18.04 (Bionic)
 * Ubuntu 18.10 (Cosmic)
 * Ubuntu 19.04 (Disco)
 
-Without Docker userns-remap:
+When using Sysvisor without Docker userns-remap:
 
 * Ubuntu 19.04 (Disco)
 
@@ -274,24 +274,18 @@ system containers, without lax permissions and in spite of the fact
 that each system container may be assigned a different uid/gid range
 on the host.
 
-This uses uid(gid) shifting performed by the `shiftfs` module describe
+This uses uid(gid) shifting performed by the `shiftfs` module described
 previously (see section "Docker without userns-remap" above).
 
 Setting it up is simple:
 
-First, create a shared directory owned by root:
+First, create a shared directory owned by `root:root`:
 
 ```
 sudo mkdir <path/to/shared/dir>
 ```
 
-Then mark the shared directory with `shiftfs`:
-
-```
-$ sudo mount -t shiftfs -o mark <path/to/shared/dir>
-```
-
-Then simply bind mount the volume into the system containers:
+Then simply bind-mount the volume into the system container(s):
 
 ```
 $ docker run --runtime=sysvisor-runc \
@@ -300,8 +294,17 @@ $ docker run --runtime=sysvisor-runc \
     debian:latest
 ```
 
-After this, all system containers will have root access to the shared volume.
+When the system container is launched this way, Sysvisor will notice
+that bind mounted volume is owned by `root:root` and will mount
+shiftfs on top of it, such that the container can have access to
+it. Repeating this for multiple system containers will give all of
+them access to the shared volume.
 
+Note: for security reasons, ensure that *only* the root user has
+search permissions to the shared directory. This prevents a scenario
+where a corrupt/malicious system container writes an executable file
+to this directory (as root) and makes it executable by any user
+on the host, thereby granting regular users host privileges.
 
 ## Shiftfs Module
 
@@ -370,10 +373,20 @@ $ make test-sysvisor-shiftuid
 It's also possible to run a specific integration test with:
 
 ```
-$ TESTPATH=/<test-name> make test-sysvisor
+$ make test-sysvisor TESTPATH=<test-name>
 ```
 
-where `<test-name>` is one of the `*.bats` files in the Sysvisor `tests/` directory.
+For example, to run all sysvisor-fs handler tests:
+
+```
+$ make test-sysvisor TESTPATH=handlers
+```
+
+Or to run one specific hanlder test:
+
+```
+$ make test-sysvisor TESTPATH=handlers/disable_ipv6.bats
+```
 
 ### Running the unit tests
 
@@ -388,7 +401,7 @@ $ make test-mgr
 These unit tests run inside a privileged container, as some of them
 require running as root. There are also "local" targets for the `mgr`
 and `fs` unit tests which run directly on the host (e.g., `make
-test-fs-local`, `make test-mgr-local`). These local targets run faster,
+test-fs-local`, `make test-mgr-local`). These local targets run a bit faster,
 but will skip tests that require root permissions.
 
 ### More on Sysvisor integration tests
