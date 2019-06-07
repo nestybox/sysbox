@@ -2,7 +2,11 @@
 
 SYSCONT_NAME=""
 
-function setup_syscont() {
+# TODO: write a helper to setup a busybox syscont, run it with sysvisor-runc rather than docker
+
+
+
+function docker_run() {
   run docker run --runtime=sysvisor-runc --rm -d --hostname syscont nestybox/sys-container:debian-plus-docker tail -f /dev/null
   [ "$status" -eq 0 ]
 
@@ -11,7 +15,7 @@ function setup_syscont() {
   SYSCONT_NAME="$output"
 }
 
-function teardown_syscont() {
+function docker_stop() {
   # use '-t 0' to force stop immediately; otherwise it takes several seconds ...
   run docker stop -t 0 "$SYSCONT_NAME"
   [ "$status" -eq 0 ]

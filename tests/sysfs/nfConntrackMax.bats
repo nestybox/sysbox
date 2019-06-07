@@ -15,7 +15,7 @@ NF_CONNTRACK_LOW_VAL=""
 NF_CONNTRACK_HIGH_VAL=""
 
 function setup() {
-  setup_syscont
+  docker_run
 
   # Define nf_conntrack_max values to utilize during testing.
   run cat /proc/sys/net/netfilter/nf_conntrack_max
@@ -26,7 +26,7 @@ function setup() {
 }
 
 function teardown() {
-  teardown_syscont
+  docker_stop
 }
 
 # Lookup/Getattr operation.

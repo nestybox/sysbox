@@ -3,7 +3,7 @@
 load ../helpers
 
 function setup() {
-  setup_syscont
+  docker_run
 
   # Obtain the container creation time.
   run cat /proc/uptime
@@ -13,7 +13,7 @@ function setup() {
 }
 
 function teardown() {
-  teardown_syscont
+  docker_stop
 }
 
 # Lookup/Getattr operation.

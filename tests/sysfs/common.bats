@@ -9,7 +9,7 @@ IPV6_ENABLED="0"
 IPV6_DISABLED="1"
 
 function setup() {
-  setup_syscont
+  docker_run
 
   # The testcases in this file originally assumed that IPv6 is enabled in the
   # host fs. However, that's not a valid assumption for all the scenarios, as
@@ -24,7 +24,7 @@ function setup() {
 }
 
 function teardown() {
-  teardown_syscont
+  docker_stop
 }
 
 # Lookup/Getattr operation.
