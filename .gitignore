@@ -1,5 +1,5 @@
-# Ignore protobuf auto-generated code
-sysvisor-protobuf/*.pb.go
+# Ignore sysvisor build token
+.buildinfo
 
 # Ignore virtual-studio-code metadata
 .vscode
