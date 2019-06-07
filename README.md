@@ -379,13 +379,13 @@ $ make test-sysvisor TESTPATH=<test-name>
 For example, to run all sysvisor-fs handler tests:
 
 ```
-$ make test-sysvisor TESTPATH=handlers
+$ make test-sysvisor TESTPATH=sysfs
 ```
 
 Or to run one specific hanlder test:
 
 ```
-$ make test-sysvisor TESTPATH=handlers/disable_ipv6.bats
+$ make test-sysvisor TESTPATH=sysfs/disable_ipv6.bats
 ```
 
 ### Running the unit tests

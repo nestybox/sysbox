@@ -1,6 +1,6 @@
 # integration test for the syvisor-mgr docker-store volume manager
 
-load helpers
+load ../helpers
 
 function setup() {
   setup_syscont

@@ -20,10 +20,12 @@ if [ $# -eq 1 ]; then
   printf "\nExecuting tests/$1 ... \n"
   bats --tap tests/$1
 else
-  printf "\nExecuting sysvisor general tests ... \n"
-  bats --tap tests
-  printf "\nExecuting sysvisor handler tests ... \n"
-  bats --tap tests/handlers
+  printf "\nExecuting sysvisor-mgr tests ... \n"
+  bats --tap tests/sysmgr
+  printf "\nExecuting sysvisor-fs tests ... \n"
+  bats --tap tests/sysfs
+  printf "\nExecuting dind tests ... \n"
+  bats --tap tests/dind
 fi
 
 exit 0
