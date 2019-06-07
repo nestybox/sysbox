@@ -4,21 +4,12 @@
 
 load ../helpers
 
-# Container name.
-SYSCONT_NAME=""
-
 # IPv6 constants.
 IPV6_ENABLED="0"
 IPV6_DISABLED="1"
 
-function setup_syscont() {
-  run docker run --runtime=sysvisor-runc --rm -d --hostname syscont \
-    nestybox/sys-container:debian-plus-docker tail -f /dev/null
-  [ "$status" -eq 0 ]
-
-  run docker ps --format "{{.ID}}"
-  [ "$status" -eq 0 ]
-  SYSCONT_NAME="$output"
+function setup() {
+  setup_syscont
 
   # The testcases in this file originally assumed that IPv6 is enabled in the
   # host fs. However, that's not a valid assumption for all the scenarios, as
@@ -30,15 +21,6 @@ function setup_syscont() {
   run cat /proc/sys/net/ipv6/conf/all/disable_ipv6
   [ "$status" -eq 0 ]
   [ "$output" = $IPV6_DISABLED ]
-}
-
-function teardown_syscont() {
-  run docker stop "$SYSCONT_NAME"
-}
-
-function setup() {
-  teardown_syscont
-  setup_syscont
 }
 
 function teardown() {
@@ -103,4 +85,3 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" = $IPV6_DISABLED ]
 }
-

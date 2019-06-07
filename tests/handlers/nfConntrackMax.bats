@@ -14,14 +14,8 @@ NF_CONNTRACK_LOW_VAL=""
 # nf_conntrack_max value to set inside container (higher than host-fs value).
 NF_CONNTRACK_HIGH_VAL=""
 
-function setup_syscont() {
-  run docker run --runtime=sysvisor-runc --rm -d --hostname syscont \
-    nestybox/sys-container:debian-plus-docker tail -f /dev/null
-  [ "$status" -eq 0 ]
-
-  run docker ps --format "{{.ID}}"
-  [ "$status" -eq 0 ]
-  SYSCONT_NAME="$output"
+function setup() {
+  setup_syscont
 
   # Define nf_conntrack_max values to utilize during testing.
   run cat /proc/sys/net/netfilter/nf_conntrack_max
@@ -29,15 +23,6 @@ function setup_syscont() {
   NF_CONNTRACK_CUR_VAL=$output
   NF_CONNTRACK_LOW_VAL=$((NF_CONNTRACK_CUR_VAL - 100))
   NF_CONNTRACK_HIGH_VAL=$((NF_CONNTRACK_CUR_VAL + 100))
-}
-
-function teardown_syscont() {
-  run docker stop "$SYSCONT_NAME"
-}
-
-function setup() {
-  teardown_syscont
-  setup_syscont
 }
 
 function teardown() {
@@ -102,4 +87,3 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
 }
-

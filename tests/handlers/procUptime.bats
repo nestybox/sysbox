@@ -2,34 +2,7 @@
 
 load ../helpers
 
-# Container name.
-SYSCONT_NAME=""
-
-# Timestamps.
-CNTR_START_TIMESTAMP=""
-
-function setup_syscont() {
-  run docker run --runtime=sysvisor-runc --rm -d --hostname syscont \
-    nestybox/sys-container:debian-plus-docker tail -f /dev/null
-  [ "$status" -eq 0 ]
-
-  run docker ps --format "{{.ID}}"
-  [ "$status" -eq 0 ]
-  SYSCONT_NAME="$output"
-
-  # Obtain the container creation time.
-  run cat /proc/uptime
-  [ "$status" -eq 0 ]
-  hostUptimeOutput="${lines[0]}"
-  CNTR_START_TIMESTAMP=`echo ${hostUptimeOutput} | cut -d'.' -f 1`
-}
-
-function teardown_syscont() {
-  run docker stop "$SYSCONT_NAME"
-}
-
 function setup() {
-  teardown_syscont
   setup_syscont
 }
 
