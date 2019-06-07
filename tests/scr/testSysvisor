@@ -1,0 +1,29 @@
+#!/bin/bash -e
+
+#
+# script to run sysvisor integration tests
+#
+
+progName=$(basename "$0")
+
+usage()
+{
+  echo "
+Usage: $progName <testName>
+
+"
+  exit 1
+}
+
+# argument testName is optional
+if [ $# -eq 1 ]; then
+  printf "\nExecuting tests/$1 ... \n"
+  bats --tap tests/$1
+else
+  printf "\nExecuting sysvisor general tests ... \n"
+  bats --tap tests
+  printf "\nExecuting sysvisor handler tests ... \n"
+  bats --tap tests/handlers
+fi
+
+exit 0
