@@ -4,6 +4,12 @@ load ../helpers
 
 function setup() {
   setup_syscont
+
+  # Obtain the container creation time.
+  run cat /proc/uptime
+  [ "$status" -eq 0 ]
+  hostUptimeOutput="${lines[0]}"
+  CNTR_START_TIMESTAMP=`echo ${hostUptimeOutput} | cut -d'.' -f 1`
 }
 
 function teardown() {
