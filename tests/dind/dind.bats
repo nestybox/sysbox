@@ -3,11 +3,11 @@
 load ../helpers
 
 function setup() {
-  setup_syscont
+  docker_run
 }
 
 function teardown() {
-  teardown_syscont
+  docker_stop
 }
 
 function wait_for_nested_dockerd {
