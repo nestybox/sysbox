@@ -135,8 +135,7 @@ test-sysvisor-shiftuid: test-img
 	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
 test-sysvisor-local:
-	bats --tap tests$(TESTPATH)
-	bats --tap tests/handlers$(TESTPATH)
+	$(TEST_DIR)/scr/testSysvisor $(TESTPATH)
 
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
