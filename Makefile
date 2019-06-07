@@ -20,7 +20,7 @@
 	clean
 
 SHELL := bash
-
+HOSTNAME := $(shell hostname)
 
 # Sysvisor's build-target locations.
 SYSRUNC_DIR     := sysvisor-runc
@@ -49,13 +49,13 @@ TEST_VOL2 := /var/tmp/sysvisor-test-var-lib-sysvisor
 
 #
 # build targets
-#
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
 #
 
 .DEFAULT: sysvisor
 
 sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
+	@echo $(HOSTNAME) > .buildinfo
 
 sysvisor-debug: sysvisor-runc-debug sysvisor-fs-debug sysvisor-mgr-debug
 
