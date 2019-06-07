@@ -1,6 +1,6 @@
 # Basic tests running docker *inside* a system container
 
-load helpers
+load ../helpers
 
 function setup() {
   setup_syscont
