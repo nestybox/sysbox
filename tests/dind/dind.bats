@@ -3,11 +3,11 @@
 load ../helpers
 
 function setup() {
-  docker_run
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 }
 
 function teardown() {
-  docker_stop
+  docker_stop "$SYSCONT_NAME"
 }
 
 function wait_for_nested_dockerd {
@@ -15,12 +15,15 @@ function wait_for_nested_dockerd {
 }
 
 @test "basic sys container" {
+  run docker exec "$SYSCONT_NAME" hostname syscont
+  [ "$status" -eq 0 ]
+
   run docker exec "$SYSCONT_NAME" hostname
   [ "$status" -eq 0 ]
   [ "$output" = "syscont" ]
 }
 
-@test "basic nested docker" {
+@test "basic inner docker" {
   run docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
@@ -30,7 +33,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 }
 
-@test "nested busybox" {
+@test "basic inner busybox" {
   run docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 

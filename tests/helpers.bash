@@ -128,14 +128,34 @@ function teardown_busybox() {
   rm -f -r "$BUSYBOX_BUNDLE"
 }
 
-function docker_run() {
-  docker run --runtime=sysvisor-runc --rm -d --hostname syscont nestybox/sys-container:debian-plus-docker tail -f /dev/null
-  SYSCONT_NAME=$(docker ps --format "{{.ID}}" | tail -1)
+# commands sysvisor-runc to launch a busybox container called 'test_busybox'
+function sysvisor_run_busybox() {
+  setup_busybox
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
 }
 
+# commands sysvisor-runc to stop (kill and delete) a container called 'test_busybox'
+function sysvisor_stop_busybox() {
+  teardown_busybox
+}
+
+# commands docker to run a sys-container with the given image and
+# command; returns the container's docker ID
+function docker_run() {
+  [[ "$#" = 2 ]]
+  local image=$1
+  shift
+  local cmd=$@
+  docker run --runtime=sysvisor-runc --rm -d $image $cmd
+}
+
+# commands docker to stop the sys-container with the given docker ID
 function docker_stop() {
-  # use '-t 0' to force stop immediately; otherwise it takes several seconds ...
-  docker stop -t 0 "$SYSCONT_NAME"
+  [[ "$#" = 2 ]]
+  local name=$1
+  # use '-t 0' to force stop immediately; otherwise docker takes several seconds ...
+  docker stop -t 0 $name
 }
 
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
