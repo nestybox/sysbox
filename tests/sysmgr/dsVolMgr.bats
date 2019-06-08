@@ -7,11 +7,11 @@
 load ../helpers
 
 function setup() {
-  docker_run
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 }
 
 function teardown() {
-  docker_stop
+  docker_stop "$SYSCONT_NAME"
 }
 
 @test "sysvisor-mgr dsVolMgr" {
