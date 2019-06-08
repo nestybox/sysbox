@@ -29,6 +29,27 @@ UID_MAP=100000
 GID_MAP=100000
 ID_MAP_SIZE=65536
 
+# Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
+# (copied from runc/tests/integration/helpers.bash)
+function retry() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    run "$@"
+    if [[ "$status" -eq 0 ]]; then
+	return 0
+    fi
+    sleep $delay
+  done
+
+  echo "Command \"$@\" failed $attempts times. Output: $output"
+  false
+}
+
 # Wrapper for runc.
 function runc() {
   run __runc "$@"
@@ -128,19 +149,24 @@ function teardown_busybox() {
   rm -f -r "$BUSYBOX_BUNDLE"
 }
 
-# commands sysvisor-runc to launch a busybox container called 'test_busybox'
+# Commands sysvisor-runc to launch a busybox container called 'test_busybox'
 function sysvisor_run_busybox() {
   setup_busybox
   runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 }
 
-# commands sysvisor-runc to stop (kill and delete) a container called 'test_busybox'
+# Executes the given command inside the 'test_busybox' container
+function sysvisor_exec_busybox() {
+  runc exec test_busybox $@
+}
+
+# Commands sysvisor-runc to stop (kill and delete) a container called 'test_busybox'
 function sysvisor_stop_busybox() {
   teardown_busybox
 }
 
-# commands docker to run a sys-container with the given image and
+# Commands docker to run a sys-container with the given image and
 # command; returns the container's docker ID
 function docker_run() {
   [[ "$#" = 2 ]]
@@ -150,7 +176,7 @@ function docker_run() {
   docker run --runtime=sysvisor-runc --rm -d $image $cmd
 }
 
-# commands docker to stop the sys-container with the given docker ID
+# Commands docker to stop the sys-container with the given docker ID
 function docker_stop() {
   [[ "$#" = 2 ]]
   local name=$1
@@ -158,23 +184,31 @@ function docker_stop() {
   docker stop -t 0 $name
 }
 
-# Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
-# (copied from runc/tests/integration/helpers.bash)
-function retry() {
-  local attempts=$1
-  shift
-  local delay=$1
-  shift
-  local i
+# Starts a busybox sys container; if variable $WITH_DOCKER is set, it
+# uses docker + sysvisor-runc to start the sys container; otherwise it
+# uses sysvisor-runc directly.
+function run_busybox() {
+  if [ -z "$WITH_DOCKER" ]; then
+    sysvisor_run_busybox
+  else
+    __SYSCONT_NAME=$(docker_run busybox tail -f /dev/null)
+  fi
+}
 
-  for ((i = 0; i < attempts; i++)); do
-    run "$@"
-    if [[ "$status" -eq 0 ]]; then
-	return 0
-    fi
-    sleep $delay
-  done
+# Executes the given command inside a busybox sys container
+function exec_busybox() {
+  if [ -z "$WITH_DOCKER" ]; then
+    sysvisor_exec_busybox $@
+  else
+    run docker exec "$__SYSCONT_NAME" $@
+  fi
+}
 
-  echo "Command \"$@\" failed $attempts times. Output: $output"
-  false
+# Stops a busybox sys container started with run_busybox().
+function stop_busybox() {
+  if [ -z "$WITH_DOCKER" ]; then
+    sysvisor_stop_busybox
+  else
+    docker_stop "$__SYSCONT_NAME"
+  fi
 }
