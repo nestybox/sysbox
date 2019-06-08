@@ -1,9 +1,14 @@
+#!/usr/bin/env bats
+
+#
 # Testing of procUptime handler.
+#
 
 load ../helpers
+load helpers
 
 function setup() {
-  docker_run
+  setup_busybox
 
   # Obtain the container creation time.
   run cat /proc/uptime
@@ -13,17 +18,15 @@ function setup() {
 }
 
 function teardown() {
-  docker_stop
+  teardown_busybox
 }
 
 # Lookup/Getattr operation.
 @test "procUptime lookup() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
-    "ls -lrt /proc/uptime"
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  # Read value should match this substring.
-  [[ "${lines[0]}" =~ "-r--r--r-- 1 root root" ]]
+  verify_proc_ro test_busybox proc/uptime
 }
 
 # Read operation.
@@ -32,8 +35,10 @@ function teardown() {
   # Let's sleep a bit to obtain a meaningful (!= zero) uptime.
   sleep 3
 
-  run docker exec "$SYSCONT_NAME" sh -c \
-    "cat /proc/uptime"
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c "cat /proc/uptime"
   [ "$status" -eq 0 ]
 
   # Obtain the container uptime and add it to the container creation time. This

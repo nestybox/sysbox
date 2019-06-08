@@ -15,7 +15,7 @@ NF_CONNTRACK_LOW_VAL=""
 NF_CONNTRACK_HIGH_VAL=""
 
 function setup() {
-  docker_run
+  setup_busybox
 
   # Define nf_conntrack_max values to utilize during testing.
   run cat /proc/sys/net/netfilter/nf_conntrack_max
@@ -26,22 +26,28 @@ function setup() {
 }
 
 function teardown() {
-  docker_stop
+  teardown_busybox
 }
 
 # Lookup/Getattr operation.
 @test "nf_conntrack_max lookup() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "ls -lrt /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
   # Read value should match the existing host-fs figure.
-  [[ "${lines[0]}" =~ "-rw-r--r-- 1 root root" ]]
+  [[ "${lines[0]}" =~ "-rw-r--r--    1 root     root" ]]
 }
 
 # Read operation.
 @test "nf_conntrack_max read() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
@@ -51,13 +57,16 @@ function teardown() {
 
 # Write a value lower than the current host-fs number.
 @test "nf_conntrack_max write() operation (lower value)" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "echo $NF_CONNTRACK_LOW_VAL > /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's matching the same one previously
   # pushed.
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_LOW_VAL ]
@@ -70,13 +79,16 @@ function teardown() {
 
 # Write a value higher than the current host-fs number.
 @test "nf_conntrack_max write() operation (higher value)" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "echo $NF_CONNTRACK_HIGH_VAL > /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's matching the same one previously
   # pushed.
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_HIGH_VAL ]

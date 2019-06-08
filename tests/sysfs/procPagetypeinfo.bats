@@ -1,22 +1,22 @@
+#!/usr/bin/env bats
+
 # Testing of procPagetypeinfo handler.
 
 load ../helpers
+load helpers
 
 function setup() {
-  docker_run
+  setup_busybox
 }
 
 function teardown() {
-  docker_stop
+  teardown_busybox
 }
 
 # Lookup/Getattr operation.
 @test "procPagetypeinfo lookup() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
-    "ls -lrt /proc/pagetypeinfo"
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  # Read value should match this substring.
-  echo "lines = ${lines[0]}"
-  [[ "${lines[0]}" =~ "-r--r--r-- 1 root root" ]]
+  verify_proc_ro test_busybox proc/pagetypeinfo
 }
