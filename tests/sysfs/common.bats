@@ -1,15 +1,19 @@
+#!/usr/bin/env bats
+
+#
 # Testing of common handler.
 #
 # We will make use of ipv6_disable procfs entry to test this handler.
 
 load ../helpers
+load helpers
 
 # IPv6 constants.
 IPV6_ENABLED="0"
 IPV6_DISABLED="1"
 
 function setup() {
-  docker_run
+  setup_busybox
 
   # The testcases in this file originally assumed that IPv6 is enabled in the
   # host fs. However, that's not a valid assumption for all the scenarios, as
@@ -24,22 +28,23 @@ function setup() {
 }
 
 function teardown() {
-  docker_stop
+  teardown_busybox
 }
 
 # Lookup/Getattr operation.
 @test "disable_ipv6 lookup() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
-    "ls -lrt /proc/sys/net/ipv6/conf/all/disable_ipv6"
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  # Read value should match this substring.
-  [[ "${lines[0]}" =~ "-rw-r--r-- 1 root root" ]]
+  verify_proc_rw test_busybox /proc/sys/net/ipv6/conf/all/disable_ipv6
 }
 
 # Read operation.
 @test "disable_ipv6 read() operation" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
 
@@ -49,12 +54,15 @@ function teardown() {
 
 # Activate ipv6 within system container.
 @test "disable_ipv6 write() operation (activation)" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "echo $IPV6_ENABLED > /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's the expected one.
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
   [ "$output" = $IPV6_ENABLED ]
@@ -68,13 +76,16 @@ function teardown() {
 
 # Deactivate ipv6 within system container.
 @test "disable_ipv6 write() operation (de-activation)" {
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  [ "$status" -eq 0 ]
+
+  runc exec test_busybox sh -c \
     "echo $IPV6_DISABLED > /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's matching the same one previously
   # pushed -- IPV6 is now disabled.
-  run docker exec "$SYSCONT_NAME" sh -c \
+  runc exec test_busybox sh -c \
     "cat /proc/sys/net/ipv6/conf/all/disable_ipv6"
   [ "$status" -eq 0 ]
   [ "$output" = $IPV6_DISABLED ]

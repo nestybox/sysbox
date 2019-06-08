@@ -106,7 +106,6 @@ RUN cd /root \
     && make pjdfstest \
     && cp pjdfstest /usr/local/bin
 
-
 # sysvisor deps
 RUN apt-get update && apt-get install -y \
     fuse

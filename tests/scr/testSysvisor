@@ -17,8 +17,8 @@ Usage: $progName <testName>
 
 # argument testName is optional
 if [ $# -eq 1 ]; then
-  printf "\nExecuting tests/$1 ... \n"
-  bats --tap tests/$1
+  printf "\nExecuting $1 ... \n"
+  bats --tap $1
 else
   printf "\nExecuting sysvisor-mgr tests ... \n"
   bats --tap tests/sysmgr

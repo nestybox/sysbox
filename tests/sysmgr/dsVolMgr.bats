@@ -1,4 +1,8 @@
-# integration test for the syvisor-mgr docker-store volume manager
+#!/usr/bin/env bats
+
+#
+# Integration test for the sysvisor-mgr docker-store volume manager
+#
 
 load ../helpers
 
