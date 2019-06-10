@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# sysvisor integration test helper functions
+# sysvisor integration test setup helpers
 #
 # Note: much code borrowed from the OCI runc integration tests
 #
@@ -10,7 +10,7 @@ SYSCONT_NAME=""
 
 WORK_DIR="/tmp"
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
-RECVTTY="${INTEGRATION_ROOT}/../sysvisor-runc/contrib/cmd/recvtty/recvtty"
+RECVTTY="${INTEGRATION_ROOT}/../../sysvisor-runc/contrib/cmd/recvtty/recvtty"
 
 CONSOLE_SOCKET="$WORK_DIR/console.sock"
 
@@ -39,30 +39,20 @@ function retry() {
   local i
 
   for ((i = 0; i < attempts; i++)); do
-    run "$@"
-    if [[ "$status" -eq 0 ]]; then
+    "$@"
+    if [ "$?" -eq 0 ]; then
 	return 0
     fi
     sleep $delay
   done
 
-  echo "Command \"$@\" failed $attempts times. Output: $output"
+  echo "Command \"$@\" failed $attempts times. Output: $?"
   false
 }
 
-# Wrapper for runc.
-function runc() {
-  run __runc "$@"
-
-  # Some debug information to make life easier. bats will only print it if the
-  # test failed, in which case the output is useful.
-  echo "runc $@ (status=$status):" >&2
-  echo "$output" >&2
-}
-
-# Raw wrapper for sysvisor-runc.
+# Wrapper for sysvisor-runc
 function __runc() {
-  $RUNC ${RUNC_FLAGS} --log /proc/self/fd/2 --root "$ROOT" "$@"
+  command $RUNC ${RUNC_FLAGS} --log /proc/self/fd/2 --root "$ROOT" "$@"
 }
 
 # Wrapper for sysvisor-runc spec, which takes only one argument (the bundle path).
@@ -77,8 +67,9 @@ function runc_spec() {
     args+=("--bundle" "$bundle")
   fi
 
-  # sysvisor-runc: sys container spec takes id mappings
-  $RUNC spec "${args[@]}" --id-map "$UID_MAP $GID_MAP $ID_MAP_SIZE"
+  if [ -z "$SHIFT_UIDS" ]; then
+    $RUNC spec "${args[@]}" --id-map "$UID_MAP $GID_MAP $ID_MAP_SIZE"
+  fi
 }
 
 function get_busybox() {
@@ -131,14 +122,14 @@ function setup_busybox() {
 }
 
 function teardown_running_container() {
-  runc list
+  res=$(__runc list)
   # $1 should be a container name such as "test_busybox"
   # here we detect "test_busybox "(with one extra blank) to avoid conflict prefix
   # e.g. "test_busybox" and "test_busybox_update"
-  if [[ "${output}" == *"$1 "* ]]; then
-    runc kill $1 KILL
+  if [[ "${res}" == *"$1 "* ]]; then
+    __runc kill $1 KILL
     retry 10 1 eval "__runc state '$1' | grep -q 'stopped'"
-    runc delete $1
+    __runc delete $1
   fi
 }
 
@@ -149,66 +140,8 @@ function teardown_busybox() {
   rm -f -r "$BUSYBOX_BUNDLE"
 }
 
-# Commands sysvisor-runc to launch a busybox container called 'test_busybox'
-function sysvisor_run_busybox() {
-  setup_busybox
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
-  [ "$status" -eq 0 ]
-}
-
-# Executes the given command inside the 'test_busybox' container
-function sysvisor_exec_busybox() {
-  runc exec test_busybox $@
-}
-
-# Commands sysvisor-runc to stop (kill and delete) a container called 'test_busybox'
-function sysvisor_stop_busybox() {
-  teardown_busybox
-}
-
-# Commands docker to run a sys-container with the given image and
-# command; returns the container's docker ID
-function docker_run() {
-  [[ "$#" = 2 ]]
-  local image=$1
-  shift
-  local cmd=$@
-  docker run --runtime=sysvisor-runc --rm -d $image $cmd
-}
-
-# Commands docker to stop the sys-container with the given docker ID
 function docker_stop() {
-  [[ "$#" = 2 ]]
+  [[ "$#" == 1 ]]
   local name=$1
-  # use '-t 0' to force stop immediately; otherwise docker takes several seconds ...
-  docker stop -t 0 $name
-}
-
-# Starts a busybox sys container; if variable $WITH_DOCKER is set, it
-# uses docker + sysvisor-runc to start the sys container; otherwise it
-# uses sysvisor-runc directly.
-function run_busybox() {
-  if [ -z "$WITH_DOCKER" ]; then
-    sysvisor_run_busybox
-  else
-    __SYSCONT_NAME=$(docker_run busybox tail -f /dev/null)
-  fi
-}
-
-# Executes the given command inside a busybox sys container
-function exec_busybox() {
-  if [ -z "$WITH_DOCKER" ]; then
-    sysvisor_exec_busybox $@
-  else
-    run docker exec "$__SYSCONT_NAME" $@
-  fi
-}
-
-# Stops a busybox sys container started with run_busybox().
-function stop_busybox() {
-  if [ -z "$WITH_DOCKER" ]; then
-    sysvisor_stop_busybox
-  else
-    docker_stop "$__SYSCONT_NAME"
-  fi
+  docker stop -t 0 "$name"
 }

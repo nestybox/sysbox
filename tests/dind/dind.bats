@@ -1,9 +1,22 @@
-# Basic tests running docker *inside* a system container
+#!/usr/bin/env bats
 
-load ../helpers
+#
+# Basic tests running docker inside a system container
+#
+
+load ../helpers/setup
+load ../helpers/run
+
+SYSCONT_NAME=""
 
 function setup() {
-  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+  docker run --runtime=sysvisor-runc --rm -d nestybox/sys-container:debian-plus-docker tail -f /dev/null
+  [ "$status" -eq 0 ]
+
+  docker ps --format "{{.ID}}"
+  [ "$status" -eq 0 ]
+
+  SYSCONT_NAME="$output"
 }
 
 function teardown() {
@@ -15,38 +28,38 @@ function wait_for_nested_dockerd {
 }
 
 @test "basic sys container" {
-  run docker exec "$SYSCONT_NAME" hostname syscont
+  docker exec "$SYSCONT_NAME" hostname syscont
   [ "$status" -eq 0 ]
 
-  run docker exec "$SYSCONT_NAME" hostname
+  docker exec "$SYSCONT_NAME" hostname
   [ "$status" -eq 0 ]
   [ "$output" = "syscont" ]
 }
 
 @test "basic inner docker" {
-  run docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
 
-  run docker exec "$SYSCONT_NAME" sh -c "docker run hello-world | grep \"Hello from Docker!\""
+  docker exec "$SYSCONT_NAME" sh -c "docker run hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
 }
 
 @test "basic inner busybox" {
-  run docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
 
-  run docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  run docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
   INNER_CONT_NAME="$output"
 
-  run docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 }
