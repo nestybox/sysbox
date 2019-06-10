@@ -6,6 +6,12 @@
 
 # Build & install sysvisor
 thisHost=$(hostname)
+
+if [[ ! -f .buildinfo ]]; then
+    touch .buildinfo
+    chown sysvisor:sysvisor .buildinfo
+fi
+
 lastBuildHost=$(cat .buildinfo)
 if [[ "$lastBuildHost" != "$thisHost" ]]; then
   make clean
