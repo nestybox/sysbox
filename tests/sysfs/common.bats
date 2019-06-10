@@ -5,8 +5,9 @@
 #
 # We will make use of ipv6_disable procfs entry to test this handler.
 
-load ../helpers
-load helpers
+load ../helpers/setup
+load ../helpers/fs
+load ../helpers/run
 
 # IPv6 constants.
 IPV6_ENABLED="0"
@@ -36,7 +37,11 @@ function teardown() {
   runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  verify_proc_rw test_busybox /proc/sys/net/ipv6/conf/all/disable_ipv6
+  runc exec test_busybox sh -c "ls -l /proc/sys/net/ipv6/conf/all/disable_ipv6"
+  [ "$status" -eq 0 ]
+
+  run verify_root_rw "$output"
+  [ "$status" -eq 0 ]
 }
 
 # Read operation.

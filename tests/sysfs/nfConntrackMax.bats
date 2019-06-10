@@ -1,6 +1,8 @@
 # Testing of handler for /proc/sys/net/netfilter/nf_conntrack_max entry.
 
-load ../helpers
+load ../helpers/setup
+load ../helpers/fs
+load ../helpers/run
 
 # Container name.
 SYSCONT_NAME=""
@@ -39,7 +41,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # Read value should match the existing host-fs figure.
-  [[ "${lines[0]}" =~ "-rw-r--r--    1 root     root" ]]
+  verify_root_rw "${output}"
 }
 
 # Read operation.
