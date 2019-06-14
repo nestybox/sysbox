@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Bats run wrappers
+# Bats command execution wrappers
 #
 # Note: assumes the setup helper is loaded
 #
@@ -26,4 +26,22 @@ function docker() {
 # Need this to avoid recursion on docker function
 function __docker() {
   command docker "$@"
+}
+
+# Run a background process
+function bats_background() {
+  # To prevent background processes from hanging bats, we need to
+  # close FD 3; see https://github.com/sstephenson/bats/issues/80#issuecomment-174101686
+  "$@" 3>/dev/null &
+}
+
+function sysvisor_mgr_start() {
+  # Note: must match the way sysvisor-mgr is usually started, except
+  # that we also pass in the "$@".
+  bats_background sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
+}
+
+function sysvisor_mgr_stop() {
+  pid=$(pidof sysvisor-mgr)
+  kill $pid
 }

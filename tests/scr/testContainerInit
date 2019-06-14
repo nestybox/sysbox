@@ -3,6 +3,8 @@
 #
 # Test container initialization script
 #
+# TODO: Build & install shiftfs (if uid-shift option set)
+#
 
 # Build & install sysvisor
 thisHost=$(hostname)
@@ -19,7 +21,11 @@ fi
 
 make --no-print-directory && make install
 
-# TODO: Build & install shiftfs (if uid-shift option set)
+# Configure sysvisor subuid(gid) range (up to 100 sys containers with 64k each)
+if [ -n "$SHIFT_UIDS" ]; then
+  sed -i 's/sysvisor:165536:65536/sysvisor:165536:6553600/g' /etc/subuid
+  sed -i 's/sysvisor:165536:65536/sysvisor:165536:6553600/g' /etc/subgid
+fi
 
 # Configure dockerd
 mkdir -p /etc/docker
