@@ -132,7 +132,7 @@ test-sysvisor: test-img
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
 test-sysvisor-local:
 	$(TEST_DIR)/scr/testSysvisor $(TESTPATH)
@@ -162,8 +162,8 @@ test-shell: test-img
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
 
 test-shell-shiftuid: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
-	$(DOCKER_RUN) /bin/bash -c "SHIFT_UIDS=true testContainerInit && /bin/bash"
+	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
