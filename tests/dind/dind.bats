@@ -4,7 +4,6 @@
 # Basic tests running docker inside a system container
 #
 
-load ../helpers/setup
 load ../helpers/run
 
 SYSCONT_NAME=""

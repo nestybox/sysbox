@@ -1,6 +1,5 @@
 # Testing of handler for /proc/sys/net/netfilter/nf_conntrack_max entry.
 
-load ../helpers/setup
 load ../helpers/fs
 load ../helpers/run
 
@@ -33,10 +32,10 @@ function teardown() {
 
 # Lookup/Getattr operation.
 @test "nf_conntrack_max lookup() operation" {
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "ls -lrt /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
@@ -46,10 +45,10 @@ function teardown() {
 
 # Read operation.
 @test "nf_conntrack_max read() operation" {
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
@@ -59,16 +58,16 @@ function teardown() {
 
 # Write a value lower than the current host-fs number.
 @test "nf_conntrack_max write() operation (lower value)" {
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "echo $NF_CONNTRACK_LOW_VAL > /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's matching the same one previously
   # pushed.
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_LOW_VAL ]
@@ -81,16 +80,16 @@ function teardown() {
 
 # Write a value higher than the current host-fs number.
 @test "nf_conntrack_max write() operation (higher value)" {
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "echo $NF_CONNTRACK_HIGH_VAL > /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
 
   # Read value back and verify that it's matching the same one previously
   # pushed.
-  runc exec test_busybox sh -c \
+  sv_runc exec test_busybox sh -c \
     "cat /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_HIGH_VAL ]

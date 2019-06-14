@@ -4,7 +4,6 @@
 # Integration test for the sysvisor-mgr docker-store volume manager
 #
 
-load ../helpers/setup
 load ../helpers/run
 
 function setup() {

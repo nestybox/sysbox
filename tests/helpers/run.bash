@@ -3,16 +3,16 @@
 #
 # Bats command execution wrappers
 #
-# Note: assumes the setup helper is loaded
-#
+
+. $(dirname ${BASH_SOURCE[0]})/setup.bash
 
 # Wrapper for sysvisor-runc using bats
-function runc() {
-  run __runc "$@"
+function sv_runc() {
+  run __sv_runc "$@"
 
   # Some debug information to make life easier. bats will only print it if the
   # test failed, in which case the output is useful.
-  echo "runc $@ (status=$status):" >&2
+  echo "sysvisor-runc $@ (status=$status):" >&2
   echo "$output" >&2
 }
 
@@ -23,25 +23,25 @@ function docker() {
   echo "$output"
 }
 
-# Need this to avoid recursion on docker function
+# Need this to avoid recursion on docker()
 function __docker() {
   command docker "$@"
 }
 
-# Run a background process
-function bats_background() {
+# Run a background process under bats
+function bats_bg() {
   # To prevent background processes from hanging bats, we need to
   # close FD 3; see https://github.com/sstephenson/bats/issues/80#issuecomment-174101686
   "$@" 3>/dev/null &
 }
 
-function sysvisor_mgr_start() {
+function sv_mgr_start() {
   # Note: must match the way sysvisor-mgr is usually started, except
   # that we also pass in the "$@".
-  bats_background sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
+  bats_bg sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
 }
 
-function sysvisor_mgr_stop() {
+function sv_mgr_stop() {
   pid=$(pidof sysvisor-mgr)
   kill $pid
 }
