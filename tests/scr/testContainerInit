@@ -9,9 +9,10 @@
 # Build & install sysvisor
 thisHost=$(hostname)
 
+# Build cookie (to build from scratch when necessary only)
 if [[ ! -f .buildinfo ]]; then
-    touch .buildinfo
-    chown sysvisor:sysvisor .buildinfo
+  touch .buildinfo
+  chown rootless:rootless .buildinfo
 fi
 
 lastBuildHost=$(cat .buildinfo)
