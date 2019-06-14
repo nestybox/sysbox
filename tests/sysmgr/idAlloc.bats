@@ -1,0 +1,165 @@
+#!/usr/bin/env bats
+
+#
+# Integration test to verify exclusive uid/gid allocation per sys container
+#
+
+load ../helpers/setup
+load ../helpers/run
+
+@test "uid alloc basic" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "uid shifting disabled"
+  fi
+
+  num_syscont=5
+
+  # start multiple sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
+    [ "$status" -eq 0 ]
+
+    docker ps --format "{{.ID}}" | head -1
+    [ "$status" -eq 0 ]
+
+    syscont_name[$i]="$output"
+  done
+
+  # verify each got an exclusive uid(gid) range of 64k each
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map"
+    [ "$status" -eq 0 ]
+    map="$output"
+
+    uid=$(echo "$map" | awk '{print $2}')
+    uid_size=$(echo "$map" | awk '{print $3}')
+    [ $uid_size -ge 65536 ]
+
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map"
+    [ "$status" -eq 0 ]
+    map="$output"
+
+    gid=$(echo "$map" | awk '{print $2}')
+    gid_size=$(echo "$map" | awk '{print $3}')
+    [ $gid_size -ge 65536 ]
+
+    for id in ${syscont_uids[@]}; do
+      [ $id -ne $uid ]
+    done
+
+    for id in ${syscont_gids[@]}; do
+      [ $id -ne $gid ]
+    done
+
+    syscont_uids[$i]=$uid
+    syscont_gids[$i]=$gid
+  done
+
+  # stop the sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker_stop "${syscont_name[$i]}"
+  done
+}
+
+@test "uid exhaust" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "uid shifting disabled"
+  fi
+
+  sysvisor_mgr_stop
+
+  # configure /etc/subuid(gid) to 128K range
+  uid_map=$(grep sysvisor /etc/subuid)
+  gid_map=$(grep sysvisor /etc/subgid)
+  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
+  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
+
+  sysvisor_mgr_start --subid-policy "no-reuse"
+
+  # start two sys containers
+  num_syscont=2
+
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
+    [ "$status" -eq 0 ]
+
+    docker ps --format "{{.ID}}" | head -1
+    [ "$status" -eq 0 ]
+
+    syscont_name[$i]="$output"
+  done
+
+  # start 3rd sys container and verify this fails due to no uid availability
+  docker run --runtime=sysvisor-runc --rm -d debian:latest tail -f /dev/null 2>&1
+  [ "$status" -eq 125 ]
+  [[ "$output" =~ "subid allocation failed" ]]
+
+  # stop the sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker_stop "${syscont_name[$i]}"
+  done
+
+  # cleanup
+  sysvisor_mgr_stop
+  sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
+  sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
+  sysvisor_mgr_start
+}
+
+@test "uid reuse" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "uid shifting disabled"
+  fi
+
+  sysvisor_mgr_stop
+
+  # Configure /etc/subuid(gid) to 128K range
+  uid_map=$(grep sysvisor /etc/subuid)
+  gid_map=$(grep sysvisor /etc/subgid)
+  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
+  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
+
+  sysvisor_mgr_start
+
+  # Start 4 sys containers; the first two should get new ids; the last
+  # two should get re-used ids.
+  num_syscont=4
+
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
+    [ "$status" -eq 0 ]
+
+    docker ps --format "{{.ID}}" | head -1
+    [ "$status" -eq 0 ]
+    syscont_name[$i]="$output"
+
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'"
+    [ "$status" -eq 0 ]
+    syscont_uids[$i]="$output"
+
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'"
+    [ "$status" -eq 0 ]
+    syscont_gids[$i]="$output"
+  done
+
+  # verify
+  [ ${syscont_uids[0]} -eq ${syscont_uids[2]} ]
+  [ ${syscont_uids[1]} -eq ${syscont_uids[3]} ]
+
+  [ ${syscont_gids[0]} -eq ${syscont_gids[2]} ]
+  [ ${syscont_gids[1]} -eq ${syscont_gids[3]} ]
+
+  # stop the sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker_stop "${syscont_name[$i]}"
+  done
+
+  # cleanup
+  sysvisor_mgr_stop
+  sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
+  sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
+  sysvisor_mgr_start
+}

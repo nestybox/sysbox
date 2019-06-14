@@ -69,6 +69,8 @@ function runc_spec() {
 
   if [ -z "$SHIFT_UIDS" ]; then
     $RUNC spec "${args[@]}" --id-map "$UID_MAP $GID_MAP $ID_MAP_SIZE"
+  else
+    $RUNC spec "${args[@]}"
   fi
 }
 
