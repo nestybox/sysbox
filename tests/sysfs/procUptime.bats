@@ -4,7 +4,6 @@
 # Testing of procUptime handler.
 #
 
-load ../helpers/setup
 load ../helpers/fs
 load ../helpers/run
 
@@ -24,10 +23,10 @@ function teardown() {
 
 # Lookup/Getattr operation.
 @test "procUptime lookup() operation" {
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c "ls -l /proc/cgroups"
+  sv_runc exec test_busybox sh -c "ls -l /proc/cgroups"
   [ "$status" -eq 0 ]
 
   verify_root_ro "${output}"
@@ -39,10 +38,10 @@ function teardown() {
   # Let's sleep a bit to obtain a meaningful (!= zero) uptime.
   sleep 3
 
-  runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
   [ "$status" -eq 0 ]
 
-  runc exec test_busybox sh -c "cat /proc/uptime"
+  sv_runc exec test_busybox sh -c "cat /proc/uptime"
   [ "$status" -eq 0 ]
 
   # Obtain the container uptime and add it to the container creation time. This

@@ -4,7 +4,6 @@
 # Integration test to verify exclusive uid/gid allocation per sys container
 #
 
-load ../helpers/setup
 load ../helpers/run
 
 @test "uid alloc basic" {
@@ -68,7 +67,7 @@ load ../helpers/run
     skip "uid shifting disabled"
   fi
 
-  sysvisor_mgr_stop
+  sv_mgr_stop
 
   # configure /etc/subuid(gid) to 128K range
   uid_map=$(grep sysvisor /etc/subuid)
@@ -76,7 +75,7 @@ load ../helpers/run
   sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
   sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
 
-  sysvisor_mgr_start --subid-policy "no-reuse"
+  sv_mgr_start --subid-policy "no-reuse"
 
   # start two sys containers
   num_syscont=2
@@ -102,10 +101,10 @@ load ../helpers/run
   done
 
   # cleanup
-  sysvisor_mgr_stop
+  sv_mgr_stop
   sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
   sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
-  sysvisor_mgr_start
+  sv_mgr_start
 }
 
 @test "uid reuse" {
@@ -114,7 +113,7 @@ load ../helpers/run
     skip "uid shifting disabled"
   fi
 
-  sysvisor_mgr_stop
+  sv_mgr_stop
 
   # Configure /etc/subuid(gid) to 128K range
   uid_map=$(grep sysvisor /etc/subuid)
@@ -122,7 +121,7 @@ load ../helpers/run
   sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
   sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
 
-  sysvisor_mgr_start
+  sv_mgr_start
 
   # Start 4 sys containers; the first two should get new ids; the last
   # two should get re-used ids.
@@ -158,8 +157,8 @@ load ../helpers/run
   done
 
   # cleanup
-  sysvisor_mgr_stop
+  sv_mgr_stop
   sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
   sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
-  sysvisor_mgr_start
+  sv_mgr_start
 }

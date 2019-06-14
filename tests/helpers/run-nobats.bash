@@ -6,31 +6,21 @@
 # These are useful for manually reproducing failures step-by-step by cut & pasting
 # test steps into the test container's shell.
 #
-# Note: assumes the setup helper is loaded
-#
+
+. $(dirname ${BASH_SOURCE[0]})/setup.bash
 
 # Wrapper for sysvisor-runc
-function runc() {
-  __runc "$@"
+function sv_runc() {
+  __sv_runc "$@"
 }
 
-# Wrapper for docker using bats
-function docker() {
-  __docker "$@"
-}
-
-# Need this to avoid recursion on docker function
-function __docker() {
-  command docker "$@"
-}
-
-function sysvisor_mgr_start() {
+function sv_mgr_start() {
   # Note: must match the way sysvisor-mgr is usually started, except
   # that we also pass in the "$@".
   sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
 }
 
-function sysvisor_mgr_stop() {
+function sv_mgr_stop() {
   pid=$(pidof sysvisor-mgr)
   kill $pid
 }

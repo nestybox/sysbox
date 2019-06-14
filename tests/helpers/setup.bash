@@ -51,7 +51,7 @@ function retry() {
 }
 
 # Wrapper for sysvisor-runc
-function __runc() {
+function __sv_runc() {
   command $RUNC ${RUNC_FLAGS} --log /proc/self/fd/2 --root "$ROOT" "$@"
 }
 
@@ -124,14 +124,14 @@ function setup_busybox() {
 }
 
 function teardown_running_container() {
-  res=$(__runc list)
+  res=$(__sv_runc list)
   # $1 should be a container name such as "test_busybox"
   # here we detect "test_busybox "(with one extra blank) to avoid conflict prefix
   # e.g. "test_busybox" and "test_busybox_update"
   if [[ "${res}" == *"$1 "* ]]; then
-    __runc kill $1 KILL
-    retry 10 1 eval "__runc state '$1' | grep -q 'stopped'"
-    __runc delete $1
+    __sv_runc kill $1 KILL
+    retry 10 1 eval "__sv_runc state '$1' | grep -q 'stopped'"
+    __sv_runc delete $1
   fi
 }
 
