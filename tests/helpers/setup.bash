@@ -11,11 +11,15 @@ SYSCONT_NAME=""
 WORK_DIR="/tmp"
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
 RECVTTY="${INTEGRATION_ROOT}/../../sysvisor-runc/contrib/cmd/recvtty/recvtty"
+BUNDLES="${INTEGRATION_ROOT}/../../sys-container/bundles"
 
 CONSOLE_SOCKET="$WORK_DIR/console.sock"
 
-BUSYBOX_IMAGE="$WORK_DIR/busybox.tar"
+BUSYBOX_TAR_GZ="$BUNDLES/busybox.tar.gz"
 BUSYBOX_BUNDLE="$WORK_DIR/busyboxtest"
+
+DEBIAN_TAR_GZ="$BUNDLES/debian.tar.gz"
+DEBIAN_BUNDLE="$WORK_DIR/debiantest"
 
 # Root state path.
 ROOT=$(mktemp -d "$WORK_DIR/runc.XXXXXX")
@@ -74,10 +78,6 @@ function runc_spec() {
   fi
 }
 
-function get_busybox() {
-  echo 'https://github.com/docker-library/busybox/raw/a0558a9006ce0dd6f6ec5d56cfd3f32ebeeb815f/glibc/busybox.tar.xz'
-}
-
 function setup_recvtty() {
   # We need to start recvtty in the background, so we double fork in the shell.
   ("$RECVTTY" --pid-file "$WORK_DIR/recvtty.pid" --mode null "$CONSOLE_SOCKET" &) &
@@ -94,35 +94,6 @@ function teardown_recvtty() {
   rm -f "$CONSOLE_SOCKET"
 }
 
-function setup_busybox() {
-  setup_recvtty
-  mkdir "$BUSYBOX_BUNDLE"
-  mkdir "$BUSYBOX_BUNDLE"/rootfs
-  if [ -e "/testdata/busybox.tar" ]; then
-    BUSYBOX_IMAGE="/testdata/busybox.tar"
-  fi
-  if [ ! -e $BUSYBOX_IMAGE ]; then
-    curl -o $BUSYBOX_IMAGE -sSL `get_busybox`
-  fi
-  tar --exclude './dev/*' -C "$BUSYBOX_BUNDLE"/rootfs -xf "$BUSYBOX_IMAGE"
-
-  # sysvisor-runc: set bundle ownership to match system
-  # container's uid/gid map, except if using uid-shifting
-  if [ -z "$SHIFT_UIDS" ]; then
-    chown -R "$UID_MAP":"$GID_MAP" "$BUSYBOX_BUNDLE"
-  fi
-
-  # sysvisor-runc: restrict path to bundle when using
-  # uid-shift, as required by sysvisor-runc's shiftfs
-  # mount security check
-  if [ -n "$SHIFT_UIDS" ]; then
-    chmod 700 "$BUSYBOX_BUNDLE"
-  fi
-
-  cd "$BUSYBOX_BUNDLE"
-  runc_spec
-}
-
 function teardown_running_container() {
   res=$(__sv_runc list)
   # $1 should be a container name such as "test_busybox"
@@ -135,11 +106,56 @@ function teardown_running_container() {
   fi
 }
 
-function teardown_busybox() {
+# setup_bundle tar-gz-path setup-path
+function setup_bundle() {
+  local tar_gz=$1
+  local bundle=$2
+
+  setup_recvtty
+  mkdir -p "$bundle"/rootfs
+
+  tar --exclude './dev/*' -C "$bundle"/rootfs -xzf "$tar_gz"
+
+  # sysvisor-runc: set bundle ownership to match system
+  # container's uid/gid map, except if using uid-shifting
+  if [ -z "$SHIFT_UIDS" ]; then
+    chown -R "$UID_MAP":"$GID_MAP" "$bundle"
+  fi
+
+  # sysvisor-runc: restrict path to bundle when using
+  # uid-shift, as required by sysvisor-runc's shiftfs
+  # mount security check
+  if [ -n "$SHIFT_UIDS" ]; then
+    chmod 700 "$bundle"
+  fi
+
+  cd "$bundle"
+  runc_spec
+}
+
+# teardown_bundle path
+function teardown_bundle() {
+  local bundle=$1
   cd "$INTEGRATION_ROOT"
   teardown_recvtty
   teardown_running_container test_busybox
-  rm -f -r "$BUSYBOX_BUNDLE"
+  rm -f -r "$bundle"
+}
+
+function setup_busybox() {
+  setup_bundle "$BUSYBOX_TAR_GZ" "$BUSYBOX_BUNDLE"
+}
+
+function teardown_busybox() {
+  teardown_bundle "$BUSYBOX_BUNDLE"
+}
+
+function setup_debian() {
+  setup_bundle "$DEBIAN_TAR_GZ" "$DEBIAN_BUNDLE"
+}
+
+function teardown_debian() {
+  teardown_bundle "$DEBIAN_BUNDLE"
 }
 
 function docker_stop() {
