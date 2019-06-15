@@ -14,15 +14,20 @@ load ../helpers/run
 
   num_syscont=5
 
+  declare -a syscont_name
+  declare -a syscont_uids
+  declare -a syscont_gids
+
+  # ensure the subuid(gid) ranges look good
+  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+
+  [ "$uid_size" -ge $((65536 * "$num_syscont")) ]
+  [ "$gid_size" -ge $((65536 * "$num_syscont")) ]
+
   # start multiple sys containers
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
-    [ "$status" -eq 0 ]
-
-    docker ps --format "{{.ID}}" | head -1
-    [ "$status" -eq 0 ]
-
-    syscont_name[$i]="$output"
+    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
   done
 
   # verify each got an exclusive uid(gid) range of 64k each
@@ -81,16 +86,11 @@ load ../helpers/run
   num_syscont=2
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
-    [ "$status" -eq 0 ]
-
-    docker ps --format "{{.ID}}" | head -1
-    [ "$status" -eq 0 ]
-
-    syscont_name[$i]="$output"
+    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
   done
 
   # start 3rd sys container and verify this fails due to no uid availability
+  # (don't use docker_run() as we want to get the $status and $output)
   docker run --runtime=sysvisor-runc --rm -d debian:latest tail -f /dev/null 2>&1
   [ "$status" -eq 125 ]
   [[ "$output" =~ "subid allocation failed" ]]
@@ -128,12 +128,7 @@ load ../helpers/run
   num_syscont=4
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    docker run --runtime=sysvisor-runc --rm -d --hostname "syscont_$i" debian:latest tail -f /dev/null
-    [ "$status" -eq 0 ]
-
-    docker ps --format "{{.ID}}" | head -1
-    [ "$status" -eq 0 ]
-    syscont_name[$i]="$output"
+    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
 
     docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'"
     [ "$status" -eq 0 ]
