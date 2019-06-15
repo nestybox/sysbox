@@ -9,13 +9,7 @@ load ../helpers/run
 SYSCONT_NAME=""
 
 function setup() {
-  docker run --runtime=sysvisor-runc --rm -d nestybox/sys-container:debian-plus-docker tail -f /dev/null
-  [ "$status" -eq 0 ]
-
-  docker ps --format "{{.ID}}" | head -1
-  [ "$status" -eq 0 ]
-
-  SYSCONT_NAME="$output"
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 }
 
 function teardown() {
