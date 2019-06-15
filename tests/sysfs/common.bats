@@ -11,11 +11,11 @@ load ../helpers/ns
 disable_ipv6=/proc/sys/net/ipv6/conf/all/disable_ipv6
 
 function setup() {
-  setup_debian
+  setup_busybox
 }
 
 function teardown() {
-  teardown_debian
+  teardown_busybox syscont
 }
 
 # lookup

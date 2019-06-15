@@ -18,15 +18,15 @@ function setup() {
 }
 
 function teardown() {
-  teardown_busybox
+  teardown_busybox syscont
 }
 
 # Lookup/Getattr operation.
 @test "procUptime lookup() operation" {
-  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sv_runc exec test_busybox sh -c "ls -l /proc/cgroups"
+  sv_runc exec syscont sh -c "ls -l /proc/cgroups"
   [ "$status" -eq 0 ]
 
   verify_root_ro "${output}"
@@ -38,10 +38,10 @@ function teardown() {
   # Let's sleep a bit to obtain a meaningful (!= zero) uptime.
   sleep 3
 
-  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sv_runc exec test_busybox sh -c "cat /proc/uptime"
+  sv_runc exec syscont sh -c "cat /proc/uptime"
   [ "$status" -eq 0 ]
 
   # Obtain the container uptime and add it to the container creation time. This

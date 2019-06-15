@@ -10,15 +10,15 @@ function setup() {
 }
 
 function teardown() {
-  teardown_busybox
+  teardown_busybox syscont
 }
 
 # Lookup/Getattr operation.
 @test "procCgroups lookup() operation" {
-  sv_runc run -d --console-socket $CONSOLE_SOCKET test_busybox
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sv_runc exec test_busybox sh -c "ls -l /proc/cgroups"
+  sv_runc exec syscont sh -c "ls -l /proc/cgroups"
   [ "$status" -eq 0 ]
 
   verify_root_ro "${output}"
