@@ -116,15 +116,15 @@ function setup_bundle() {
 
   tar --exclude './dev/*' -C "$bundle"/rootfs -xzf "$tar_gz"
 
-  # sysvisor-runc: set bundle ownership to match system
-  # container's uid/gid map, except if using uid-shifting
-  if [ -z "$SHIFT_UIDS" ]; then
+  # set bundle ownership per sysvisor-runc requirements
+  if [ -n "$SHIFT_UIDS" ]; then
+    chown -R root:root "$bundle"
+  else
     chown -R "$UID_MAP":"$GID_MAP" "$bundle"
   fi
 
-  # sysvisor-runc: restrict path to bundle when using
-  # uid-shift, as required by sysvisor-runc's shiftfs
-  # mount security check
+  # Restrict path to bundle when using uid-shift, as required by
+  # sysvisor-runc's shiftfs mount security check
   if [ -n "$SHIFT_UIDS" ]; then
     chmod 700 "$bundle"
   fi
@@ -133,12 +133,13 @@ function setup_bundle() {
   runc_spec
 }
 
-# teardown_bundle path
+# teardown_bundle bundle_path container_name
 function teardown_bundle() {
-  local bundle=$1
+  local bundle="$1"
+  local container="$2"
   cd "$INTEGRATION_ROOT"
+  teardown_running_container "$container"
   teardown_recvtty
-  teardown_running_container test_busybox
   rm -f -r "$bundle"
 }
 
@@ -146,20 +147,18 @@ function setup_busybox() {
   setup_bundle "$BUSYBOX_TAR_GZ" "$BUSYBOX_BUNDLE"
 }
 
+# teardown_busybox container_name
 function teardown_busybox() {
-  teardown_bundle "$BUSYBOX_BUNDLE"
+  local container="$1"
+  teardown_bundle "$BUSYBOX_BUNDLE" "$container"
 }
 
 function setup_debian() {
   setup_bundle "$DEBIAN_TAR_GZ" "$DEBIAN_BUNDLE"
 }
 
+# teardown_debian container_name
 function teardown_debian() {
-  teardown_bundle "$DEBIAN_BUNDLE"
-}
-
-function docker_stop() {
-  [[ "$#" == 1 ]]
-  local name=$1
-  docker stop -t 0 "$name"
+  local container="$1"
+  teardown_bundle "$DEBIAN_BUNDLE" "$container"
 }
