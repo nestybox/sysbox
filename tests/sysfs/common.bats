@@ -98,3 +98,28 @@ function teardown() {
   # aren't namespaced)
   [ "$sc_proc_sys" == "$ns_proc_sys" ]
 }
+
+@test "common handler: /proc/sys perm" {
+
+  # this lists all files and dirs under /proc/sys, each as:
+  # -rw-r--r-- 1 root root /proc/sys/<path>
+  l_proc_sys_files="find /proc/sys -type f -print0 | xargs -0 ls -l | awk '{print \$1 \" \" \$2 \" \" \$3 \" \" \$4 \" \" \$9}'"
+  l_proc_sys_dirs="find /proc/sys -type d -print0 | xargs -0 ls -ld | awk '{print \$1 \" \" \$2 \" \" \$3 \" \" \$4 \" \" \$9}'"
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "${l_proc_sys_files}"
+  [ "$status" -eq 0 ]
+  sc_proc_sys_files="$output"
+
+  sv_runc exec syscont sh -c "${l_proc_sys_dirs}"
+  [ "$status" -eq 0 ]
+  sc_proc_sys_dirs="$output"
+
+  ns_proc_sys_files=$(unshare_all sh -c "${l_proc_sys_files}")
+  ns_proc_sys_dirs=$(unshare_all sh -c "${l_proc_sys_dirs}")
+
+  [ "$sc_proc_sys_files" == "$ns_proc_sys_files" ]
+  [ "$sc_proc_sys_dirs" == "$ns_proc_sys_dirs" ]
+}
