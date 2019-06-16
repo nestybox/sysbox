@@ -76,7 +76,7 @@ function teardown() {
 }
 
 @test "common handler: /proc/sys hierarchy" {
-  skip
+
   walk_proc="find /proc/sys -print"
 
   # launch sys container
@@ -100,7 +100,7 @@ function teardown() {
 }
 
 @test "common handler: /proc/sys perm" {
-  skip
+
   # this lists all files and dirs under /proc/sys, each as:
   # -rw-r--r-- 1 root root /proc/sys/<path>
   l_proc_sys_files="find /proc/sys -type f -print0 | xargs -0 ls -l | awk '{print \$1 \" \" \$2 \" \" \$3 \" \" \$4 \" \" \$9}'"
