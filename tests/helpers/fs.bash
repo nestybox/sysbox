@@ -4,6 +4,19 @@
 # filesystem test helpers
 #
 
+# sysvisor-fs sys container mounts
+SYSFS_MOUNTS="/proc/cpuinfo \
+              /proc/cgroups \
+              /proc/devices \
+              /proc/diskstats \
+              /proc/loadavg \
+              /proc/meminfo \
+              /proc/pagetypeinfo \
+              /proc/partitions \
+              /proc/stat \
+              /proc/swaps \
+              /proc/uptime"
+
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
   if [ "$#" -le 3 ]; then
