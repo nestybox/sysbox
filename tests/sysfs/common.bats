@@ -1,7 +1,9 @@
 #!/usr/bin/env bats
 
 #
-# Testing of common handler.
+# Testing of common (aka passthrough) handler (this handler handles
+# accesses to resources that are namespaced by the Linux kernel
+# and for which no actual emulation is required).
 #
 
 load ../helpers/run
@@ -16,6 +18,25 @@ function setup() {
 
 function teardown() {
   teardown_busybox syscont
+}
+
+# compares /proc/* listings between a sys-container and unshare-all
+# (there are expected to match, except for files emulated by sysvisor-fs)
+function compare_syscont_unshare() {
+  sc_list=$1
+  ns_list=$2
+
+  delta=$(diff --suppress-common-lines <(echo "$sc_list" | sed -e 's/ /\n/g') <(echo "$ns_list" | sed -e 's/ /\n/g') | grep "proc" | sed 's/^< //g')
+
+  for file in $delta; do
+    found=false
+    for mnt in $SYSFS_PROC_SYS; do
+      if [ "$file" == "$mnt" ]; then
+        found=true
+      fi
+    done
+    [ "$found" == true ]
+  done
 }
 
 # lookup
@@ -91,12 +112,7 @@ function teardown() {
   # unshare all ns and get the list of dirs under /proc/sys
   ns_proc_sys=$(unshare_all sh -c "${walk_proc}")
 
-  # for now the expectation is that sysvisor-fs will expose the same
-  # hierarchy under /proc/sys as linux does when unsharing all ns;
-  # in the future this may change (e.g., when sysvisor-fs exposes
-  # /proc/sys files that linux hides because the associated resources
-  # aren't namespaced)
-  [ "$sc_proc_sys" == "$ns_proc_sys" ]
+  compare_syscont_unshare "$sc_proc_sys" "$ns_proc_sys"
 }
 
 @test "common handler: /proc/sys perm" {
@@ -120,6 +136,6 @@ function teardown() {
   ns_proc_sys_files=$(unshare_all sh -c "${l_proc_sys_files}")
   ns_proc_sys_dirs=$(unshare_all sh -c "${l_proc_sys_dirs}")
 
-  [ "$sc_proc_sys_files" == "$ns_proc_sys_files" ]
-  [ "$sc_proc_sys_dirs" == "$ns_proc_sys_dirs" ]
+  compare_syscont_unshare "$sc_proc_sys_files" "$ns_proc_sys_files"
+  compare_syscont_unshare "$sc_proc_sys_dirs" "$ns_proc_sys_dirs"
 }

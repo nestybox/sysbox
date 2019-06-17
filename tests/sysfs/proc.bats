@@ -19,7 +19,7 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  for file in $SYSFS_MOUNTS; do
+  for file in $SYSFS_PROC; do
     sv_runc exec syscont sh -c "ls -l $file"
     [ "$status" -eq 0 ]
     verify_root_ro "${output}"
@@ -30,7 +30,7 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  for file in $SYSFS_MOUNTS; do
+  for file in $SYSFS_PROC; do
     sv_runc exec syscont sh -c "echo \"data\" > $file"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Permission denied" ]]
