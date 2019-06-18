@@ -40,7 +40,7 @@ function compare_syscont_unshare() {
 }
 
 # lookup
-@test "common handler: lookup" {
+@test "lookup disable_ipv6" {
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
@@ -53,7 +53,7 @@ function compare_syscont_unshare() {
   [ "$status" -eq 0 ]
 }
 
-@test "common handler: disable_ipv6" {
+@test "disable_ipv6 namespacing" {
 
   local enable="0"
   local disable="1"
@@ -96,7 +96,7 @@ function compare_syscont_unshare() {
   [ "$host_val" -eq "$host_orig_val" ]
 }
 
-@test "common handler: /proc/sys hierarchy" {
+@test "/proc/sys hierarchy" {
 
   walk_proc="find /proc/sys -print"
 
@@ -115,7 +115,7 @@ function compare_syscont_unshare() {
   compare_syscont_unshare "$sc_proc_sys" "$ns_proc_sys"
 }
 
-@test "common handler: /proc/sys perm" {
+@test "/proc/sys perm" {
 
   # this lists all files and dirs under /proc/sys, each as:
   # -rw-r--r-- 1 root root /proc/sys/<path>
