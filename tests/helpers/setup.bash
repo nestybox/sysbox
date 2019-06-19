@@ -54,6 +54,26 @@ function retry() {
   false
 }
 
+# retry wrapper for bats 'run' commands
+function retry_run() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    "$@"
+    if [ "$status" -eq 0 ]; then
+	return 0
+    fi
+    sleep $delay
+  done
+
+  echo "Command \"$@\" failed $attempts times. Output: $status"
+  false
+}
+
 # Wrapper for sysvisor-runc
 function __sv_runc() {
   command $RUNC ${RUNC_FLAGS} --log /proc/self/fd/2 --root "$ROOT" "$@"
