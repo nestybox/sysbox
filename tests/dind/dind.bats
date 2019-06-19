@@ -17,7 +17,7 @@ function teardown() {
 }
 
 function wait_for_nested_dockerd {
-  retry 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
 }
 
 @test "basic sys container" {

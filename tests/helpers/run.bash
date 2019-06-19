@@ -6,6 +6,33 @@
 
 . $(dirname ${BASH_SOURCE[0]})/setup.bash
 
+# Call this from setup() to run a single test
+#
+# E.g.,
+# function setup() {
+#    run_only_test "disable_ipv6 lookup"
+#    other_setup_actions
+# }
+#
+# or
+#
+# function setup() {
+#    run_only_test_num 2
+#    other_setup_actions
+# }
+
+run_only_test() {
+  if [ "$BATS_TEST_DESCRIPTION" != "$1" ]; then
+    skip
+  fi
+}
+
+run_only_test_num() {
+  if [ "$BATS_TEST_NUMBER" -ne "$1" ]; then
+    skip
+  fi
+}
+
 # Wrapper for sysvisor-runc using bats
 function sv_runc() {
   run __sv_runc "$@"
