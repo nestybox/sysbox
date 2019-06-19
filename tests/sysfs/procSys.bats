@@ -39,7 +39,6 @@ function compare_syscont_unshare() {
   done
 }
 
-# lookup
 @test "disable_ipv6 lookup" {
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
@@ -229,7 +228,7 @@ function compare_syscont_unshare() {
 # can't be modified from within a sys container.
 @test "/proc/sys non-namespaced resources" {
 
-  skip "Fails due to sysvisor issue #244"
+  skip "Sysvisor issue #244"
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
@@ -262,5 +261,151 @@ function compare_syscont_unshare() {
     [[ "$output" =~ "Permission denied" ]]
 
   done
+}
 
+@test "/proc/sys concurrent intra-container access" {
+
+  skip "Sysvisor issue #246"
+
+  num_workers=10
+
+  # worker script (periodically polls a /proc/sys file)
+  cat << EOF > ${HOME}/worker.sh
+#!/bin/sh
+while true; do
+  cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
+  sleep 1
+done
+EOF
+
+  chmod +x ${HOME}/worker.sh
+
+  sc=$(docker_run \
+         --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
+         nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+
+  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  val="$output"
+
+  for i in $(seq 1 $num_workers); do
+    docker exec -d "$sc" sh -c "/worker.sh result_$i.txt"
+    [ "$status" -eq 0 ]
+  done
+
+  for i in $(seq 1 $num_workers); do
+    docker exec "$sc" sh -c "cat result_$i.txt"
+    [ "$status" -eq 0 ]
+    [ "$output" == "$val" ]
+  done
+
+  new_val=$(( $val + 1 ))
+  docker exec "$sc" sh -c "echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+
+  sleep 2
+
+  for i in $(seq 1 $num_workers); do
+    docker exec "$sc" sh -c "cat result_$i.txt"
+    [ "$status" -eq 0 ]
+    [ "$output" == "$new_val" ]
+  done
+
+  # cleanup
+  docker_stop "$sc"
+  rm ${HOME}/worker.sh
+}
+
+@test "/proc/sys concurrent inter-container access" {
+
+  num_sc=5
+  iter=20
+
+  # this worker script will run in each sys container
+  cat << EOF > ${HOME}/worker.sh
+#!/bin/sh
+for i in \$(seq 1 $iter); do
+  echo \$i > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout
+  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout)
+  if [ "\$val" != "\$i" ]; then
+    echo "fail" > result.txt
+    exit
+  fi
+done
+echo "pass" > result.txt
+EOF
+
+  chmod +x ${HOME}/worker.sh
+
+  # deploy the sys containers
+  for i in $(seq 1 $num_sc); do
+    syscont[$i]=$(docker_run \
+                    --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
+                    nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+  done
+
+  # start the worker script
+  for sc in ${syscont[@]}; do
+    docker exec -d "$sc" sh -c "/worker.sh"
+    [ "$status" -eq 0 ]
+  done
+
+  # wait for workers to finish (we check the last worker only)
+  retry_run 10 1 docker exec ${syscont[$num_sc]} sh -c "cat /result.txt"
+
+  # verify results
+  for sc in ${syscont[@]}; do
+    docker exec "$sc" sh -c "cat /result.txt"
+    [ "$status" -eq 0 ]
+    [ "$output" == "pass" ]
+  done
+
+  # cleanup
+  for sc in ${syscont[@]}; do
+    docker_stop "$sc"
+  done
+
+  rm ${HOME}/worker.sh
+}
+
+@test "/proc/sys access frequency" {
+
+  skip "Sysvisor issue #246"
+
+  # verify sysvisor-fs handles a high access frequency properly
+  num_workers=10
+
+  # worker script (periodically polls a /proc/sys file)
+  cat << EOF > ${HOME}/worker.sh
+#!/bin/sh
+while true; do
+  cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
+  sleep 1
+done
+EOF
+
+  chmod +x ${HOME}/worker.sh
+
+  sc=$(docker_run \
+         --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
+         nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+
+  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  val="$output"
+
+  for i in $(seq 1 $num_workers); do
+    docker exec -d "$sc" sh -c "/worker.sh result_$i.txt"
+    [ "$status" -eq 0 ]
+  done
+
+  for i in $(seq 1 $num_workers); do
+    docker exec "$sc" sh -c "cat result_$i.txt"
+    [ "$status" -eq 0 ]
+    [ "$output" == "$val" ]
+  done
+
+  # cleanup
+  docker_stop "$sc"
+  rm ${HOME}/worker.sh
 }
