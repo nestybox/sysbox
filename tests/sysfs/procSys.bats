@@ -271,7 +271,7 @@ function compare_syscont_unshare() {
 
   # worker script (periodically polls a /proc/sys file)
   cat << EOF > ${HOME}/worker.sh
-#!/bin/sh
+#!/bin/bash
 while true; do
   cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
   sleep 1
@@ -323,7 +323,7 @@ EOF
 
   # this worker script will run in each sys container
   cat << EOF > ${HOME}/worker.sh
-#!/bin/sh
+#!/bin/bash
 for i in \$(seq 1 $iter); do
   echo \$i > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout
   val=\$(cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout)
@@ -377,7 +377,7 @@ EOF
 
   # worker script (periodically polls a /proc/sys file)
   cat << EOF > ${HOME}/worker.sh
-#!/bin/sh
+#!/bin/bash
 while true; do
   cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
   sleep 1
