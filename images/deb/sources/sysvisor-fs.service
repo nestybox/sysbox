@@ -1,0 +1,20 @@
+[Unit]
+Description=Sysvisor-fs component
+# When systemd stops or restarts the sysvisor.service, the action is propagated
+# to this unit.
+PartOf=sysvisor.service
+After=sysvisor.service
+# sysvisor-fs should always start after sysvisor-mgr.
+After=sysvisor-mgr.service
+
+[Service]
+# Initialize sysvisor-fs daemon.
+ExecStart=/usr/local/sbin/sysvisor-fs --log /var/log/sysvisor-fs.log
+# Restart service upon detection of non-zero exit code, i.e. when terminated by
+# a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE.
+Restart=on-failure
+
+[Install]
+# This unit should be only started after sysvisor.service has completed its
+# initialization.
+WantedBy=sysvisor.service

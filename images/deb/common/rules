@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+
+# Output every command that modifies files on the build system. Enable me for
+# debugging purposes.
+export DH_VERBOSE = 1
+
+override_dh_auto_build:
+	# Build sysvisor's components.
+	cd sysvisor && make
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	# Sysvisor binaries will be installed through the regular (makefile) process.
+	install -D -m0755 sysvisor/sysvisor-fs/sysvisor-fs \
+		debian/sysvisor/usr/local/sbin/sysvisor-fs
+	install -D -m0755 sysvisor/sysvisor-mgr/sysvisor-mgr \
+		debian/sysvisor/usr/local/sbin/sysvisor-mgr
+	install -D -m0755 sysvisor/sysvisor-runc/sysvisor-runc \
+		debian/sysvisor/usr/local/sbin/sysvisor-runc
+
+	# Sysvisor services installation.
+	install -D -m 0644 /sources/sysvisor.service \
+		debian/sysvisor/lib/systemd/system/sysvisor.service
+	install -D -m 0644 /sources/sysvisor-fs.service \
+		debian/sysvisor/lib/systemd/system/sysvisor-fs.service
+	install -D -m 0644 /sources/sysvisor-mgr.service \
+		debian/sysvisor/lib/systemd/system/sysvisor-mgr.service
+
+	# Sysvisor's sysctl.d config-file installation.
+	install -D -m 0644 /sources/sysvisor-systemd.conf \
+		debian/sysvisor/lib/systemd/system/sysvisor-systemd.conf
+
+override_dh_install:
+	dh_install
+
+# Override dh_usrlocal to prevent error after placing sysvisor binaries in
+# /usr/local path.
+override_dh_usrlocal:
+
+%:
+	dh $@
+

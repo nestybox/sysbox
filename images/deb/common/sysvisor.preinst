@@ -1,0 +1,153 @@
+#!/bin/bash
+
+
+# Sysvisor system requirements matrix:
+#
+#   +=========================================================================================+
+#   |  Supported Distributions  |  Supported Kernels  |  Shiftfs mode  |  Userns-remap mode   |
+#   +=========================================================================================+
+#   |                           |                     |                |                      |
+#   |   Ubuntu Disco (19.04)    |        5.0+         |     yes        |         yes          |
+#   |                           |                     |                |                      |
+#   |   Ubuntu Cosmic (18.10)   |        4.18+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Ubuntu Bionic (18.04)   |        4.15+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Ubuntu Artful (17.10)   |        4.13+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Ubuntu Zesty (17.04)    |        4.10+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Ubuntu Yakkety (16.10)  |        4.8+         |     no         |         no           |
+#   |                           |                     |                |                      |
+#   |   Debian Buster (10)      |        4.19+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Debian Stretch (9)      |        4.19+        |     no         |         yes          |
+#   |                           |                     |                |                      |
+#   |   Debian Buster (10)      |        4.9+         |     no         |         no           |
+#   |___________________________|_____________________|________________|______________________|
+
+
+# At the moment, only Ubuntu distro is supported.
+declare -A sysvisor_support_matrix
+sysvisor_support_matrix=(
+    ["Ubuntu 19.04"]="5.0"
+    ["Ubuntu 18.10"]="4.18"
+    ["Ubuntu 18.04"]="4.15"
+)
+
+# Placeholder, not used at the moment.
+USERNS_MIN_SUPPORTED_KERNEL="4.10.0"
+USERNS_SUPPORTED_DISTROS=("Ubuntu" "Debian")
+
+# Shiftfs globals, not used at the moment.
+SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
+SHIFTFS_SUPPORTED_DISTROS=( "Ubuntu" )
+SHFITFS_MIN_SUPPORTED_DISTRO_RELEASE="19.04"
+
+
+# Compare two versions in SemVer format (borrowed from stack-overflow).
+#
+# Examples:  (1.0.1, 1.0.1) = 0
+#            (1.0.1, 1.0.2) = 1
+#            (1.0.1, 1.0.0) = 2
+#            (1, 1.0) = 0
+#            (3.0.4.10, 3.0.4.2) = 2
+#
+version_compare() {
+
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+
+    # Fill empty fields in ver1 with zeros.
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # Fill empty fields in ver2 with zeros.
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+
+    return 0
+}
+
+# Enforce Sysvisor's system-requirements matrix.
+#
+# TBD:
+#       1) Shitffs-mode validation.
+#       2) 'Postinst' script should somehow know about the decisions
+#       being made here in regards to 'shiftfs' vs 'userns' modes.
+#
+verify_compatibility() {
+
+    local cur_distro=$(lsb_release -ds)
+    local cur_kernel=$(uname -r | cut -d'-' -f1)
+    local found_supported_distro=false
+    local found_supported_kernel=false
+
+    # Iterate through the support_matrix and verify that minimum requirements
+    # are met.
+    for distro in "${!sysvisor_support_matrix[@]}"; do
+
+        # Verify distro compatibility.
+        if [[ ${distro} = ${cur_distro} ]]; then
+            found_supported_distro=true
+
+            # Verify kernel compatibility.
+            version_compare ${cur_kernel} ${sysvisor_support_matrix[$distro]}
+            if [[ $? -le 1 ]]; then
+                found_supported_kernel=true
+            fi
+
+            break
+        fi
+    done
+
+    if [[ ${found_supported_distro} = false ]]; then
+        echo "Unsupported linux distribution: ${cur_distro}"
+        exit 1
+    fi
+
+    if [[ ${found_supported_kernel} = false ]]; then
+        echo "Unsupported linux kernel: ${cur_kernel}"
+        exit 1
+    fi
+}
+
+case "$1" in
+    install)
+        # Verify that Sysvisor's system requirements are met.
+        verify_compatibility
+
+        exit 0
+        ;;
+
+    upgrade|abort-upgrade)
+        # TBD
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 0
+        ;;
+esac
+
+#DEBHELPER#
+
