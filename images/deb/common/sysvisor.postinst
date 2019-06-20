@@ -1,0 +1,122 @@
+#!/bin/bash
+
+set -e
+
+# Dockerd default configuration file.
+dockercfg="/etc/docker/daemon.json"
+#dockercfg="daemon.json.not.present"
+
+# Sysvisor-fs' default mountpoint path.
+mountpoint="/var/lib/sysvisorfs"
+
+
+create_mountpoint() {
+
+    if [[ -d ${mountpoint} ]]; then
+        return
+    fi
+
+    echo "Creating default mountpoint '${mountpoint}'..."
+    mkdir -p ${mountpoint}
+    if [[ ! -d ${mountpoint} ]]; then
+        printf "Could not create Sysvisor-fs mountpoint.\n"
+        exit 1
+    fi
+}
+
+enable_user_namespaces() {
+
+    val=$(sysctl kernel.unprivileged_userns_clone)
+    if [[ "${val##* }" = 0 ]]; then
+        echo "Enabling user namespaces..."
+        sysctl -w kernel.unprivileged_userns_clone=1 2>/dev/null
+    fi
+}
+
+add_sysvisor_user() {
+
+    if ! getent passwd | grep -q "^sysvisor:"; then
+        echo "Adding system user 'sysvisor'..."
+        adduser sysvisor --shell=/bin/false --no-create-home sysvisor 2>/dev/null
+    fi
+}
+
+adjust_docker_config() {
+
+    echo "Adjusting 'dockerd' configuration..."
+
+    # If no dockerd's default config-file exist, or if there's no content on it,
+    # create one with a bare json squeleton.
+    if [[ ! -f ${dockercfg} ]] || [[ ! -s ${dockercfg} ]]; then
+        touch ${dockercfg}
+        echo -e "{\n}" > ${dockercfg}
+    fi
+
+    # If no 'userns-remap' key-entry is present, or its associated value is
+    # empty, proceed to create a key and set its value to 'sysvisor' user.
+    # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
+    # it displays inconsistence behavior), hence the need for the auxiliar
+    # 'tmp' file.
+    if [[ $(jq 'has("userns-remap")' ${dockercfg}) = false ]] ||
+        [[ $(jq '."userns-remap"' ${dockercfg}) = "\"\"" ]]; then
+
+        jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
+            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+    fi
+
+    # If no 'runtimes' key-entry is present, proceed to add one.
+    if [[ $(jq 'has("runtimes")' ${dockercfg}) = false ]]; then
+        jq --indent 4 '. + {"runtimes": {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}}' \
+            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+    # If no 'sysvisor-runc' runtime entry is present, proceed to add it.
+    elif [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockercfg}) = false ]]; then
+        #jq '. += {"runtimes": {"system-runc": {"path": "/usr/local/sbin/sysvsor-runc"}}}' ${dockercfg} > ${dockercfg}
+        jq --indent 4 '.runtimes |= . + {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}' \
+            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+    fi
+}
+
+config_sysvisor() {
+
+    # Ensure default mountpoint is created in the file-system.
+    create_mountpoint
+
+    # Ensure that user-namespaces are allowed. This change will persist through
+    # system reboots by relying on a sysctl.d config file to be installed as
+    # part of this package's installation process.
+    enable_user_namespaces
+
+    # Adjust dockerd configuration.
+    #adjust_docker_config
+
+	# Add 'sysvisor' user for scenarios requiring a single UID/GID pool being
+    # shared across all system-containers. This user must match the one defined
+    # in the docker configuration file.
+    # Add 'sysvisor' user.
+    add_sysvisor_user
+
+	# Have dockerd re-read its config file -- we are just sending a 'sighup'
+	# signal here, so no service impact is expected.
+	kill -SIGHUP $(pidof dockerd)
+}
+
+
+case "$1" in
+    configure)
+	    # Adjust system's configuration to satisfy Sysvisor requirements.
+	    config_sysvisor
+
+	    exit 0
+	    ;;
+
+    abort-*)
+
+	    exit 1
+	    ;;
+
+    *)
+	    ;;
+esac
+
+#DEBHELPER#

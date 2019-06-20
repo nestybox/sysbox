@@ -1,0 +1,19 @@
+Source: sysvisor
+Section: admin
+Priority: optional
+Maintainer: Nestybox Contact <contact@nestybox.com>
+Build-Depends: debhelper (>= 11),
+               bash,
+Standards-Version: 4.1.4
+Homepage: nestybox.com
+Vcs-Git: git://github.com/nestybox/sysvisor.git
+
+Package: sysvisor
+Architecture: linux-any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         jq,
+         lsb-release
+Description: System-containers runtime
+ Sysvisor is a container runtime that enables the creation of
+  system containers.

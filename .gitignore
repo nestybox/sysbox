@@ -4,6 +4,10 @@
 # Ignore virtual-studio-code metadata
 .vscode
 
+# Ignore paths holding build artifacts and related files.
+images/deb/debbuild/
+images/deb/sources/
+
 # GNU Global Tags
 GPATH
 GRTAGS

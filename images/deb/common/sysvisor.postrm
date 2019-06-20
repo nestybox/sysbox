@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+# As per Debian packaging policies, package elimination should not remove
+# logfiles. Therefore we shouldn't delete the 'sysvisor' user/group previously
+# created, as it would leave files with dangling ownership.
+
+# TBD:
+
+# Eliminate sysvisor-runc runtime from dockerd configuration.
+
+# Eliminate the 'sysvisor' userns-remap instruction if present.
+
+# Restart dockerd.
+
+# Stop all sysvisor's services and eliminate all the associated systemd data.
+
+#DEBHELPER#

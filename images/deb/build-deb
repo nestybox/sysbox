@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -x
+set -e
+
+# Untar Sysvisor sources.
+mkdir -p /root/build-deb/sysvisor
+tar -C /root/build-deb -xzf /sources/sysvisor.tgz
+
+# Obtain Sysvisor version out of the source tree.
+VERSION=$(cat /root/build-deb/sysvisor/VERSION)
+
+# Set variables required to satisfy 'changelog' layout requirements.
+EPOCH=1
+EPOCH_SEP=":"
+debSource="$(awk -F ': ' '$1 == "Source" { print $2; exit }' debian/control)"
+debMaintainer="$(awk -F ': ' '$1 == "Maintainer" { print $2; exit }' debian/control)"
+debDate="$(date --rfc-2822)"
+
+# Generate log entry to update 'changelog' file.
+cat > "debian/changelog" <<-EOF
+$debSource (${EPOCH}${EPOCH_SEP}${VERSION}-0~${DISTRO}-${SUITE}) $SUITE; urgency=low
+  * Version: $VERSION
+ -- $debMaintainer  $debDate
+EOF
+
+# Build the package and copy artifacts to the expected location.
+dpkg-buildpackage -uc -us -I.git
+mkdir -p /build
+mv -v /root/sysvisor* /build
