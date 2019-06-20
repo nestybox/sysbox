@@ -22,7 +22,7 @@
 SHELL := bash
 HOSTNAME := $(shell hostname)
 
-# Sysvisor's build-target locations.
+# Source-code paths of Sysvisor's binary targets.
 SYSRUNC_DIR     := sysvisor-runc
 SYSFS_DIR       := sysvisor-fs
 SYSMGR_DIR      := sysvisor-mgr
@@ -32,8 +32,14 @@ SYSMGR_GRPC_DIR := sysvisor-ipc/sysvisorMgrGrpc
 # Consider to have this one moved out within sysvisor-runc folder.
 SYSRUNC_BUILDTAGS := seccomp apparmor
 
-INSTALL_DIR := /usr/local/sbin
 PROJECT := /root/nestybox/sysvisor
+
+# Sysvisor's binary targets destination.
+ifeq ($(DESTDIR),)
+INSTALL_DIR := /usr/local/sbin
+else
+INSTALL_DIR := ${DESTDIR}
+endif
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysvisor-test
@@ -180,6 +186,14 @@ test-cleanup: test-img
 	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+
+#
+# Images targets.
+#
+
+image:
+#	@echo rodny $(MAKECMDGOALS)
+	cd images && $(MAKE) $(filter-out $@,$(MAKECMDGOALS))
 
 #
 # Misc targets
