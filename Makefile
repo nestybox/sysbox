@@ -15,8 +15,10 @@
 	test-runc test-fs test-mgr \
 	test-shell test-shell-shiftuid \
 	test-fs-local test-mgr-local \
+	test-shiftfs test-shiftfs-local \
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
+	pjdfstest \
 	clean
 
 SHELL := bash
@@ -28,6 +30,7 @@ SYSFS_DIR       := sysvisor-fs
 SYSMGR_DIR      := sysvisor-mgr
 SYSFS_GRPC_DIR  := sysvisor-ipc/sysvisorFsGrpc
 SYSMGR_GRPC_DIR := sysvisor-ipc/sysvisorMgrGrpc
+SHIFTFS_DIR     := shiftfs
 
 # Consider to have this one moved out within sysvisor-runc folder.
 SYSRUNC_BUILDTAGS := seccomp apparmor
@@ -190,12 +193,16 @@ test-mgr: test-img
 test-shiftfs: ## Run shiftfs posix compliance tests
 test-shiftfs: test-img
 	@printf "\n** Running shiftfs posix compliance tests **\n\n"
-	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
+	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
 
-# must run as root; requires pjdfstest to be installed at $(SUITEPATH); $(TESTPATH) is the directory where shiftfs is mounted.
-test-shiftfs-local: ## Run shiftfs posix compliance tests (used within test container -- to be run as root)
-test-shiftfs-local:
-	tests/scr/testShiftfs $(SUITEPATH) $(TESTPATH)
+# must run as root
+test-shiftfs-local: pjdfstest
+ifdef TESTPATH
+	tests/scr/testShiftfs $(CURDIR)/$(TESTPATH) /var/lib/sysvisor/shiftfs-test
+else
+	tests/scr/testShiftfs $(CURDIR)/$(SHIFTFS_DIR)/pjdfstest/tests /var/lib/sysvisor/shiftfs-test
+endif
+	cd $(SHIFTFS_DIR)/pjdfstest && ./cleanup.sh
 
 test-shell: ## Access to test container
 test-shell: test-img
@@ -237,6 +244,13 @@ image: ## Image creation / elimination sub-menu
 #
 # Misc targets
 #
+
+# must run as root
+pjdfstest: $(SHIFTFS_DIR)/pjdfstest/pjdfstest
+	cp shiftfs/pjdfstest/pjdfstest /usr/local/bin
+
+$(SHIFTFS_DIR)/pjdfstest/pjdfstest:
+	cd shiftfs/pjdfstest && autoreconf -ifs && ./configure && make pjdfstest
 
 listRuncPkgs:
 	@echo $(runcPkgs)
