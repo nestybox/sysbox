@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 #
 # script to run shiftfs posix compliance test suite.
@@ -11,7 +11,7 @@ progName=$(basename "$0")
 usage()
 {
   echo "
-Usage: $progName <path-to-pjdfstest> <path-to-test-dir>
+Usage: $progName <path-to-pjdfstest-suite> <path-to-test-dir>
 
 "
   exit 1
@@ -22,7 +22,7 @@ if [ $# -ne 2 ]; then
   usage
 fi
 
-SUITE=$1
+TPATH=$1
 TDIR=$2
 
 # check that we are executing as root
@@ -66,7 +66,7 @@ else
   cd mountpoint
 fi
 
-prove -rv $SUITE/tests
+prove -rv $TPATH
 
 # unmount shiftfs and overlayfs
 cd
@@ -85,7 +85,7 @@ cd $TDIR
 mount -t tmpfs tmpfs mountpoint
 mount -t shiftfs -o userns=/proc/1/ns/user mountpoint mountpoint
 cd mountpoint
-prove -rv $SUITE/tests
+prove -rv $TPATH
 
 cd
 umount $TDIR/mountpoint
