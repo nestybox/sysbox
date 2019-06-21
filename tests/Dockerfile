@@ -23,6 +23,8 @@ FROM golang:1.12-stretch
 
 RUN apt-get update && apt-get install -y \
     build-essential \
+    automake \
+    autoconf \
     procps \
     nano \
     less \
@@ -95,16 +97,6 @@ RUN add-apt-repository \
        stable"
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
-
-# install pjdfstest suite (used to test shiftfs posix compliance)
-RUN apt-get install -y autoconf
-RUN cd /root \
-    && git clone https://github.com/pjd/pjdfstest.git \
-    && cd pjdfstest \
-    && autoreconf -ifs \
-    && ./configure \
-    && make pjdfstest \
-    && cp pjdfstest /usr/local/bin
 
 # sysvisor deps
 RUN apt-get update && apt-get install -y \

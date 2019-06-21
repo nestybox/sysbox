@@ -398,11 +398,19 @@ $ make test-fs
 $ make test-mgr
 ```
 
-These unit tests run inside a privileged container, as some of them
-require running as root. There are also "local" targets for the `mgr`
-and `fs` unit tests which run directly on the host (e.g., `make
-test-fs-local`, `make test-mgr-local`). These local targets run a bit faster,
-but will skip tests that require root permissions.
+### shiftfs unit tests
+
+To run the full suite of tests:
+
+```
+$ make test-shiftfs
+```
+
+To run a single test:
+
+```
+$ make test-shiftfs TESTPATH=shiftfs/pjdfstest/tests/open
+```
 
 ### More on Sysvisor integration tests
 
