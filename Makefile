@@ -58,45 +58,66 @@ TEST_VOL2 := /var/tmp/sysvisor-test-var-lib-sysvisor
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
 #
 
-.DEFAULT: sysvisor
+.DEFAULT := help
 
+help:
+	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUsage:\n  make \033[36m<target>\033[0m\n"} \
+	/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ \
+	{ printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Building targets
+
+sysvisor: ## Build all sysvisor modules
 sysvisor: sysvisor-runc sysvisor-fs sysvisor-mgr
 	@echo $(HOSTNAME) > .buildinfo
 
+sysvisor-debug: ## Build all sysvisor modules (compiler optimizations off)
 sysvisor-debug: sysvisor-runc-debug sysvisor-fs-debug sysvisor-mgr-debug
 
+sysvisor-static: ## Build all sysvisor modules (static linking)
 sysvisor-static: sysvisor-runc-static sysvisor-fs-static sysvisor-mgr-static
 
+sysvisor-runc: ## Build sysvisor-runc module
 sysvisor-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
+sysvisor-runc-debug: ## Build sysvisor-runc module (compiler optimizations off)
 sysvisor-runc-debug: sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysvisor-runc-debug
 
+sysvisor-runc-static: ## Build sysvisor-runc module (static linking)
 sysvisor-runc-static: sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make static
 
+sysvisor-fs: ## Build sysvisor-fs module
 sysvisor-fs: sysfs-grpc-proto
 	@cd $(SYSFS_DIR) && make
 
+sysvisor-fs-debug: ## Build sysvisor-fs module (compiler optimizations off)
 sysvisor-fs-debug: sysfs-grpc-proto
 	@cd $(SYSFS_DIR) && make sysvisor-fs-debug
 
+sysvisor-fs-static: ## Build sysvisor-fs module (static linking)
 sysvisor-fs-static: sysfs-grpc-proto
 	@cd $(SYSFS_DIR) && make sysvisor-fs-static
 
+sysvisor-mgr: ## Build sysvisor-mgr module
 sysvisor-mgr: sysmgr-grpc-proto
 	@cd $(SYSMGR_DIR) && make
 
+sysvisor-mgr-debug: ## Build sysvisor-mgr module (compiler optimizations off)
 sysvisor-mgr-debug: sysmgr-grpc-proto
 	@cd $(SYSMGR_DIR) && make sysvisor-mgr-debug
 
+sysvisor-mgr-static: ## Build sysvisor-mgr module (static linking)
 sysvisor-mgr-static: sysmgr-grpc-proto
 	@cd $(SYSMGR_DIR) && make sysvisor-mgr-static
 
+sysfs-grpc-proto: ## Generate protobuffer code for sysvisor-fs interaction
 sysfs-grpc-proto:
 	@cd $(SYSFS_GRPC_DIR)/protobuf && make
 
+sysmgr-grpc-proto: ## Generate protobuffer code for sysvisor-mgr interaction
 sysmgr-grpc-proto:
 	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
@@ -104,13 +125,15 @@ sysmgr-grpc-proto:
 # install targets (require root privileges)
 #
 
-install:
+##@ Installation targets
+
+install: ## Install all sysvisor binaries
 	install -D -m0755 sysvisor-fs/sysvisor-fs $(INSTALL_DIR)/sysvisor-fs
 	install -D -m0755 sysvisor-mgr/sysvisor-mgr $(INSTALL_DIR)/sysvisor-mgr
 	install -D -m0755 sysvisor-runc/sysvisor-runc $(INSTALL_DIR)/sysvisor-runc
 	install -D -m0755 bin/sysvisor $(INSTALL_DIR)/sysvisor
 
-uninstall:
+uninstall: ## Uninstall all sysvisor binaries
 	rm -f $(INSTALL_DIR)/sysvisor
 	rm -f $(INSTALL_DIR)/sysvisor-fs
 	rm -f $(INSTALL_DIR)/sysvisor-mgr
@@ -128,41 +151,53 @@ DOCKER_RUN := docker run -it --privileged --rm --hostname sysvisor-test \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod    \
 			$(TEST_IMAGE)
 
+##@ Testing targets
+
+test: ## Run all sysvisor test suites
 test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
+test-sysvisor: ## Run sysvisor integration tests
 test-sysvisor: test-img
 	@printf "\n** Running sysvisor integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
+test-sysvisor-shiftuid: ## Run sysvisor's shiftfs integration tests
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
+test-sysvisor-local: ## Run sysvisor integration tests (used within test container)
 test-sysvisor-local:
 	$(TEST_DIR)/scr/testSysvisor $(TESTPATH)
 
+test-runc: ## Run sysvisor-runc unit & integration tests
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
 	@printf "\n** Running sysvisor-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
+test-fs: ## Run sysvisor-fs unit tests
 test-fs: test-img
 	@printf "\n** Running sysvisor-fs unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
 
+test-mgr: ## Run sysvisor-mgr unit tests
 test-mgr: test-img
 	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
 
+test-shiftfs: ## Run shiftfs posix compliance tests
 test-shiftfs: test-img
 	@printf "\n** Running shiftfs posix compliance tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local SUITEPATH=/root/pjdfstest TESTPATH=/var/lib/sysvisor/shiftfs-test"
 
 # must run as root; requires pjdfstest to be installed at $(SUITEPATH); $(TESTPATH) is the directory where shiftfs is mounted.
+test-shiftfs-local: ## Run shiftfs posix compliance tests (used within test container -- to be run as root)
 test-shiftfs-local:
 	tests/scr/testShiftfs $(SUITEPATH) $(TESTPATH)
 
+test-shell: ## Access to test container
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
@@ -171,17 +206,20 @@ test-shell-shiftuid: test-img
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
+test-fs-local: ## Run sysvisor-fs unit tests (used within test container)
 test-fs-local: sysfs-grpc-proto
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
 
+test-mgr-local: ## Run sysvisor-mgr unit tests (used within test container)
 test-mgr-local: sysmgr-grpc-proto
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
+test-img: ## Build test container image
 test-img:
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
 
-# must run as root
+test-cleanup: ## Clean up sysvisor integration tests (to be run as root)
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysvisor integration tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
@@ -191,8 +229,9 @@ test-cleanup: test-img
 # Images targets.
 #
 
-image:
-#	@echo rodny $(MAKECMDGOALS)
+##@ Images handling targets
+
+image: ## Image creation / elimination sub-menu
 	cd images && $(MAKE) $(filter-out $@,$(MAKECMDGOALS))
 
 #
@@ -212,6 +251,9 @@ listMgrPkgs:
 # cleanup targets
 #
 
+##@ Cleaning targets
+
+clean: ## Eliminate sysvisor binaries
 clean:
 	cd $(SYSRUNC_DIR) && make clean
 	cd $(SYSFS_DIR) && make clean
