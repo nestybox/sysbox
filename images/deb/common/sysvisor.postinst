@@ -88,7 +88,7 @@ config_sysvisor() {
     enable_user_namespaces
 
     # Adjust dockerd configuration.
-    #adjust_docker_config
+    adjust_docker_config
 
 	# Add 'sysvisor' user for scenarios requiring a single UID/GID pool being
     # shared across all system-containers. This user must match the one defined
