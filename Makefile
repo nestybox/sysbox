@@ -232,7 +232,7 @@ test-cleanup: test-img
 ##@ Images handling targets
 
 image: ## Image creation / elimination sub-menu
-	cd images && $(MAKE) $(filter-out $@,$(MAKECMDGOALS))
+	$(MAKE) -C images --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
 
 #
 # Misc targets

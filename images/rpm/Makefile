@@ -34,80 +34,71 @@ CHOWN:=docker run --rm -v $(CURDIR):/v -w /v alpine chown
 DOCKER_BUILD=docker build                                  \
 	--build-arg GO_IMAGE=$(GO_IMAGE)                   \
 	--build-arg COMMON_FILES=$(SYSVISOR_IMAGE_COMMON)  \
-	-t debbuild-$@/$(ARCH)                             \
+	-t rpmbuild-$@/$(ARCH)                             \
 	-f $(CURDIR)/$@/Dockerfile .
 
 DOCKER_RUN=docker run --rm -i                    \
 	-e PLATFORM                              \
-	-v $(CURDIR)/debbuild/$@:/build          \
+	-v $(CURDIR)/rpmbuild/$@:/build          \
 	-v $(GOPATH)/pkg/mod:/go/pkg/mod         \
-	debbuild-$@/$(ARCH)
+	rpmbuild-$@/$(ARCH)
 
 
-.PHONY: help       \
-	deb            \
-	debian         \
-	debian-buster  \
-	debian-stretch \
-	ubuntu         \
-	ubuntu-disco   \
-	ubuntu-cosmic  \
-	ubuntu-bionic  \
+.PHONY: help     \
+	rpm          \
+	centos       \
+	centos-7     \
+	fedora       \
+	fedora-30    \
+	fedora-29    \
+	fedora-28    \
 	clean
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUsage:\n  \
-	make image build-deb \033[36m<target>\033[0m\n"} \
-	/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ \
+	make image build-rpm \033[36m<target>\033[0m\n"} \
+	/^[a-zA-Z_-0-9]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ \
 	{ printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-##@ DEB building targets
+##@ RPM building targets
 
-deb: debian ubuntu
+rpm: centos fedora
 
-debian: ## Build all Debian deb packages
-debian: debian-stretch debian-buster
+centos: ## Build all Centos rpm packages
+centos: centos-7
 
-debian-buster: ## Build Debian Buster (10) packages
-debian-buster: $(SOURCES)
+centos-7: ## Build Centos-7 packages
+centos-7: $(SOURCES)
 	$(DOCKER_BUILD)
 	$(DOCKER_RUN)
-	$(CHOWN) -R $(shell id -u):$(shell id -g) debbuild/$@
+	$(CHOWN) -R $(shell id -u):$(shell id -g) rpmbuild/$@
 
-debian-stretch: ## Build Debian Buster (9) packages
-debian-stretch: $(SOURCES)
+fedora: ## Build all Fedora rpm packages
+fedora: fedora-30 fedora-29 fedora-28
+
+fedora-30: ## Build Fedora-30 packages
+fedora-30: $(SOURCES)
 	$(DOCKER_BUILD)
 	$(DOCKER_RUN)
-	$(CHOWN) -R $(shell id -u):$(shell id -g) debbuild/$@
+	$(CHOWN) -R $(shell id -u):$(shell id -g) rpmbuild/$@
 
-ubuntu: ## Build all Ubuntu deb packages
-ubuntu: ubuntu-bionic ubuntu-cosmic ubuntu-disco
-
-ubuntu-disco: ## Build Ubuntu Disco (19.04) deb packages
-ubuntu-disco: $(SOURCES)
+fedora-29: ## Build Fedora-29 packages
+fedora-29: $(SOURCES)
 	$(DOCKER_BUILD)
 	$(DOCKER_RUN)
-	$(CHOWN) -R $(shell id -u):$(shell id -g) debbuild/$@
+	$(CHOWN) -R $(shell id -u):$(shell id -g) rpmbuild/$@
 
-ubuntu-cosmic: ## Build Ubuntu Cosmic (18.10) deb packages
-ubuntu-cosmic: $(SOURCES)
+fedora-28: ## Build Fedora-28 packages
+fedora-28: $(SOURCES)
 	$(DOCKER_BUILD)
 	$(DOCKER_RUN)
-	$(CHOWN) -R $(shell id -u):$(shell id -g) debbuild/$@
-
-ubuntu-bionic: ## Build Ubuntu Bionic (18.04) deb packages
-ubuntu-bionic: $(SOURCES)
-	$(DOCKER_BUILD)
-	$(DOCKER_RUN)
-	$(CHOWN) -R $(shell id -u):$(shell id -g) debbuild/$@
-
+	$(CHOWN) -R $(shell id -u):$(shell id -g) rpmbuild/$@
 
 clean: ## Remove build artifacts
-	[ ! -d debbuild ] || $(CHOWN) -R $(shell id -u):$(shell id -g) debbuild
-	$(RM) -r debbuild
+	[ ! -d rpmbuild ] || $(CHOWN) -R $(shell id -u):$(shell id -g) rpmbuild
+	$(RM) -r rpmbuild
 	[ ! -d sources ] || $(CHOWN) -R $(shell id -u):$(shell id -g) sources
 	$(RM) -r sources
-
 
 sources/sysvisor.tgz:
 	mkdir -p $(@D)
