@@ -20,7 +20,7 @@ if [[ "$lastBuildHost" != "$thisHost" ]]; then
   make clean
 fi
 
-make --no-print-directory && make install
+make sysvisor --no-print-directory && make install
 
 # Configure sysvisor subuid(gid) range (up to 100 sys containers with 64k each)
 if [ -n "$SHIFT_UIDS" ]; then

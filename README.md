@@ -116,7 +116,7 @@ When using Sysvisor without Docker userns-remap:
 ## Building & Installing
 
 ```
-$ make
+$ make sysvisor
 $ sudo make install
 ```
 
