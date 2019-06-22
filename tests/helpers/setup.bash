@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#
 # sysvisor integration test setup helpers
 #
-# Note: much code borrowed from the OCI runc integration tests
+# Note: based on a similar file in the OCI runc integration tests
 #
+# Note: these should not use bats, so as to allow their use
+# when manually reproducing tests.
 
 SYSCONT_NAME=""
 

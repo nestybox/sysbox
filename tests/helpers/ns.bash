@@ -3,6 +3,9 @@
 #
 # Namespace helpers
 #
+# Note: these should not use bats, so as to allow their use
+# when manually reproducing tests.
+#
 
 # Linux kernel namespaced resources under /proc/sys
 # (representative list, not exhaustive)
