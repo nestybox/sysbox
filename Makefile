@@ -18,7 +18,7 @@
 	test-shiftfs test-shiftfs-local \
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
-	pjdfstest \
+	pjdfstest pjdfstest-clean \
 	clean
 
 SHELL := bash
@@ -192,17 +192,24 @@ test-mgr: test-img
 
 test-shiftfs: ## Run shiftfs posix compliance tests
 test-shiftfs: test-img
-	@printf "\n** Running shiftfs posix compliance tests **\n\n"
+	@printf "\n** Running shiftfs tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-ovfs-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-tmpfs-local TESTPATH=$(TESTPATH)"
 
-# must run as root
 test-shiftfs-local: pjdfstest
-ifdef TESTPATH
-	tests/scr/testShiftfs $(CURDIR)/$(TESTPATH) /var/lib/sysvisor/shiftfs-test
-else
-	tests/scr/testShiftfs $(CURDIR)/$(SHIFTFS_DIR)/pjdfstest/tests /var/lib/sysvisor/shiftfs-test
-endif
-	cd $(SHIFTFS_DIR)/pjdfstest && ./cleanup.sh
+	@printf "\n** shiftfs only mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs /var/lib/sysvisor $(TESTPATH)
+
+test-shiftfs-ovfs-local: pjdfstest
+	@printf "\n** shiftfs + overlayfs mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs -m overlayfs /var/lib/sysvisor $(TESTPATH)
+
+test-shiftfs-tmpfs-local: pjdfstest
+	@printf "\n** shiftfs + tmpfs mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs -m tmpfs /var/lib/sysvisor $(TESTPATH)
+
+test-shiftfs-cleanup: pjdfstest-clean
 
 test-shell: ## Access to test container
 test-shell: test-img
@@ -251,6 +258,9 @@ pjdfstest: $(SHIFTFS_DIR)/pjdfstest/pjdfstest
 
 $(SHIFTFS_DIR)/pjdfstest/pjdfstest:
 	cd shiftfs/pjdfstest && autoreconf -ifs && ./configure && make pjdfstest
+
+pjdfstest-clean:
+	cd $(SHIFTFS_DIR)/pjdfstest && ./cleanup.sh
 
 listRuncPkgs:
 	@echo $(runcPkgs)
