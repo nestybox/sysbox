@@ -116,11 +116,9 @@ sysvisor-mgr-static: ## Build sysvisor-mgr module (static linking)
 sysvisor-mgr-static: sysmgr-grpc-proto
 	@cd $(SYSMGR_DIR) && make sysvisor-mgr-static
 
-sysfs-grpc-proto: ## Generate protobuffer code for sysvisor-fs interaction
 sysfs-grpc-proto:
 	@cd $(SYSFS_GRPC_DIR)/protobuf && make
 
-sysmgr-grpc-proto: ## Generate protobuffer code for sysvisor-mgr interaction
 sysmgr-grpc-proto:
 	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
@@ -144,6 +142,7 @@ uninstall: ## Uninstall all sysvisor binaries
 
 #
 # test targets
+# (these run within a test container, so they won't messup your host)
 #
 
 DOCKER_RUN := docker run -it --privileged --rm --hostname sysvisor-test \
@@ -156,7 +155,7 @@ DOCKER_RUN := docker run -it --privileged --rm --hostname sysvisor-test \
 
 ##@ Testing targets
 
-test: ## Run all sysvisor test suites
+test: ## Run all sysvisor tests suites
 test: test-fs test-mgr test-runc test-sysvisor test-sysvisor-shiftuid
 
 test-sysvisor: ## Run sysvisor integration tests
@@ -165,15 +164,11 @@ test-sysvisor: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
 
-test-sysvisor-shiftuid: ## Run sysvisor's shiftfs integration tests
+test-sysvisor-shiftuid: ## Run sysvisor intergration tests with uid-shifting
 test-sysvisor-shiftuid: test-img
 	@printf "\n** Running sysvisor integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysvisor-local TESTPATH=$(TESTPATH)"
-
-test-sysvisor-local: ## Run sysvisor integration tests (used within test container)
-test-sysvisor-local:
-	$(TEST_DIR)/scr/testSysvisor $(TESTPATH)
 
 test-runc: ## Run sysvisor-runc unit & integration tests
 test-runc: sysfs-grpc-proto sysmgr-grpc-proto
@@ -190,43 +185,25 @@ test-mgr: test-img
 	@printf "\n** Running sysvisor-mgr unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
 
-test-shiftfs: ## Run shiftfs posix compliance tests
+test-shiftfs: ## Run shiftfs tests
 test-shiftfs: test-img
 	@printf "\n** Running shiftfs tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-ovfs-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-tmpfs-local TESTPATH=$(TESTPATH)"
 
-test-shiftfs-local: pjdfstest
-	@printf "\n** shiftfs only mount **\n\n"
-	$(SHIFTFS_DIR)/tests/testShiftfs /var/lib/sysvisor $(TESTPATH)
-
-test-shiftfs-ovfs-local: pjdfstest
-	@printf "\n** shiftfs + overlayfs mount **\n\n"
-	$(SHIFTFS_DIR)/tests/testShiftfs -m overlayfs /var/lib/sysvisor $(TESTPATH)
-
-test-shiftfs-tmpfs-local: pjdfstest
-	@printf "\n** shiftfs + tmpfs mount **\n\n"
-	$(SHIFTFS_DIR)/tests/testShiftfs -m tmpfs /var/lib/sysvisor $(TESTPATH)
-
+test-shiftfs-cleanup: ## Cleanup shiftfs test suite
 test-shiftfs-cleanup: pjdfstest-clean
 
-test-shell: ## Access to test container
+test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
 
+test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
-
-test-fs-local: ## Run sysvisor-fs unit tests (used within test container)
-test-fs-local: sysfs-grpc-proto
-	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
-
-test-mgr-local: ## Run sysvisor-mgr unit tests (used within test container)
-test-mgr-local: sysmgr-grpc-proto
-	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
 test-img: ## Build test container image
 test-img:
@@ -240,7 +217,35 @@ test-cleanup: test-img
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
 #
-# Images targets.
+# Local test targets (these are invoked from within the test container
+# by the test target above); in theory they can run directly on a dev
+# machine, but they require root privileges and might messup the state
+# of the host.
+#
+
+test-sysvisor-local:
+	$(TEST_DIR)/scr/testSysvisor $(TESTPATH)
+
+test-shiftfs-local: pjdfstest
+	@printf "\n** shiftfs only mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs /var/lib/sysvisor $(TESTPATH)
+
+test-shiftfs-ovfs-local: pjdfstest
+	@printf "\n** shiftfs + overlayfs mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs -m overlayfs /var/lib/sysvisor $(TESTPATH)
+
+test-shiftfs-tmpfs-local: pjdfstest
+	@printf "\n** shiftfs + tmpfs mount **\n\n"
+	$(SHIFTFS_DIR)/tests/testShiftfs -m tmpfs /var/lib/sysvisor $(TESTPATH)
+
+test-fs-local: sysfs-grpc-proto
+	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
+
+test-mgr-local: sysmgr-grpc-proto
+	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
+
+#
+# Images targets
 #
 
 ##@ Images handling targets
