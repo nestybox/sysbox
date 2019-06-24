@@ -41,3 +41,5 @@ override_dh_usrlocal:
 %:
 	dh $@
 
+override_dh_installsystemd:
+	dh_installsystemd --name=sysvisor sysvisor.service
