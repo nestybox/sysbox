@@ -37,7 +37,7 @@ add_sysvisor_user() {
 
     if ! getent passwd | grep -q "^sysvisor:"; then
         echo "Adding system user 'sysvisor'..."
-        adduser sysvisor --shell=/bin/false --no-create-home sysvisor 2>/dev/null
+        adduser sysvisor --shell=/bin/false --no-create-home 2>/dev/null
     fi
 }
 
@@ -104,19 +104,18 @@ config_sysvisor() {
 
 case "$1" in
     configure)
-	    # Adjust system's configuration to satisfy Sysvisor requirements.
-	    config_sysvisor
+        # Adjust system's configuration to satisfy Sysvisor requirements.
+        config_sysvisor
 
-	    exit 0
-	    ;;
+        # Avoid calling exit() here to allow debhelper tools to add their
+        # auto-generated code further below.
+        ;;
 
     abort-*)
-
-	    exit 1
-	    ;;
+        ;;
 
     *)
-	    ;;
+        ;;
 esac
 
 #DEBHELPER#
