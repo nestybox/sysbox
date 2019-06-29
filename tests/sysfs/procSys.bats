@@ -13,11 +13,11 @@ load ../helpers/ns
 disable_ipv6=/proc/sys/net/ipv6/conf/all/disable_ipv6
 
 function setup() {
-  setup_busybox
+  setup_debian
 }
 
 function teardown() {
-  teardown_busybox syscont
+  teardown_debian syscont
 }
 
 # compares /proc/* listings between a sys-container and unshare-all
@@ -114,7 +114,7 @@ function compare_syscont_unshare() {
   compare_syscont_unshare "$sc_proc_sys" "$ns_proc_sys"
 }
 
-@test "/proc/sys perm" {
+@test "/proc/sys ownership" {
 
   # this lists all files and dirs under /proc/sys, each as:
   # -rw-r--r-- 1 root root /proc/sys/<path>
@@ -409,3 +409,110 @@ EOF
   docker_stop "$sc"
   rm ${HOME}/worker.sh
 }
+
+@test "/proc/sys stat" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "stat /proc/sys/kernel/cap_last_cap"
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" =~ "File: /proc/sys/kernel/cap_last_cap" ]]
+  [[ "${lines[1]}" =~ "Size: 0 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular empty file" ]]
+  [[ "${lines[3]}" =~ "Access: (0444/-r--r--r--)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
+
+  sv_runc exec syscont sh -c "stat /proc/sys/kernel/hostname"
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" =~ "File: /proc/sys/kernel/hostname" ]]
+  [[ "${lines[1]}" =~ "Size: 0 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular empty file" ]]
+  [[ "${lines[3]}" =~ "Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
+}
+
+@test "/proc/sys chown" {
+
+  skip "Sysvisor issue #258"
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  for owner in root 65534; do
+    sv_runc exec syscont sh -c "chown $owner:$owner /proc/sys/kernel/cap_last_cap"
+    [ "$status" -eq 0 ]
+    [[ "$ouput" == "chown: changing ownership of 'cap_last_cap': Operation not permitted" ]]
+  done
+}
+
+@test "/proc/sys read-permission check" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "useradd -m someuser"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  val="$output"
+
+  # As non-root, read a /proc/sys file; sysvisor-fs should allow this
+  sv_runc exec syscont sh -c "runuser -l someuser -c \"cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  [ "$status" -eq 0 ]
+  [ $output -eq $val ]
+}
+
+@test "/proc/sys write-permission check" {
+
+  skip "Sysvisor issue #259"
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "useradd -m someuser"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  val="$output"
+  new_val=$(( $val + 1 ))
+
+  # As root, write a /proc/sys read-write file; sysvisor-fs should allow this
+  sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  [ "$status" -eq 0 ]
+
+  # Verify write indeed took place
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  val="$output"
+  [ $val -eq $new_val ]
+  new_val=$(( $val + 1 ))
+
+  # As non-root, write to the same file; sysvisor-fs should disallow this
+  sv_runc exec syscont sh -c "runuser -l someuser -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  [ "$status" -ne 0 ]
+  [[ "$output" =~ *"Operation not permitted"* ]]
+
+  # Verify write did not take place
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq $val ]
+
+  # As root, write a /proc/sys read-only file; sysvisor-fs should disallow this
+  sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/kernel/cap_last_cap\""
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ *"Permission denied"* ]]
+}
+
+# @test "/proc/sys capability checking" {
+#
+#   # TODO: verify sysvisor-fs checking of capabilities
+#
+#   # verify that a non-root process with CAP_DAC_OVERRIDE and
+#   # CAP_DAC_READ_SEARCH is allowed to modify a /proc/sys file
+#   # use capsh tool
+# }
+
+# @test "/proc/sys timestamps" {
+#
+#   # TODO: verify access/modify/change timestamps are updated correctly; use stat to check.
+#
+# }
