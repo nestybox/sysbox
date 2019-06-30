@@ -20,16 +20,7 @@ function wait_for_nested_dockerd {
   retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
 }
 
-@test "basic sys container" {
-  docker exec "$SYSCONT_NAME" hostname syscont
-  [ "$status" -eq 0 ]
-
-  docker exec "$SYSCONT_NAME" hostname
-  [ "$status" -eq 0 ]
-  [ "$output" = "syscont" ]
-}
-
-@test "basic inner docker" {
+@test "basic dind" {
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
@@ -39,7 +30,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 }
 
-@test "basic inner busybox" {
+@test "dind busybox" {
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
