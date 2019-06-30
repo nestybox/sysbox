@@ -71,7 +71,13 @@ function docker_run() {
 # Stops a docker container immediately
 function docker_stop() {
   [[ "$#" == 1 ]]
-  docker stop -t 0 "$1"
+
+  id="$1"
+  if [ -n "$id" ]; then
+    return 0
+  fi
+
+  docker stop -t 0 "$id"
 }
 
 # Run a background process under bats

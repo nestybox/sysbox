@@ -24,6 +24,8 @@ else
   bats --tap tests/sysmgr
   printf "\nExecuting sysvisor-fs tests ... \n"
   bats --tap tests/sysfs
+  printf "\nExecuting docker tests ... \n"
+  bats --tap tests/docker
   printf "\nExecuting dind tests ... \n"
   bats --tap tests/dind
 fi
