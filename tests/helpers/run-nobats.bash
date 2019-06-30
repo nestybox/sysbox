@@ -23,13 +23,19 @@ function docker_run() {
 
 function docker_stop() {
   [[ "$#" == 1 ]]
-  docker stop -t 0 "$1"
+
+  id="$1"
+  if [ -n "$id" ]; then
+    return 0
+  fi
+
+  docker stop -t 0 "$id"
 }
 
 function sv_mgr_start() {
   # Note: must match the way sysvisor-mgr is usually started, except
   # that we also pass in the "$@".
-  sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
+  sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1 &
   sleep 1
 }
 

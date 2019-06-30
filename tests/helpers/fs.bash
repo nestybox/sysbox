@@ -25,7 +25,7 @@ SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max"
 
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
-  if [ "$#" -le 3 ]; then
+  if [ $# -le 3 ]; then
      return 1
   fi
 
