@@ -106,8 +106,8 @@ function wait_for_nested_dockerd {
   docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge alpine-net"
   [ "$status" -eq 0 ]
 
-  # create 4 inner containers; 2 of them are connected to apline-net;
-  # 1 of them is connected to the default bridge net.  1 of them is
+  # Create four inner containers; two of them are connected to apline-net;
+  # one of them is connected to the default bridge net; one of them is
   # connected to both alpine-net and the default bridge net.
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name alpine1 --network alpine-net alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -138,7 +138,7 @@ function wait_for_nested_dockerd {
   [[ "$alpine3_sub" != "$sc_sub" ]]
   [[ "$alpine4_sub" != "$sc_sub" ]]
 
-  # test connectivity on alpine1 using container names (auto service discovery)
+  # test connectivity on alpine1 using container names (docker auto dns)
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine1 ping -c 2 alpine2"
   [ "$status" -eq 0 ]
 
