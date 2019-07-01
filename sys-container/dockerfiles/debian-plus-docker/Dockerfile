@@ -1,5 +1,5 @@
 #
-# debian-stretch base image + (official) docker
+# debian base image + (official) docker
 #
 # Instructions for docker installation taken from:
 # https://docs.docker.com/install/linux/docker-ce/debian/
@@ -13,7 +13,8 @@ RUN apt-get install -y \
        procps \
        nano \
        strace \
-       net-tools
+       net-tools \
+       wget
 
 # Docker install
 RUN apt-get install -y \
