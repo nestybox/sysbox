@@ -200,3 +200,10 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
   [[ "$output" == "<title>Welcome to nginx!</title>" ]]
 }
+
+# @test "dind port map" {
+#
+#   # verify docker port mapping (from host->syscont, from
+#   # syscont->inner-cont); access inner cont from host via mapped port.
+#
+# }
