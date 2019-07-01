@@ -25,7 +25,7 @@ function docker_stop() {
   [[ "$#" == 1 ]]
 
   id="$1"
-  if [ -n "$id" ]; then
+  if [ -z "$id" ]; then
     return 0
   fi
 

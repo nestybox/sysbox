@@ -12,7 +12,8 @@ RUN apt-get update
 RUN apt-get install -y \
        procps \
        nano \
-       strace
+       strace \
+       net-tools
 
 # Docker install
 RUN apt-get install -y \
