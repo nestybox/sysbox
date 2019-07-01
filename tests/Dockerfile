@@ -49,6 +49,7 @@ RUN apt-get update && apt-get install -y \
     kmod \
     unzip \
     time \
+    net-tools \
     --no-install-recommends \
     && apt-get clean
 
