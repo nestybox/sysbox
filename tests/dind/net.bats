@@ -37,7 +37,13 @@ function wait_for_nested_dockerd {
   [ "${lines[2]}" == "host local" ]
   [ "${lines[3]}" == "none local" ]
 
-  # spawn a couple of level-2 containers and check that their network config is fine
+  docker exec "$SYSCONT_NAME" sh -c "ip a"
+  [ "$status" -eq 0 ]
+
+  sc_ip=$(parse_ip "$output" "eth0")
+  sc_sub=$(parse_subnet "$output" "eth0")
+
+  # spawn a couple of inner containers and check that their network config is fine
   for inner in alpine1 alpine2; do
     docker exec "$SYSCONT_NAME" sh -c "docker run -d --name $inner alpine tail -f /dev/null"
     [ "$status" -eq 0 ]
@@ -47,26 +53,38 @@ function wait_for_nested_dockerd {
     [[ "${lines[0]}" =~ "lo".+"<LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000" ]]
     [[ "${lines[2]}" =~ "inet 127.0.0.1/8 scope host lo" ]]
     [[ "${lines[6]}" =~ "eth0".+"<BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP" ]]
-    declare "${inner}_ip"=$(parse_ip "$output" "eth0")
 
-    # test external connectivity
-    docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ping -c 2 google.com"
-    [ "$status" -eq 0 ]
+    declare "${inner}_ip"=$(parse_ip "$output" "eth0")
+    declare "${inner}_sub"=$(parse_subnet "$output" "eth0")
   done
 
-  # verify the level-2 containers can ping each other by IP
+  # verify subnets look ok
+  [[ "$alpine1_sub" != "$sc_sub" ]]
+  [[ "$alpine2_sub" != "$sc_sub" ]]
+  [[ "$alpine1_sub" == "$alpine2_sub" ]]
+
+  # verify the inner containers can ping each other by IP
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine1 ping -c 2 $alpine2_ip"
   [ "$status" -eq 0 ]
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine2 ping -c 2 $alpine1_ip"
   [ "$status" -eq 0 ]
 
-  # verify the level-2 containers can't ping each other by name
+  # verify the inner containers can't ping each other by name
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine1 ping -c 2 alpine2"
   [ "$status" -eq 1 ]
   [[ "$output" =~ "ping: bad address" ]]
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine2 ping -c 2 alpine1"
   [ "$status" -eq 1 ]
   [[ "$output" =~ "ping: bad address" ]]
+
+  # test external connectivity of inner containers
+  for inner in alpine1 alpine2; do
+    docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ping -c 2 google.com"
+    [ "$status" -eq 0 ]
+
+    docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ping -c 2 $sc_ip"
+    [ "$status" -eq 0 ]
+  done
 }
 
 @test "dind user net" {
@@ -78,6 +96,12 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
+
+  docker exec "$SYSCONT_NAME" sh -c "ip a"
+  [ "$status" -eq 0 ]
+
+  sc_ip=$(parse_ip "$output" "eth0")
+  sc_sub=$(parse_subnet "$output" "eth0")
 
   docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge alpine-net"
   [ "$status" -eq 0 ]
@@ -105,7 +129,14 @@ function wait_for_nested_dockerd {
     docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ip a"
     [ "$status" -eq 0 ]
     declare "${inner}_ip"=$(parse_ip "$output" "eth0")
+    declare "${inner}_sub"=$(parse_subnet "$output" "eth0")
   done
+
+  # verify subnets look ok
+  [[ "$alpine1_sub" != "$sc_sub" ]]
+  [[ "$alpine2_sub" != "$sc_sub" ]]
+  [[ "$alpine3_sub" != "$sc_sub" ]]
+  [[ "$alpine4_sub" != "$sc_sub" ]]
 
   # test connectivity on alpine1 using container names (auto service discovery)
   docker exec "$SYSCONT_NAME" sh -c "docker exec alpine1 ping -c 2 alpine2"
@@ -142,5 +173,30 @@ function wait_for_nested_dockerd {
   for inner in alpine1 alpine2 alpine3 alpine4; do
     docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ping -c 2 google.com"
     [ "$status" -eq 0 ]
+
+    docker exec "$SYSCONT_NAME" sh -c "docker exec $inner ping -c 2 $sc_ip"
+    [ "$status" -eq 0 ]
   done
+}
+
+@test "dind host net" {
+
+  # verify basic docker host networking inside a sys container
+  # (based on https://docs.docker.com/network/network-tutorial-standalone/)
+
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  [ "$status" -eq 0 ]
+
+  wait_for_nested_dockerd
+
+  docker exec "$SYSCONT_NAME" sh -c "docker run -d --network host --name my_nginx nginx"
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "netstat -tulpn | grep :80"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "tcp".+"0.0.0.0:80".+"LISTEN".+"nginx" ]]
+
+  docker exec "$SYSCONT_NAME" sh -c "curl -s http://localhost:80 | grep \"<title>Welcome to nginx\!</title>\""
+  [ "$status" -eq 0 ]
+  [[ "$output" == "<title>Welcome to nginx!</title>" ]]
 }
