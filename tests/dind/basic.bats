@@ -9,7 +9,7 @@ load ../helpers/run
 SYSCONT_NAME=""
 
 function setup() {
-  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 }
 
 function teardown() {

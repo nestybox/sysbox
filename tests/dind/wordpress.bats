@@ -16,7 +16,7 @@ function wait_for_inner_dockerd() {
 
   # launch a sys container; we use a ubuntu-based sys container to
   # work-around sysvisor issue #270.
-  SYSCONT_NAME=$(docker_run --hostname sc nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --hostname sc nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
