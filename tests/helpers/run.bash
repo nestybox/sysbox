@@ -59,7 +59,7 @@ function __docker() {
 
 # Executes docker run with sysvisor-runc; returns the container id
 function docker_run() {
-  docker run --runtime=sysvisor-runc --rm -d "$@"
+  docker run --runtime=sysvisor-runc -d "$@"
   [ "$status" -eq 0 ]
 
   docker ps --format "{{.ID}}"
