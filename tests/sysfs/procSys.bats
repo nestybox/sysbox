@@ -150,7 +150,7 @@ function compare_syscont_unshare() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sc2=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+  sc2=$(docker_run --rm nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 
   # For each /proc/sys control associated with a namespaced resource,
   # modify the value in the sys container and check isolation. Then
@@ -280,7 +280,7 @@ EOF
 
   chmod +x ${HOME}/worker.sh
 
-  sc=$(docker_run \
+  sc=$(docker_run --rm \
          --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
          nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 
@@ -339,7 +339,7 @@ EOF
 
   # deploy the sys containers
   for i in $(seq 1 $num_sc); do
-    syscont[$i]=$(docker_run \
+    syscont[$i]=$(docker_run --rm \
                     --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
                     nestybox/sys-container:debian-plus-docker tail -f /dev/null)
   done
@@ -386,7 +386,7 @@ EOF
 
   chmod +x ${HOME}/worker.sh
 
-  sc=$(docker_run \
+  sc=$(docker_run --rm \
          --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
          nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 

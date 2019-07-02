@@ -27,7 +27,7 @@ load ../helpers/run
 
   # start multiple sys containers
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" debian:latest tail -f /dev/null)
   done
 
   # verify each got an exclusive uid(gid) range of 64k each
@@ -86,7 +86,7 @@ load ../helpers/run
   num_syscont=2
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" debian:latest tail -f /dev/null)
   done
 
   # start 3rd sys container and verify this fails due to no uid availability
@@ -128,7 +128,7 @@ load ../helpers/run
   num_syscont=4
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --hostname "syscont_$i" debian:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" debian:latest tail -f /dev/null)
 
     docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'"
     [ "$status" -eq 0 ]

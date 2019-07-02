@@ -18,7 +18,7 @@ function sv_runc() {
 }
 
 function docker_run() {
-  docker run --runtime=sysvisor-runc --rm -d "$@"
+  docker run --runtime=sysvisor-runc -d "$@"
 }
 
 function docker_stop() {
