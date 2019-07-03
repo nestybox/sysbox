@@ -6,15 +6,9 @@
 
 load ../helpers/run
 
-function setup() {
-  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
-}
+@test "dsVolMgr basic" {
 
-function teardown() {
-  docker_stop "$SYSCONT_NAME"
-}
-
-@test "sysvisor-mgr dsVolMgr" {
+  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:debian-plus-docker tail -f /dev/null)
 
   #
   # verify things look good inside the sys container
@@ -47,9 +41,97 @@ function teardown() {
 
   run sh -c "stat /var/lib/sysvisor/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSVISOR_UID\""
   [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
 }
 
-#@test "sysvisor-mgr dsVolMgr copy-up" {
+@test "dsVolMgr persistence" {
+
+  # Verify the sys container docker-store vol persists across container
+  # start-stop-start events
+
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker start "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/test"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker rm "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+}
+
+@test "dsVolMgr non-persistence" {
+
+  # Verify the sys container docker-store vol is removed when a
+  # container is removed
+
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+
+  # short ID -> full ID
+  run sh -c "docker inspect \"$SYSCONT_NAME\" | jq '.[0] | .Id' | sed 's/\"//g'"
+  [ "$status" -eq 0 ]
+  sc_id="$output"
+
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  [ "$status" -eq 0 ]
+
+  run cat "/var/lib/sysvisor/docker/$sc_id/test"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  run cat "/var/lib/sysvisor/docker/$sc_id/test"
+  [ "$status" -eq 0 ]
+
+  docker rm "$SYSCONT_NAME"
+
+  run cat "/var/lib/sysvisor/docker/$sc_id/test"
+  [ "$status" -eq 1 ]
+
+  run cat "/var/lib/sysvisor/docker/$sc_id"
+  [ "$status" -eq 1 ]
+}
+
+@test "dsVolMgr consecutive restart" {
+
+  SYSCONT_NAME=$(docker_run nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  for i in $(seq 1 5); do
+    docker start "$SYSCONT_NAME"
+    [ "$status" -eq 0 ]
+
+    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "data" ]]
+
+    docker_stop "$SYSCONT_NAME"
+    [ "$status" -eq 0 ]
+  done
+
+  docker rm "$SYSCONT_NAME"
+}
+
+#@test "sys-mgr dsVolMgr copy-up" {
   #
   # TODO: verify dsVolMgr copy-up by creating a sys container image with contents in /var/lib/docker
   # and checking that the contents are copied to the /var/lib/sysvisor/docker/<syscont-name> and
