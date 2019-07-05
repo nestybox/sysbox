@@ -10,3 +10,6 @@
 [submodule "sysvisor-mgr"]
 	path = sysvisor-mgr
 	url = git@github.com:nestybox/sysvisor-mgr.git
+[submodule "shiftfs"]
+	path = shiftfs
+	url = git@github.com:nestybox/shiftfs.git
