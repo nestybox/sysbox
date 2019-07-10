@@ -4,12 +4,19 @@
 # debugging purposes.
 export DH_VERBOSE = 1
 
+# Shiftfs module name.
+export SHIFTFS_MOD_NAME = shiftfs
+
 override_dh_auto_build:
 	# Build sysvisor's components.
 	cd sysvisor && make sysvisor
 
 override_dh_auto_test:
 
+# ONESHELL attribute to ensure that all instruccions in this target are executed
+# within a single shell process.
+.ONESHELL:
+SHELL=/bin/bash
 override_dh_auto_install:
 	# Sysvisor binaries will be installed through the regular (makefile) process.
 	install -D -m0755 sysvisor/sysvisor-fs/sysvisor-fs \
@@ -30,6 +37,22 @@ override_dh_auto_install:
 	# Sysvisor's sysctl.d config-file installation.
 	install -D -m 0644 /sources/sysvisor-systemd.conf \
 		debian/sysvisor/lib/systemd/system/sysvisor-systemd.conf
+
+	# Iterate through all the kernel-headers present in the build-server and
+	# install the shiftfs modules previously compiled.
+	for d in /lib/modules/*; do
+
+		kernel_major_no=$$(echo $$d | cut -d"/" -f4 | cut -d"." -f1)
+		if [[ $${kernel_major_no} -lt 5 ]]; then
+			echo "Skipping kernel $${d}"
+			continue
+		fi
+
+		echo "Installing $${SHIFTFS_MOD_NAME} module for kernel $${d}"
+		install -D -m 0644 $${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko \
+			debian/sysvisor/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
+	done
+
 
 override_dh_install:
 	dh_install

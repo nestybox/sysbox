@@ -1,30 +1,30 @@
 #!/bin/bash
 
 
-# Sysvisor system requirements matrix:
+# Sysvisor kernel requirements matrix:
 #
-#   +=========================================================================================+
-#   |  Supported Distributions  |  Supported Kernels  |  Shiftfs mode  |  Userns-remap mode   |
-#   +=========================================================================================+
-#   |                           |                     |                |                      |
-#   |   Ubuntu Disco (19.04)    |        5.0+         |     yes        |         yes          |
-#   |                           |                     |                |                      |
-#   |   Ubuntu Cosmic (18.10)   |        4.18+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Ubuntu Bionic (18.04)   |        4.15+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Ubuntu Artful (17.10)   |        4.13+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Ubuntu Zesty (17.04)    |        4.10+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Ubuntu Yakkety (16.10)  |        4.8+         |     no         |         no           |
-#   |                           |                     |                |                      |
-#   |   Debian Buster (10)      |        4.19+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Debian Stretch (9)      |        4.19+        |     no         |         yes          |
-#   |                           |                     |                |                      |
-#   |   Debian Buster (10)      |        4.9+         |     no         |         no           |
-#   |___________________________|_____________________|________________|______________________|
+#   +========================================================================================+
+#   |  Supported Distributions  |  Supported Kernels  |  uid-shift mode  |   regular mode    |
+#   +========================================================================================+
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Disco (19.04)    |        5.x          |      yes         |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Cosmic (18.10)   |        4.18+        |      no          |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Bionic (18.04)   |        4.15+        |      yes (5.x)   |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Artful (17.10)   |        4.13+        |      no          |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Zesty (17.04)    |        4.10+        |      no          |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Ubuntu Yakkety (16.10)  |        4.8+         |      no          |        no         |
+#   |                           |                     |                  |                   |
+#   |   Debian Buster (10)      |        4.19+        |      no          |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Debian Stretch (9)      |        4.9+         |      no          |        yes        |
+#   |                           |                     |                  |                   |
+#   |   Debian Jessie (8)       |        3.16+        |      no          |        no         |
+#   |___________________________|_____________________|__________________|___________________|
 
 
 # At the moment, only Ubuntu distro is supported.
@@ -48,10 +48,10 @@ SHFITFS_MIN_SUPPORTED_DISTRO_RELEASE="19.04"
 # Compare two versions in SemVer format (borrowed from stack-overflow).
 #
 # Examples:  (1.0.1, 1.0.1) = 0
-#            (1.0.1, 1.0.2) = 1
-#            (1.0.1, 1.0.0) = 2
+#            (1.0.1, 1.0.2) = 2
+#            (1.0.1, 1.0.0) = 1
 #            (1, 1.0) = 0
-#            (3.0.4.10, 3.0.4.2) = 2
+#            (3.0.4.10, 3.0.4.2) = 1
 #
 version_compare() {
 
@@ -88,7 +88,7 @@ version_compare() {
     return 0
 }
 
-# Enforce Sysvisor's system-requirements matrix.
+# Enforce Sysvisor's kernel-requirements matrix.
 #
 # TBD:
 #       1) Shitffs-mode validation.

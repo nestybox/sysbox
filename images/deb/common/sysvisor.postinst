@@ -9,7 +9,17 @@ dockercfg="/etc/docker/daemon.json"
 # Sysvisor-fs' default mountpoint path.
 mountpoint="/var/lib/sysvisorfs"
 
+# Shiftfs' minimum-supported kernel
+SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
 
+# Shiftfs module-name
+shiftfs_mod_name="shiftfs"
+
+# Global var to track the activation/support of uid-shifting functionality.
+uid_shift_mode=false
+
+
+# Creates sysvisor-fs mountpoint.
 create_mountpoint() {
 
     if [[ -d ${mountpoint} ]]; then
@@ -24,6 +34,7 @@ create_mountpoint() {
     fi
 }
 
+# Enables the utilization of user-namespaces in a system.
 enable_user_namespaces() {
 
     val=$(sysctl kernel.unprivileged_userns_clone)
@@ -33,6 +44,7 @@ enable_user_namespaces() {
     fi
 }
 
+# Adds user/group in charge of running all sysvisor components.
 add_sysvisor_user() {
 
     if ! getent passwd | grep -q "^sysvisor:"; then
@@ -41,27 +53,112 @@ add_sysvisor_user() {
     fi
 }
 
+# Function to asses the possibility of activating uid-shifting mode, and load the
+# corresponding kernel module if expected requirements are met.
+load_uid_shift_module() {
+
+    local cur_kernel=$(uname -r)
+    local cur_kernel_major=$(uname -r | cut -d'.' -f1)
+    local shiftfs_kernel_major=$(echo ${SHIFTFS_MIN_SUPPORTED_KERNEL} | cut -d'.' -f1)
+
+    # Check if the existing kernel matches shiftfs' requirements, otherwise
+    # return as there's nothing else to be done here.
+    if [[ ${cur_kernel_major} -lt ${shiftfs_kernel_major} ]]; then
+        printf "Current kernel %s does not support uid-shifting funtionality. " \
+               "Defaulting to regular / non-uid-shifting mode...\n" \
+               ${cur_kernel}
+        return
+    fi
+
+    # Exit here if the package being installed doesn't include a shiftfs module
+    # built for a kernel version that matches the current one.
+    if ! dpkg -L $DPKG_MAINTSCRIPT_PACKAGE | egrep "${cur_kernel}.*${shiftfs_mod_name}.*.ko" >/dev/null 2>&1; then
+        return
+    fi
+
+    printf "Current kernel %s does support uid-shifting functionality. " \
+           "Activating uid-shifting-mode...\n" \
+            ${cur_kernel}
+
+    # Enabling uid-shifting mode.
+    uid_shift_mode=true
+
+    # Verify if there's an existing shiftfs module already loaded, and if that's
+    # the case, unload it prior to the installation of the new one.
+    if lsmod | grep ${shiftfs_mod_name} >/dev/null 2>&1; then
+        printf "Existing %s module already loaded. Proceeding to unload it...\n" \
+               ${shiftfs_mod_name}
+        if ! rmmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
+            printf "Could not properly unload %s module. Exitting...\n" \
+                   ${shiftfs_mod_name}
+            return
+        fi
+    fi
+
+    printf "Loading %s module...\n" ${shiftfs_mod_name}
+    if ! insmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
+        printf "Could not properly load %s module. Exitting...\n" \
+               ${shiftfs_mod_name}
+        return
+    fi
+}
+
+# Create/Modify dockerd configuration to satisfy Sysvisor's requirements.
+#
+# There are two operation-modes that dictate the presence/absence of
+# a 'userns-remap' entry in dockerd's config file:
+#
+# 1) uid-shifting mode: In this case no 'userns-remap' entry is required in
+#    dockerd's configuration.
+# 2) regular mode: In this mode a 'userns-remap' entry is required by making
+#    used of the 'sysvisor' uid.
+#
+# Regardless of the oper-mode being elected, dockerd config file must be always
+# updated to introduce the sysvisor-runc runtime.
 adjust_docker_config() {
 
-    echo "Adjusting 'dockerd' configuration..."
+    echo "Adjusting dockerd configuration..."
 
-    # If no dockerd's default config-file exist, or if there's no content on it,
-    # create one with a bare json squeleton.
+    local docker_restart_required=false
+    local docker_sighup_required=false
+
+    # If no dockerd default config-file exist, or if there's no content on it,
+    # create one with a bare json layout.
     if [[ ! -f ${dockercfg} ]] || [[ ! -s ${dockercfg} ]]; then
         touch ${dockercfg}
         echo -e "{\n}" > ${dockercfg}
     fi
 
-    # If no 'userns-remap' key-entry is present, or its associated value is
-    # empty, proceed to create a key and set its value to 'sysvisor' user.
-    # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
-    # it displays inconsistence behavior), hence the need for the auxiliar
-    # 'tmp' file.
-    if [[ $(jq 'has("userns-remap")' ${dockercfg}) = false ]] ||
-        [[ $(jq '."userns-remap"' ${dockercfg}) = "\"\"" ]]; then
+    # Consider adding a 'userns-remap' entry only if uid-shift-mode is turned
+    # off.
+    if [[ ${uid_shift_mode} = false ]]; then
+        # If no 'userns-remap' key-entry is present, or if its associated value
+        # is empty, proceed to create a key and set its value to 'sysvisor' user.
+        # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
+        # it displays inconsistent behavior), hence the need for the auxiliar
+        # 'tmp' file.
+        if [[ $(jq 'has("userns-remap")' ${dockercfg}) = false ]] ||
+            [[ $(jq '."userns-remap"' ${dockercfg}) = "\"\"" ]]; then
 
-        jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
-            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+            printf "Adding 'sysvisor' userns-remap entry to dockerd config file...\n"
+            jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
+                ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+            docker_restart_required=true
+        fi
+
+    else
+        # If uid_shift_mode is enabled verify that no 'userns-remap' entry exists
+        # for 'sysvisor' user, and if that's the case, proceed to eliminate it.
+        if [[ $(jq 'has("userns-remap")' ${dockercfg}) = true ]] &&
+            [[ $(jq '."userns-remap"' ${dockercfg}) = "\"sysvisor\"" ]]; then
+
+            printf "Removing 'sysvisor' userns-remap entry from dockerd config file...\n"
+            jq --indent 4 '. + {"userns-remap": ""}' \
+                ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+            docker_restart_required=true
+        fi
     fi
 
     # If no 'runtimes' key-entry is present, proceed to add one.
@@ -69,11 +166,29 @@ adjust_docker_config() {
         jq --indent 4 '. + {"runtimes": {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}}' \
             ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
 
+        docker_sighup_required=true
+
     # If no 'sysvisor-runc' runtime entry is present, proceed to add it.
     elif [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockercfg}) = false ]]; then
-        #jq '. += {"runtimes": {"system-runc": {"path": "/usr/local/sbin/sysvsor-runc"}}}' ${dockercfg} > ${dockercfg}
         jq --indent 4 '.runtimes |= . + {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}' \
             ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+        docker_sighup_required=true
+    fi
+
+    # Restart dockerd if config changes cannot be processed on-the-fly. Note
+    # that this action may disrupt the existing containers (unless dockerd is
+    # running with 'live-restore' feature enabled). On the other hand, if no
+    # critical change has been made to config, simply send a sighup to dockerd
+    # to have its config-file being re-parsed.
+    if [[ ${docker_restart_required} = true ]]; then
+        echo "Restarting docker service..."
+        systemctl restart docker
+        return
+    elif [[ $docker_sighup_required} = true ]]; then
+        echo "Sending SIGHUP signal to docker daemon..."
+	    kill -SIGHUP $(pidof dockerd)
+        return
     fi
 }
 
@@ -87,18 +202,17 @@ config_sysvisor() {
     # part of this package's installation process.
     enable_user_namespaces
 
-    # Adjust dockerd configuration.
-    adjust_docker_config
-
 	# Add 'sysvisor' user for scenarios requiring a single UID/GID pool being
     # shared across all system-containers. This user must match the one defined
     # in the docker configuration file.
     # Add 'sysvisor' user.
     add_sysvisor_user
 
-	# Have dockerd re-read its config file -- we are just sending a 'sighup'
-	# signal here, so no service impact is expected.
-	kill -SIGHUP $(pidof dockerd)
+    # Load our shiftfs module if its requirements are properly met.
+    load_uid_shift_module
+
+    # Adjust dockerd configuration.
+    adjust_docker_config
 }
 
 

@@ -10,6 +10,44 @@ tar -C /root/build-deb -xzf /sources/sysvisor.tgz
 # Obtain Sysvisor version out of the source tree.
 VERSION=$(cat /root/build-deb/sysvisor/VERSION)
 
+###############################################################################
+#
+# Create shiftfs-dkms debian package. This will be a traditional / full-blown
+# package including source-code and changelogs. The obtained binary modules
+# (*.ko files) will be later on included in the final sysvisor's debian package.
+#
+###############################################################################
+
+# Shiftfs module dkms debian package
+cd sysvisor/shiftfs/${DISTRO}-${SUITE}
+
+# Set variables required to satisfy 'changelog' layout requirements.
+EPOCH=1
+EPOCH_SEP=":"
+debSource="$(awk -F ': ' '$1 == "Source" { print $2; exit }' debian/control)"
+debMaintainer="$(awk -F ': ' '$1 == "Maintainer" { print $2; exit }' debian/control)"
+debDate="$(date --rfc-2822)"
+
+# Generate log entry to update 'changelog' file.
+cat > "debian/changelog" <<-EOF
+$debSource (${EPOCH}${EPOCH_SEP}${VERSION}-0~${DISTRO}-${SUITE}) $SUITE; urgency=low
+  * Version: $VERSION
+ -- $debMaintainer  $debDate
+EOF
+
+dpkg-buildpackage -uc -us -I.git
+dpkg -i ../shiftfs-dkms_${VERSION}-0~${DISTRO}-${SUITE}_*.deb
+cd -
+
+
+###############################################################################
+#
+# Create sysvisor's debian package. Note that the generated package will
+# include all the traditional debian artifacts (tar, dsc, deb, etc), thereby,
+# we should ensure that only the *.deb file (binaries) is externally shared.
+#
+###############################################################################
+
 # Set variables required to satisfy 'changelog' layout requirements.
 EPOCH=1
 EPOCH_SEP=":"
@@ -28,3 +66,6 @@ EOF
 dpkg-buildpackage -uc -us -I.git
 mkdir -p /build
 mv -v /root/sysvisor* /build
+
+
+/bin/bash
