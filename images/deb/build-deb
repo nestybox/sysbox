@@ -66,6 +66,3 @@ EOF
 dpkg-buildpackage -uc -us -I.git
 mkdir -p /build
 mv -v /root/sysvisor* /build
-
-
-/bin/bash
