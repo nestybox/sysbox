@@ -2,6 +2,9 @@
 
 set -e
 
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
 # Dockerd default configuration file.
 dockercfg="/etc/docker/daemon.json"
 #dockercfg="daemon.json.not.present"
@@ -26,10 +29,8 @@ create_mountpoint() {
         return
     fi
 
-    echo "Creating default mountpoint '${mountpoint}'..."
     mkdir -p ${mountpoint}
     if [[ ! -d ${mountpoint} ]]; then
-        printf "Could not create Sysvisor-fs mountpoint.\n"
         exit 1
     fi
 }
@@ -39,7 +40,6 @@ enable_user_namespaces() {
 
     val=$(sysctl kernel.unprivileged_userns_clone)
     if [[ "${val##* }" = 0 ]]; then
-        echo "Enabling user namespaces..."
         sysctl -w kernel.unprivileged_userns_clone=1 2>/dev/null
     fi
 }
@@ -48,7 +48,6 @@ enable_user_namespaces() {
 add_sysvisor_user() {
 
     if ! getent passwd | grep -q "^sysvisor:"; then
-        echo "Adding system user 'sysvisor'..."
         adduser sysvisor --shell=/bin/false --no-create-home 2>/dev/null
     fi
 }
@@ -64,9 +63,6 @@ load_uid_shift_module() {
     # Check if the existing kernel matches shiftfs' requirements, otherwise
     # return as there's nothing else to be done here.
     if [[ ${cur_kernel_major} -lt ${shiftfs_kernel_major} ]]; then
-        printf "Current kernel %s does not support uid-shifting funtionality. " \
-               "Defaulting to regular / non-uid-shifting mode...\n" \
-               ${cur_kernel}
         return
     fi
 
@@ -76,29 +72,18 @@ load_uid_shift_module() {
         return
     fi
 
-    printf "Current kernel %s does support uid-shifting functionality. " \
-           "Activating uid-shifting-mode...\n" \
-            ${cur_kernel}
-
     # Enabling uid-shifting mode.
     uid_shift_mode=true
 
     # Verify if there's an existing shiftfs module already loaded, and if that's
     # the case, unload it prior to the installation of the new one.
     if lsmod | grep ${shiftfs_mod_name} >/dev/null 2>&1; then
-        printf "Existing %s module already loaded. Proceeding to unload it...\n" \
-               ${shiftfs_mod_name}
         if ! rmmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
-            printf "Could not properly unload %s module. Exitting...\n" \
-                   ${shiftfs_mod_name}
             return
         fi
     fi
 
-    printf "Loading %s module...\n" ${shiftfs_mod_name}
     if ! insmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
-        printf "Could not properly load %s module. Exitting...\n" \
-               ${shiftfs_mod_name}
         return
     fi
 }
@@ -111,13 +96,11 @@ load_uid_shift_module() {
 # 1) uid-shifting mode: In this case no 'userns-remap' entry is required in
 #    dockerd's configuration.
 # 2) regular mode: In this mode a 'userns-remap' entry is required by making
-#    used of the 'sysvisor' uid.
+#    use of the 'sysvisor' uid.
 #
 # Regardless of the oper-mode being elected, dockerd config file must be always
 # updated to introduce the sysvisor-runc runtime.
 adjust_docker_config() {
-
-    echo "Adjusting dockerd configuration..."
 
     local docker_restart_required=false
     local docker_sighup_required=false
@@ -140,7 +123,6 @@ adjust_docker_config() {
         if [[ $(jq 'has("userns-remap")' ${dockercfg}) = false ]] ||
             [[ $(jq '."userns-remap"' ${dockercfg}) = "\"\"" ]]; then
 
-            printf "Adding 'sysvisor' userns-remap entry to dockerd config file...\n"
             jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
                 ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
 
@@ -153,7 +135,6 @@ adjust_docker_config() {
         if [[ $(jq 'has("userns-remap")' ${dockercfg}) = true ]] &&
             [[ $(jq '."userns-remap"' ${dockercfg}) = "\"sysvisor\"" ]]; then
 
-            printf "Removing 'sysvisor' userns-remap entry from dockerd config file...\n"
             jq --indent 4 '. + {"userns-remap": ""}' \
                 ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
 
@@ -177,18 +158,28 @@ adjust_docker_config() {
     fi
 
     # Restart dockerd if config changes cannot be processed on-the-fly. Note
-    # that this action may disrupt the existing containers (unless dockerd is
+    # that this action may impact the existing containers (unless dockerd is
     # running with 'live-restore' feature enabled). On the other hand, if no
-    # critical change has been made to config, simply send a sighup to dockerd
-    # to have its config-file being re-parsed.
+    # disruptive changes have been made to config, simply send a sighup to
+    # dockerd to have its config-file being re-parsed.
     if [[ ${docker_restart_required} = true ]]; then
-        echo "Restarting docker service..."
-        systemctl restart docker
-        return
+
+        # Depending on the user's responses to (debconf) questions formulated at
+        # pre-installation time, we will either inform user of the need to restart
+        # dockerd, or we will automatically do it as part of this installation
+        # process.
+        db_get sysvisor/docker_restart
+        if [ "$RET" = "false" ]; then
+            db_input critical sysvisor/docker_manual_restart || true
+            echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
+        else
+            echo -e "\nDisruptive changes made to docker configuration. Restarting docker service..."
+            systemctl restart docker
+        fi
+
     elif [[ $docker_sighup_required} = true ]]; then
-        echo "Sending SIGHUP signal to docker daemon..."
+        echo -e "\nNon-disruptive changes made to docker configuration. Sending SIGHUP signal to docker daemon...\n"
 	    kill -SIGHUP $(pidof dockerd)
-        return
     fi
 }
 

@@ -1,0 +1,13 @@
+
+Template: sysvisor/docker_restart
+Type: boolean
+Description: Automatically restart docker service if needed?
+ As part of Sysvisor's installation process, dockerd configuration will need to be updated.
+ In certain scenarios, Sysvisor may need to restart dockerd service for some of these changes
+ to be taken into account. If you answer 'No' here, bear in mind that you will be expected
+ to manually restart dockerd service if the installation process indicate so.
+
+Template: sysvisor/docker_manual_restart
+Type: note
+Description: Sysvisor configuration changes require a manual docker-service restart!
+
