@@ -7,7 +7,6 @@ set -e
 
 # Dockerd default configuration file.
 dockercfg="/etc/docker/daemon.json"
-#dockercfg="daemon.json.not.present"
 
 # Sysvisor-fs' default mountpoint path.
 mountpoint="/var/lib/sysvisorfs"
@@ -135,8 +134,10 @@ adjust_docker_config() {
         if [[ $(jq 'has("userns-remap")' ${dockercfg}) = true ]] &&
             [[ $(jq '."userns-remap"' ${dockercfg}) = "\"sysvisor\"" ]]; then
 
-            jq --indent 4 '. + {"userns-remap": ""}' \
+            jq 'del(."userns-remap")' \
                 ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+            #jq --indent 4 '. + {"userns-remap": ""}' \
+            #    ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
 
             docker_restart_required=true
         fi
@@ -171,13 +172,14 @@ adjust_docker_config() {
         db_get sysvisor/docker_restart
         if [ "$RET" = "false" ]; then
             db_input critical sysvisor/docker_manual_restart || true
+            db_stop
             echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
         else
             echo -e "\nDisruptive changes made to docker configuration. Restarting docker service..."
             systemctl restart docker
         fi
 
-    elif [[ $docker_sighup_required} = true ]]; then
+    elif [[ ${docker_sighup_required} = true ]]; then
         echo -e "\nNon-disruptive changes made to docker configuration. Sending SIGHUP signal to docker daemon...\n"
 	    kill -SIGHUP $(pidof dockerd)
     fi
