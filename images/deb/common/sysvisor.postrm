@@ -2,18 +2,117 @@
 
 set -e
 
-# As per Debian packaging policies, package elimination should not remove
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+# Dockerd default configuration file.
+dockercfg="/etc/docker/daemon.json"
+
+# Shiftfs module-name
+shiftfs_mod_name="shiftfs"
+
+# Note: As per Debian packaging policies, package elimination should not remove
 # logfiles. Therefore we shouldn't delete the 'sysvisor' user/group previously
-# created, as it would leave files with dangling ownership.
+# created by Sysvisor's installation process, as it would leave files with
+# dangling ownership.
 
-# TBD:
 
-# Eliminate sysvisor-runc runtime from dockerd configuration.
+# Unload shiftfs module. Note that by the time this function is invoked, sysvisor
+# service should have been already stopped by debian's prerm installation script.
+unload_uid_shift_module() {
 
-# Eliminate the 'sysvisor' userns-remap instruction if present.
+    # If there's an existing shiftfs module loaded, go ahead and unload it.
+    if lsmod | grep ${shiftfs_mod_name} >/dev/null 2>&1; then
+        echo -e "Unloading ${shiftfs_mod_name} module..."
+        if ! rmmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
+            echo -e "Could not unload ${shiftfs_mod_name} module"
+            return
+        fi
+    fi
+}
 
-# Restart dockerd.
+# Modify dockerd configuration to eliminate Sysvisor's associated entries.
+adjust_docker_config() {
 
-# Stop all sysvisor's services and eliminate all the associated systemd data.
+    local docker_restart_required=false
+    local docker_sighup_required=false
+
+    # Eliminate sysvisor's userns-remap entry if present.
+    if [[ $(jq 'has("userns-remap")' ${dockercfg}) = true ]] &&
+        [[ $(jq '."userns-remap"' ${dockercfg}) = "\"sysvisor\"" ]]; then
+
+        #jq --indent 4 '."userns-remap" = ""' ${dockercfg}
+        jq 'del(."userns-remap")' \
+            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+        docker_restart_required=true
+    fi
+
+    # Eliminate sysvisor's runtime entry if present.
+    if [[ $(jq 'has("runtimes")' ${dockercfg}) = true ]] &&
+         [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockercfg}) = true ]]; then
+
+        jq 'del(.runtimes."sysvisor-runc")' \
+            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+
+        docker_sighup_required=true
+    fi
+
+    # Restart dockerd if above config changes cannot be processed on-the-fly.
+    # Note that this action may impact the existing containers. On the other
+    # hand, if no disruptive changes have been made to config, simply send a
+    # sighup to dockerd to have its config-file being re-parsed.
+    if [[ ${docker_restart_required} = true ]]; then
+
+        # Depending on the user's responses to (debconf) questions formulated at
+        # installation time, we will either inform user of the need to restart
+        # dockerd, or we will automatically do it as part of this uninstallation
+        # process.
+        db_get sysvisor/docker_restart
+        if [ "$RET" = "false" ]; then
+            db_input critical sysvisor/docker_manual_restart || true
+            db_stop
+            echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
+        else
+            echo -e "\nDisruptive changes made to docker configuration. Restarting docker service..."
+            systemctl restart docker
+        fi
+
+    elif [[ $docker_sighup_required} = true ]]; then
+        echo -e "\nNon-disruptive changes made to docker configuration. Sending SIGHUP signal to docker daemon...\n"
+	    kill -SIGHUP $(pidof dockerd)
+    fi
+}
+
+
+case "$1" in
+    purge)
+
+        # Clear the debconf variable
+        #db_purge
+
+        # TBD. Ideally, we should be able to unload shiftfs module at purge time,
+        # but that requires the capability of sysvisor service being able to stop
+        # all the system containers. Will comment this instruction till this
+        # feature is available.
+        # unload_uid_shift_module
+
+        # Adjust docker config to eliminate entries added by Sysvisor installation.
+        adjust_docker_config
+    ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
 
 #DEBHELPER#
+
+db_stop
+
+exit 0
