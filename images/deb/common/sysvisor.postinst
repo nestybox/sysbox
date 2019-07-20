@@ -46,8 +46,8 @@ enable_user_namespaces() {
 # Adds user/group in charge of running all sysvisor components.
 add_sysvisor_user() {
 
-    if ! getent passwd | grep -q "^sysvisor:"; then
-        adduser sysvisor --shell=/bin/false --no-create-home 2>/dev/null
+    if ! getent passwd | grep "^sysvisor:" >/dev/null 2>&1; then
+        useradd -r -s /bin/false sysvisor
     fi
 }
 
