@@ -48,9 +48,11 @@ override_dh_auto_install:
 			continue
 		fi
 
-		echo "Installing $${SHIFTFS_MOD_NAME} module for kernel $${d}"
-		install -D -m 0644 $${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko \
-			debian/sysvisor/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
+		if [[ -f "$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko" ]]; then
+			echo "Installing $${SHIFTFS_MOD_NAME} module for kernel $${d}"
+			install -D -m 0644 $${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko \
+				debian/sysvisor/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
+		fi
 	done
 
 
@@ -65,4 +67,4 @@ override_dh_usrlocal:
 	dh $@
 
 override_dh_installsystemd:
-	dh_installsystemd --name=sysvisor sysvisor.service
+	dh_installsystemd sysvisor.service sysvisor-mgr.service sysvisor-fs.service
