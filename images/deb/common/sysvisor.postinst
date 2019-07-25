@@ -5,8 +5,9 @@ set -e
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-# Dockerd default configuration file.
-dockercfg="/etc/docker/daemon.json"
+# Dockerd default configuration dir/file.
+dockerCfgDir="/etc/docker"
+dockerCfgFile="${dockerCfgDir}/daemon.json"
 
 # Sysvisor-fs' default mountpoint path.
 mountpoint="/var/lib/sysvisorfs"
@@ -48,6 +49,16 @@ add_sysvisor_user() {
 
     if ! getent passwd | grep "^sysvisor:" >/dev/null 2>&1; then
         useradd -r -s /bin/false sysvisor
+    fi
+
+    # Temporarily adding a static subordinate UIDs/GIDs range for sysvisor user.
+    # A more proper logic will be soon implemented by sysvisor-mgr, and then,
+    # the following instructions shall be eliminated from here.
+    if ! egrep "^sysvisor:" /etc/subuid >/dev/null 2>&1; then
+        sed -i "\$asysvisor:1000000:65536" /etc/subuid
+    fi
+    if ! egrep "^sysvisor:" /etc/subgid >/dev/null 2>&1; then
+        sed -i "\$asysvisor:1000000:65536" /etc/subgid
     fi
 }
 
@@ -106,9 +117,10 @@ adjust_docker_config() {
 
     # If no dockerd default config-file exist, or if there's no content on it,
     # create one with a bare json layout.
-    if [[ ! -f ${dockercfg} ]] || [[ ! -s ${dockercfg} ]]; then
-        touch ${dockercfg}
-        echo -e "{\n}" > ${dockercfg}
+    if [[ ! -f ${dockerCfgFile} ]] || [[ ! -s ${dockerCfgFile} ]]; then
+        mkdir -p ${dockerCfgDir}
+        touch ${dockerCfgFile}
+        echo -e "{\n}" > ${dockerCfgFile}
     fi
 
     # Consider adding a 'userns-remap' entry only if uid-shift-mode is turned
@@ -119,11 +131,11 @@ adjust_docker_config() {
         # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
         # it displays inconsistent behavior), hence the need for the auxiliar
         # 'tmp' file.
-        if [[ $(jq 'has("userns-remap")' ${dockercfg}) = false ]] ||
-            [[ $(jq '."userns-remap"' ${dockercfg}) = "\"\"" ]]; then
+        if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = false ]] ||
+            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"\"" ]]; then
 
             jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
-                ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+                ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
             docker_restart_required=true
         fi
@@ -131,31 +143,38 @@ adjust_docker_config() {
     else
         # If uid_shift_mode is enabled verify that no 'userns-remap' entry exists
         # for 'sysvisor' user, and if that's the case, proceed to eliminate it.
-        if [[ $(jq 'has("userns-remap")' ${dockercfg}) = true ]] &&
-            [[ $(jq '."userns-remap"' ${dockercfg}) = "\"sysvisor\"" ]]; then
+        if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = true ]] &&
+            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysvisor\"" ]]; then
 
             jq 'del(."userns-remap")' \
-                ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
-            #jq --indent 4 '. + {"userns-remap": ""}' \
-            #    ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+                ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
+            # Also a valid approach, leaving it here in case it's needed in the
+            # future.
+            # jq --indent 4 '. + {"userns-remap": ""}' \
+            #    ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
             docker_restart_required=true
         fi
     fi
 
     # If no 'runtimes' key-entry is present, proceed to add one.
-    if [[ $(jq 'has("runtimes")' ${dockercfg}) = false ]]; then
+    if [[ $(jq 'has("runtimes")' ${dockerCfgFile}) = false ]]; then
         jq --indent 4 '. + {"runtimes": {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}}' \
-            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+            ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
         docker_sighup_required=true
 
     # If no 'sysvisor-runc' runtime entry is present, proceed to add it.
-    elif [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockercfg}) = false ]]; then
+    elif [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockerCfgFile}) = false ]]; then
         jq --indent 4 '.runtimes |= . + {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}' \
-            ${dockercfg} > tmp.json && mv tmp.json ${dockercfg}
+            ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
         docker_sighup_required=true
+    fi
+
+    # Skip all docker-related processing if this one is not installed.
+    if ! dpkg -s docker-ce >/dev/null 2>&1; then
+        return
     fi
 
     # Restart dockerd if config changes cannot be processed on-the-fly. Note
