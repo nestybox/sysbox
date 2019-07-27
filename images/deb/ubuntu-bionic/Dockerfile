@@ -9,6 +9,7 @@ RUN apt-get update &&  \
     curl               \
     devscripts         \
     equivs             \
+    dkms               \
     git                \
     wget               \
     pkg-config         \
@@ -51,5 +52,16 @@ RUN mkdir -p ~/bin/protoc \
 
 WORKDIR /root/build-deb
 COPY build-deb /root/build-deb/build-deb
+
+# Fetch all kernel-headers supported by Nestybox's shiftfs module. This will be
+# used to build shiftfs' module for all the kernel releases that we may encounter.
+#
+# TODO: Find a more efficient/programmatic approach to generate this list.
+RUN apt-get install -y \
+    linux-headers-5.0.0-15-generic \
+    linux-headers-5.0.0-16-generic \
+    linux-headers-5.0.0-17-generic \
+    linux-headers-5.0.0-19-generic \
+    linux-headers-5.0.0-20-generic
 
 ENTRYPOINT ["/root/build-deb/build-deb"]

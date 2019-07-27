@@ -82,9 +82,6 @@ load_uid_shift_module() {
         return
     fi
 
-    # Enabling uid-shifting mode.
-    uid_shift_mode=true
-
     # Verify if there's an existing shiftfs module already loaded, and if that's
     # the case, unload it prior to the installation of the new one.
     if lsmod | grep ${shiftfs_mod_name} >/dev/null 2>&1; then
@@ -96,6 +93,9 @@ load_uid_shift_module() {
     if ! insmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
         return
     fi
+
+    # Enabling uid-shifting mode.
+    uid_shift_mode=true
 }
 
 # Create/Modify dockerd configuration to satisfy Sysvisor's requirements.
