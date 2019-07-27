@@ -53,8 +53,10 @@ RUN mkdir -p ~/bin/protoc \
 WORKDIR /root/build-deb
 COPY build-deb /root/build-deb/build-deb
 
-# Fetch all kernel-headers supported on Ubuntu-disco. This will be used to build
-# shiftfs' module for all the kernel releases that we may encounter.
+# Fetch all kernel-headers supported by Nestybox's shiftfs module. This will be
+# used to build shiftfs' module for all the kernel releases that we may encounter.
+#
+# TODO: Find a more efficient/programmatic approach to generate this list.
 RUN apt-get install -y \
     linux-headers-5.0.0-13-generic \
     linux-headers-5.0.0-15-generic \
