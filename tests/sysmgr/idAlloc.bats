@@ -6,6 +6,25 @@
 
 load ../helpers/run
 
+@test "/etc/subuid check" {
+
+  # verify sysvisor-mgr --subid-range option works
+  sv_mgr_stop
+  sv_mgr_start --subid-range 131072
+  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+  [ "$uid_size" -eq 131072 ]
+  [ "$gid_size" -eq 131072 ]
+
+  # verify sysvisor-mgr default config of /etc/subuid(gid)
+  sv_mgr_stop
+  sv_mgr_start
+  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+  [ "$uid_size" -eq 268435456 ]
+  [ "$gid_size" -eq 268435456 ]
+}
+
 @test "uid alloc basic" {
 
   if [ -z "$SHIFT_UIDS" ]; then
@@ -73,14 +92,7 @@ load ../helpers/run
   fi
 
   sv_mgr_stop
-
-  # configure /etc/subuid(gid) to 128K range
-  uid_map=$(grep sysvisor /etc/subuid)
-  gid_map=$(grep sysvisor /etc/subgid)
-  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
-  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
-
-  sv_mgr_start --subid-policy "no-reuse"
+  sv_mgr_start --subid-policy "no-reuse" --subid-range 131072
 
   # start two sys containers
   num_syscont=2
@@ -102,8 +114,6 @@ load ../helpers/run
 
   # cleanup
   sv_mgr_stop
-  sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
-  sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
   sv_mgr_start
 }
 
@@ -114,14 +124,7 @@ load ../helpers/run
   fi
 
   sv_mgr_stop
-
-  # Configure /etc/subuid(gid) to 128K range
-  uid_map=$(grep sysvisor /etc/subuid)
-  gid_map=$(grep sysvisor /etc/subgid)
-  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subuid
-  sed -i 's/sysvisor:\(.*\):\(.*\)/sysvisor:\1:131072/g' /etc/subgid
-
-  sv_mgr_start
+  sv_mgr_start --subid-range 131072
 
   # Start 4 sys containers; the first two should get new ids; the last
   # two should get re-used ids.
@@ -153,7 +156,5 @@ load ../helpers/run
 
   # cleanup
   sv_mgr_stop
-  sed -i "s/sysvisor:.*/${uid_map}/g" /etc/subuid
-  sed -i "s/sysvisor:.*/${gid_map}/g" /etc/subgid
   sv_mgr_start
 }
