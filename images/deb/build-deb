@@ -39,9 +39,11 @@ $debSource (${EPOCH}${EPOCH_SEP}${VERSION}-0~${DISTRO}-${SUITE}) $SUITE; urgency
 EOF
 
   # Identify kernel headers not compatible with Nestybox's shiftfs module (only
-  # 5.x at this point), and temporarily move them outside the standard /lib/module
+  # +5.x at this point), and temporarily move them outside the standard /lib/module
   # path. This is just a hack to prevent shiftfs-dkms' module compilation
   # failures while trying to build over a non-supported (<5.x) kernel.
+  mkdir -p /lib/modules/tmp
+
   find /lib/modules -mindepth 1 -maxdepth 1 -type d \
     ! -name '5.*' -exec bash -c 'mkdir -p /lib/modules/tmp && mv {} /lib/modules/tmp/' \;
 
