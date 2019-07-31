@@ -45,7 +45,6 @@ EOF
                                      nginx:latest"
   [ "$status" -eq 0 ]
 
-  # DEBUG
   wait_for_inner_nginx
 
   # verify the nginx container is up and running
