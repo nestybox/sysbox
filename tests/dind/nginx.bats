@@ -18,7 +18,7 @@ function wait_for_inner_nginx() {
 
   # Deploys a nginx container inside the sys container and verifies it works
 
-  # this mysql script will be passed to the mysql inner container
+  # this html file will be passed to the nginx container
   cat << EOF > ${HOME}/index.html
 <html>
 <header><title>test</title></header>
@@ -28,7 +28,7 @@ Nginx Test!
 </html>
 EOF
 
-  # launch sys container; bind-mount the hello_world.html into it
+  # launch sys container; bind-mount the index.html into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/index.html,target=/html/index.html \
                    nestybox/sys-container:debian-plus-docker tail -f /dev/null)
@@ -94,7 +94,7 @@ EOF
                                      busybox:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  # use the nginx client to access the nginx server
+  # use the client to access the nginx server
   docker exec "$SYSCONT_NAME" sh -c "docker exec nginx-client sh -c \"wget nginx-server:80\""
   [ "$status" -eq 0 ]
 
