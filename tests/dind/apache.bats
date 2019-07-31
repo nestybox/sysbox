@@ -45,7 +45,6 @@ EOF
                                      httpd:latest"
   [ "$status" -eq 0 ]
 
-  # DEBUG
   wait_for_inner_apache
 
   # verify the apache container is up and running
