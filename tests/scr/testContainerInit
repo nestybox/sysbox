@@ -59,3 +59,16 @@ sysvisor
 
 # Start docker
 dockerd > /var/log/dockerd.log 2>&1 &
+
+# Wait for docker to be up
+set +e
+
+for ((i = 0; i < 10; i++)); do
+  docker ps > /dev/null 2>&1
+  if [ "$?" -eq 0 ]; then
+    exit 0
+  fi
+  sleep 0.5
+done
+
+exit 1
