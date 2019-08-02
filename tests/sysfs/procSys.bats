@@ -430,16 +430,24 @@ EOF
 
 @test "/proc/sys chown" {
 
-  skip "Sysvisor issue #258"
-
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
   for owner in root 65534; do
     sv_runc exec syscont sh -c "chown $owner:$owner /proc/sys/kernel/cap_last_cap"
-    [ "$status" -eq 0 ]
-    [[ "$ouput" == "chown: changing ownership of 'cap_last_cap': Operation not permitted" ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == "chown: changing ownership of '/proc/sys/kernel/cap_last_cap': Operation not permitted" ]]
   done
+}
+
+@test "/proc/sys chmod" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "chmod 755 /proc/sys/kernel/cap_last_cap"
+  [ "$status" -eq 1 ]
+  [[ "$output" == "chmod: changing permissions of '/proc/sys/kernel/cap_last_cap': Operation not permitted" ]]
 }
 
 @test "/proc/sys read-permission check" {
