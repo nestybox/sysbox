@@ -10,33 +10,33 @@ dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
 
 # Sysvisor-fs' default mountpoint path.
-mountpoint="/var/lib/sysvisorfs"
+sysvisorfs_mountpoint="/var/lib/sysvisorfs"
 
 # Shiftfs' minimum-supported kernel
 SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
 
 # Shiftfs module-name
-shiftfs_mod_name="shiftfs"
+shiftfs_mod_name="nbox-shiftfs"
 
 # Global var to track the activation/support of uid-shifting functionality.
 uid_shift_mode=false
 
 
 # Creates sysvisor-fs mountpoint.
-create_mountpoint() {
+create_sysvisorfs_mountpoint() {
 
-    if [[ -d ${mountpoint} ]]; then
+    if [[ -d ${sysvisorfs_mountpoint} ]]; then
         return
     fi
 
-    mkdir -p ${mountpoint}
-    if [[ ! -d ${mountpoint} ]]; then
+    mkdir -p ${sysvisorfs_mountpoint}
+    if [[ ! -d ${sysvisorfs_mountpoint} ]]; then
         exit 1
     fi
 }
 
-# Enables the utilization of user-namespaces in a system.
-enable_user_namespaces() {
+# Enables the utilization of unprivileged user-namespaces.
+enable_unprivileged_userns() {
 
     val=$(sysctl kernel.unprivileged_userns_clone)
     if [[ "${val##* }" = 0 ]]; then
@@ -206,18 +206,17 @@ adjust_docker_config() {
 
 config_sysvisor() {
 
-    # Ensure default mountpoint is created in the file-system.
-    create_mountpoint
+    # Ensure sysvisor-fs' default mountpoint is created in the file-system.
+    create_sysvisorfs_mountpoint
 
-    # Ensure that user-namespaces are allowed. This change will persist through
-    # system reboots by relying on a sysctl.d config file to be installed as
-    # part of this package's installation process.
-    enable_user_namespaces
+    # Allows user-namespaces creation for unprivileged users. This change will
+    # persist through system reboots by relying on a sysctl.d config-file to be
+    # generated as part of this package's installation process.
+    enable_unprivileged_userns
 
-	# Add 'sysvisor' user for scenarios requiring a single UID/GID pool being
+	# Add 'sysvisor' user to host a large pool of subordinate UIDs/GIDs to be
     # shared across all system-containers. This user must match the one defined
     # in the docker configuration file.
-    # Add 'sysvisor' user.
     add_sysvisor_user
 
     # Load our shiftfs module if its requirements are properly met.

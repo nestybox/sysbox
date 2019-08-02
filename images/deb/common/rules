@@ -5,7 +5,7 @@
 export DH_VERBOSE = 1
 
 # Shiftfs module name.
-export SHIFTFS_MOD_NAME = shiftfs
+export SHIFTFS_MOD_NAME = nbox-shiftfs
 
 override_dh_auto_build:
 	# Build sysvisor's components.

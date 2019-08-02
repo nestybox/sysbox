@@ -10,6 +10,9 @@ tar -C /root/build-deb -xzf /sources/sysvisor.tgz
 # Obtain Sysvisor version out of the source tree.
 VERSION=$(cat /root/build-deb/sysvisor/VERSION)
 
+# Shiftfs module-name
+shiftfs_mod_name="nbox-shiftfs"
+
 # Path of shiftfs module.
 SHIFTFS_MODULE_DIR=sysvisor/shiftfs/${DISTRO}-${SUITE}
 
@@ -51,7 +54,7 @@ EOF
   dpkg-buildpackage -uc -us -I.git
 
   # Installing shiftfs-dkms module into the builder container.
-  dpkg -i ../shiftfs-dkms_${VERSION}-0~${DISTRO}-${SUITE}_*.deb
+  dpkg -i ../${shiftfs_mod_name}-dkms_${VERSION}-0~${DISTRO}-${SUITE}_*.deb
 
   find /lib/modules/tmp -mindepth 1 -maxdepth 1 -type d \
     ! -name '5.*' -exec mv {} /lib/modules/ \;

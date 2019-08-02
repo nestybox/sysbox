@@ -62,6 +62,7 @@ RUN apt-get install -y \
     linux-headers-5.0.0-16-generic \
     linux-headers-5.0.0-17-generic \
     linux-headers-5.0.0-19-generic \
-    linux-headers-5.0.0-20-generic
+    linux-headers-5.0.0-20-generic \
+    linux-headers-5.0.0-23-generic
 
 ENTRYPOINT ["/root/build-deb/build-deb"]

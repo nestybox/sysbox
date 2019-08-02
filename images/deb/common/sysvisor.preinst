@@ -88,12 +88,8 @@ version_compare() {
     return 0
 }
 
-# Enforce Sysvisor's kernel-requirements matrix.
 #
-# TBD:
-#       1) Shitffs-mode validation.
-#       2) 'Postinst' script should somehow know about the decisions
-#       being made here in regards to 'shiftfs' vs 'userns' modes.
+# Enforce Sysvisor's kernel-requirements matrix.
 #
 verify_compatibility() {
 

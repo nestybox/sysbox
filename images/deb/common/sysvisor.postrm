@@ -10,7 +10,7 @@ dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
 
 # Shiftfs module-name
-shiftfs_mod_name="shiftfs"
+shiftfs_mod_name="nbox-shiftfs"
 
 # Note: As per Debian packaging policies, package elimination should not remove
 # logfiles. Therefore we shouldn't delete the 'sysvisor' user/group previously
@@ -97,13 +97,14 @@ adjust_docker_config() {
 case "$1" in
     purge)
 
-        # TBD. Ideally, we should be able to unload shiftfs module at purge time,
-        # but that requires the capability of sysvisor service being able to stop
-        # all the system containers. Will comment this instruction till this
-        # feature is available.
+        # TBD! Ideally, we should be able to unload shiftfs module at purge
+        # time, but that requires the capability of sysvisor service of being
+        # able to stop all the system containers. Will comment this instruction
+        # till this logic is available.
         # unload_uid_shift_module
 
-        # Adjust docker config to eliminate entries added by Sysvisor installation.
+        # Adjust docker config to eliminate entries added by Sysvisor's
+        # installation process.
         adjust_docker_config
     ;;
 
