@@ -4,18 +4,18 @@
 # Verify running a mysql container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
 function wait_for_inner_mysql() {
   # it takes ~30 secs for the mysql container to reach "healthy" status
-  retry_run 40 2 eval "docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"healthy\"\""
+  retry_run 40 2 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"healthy\"\""
 }
 
-@test "dind mysql basic" {
+@test "l2 mysql basic" {
 
   # Deploys a mysql container inside the sys container and verifies
   # mysql works
@@ -59,7 +59,7 @@ EOF
   rm ${HOME}/mysql-scr.txt
 }
 
-@test "dind mysql client-server" {
+@test "l2 mysql client-server" {
 
   # Deploys mysql server and client containers inside the sys
   # container and verifies mysql client can access the server.

@@ -4,17 +4,17 @@
 # Verify running a elasticSearch container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
 function wait_for_inner_elasticSearch() {
-  retry_run 40 2 eval "docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
 }
 
-@test "dind elasticSearch basic" {
+@test "l2 elasticSearch basic" {
 
   # Inside the sys container, deploys an elasticSearch container and verifies
   # another container can send logs to it.

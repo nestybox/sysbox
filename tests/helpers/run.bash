@@ -73,8 +73,11 @@ function docker_stop() {
   [[ "$#" == 1 ]]
 
   id="$1"
+
+  echo "Stopping $id ..."
+
   if [ -z "$id" ]; then
-    return 0
+    return 1
   fi
 
   docker stop -t 0 "$id"

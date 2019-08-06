@@ -4,13 +4,13 @@
 # Verify running a wordpress container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
-@test "dind wordpress basic" {
+@test "l2 wordpress basic" {
 
   # Deploy a wordpress container inside the sys container and verifies it works.
 
