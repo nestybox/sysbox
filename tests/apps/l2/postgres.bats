@@ -4,17 +4,17 @@
 # Verify running a postgres container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
 function wait_for_inner_postgres() {
-  retry_run 40 2 eval "docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
 }
 
-@test "dind postgres basic" {
+@test "l2 postgres basic" {
 
   # Deploys a postgres container inside the sys container and verifies
   # postgres works
@@ -43,7 +43,7 @@ function wait_for_inner_postgres() {
   docker_stop "$SYSCONT_NAME"
 }
 
-@test "dind postgres client-server" {
+@test "l2 postgres client-server" {
 
   # Deploys postgres server and client containers inside the sys
   # container and verifies postgres client can access the server.

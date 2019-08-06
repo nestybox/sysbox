@@ -4,17 +4,17 @@
 # Verify running a nginx container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
 function wait_for_inner_nginx() {
-  retry_run 40 2 eval "docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
 }
 
-@test "dind nginx basic" {
+@test "l2 nginx basic" {
 
   # Deploys a nginx container inside the sys container and verifies it works
 
@@ -60,7 +60,7 @@ EOF
   rm ${HOME}/index.html
 }
 
-@test "dind nginx client-server" {
+@test "l2 nginx client-server" {
 
   # Deploys nginx server and client containers inside the sys
   # container and verifies nginx client can access the server.

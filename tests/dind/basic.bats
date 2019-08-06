@@ -17,10 +17,10 @@ function teardown() {
 }
 
 function wait_for_nested_dockerd {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
-@test "basic dind" {
+@test "dind basic" {
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
