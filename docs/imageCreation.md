@@ -132,29 +132,20 @@ images                           // Image-creation sub-tree
     └── sysvisor-systemd.conf
 ```
 
-In a nutshell, these are the tasks carried out by this
-building infrastructure:
+In a nutshell, these are the tasks carried out by this building infrastructure:
 
-    - Instantiate a slave container matching the linux distro/version
-    being required. Evethough Sysvisor currently only supports Ubuntu
-    releases, this logic is capable of generating Sysvisor images for
-    all these releases:
-            - Ubuntu-Disco
-            - Ubuntu-Cosmic
-            - Ubuntu-Bionic
-            - Debian-Buster
-            - Debian-Stretch
+* Instantiate a slave container matching the linux distro/version being required. Evethough Sysvisor currently only supports Ubuntu releases, this logic is capable of generating Sysvisor images for all these releases:
+    - Ubuntu-Disco
+    - Ubuntu-Cosmic
+    - Ubuntu-Bionic
+    - Debian-Buster
+    - Debian-Stretch
 
-    - Create a 'shiftfs-dkms' debian package containing the elements
-    required for its compilation.
+* Create a 'shiftfs-dkms' debian package containing the elements required for its compilation.
 
-    - Install previous 'shiftfs-dkms' debian package into the slave
-    container, and generate, by virtue of dkms processing, the
-    shiftfs kernel modules for all the (5.x+) kernel releases supported
-    by each supported distro.
+* Install previous 'shiftfs-dkms' debian package into the slave container, and generate, by virtue of dkms processing, the shiftfs kernel modules for all the (5.x+) kernel releases supported by each supported distro.
 
-    - Create Sysvisor debian package including the shiftfs module built
-    above, as well as the Sysvisor package installer.
+* Create Sysvisor debian package including the shiftfs module built above, as well as the Sysvisor package installer.
 
 
 # Installer/Uninstaller Overview
