@@ -351,7 +351,7 @@ EOF
   done
 
   # wait for workers to finish (we check the last worker only)
-  retry_run 10 1 docker exec ${syscont[$num_sc]} sh -c "cat /result.txt"
+  retry_run 10 1 __docker exec ${syscont[$num_sc]} sh -c "cat /result.txt"
 
   # verify results
   for sc in ${syscont[@]}; do

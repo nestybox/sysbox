@@ -4,17 +4,17 @@
 # Verify running a redis container inside a sys container
 #
 
-load ../helpers/run
+load ../../helpers/run
 
 function wait_for_inner_dockerd() {
-  retry_run 10 1 eval "docker exec $SYSCONT_NAME docker ps"
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
 
 function wait_for_inner_redis() {
-  retry_run 40 2 eval "docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
 }
 
-@test "dind redis basic" {
+@test "l2 redis basic" {
 
   # Deploys a redis container inside the sys container and verifies
   # redis works
@@ -55,7 +55,7 @@ EOF
   rm ${HOME}/redis-scr.txt
 }
 
-@test "dind redis client-server" {
+@test "l2 redis client-server" {
 
   # Deploys redis server and client containers inside the sys
   # container and verifies redis client can access the server.
