@@ -59,7 +59,7 @@ builds is fully eliminated:
     clients.
 
 * Copy the obtained *.deb file to the desired DUT, and
-install it accordingly.
+  install it accordingly.
 
     ```
     $ sudo dpkg -i sysvisor_0.0.1-0~ubuntu-disco_amd64.deb
