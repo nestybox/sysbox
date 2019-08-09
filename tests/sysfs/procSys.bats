@@ -228,8 +228,6 @@ function compare_syscont_unshare() {
 # can't be modified from within a sys container.
 @test "/proc/sys non-namespaced resources" {
 
-  skip "Sysvisor issue #244"
-
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -257,7 +255,7 @@ function compare_syscont_unshare() {
     esac
 
     sv_runc exec syscont sh -c "echo $sc_new > $file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 2 ]
     [[ "$output" =~ "Permission denied" ]]
 
   done
