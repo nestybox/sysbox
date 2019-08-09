@@ -14,9 +14,13 @@ function wait_for_nginx() {
 
   # Deploys an nginx container with sysvisor-runc
 
-  # this html file will be passed to the nginx container
-  tmpdir="/tmp/nginx"
+  # this html file will be passed to the nginx container via a bind-mount
+  #
+  # Note that we place it in /root which has 700 permissions; this is
+  # a requirement imposed by sysvisor when using uid-shifting: the bind
+  # source must be within a path searchable by true root only.
 
+  tmpdir="/root/nginx"
   mkdir -p ${tmpdir}
 
   cat << EOF > ${tmpdir}/index.html
@@ -29,8 +33,8 @@ Nginx Test!
 EOF
 
   # launch the sys container; bind-mount the index.html into it
-  SYSCONT_NAME=$(docker_run -d \
-                   --mount type=bind,source=${tmpdir}/index.html,target=/usr/share/nginx/html/index.html \
+  SYSCONT_NAME=$(docker_run \
+                   --mount type=bind,source=${tmpdir},target=/usr/share/nginx/html \
                    -p 8080:80 \
                    nginx:latest)
 
