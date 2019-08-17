@@ -77,7 +77,6 @@ container (with an appropriate log message).
 
 * The system container spec must include the following namespaces:
 
-  - user
   - pid
   - ipc
   - uts
@@ -87,10 +86,8 @@ container (with an appropriate log message).
 * The system container spec may optionally include the
   following namespaces; if not present, Sysvisor will add them.
 
+  - user
   - cgroup
-
-* Note: Docker meets these requirements when configured with the
-  "userns-remap" option.
 
 ## Cgroups
 
@@ -159,8 +156,6 @@ container (with an appropriate log message).
 
     - This is necessary to support running most Linux distros inside a
       system container (e.g., Debian uses uid 65534 as "nobody").
-
-    - Note: docker userns-remap satisfies this.
 
   - sysvisor does not require that the mappings between containers be non-overlapping
     in this case; sysvisor honors the given map, regardless of whether it overlaps
