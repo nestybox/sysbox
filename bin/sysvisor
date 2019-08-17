@@ -17,7 +17,7 @@ set +e
 for ((i = 0; i < 10; i++)); do
   if [ -f /var/log/sysvisor-mgr.log ] && [ -f /var/log/sysvisor-fs.log ]; then
     mgr_up=$(grep -c "Listening on" /var/log/sysvisor-mgr.log)
-    fs_up=$(grep -c "Starting to serve sysvisorfs" /var/log/sysvisor-fs.log)
+    fs_up=$(grep -c "Starting to serve sysvisor-fs" /var/log/sysvisor-fs.log)
     if [ "$mgr_up" -eq 1 ] && [ "$fs_up" -eq 1 ]; then
       exit 0
     fi
