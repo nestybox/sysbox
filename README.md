@@ -238,10 +238,40 @@ $ docker run --runtime=sysvisor-runc \
 root@syscont:/#
 ```
 
-### Sysvisor (without Docker)
+### Sysvisor CLI
 
-**TODO**: write this section
+It easiest to use a higher-level container manager to spawn containers
+(e.g., Docker), but it's also possible to launch containers directly
+via the sysvisor-runc command line.
 
+As the root user, follow these steps:
+
+1) Create a rootfs image for the container:
+
+```bash
+# mkdir /root/mycontainer
+# cd /root/mycontainer
+# mkdir rootfs
+# docker export $(docker create debian:latest) | tar -C rootfs -xvf -
+```
+
+2) Create the OCI spec for the container, using the `sysvisor-runc --spec` command:
+
+```
+# sysvisor-runc spec
+```
+
+This will create a default OCI spec (i.e., `config.json` file) for the container.
+
+3) Launch the container
+
+Choose an ID for the container and run:
+
+```
+# sysvisor-runc run mycontainerid
+```
+
+Use `sysvisor-runc --help` command for help on all commands supported by Sysvisor.
 
 ## System Container
 
