@@ -21,8 +21,12 @@
 	pjdfstest pjdfstest-clean \
 	clean
 
-SHELL := bash
-HOSTNAME := $(shell hostname)
+export SHELL=bash
+export HOSTNAME=$(shell hostname)
+export VERSION=${shell cat ./VERSION}
+export COMMIT_ID=$(shell git rev-parse --short HEAD)
+export BUILD_AT=${shell date}
+export BUILD_BY=${USER}
 
 # Source-code paths of Sysvisor's binary targets.
 SYSRUNC_DIR     := sysvisor-runc
