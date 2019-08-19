@@ -22,11 +22,23 @@
 	clean
 
 export SHELL=bash
-export HOSTNAME=$(shell hostname)
+
+# Global env-vars to carry metadata associated to image-builds. This state will
+# be consumed by sysvisor's submodules and exposed through --version cli knob.
 export VERSION=${shell cat ./VERSION}
+export BUILT_AT=${shell date}
+# We don't want previously-set env-vars to be reset should this makefile is
+# ever visited again in the same building cycle (i.e. docker image builders).
+ifeq ($(COMMIT_ID),)
 export COMMIT_ID=$(shell git rev-parse --short HEAD)
-export BUILD_AT=${shell date}
-export BUILD_BY=${USER}
+endif
+ifeq ($(BUILT_BY),)
+export BUILT_BY=${USER}
+endif
+ifeq ($(HOSTNAME),)
+export HOSTNAME=$(shell hostname)
+endif
+
 
 # Source-code paths of Sysvisor's binary targets.
 SYSRUNC_DIR     := sysvisor-runc

@@ -17,6 +17,7 @@ SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
 
 # Shiftfs module-name
 shiftfs_mod_name="nbox-shiftfs"
+shiftfs_mod_name_shell="nbox_shiftfs"
 
 # Global var to track the activation/support of uid-shifting functionality.
 uid_shift_mode=false
@@ -84,8 +85,8 @@ load_uid_shift_module() {
 
     # Verify if there's an existing shiftfs module already loaded, and if that's
     # the case, unload it prior to the installation of the new one.
-    if lsmod | grep ${shiftfs_mod_name} >/dev/null 2>&1; then
-        if ! rmmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
+    if lsmod | grep ${shiftfs_mod_name_shell} >/dev/null 2>&1; then
+        if ! rmmod ${shiftfs_mod_name} >/dev/null 2>&1; then
             return
         fi
     fi
