@@ -14,7 +14,7 @@ SYSVISOR_IMAGE_COMMON := common
 SYSVISOR_IMAGE_SYSTEMD := ../systemd
 SYSVISOR_IMAGE_SOURCES := SYSVISOR_IMAGE_COMMON SYSVISOR_IMAGE_SYSTEMD
 
-SOURCE_FILES =  sysvisor.tgz           \
+SOURCE_FILES =  sysvisor.tgz   \
 		sysvisor.service       \
 		sysvisor-fs.service    \
 		sysvisor-mgr.service   \
@@ -31,14 +31,18 @@ GO_IMAGE=$(GO_BASE_IMAGE):$(GO_VERSION)
 
 CHOWN:=docker run --rm -v $(CURDIR):/v -w /v alpine chown
 
-DOCKER_BUILD=docker build                                  \
+DOCKER_BUILD=docker build                              \
 	--build-arg GO_IMAGE=$(GO_IMAGE)                   \
 	--build-arg COMMON_FILES=$(SYSVISOR_IMAGE_COMMON)  \
 	-t debbuild-$@/$(ARCH)                             \
 	-f $(CURDIR)/$@/Dockerfile .
 
-DOCKER_RUN=docker run --rm -i                    \
+DOCKER_RUN=docker run --rm -i                \
 	-e PLATFORM                              \
+	-e VERSION                               \
+	-e COMMIT_ID                             \
+	-e BUILT_BY                              \
+	-e HOSTNAME                              \
 	-v $(CURDIR)/debbuild/$@:/build          \
 	-v $(GOPATH)/pkg/mod:/go/pkg/mod         \
 	debbuild-$@/$(ARCH)
