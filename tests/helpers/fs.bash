@@ -8,17 +8,20 @@
 #
 
 # sysvisor-fs sys container "/proc" mounts
-SYSFS_PROC="/proc/cpuinfo \
-            /proc/cgroups \
-            /proc/devices \
-            /proc/diskstats \
-            /proc/loadavg \
-            /proc/meminfo \
-            /proc/pagetypeinfo \
-            /proc/partitions \
-            /proc/stat \
-            /proc/swaps \
-            /proc/uptime"
+SYSFS_PROC="/proc/uptime"
+
+# In the future sysvisor-fs will do these ones too ..
+# SYSFS_PROC="/proc/uptime \
+#             /proc/cpuinfo \
+#             /proc/cgroups \
+#             /proc/devices \
+#             /proc/diskstats \
+#             /proc/loadavg \
+#             /proc/meminfo \
+#             /proc/pagetypeinfo \
+#             /proc/partitions \
+#             /proc/stat \
+#             /proc/swaps"
 
 # sysvisor-fs sys container "/proc/sys" mounts
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max"
