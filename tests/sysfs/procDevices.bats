@@ -15,6 +15,9 @@ function teardown() {
 
 # Lookup/Getattr operation.
 @test "procDevices lookup() operation" {
+
+  skip "not a sysvisor-fs mount yet"
+
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
