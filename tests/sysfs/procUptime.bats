@@ -26,7 +26,7 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sv_runc exec syscont sh -c "ls -l /proc/cgroups"
+  sv_runc exec syscont sh -c "ls -l /proc/uptime"
   [ "$status" -eq 0 ]
 
   verify_root_ro "${output}"
