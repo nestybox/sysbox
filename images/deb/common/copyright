@@ -1,0 +1,15 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Nestybox Sysvisor
+Upstream-Contact: Nestybox Inc <contact@nestybox.com>
+
+Disclaimer:
+ This package is not part of the GNU/Linux Debian distribution.  It is
+ provided in the non-free archive area as a convenience to Debian users.
+ The contents of this package cannot be distributed as part of the Debian
+ distribution because the NESTYBOX Software License covering it is not a free
+ software license.  No modifications of the included binaries are
+ permitted, and the binaries are not distributed with source code.
+
+Files: *
+Copyright: 2019 Nestybox Inc.  All rights reserved.
+License: Nestybox license
