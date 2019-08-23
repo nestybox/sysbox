@@ -9,11 +9,7 @@ load ../helpers/run
 SYSCONT_NAME=""
 
 function setup() {
-  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:debian-plus-docker tail -f /dev/null)
-}
-
-function teardown() {
-  docker_stop "$SYSCONT_NAME"
+  run_only_test "dind docker build"
 }
 
 function wait_for_nested_dockerd {
@@ -21,6 +17,9 @@ function wait_for_nested_dockerd {
 }
 
 @test "dind basic" {
+
+  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
@@ -28,9 +27,14 @@ function wait_for_nested_dockerd {
 
   docker exec "$SYSCONT_NAME" sh -c "docker run hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
 }
 
 @test "dind busybox" {
+
+  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
@@ -46,4 +50,62 @@ function wait_for_nested_dockerd {
   docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
+
+  docker_stop "$SYSCONT_NAME"
+}
+
+@test "dind docker build" {
+
+  # this dockerfile will be passed into the system container via a bind-mount
+  file="/root/Dockerfile"
+
+  cat << EOF > ${file}
+FROM debian:latest
+MAINTAINER Nestybox
+RUN apt-get update
+RUN apt-get install -y nginx
+COPY . /root
+EXPOSE 8080
+CMD ["echo","Image created"]
+EOF
+
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  [ "$status" -eq 0 ]
+
+  wait_for_nested_dockerd
+
+  image="test_nginx"
+
+  docker exec "$SYSCONT_NAME" sh -c "cd /mnt && docker build -t ${image} ."
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "docker run ${image}"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Image created" ]]
+
+  docker_stop "$SYSCONT_NAME"
+  docker image rm ${image}
+  rm ${file}
+}
+
+@test "dind image cache vol" {
+
+  # TODO:
+  #
+  # start the sys container, mount a docker volume on the inner Docker's image cache
+  #
+  # create some inner containers
+  #
+  # stop and remove the container
+  #
+  # start a new container, mount the same docker volume on the inner Docker's image cache
+  #
+  # verify the inner docker image from the prior container is there (docker image ls)
+  #
+  # stop the container
+  #
+  # remove the vol
+
 }
