@@ -1,24 +1,24 @@
 SHELL:=/bin/bash
 ARCH:=$(shell uname -m)
 
-# Sysvisor source-code locations.
-SYSVISOR_DIR  := $(CURDIR)/../..
-SYSVISOR_FS   := $(SYSVISOR_DIR)/sysvisor-fs
-SYSVISOR_IPC  := $(SYSVISOR_DIR)/sysvisor-ipc
-SYSVISOR_MGR  := $(SYSVISOR_DIR)/sysvisor-mgr
-SYSVISOR_RUNC := $(SYSVISOR_DIR)/sysvisor-runc
-SYSVISOR_SOURCE_CODE := SYSVISOR_FS SYSVISOR_IPC SYSVISOR_MGR SYSVISOR_RUNC
+# Sysboxd source-code locations.
+SYSBOXD_DIR  := $(CURDIR)/../..
+SYSBOX_FS    := $(SYSBOXD_DIR)/sysbox-fs
+SYSBOX_IPC   := $(SYSBOXD_DIR)/sysbox-ipc
+SYSBOX_MGR   := $(SYSBOXD_DIR)/sysbox-mgr
+SYSBOX_RUNC  := $(SYSBOXD_DIR)/sysbox-runc
+SYSBOXD_SOURCE_CODE := SYSBOX_FS SYSBOX_IPC SYSBOX_MGR SYSBOX_RUNC
 
-# Sysvisor build-instructions locations.
-SYSVISOR_IMAGE_COMMON := common
-SYSVISOR_IMAGE_SYSTEMD := ../systemd
-SYSVISOR_IMAGE_SOURCES := SYSVISOR_IMAGE_COMMON SYSVISOR_IMAGE_SYSTEMD
+# Sysboxd build-instructions locations.
+SYSBOXD_IMAGE_COMMON := common
+SYSBOXD_IMAGE_SYSTEMD := ../systemd
+SYSBOXD_IMAGE_SOURCES := SYSBOXD_IMAGE_COMMON SYSBOXD_IMAGE_SYSTEMD
 
-SOURCE_FILES =  sysvisor.tgz           \
-		sysvisor.service       \
-		sysvisor-fs.service    \
-		sysvisor-mgr.service   \
-		sysvisor-systemd.conf
+SOURCE_FILES =  sysboxd.tgz          \
+		sysboxd.service      \
+		sysbox-fs.service    \
+		sysbox-mgr.service   \
+		sysboxd-systemd.conf
 
 SOURCES=$(addprefix sources/, $(SOURCE_FILES))
 
@@ -33,7 +33,7 @@ CHOWN:=docker run --rm -v $(CURDIR):/v -w /v alpine chown
 
 DOCKER_BUILD=docker build                              \
 	--build-arg GO_IMAGE=$(GO_IMAGE)                   \
-	--build-arg COMMON_FILES=$(SYSVISOR_IMAGE_COMMON)  \
+	--build-arg COMMON_FILES=$(SYSBOXD_IMAGE_COMMON)  \
 	-t debbuild-$@/$(ARCH)                             \
 	-f $(CURDIR)/$@/Dockerfile .
 
@@ -113,26 +113,27 @@ clean: ## Remove build artifacts
 	$(RM) -r sources
 
 
-sources/sysvisor.tgz:
+sources/sysboxd.tgz:
 	mkdir -p $(@D)
 	docker run --rm -i -w /v \
-		-v $(SYSVISOR_DIR):/sysvisor \
+		-v $(SYSBOXD_DIR):/sysboxd \
 		-v $(CURDIR)/$(@D):/v \
 		alpine \
-		tar -C / -czf /v/sysvisor.tgz --exclude='images' sysvisor
 
-sources/sysvisor.service: ../systemd/sysvisor.service
+		tar -C / -czf /v/sysboxd.tgz --exclude='images' sysvisor
+
+sources/sysboxd.service: ../systemd/sysboxd.service
 	mkdir -p $(@D)
 	cp $< $@
 
-sources/sysvisor-fs.service: ../systemd/sysvisor-fs.service
+sources/sysbox-fs.service: ../systemd/sysbox-fs.service
 	mkdir -p $(@D)
 	cp $< $@
 
-sources/sysvisor-mgr.service: ../systemd/sysvisor-mgr.service
+sources/sysbox-mgr.service: ../systemd/sysbox-mgr.service
 	mkdir -p $(@D)
 	cp $< $@
 
-sources/sysvisor-systemd.conf: ../systemd/sysvisor-systemd.conf
+sources/sysboxd-systemd.conf: ../systemd/sysboxd-systemd.conf
 	mkdir -p $(@D)
 	cp $< $@

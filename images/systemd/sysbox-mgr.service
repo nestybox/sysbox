@@ -1,0 +1,18 @@
+[Unit]
+Description=Sysbox-mgr component
+# When systemd stops or restarts the sysboxd.service, the action is propagated
+# to this unit.
+PartOf=sysboxd.service
+After=sysboxd.service
+
+[Service]
+# Initialize sysbox-mgr daemon.
+ExecStart=/usr/local/sbin/sysbox-mgr --log /var/log/sysbox-mgr.log
+# Restart service upon detection of non-zero exit code, i.e. when terminated by
+# a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE.
+Restart=on-failure
+
+[Install]
+# This unit should be only started after sysboxd.service has completed its
+# initialization.
+WantedBy=sysboxd.service

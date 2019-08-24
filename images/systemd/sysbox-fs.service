@@ -1,0 +1,20 @@
+[Unit]
+Description=Sysbox-fs component
+# When systemd stops or restarts the sysboxd.service, the action is propagated
+# to this unit.
+PartOf=sysboxd.service
+After=sysboxd.service
+# sysbox-fs should always start after sysbox-mgr.
+After=sysbox-mgr.service
+
+[Service]
+# Initialize sysbox-fs daemon.
+ExecStart=/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log
+# Restart service upon detection of non-zero exit code, i.e. when terminated by
+# a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE.
+Restart=on-failure
+
+[Install]
+# This unit should be only started after sysboxd.service has completed its
+# initialization.
+WantedBy=sysboxd.service

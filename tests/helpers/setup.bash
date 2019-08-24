@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# sysvisor integration test setup helpers
+# sysboxd integration test setup helpers
 #
 # Note: based on a similar file in the OCI runc integration tests
 #
@@ -11,7 +11,7 @@ SYSCONT_NAME=""
 
 WORK_DIR="/tmp"
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
-RECVTTY="${INTEGRATION_ROOT}/../../sysvisor-runc/contrib/cmd/recvtty/recvtty"
+RECVTTY="${INTEGRATION_ROOT}/../../sysbox-runc/contrib/cmd/recvtty/recvtty"
 BUNDLES="${INTEGRATION_ROOT}/../../sys-container/bundles"
 
 CONSOLE_SOCKET="$WORK_DIR/console.sock"
@@ -25,7 +25,7 @@ DEBIAN_BUNDLE="$WORK_DIR/debiantest"
 # Root state path.
 ROOT=$(mktemp -d "$WORK_DIR/runc.XXXXXX")
 
-RUNC=sysvisor-runc
+RUNC=sysbox-runc
 
 RUNC_FLAGS="--no-kernel-check"
 
@@ -78,12 +78,12 @@ function retry_run() {
   false
 }
 
-# Wrapper for sysvisor-runc
+# Wrapper for sysbox-runc
 function __sv_runc() {
   command $RUNC ${RUNC_FLAGS} --log /proc/self/fd/2 --root "$ROOT" "$@"
 }
 
-# Wrapper for sysvisor-runc spec, which takes only one argument (the bundle path).
+# Wrapper for sysbox-runc spec, which takes only one argument (the bundle path).
 function runc_spec() {
   ! [[ "$#" > 1 ]]
 
@@ -140,7 +140,7 @@ function setup_bundle() {
 
   tar --exclude './dev/*' -C "$bundle"/rootfs -xzf "$tar_gz"
 
-  # set bundle ownership per sysvisor-runc requirements
+  # set bundle ownership per sysbox-runc requirements
   if [ -n "$SHIFT_UIDS" ]; then
     chown -R root:root "$bundle"
   else
@@ -148,7 +148,7 @@ function setup_bundle() {
   fi
 
   # Restrict path to bundle when using uid-shift, as required by
-  # sysvisor-runc's shiftfs mount security check
+  # sysbox-runc's shiftfs mount security check
   if [ -n "$SHIFT_UIDS" ]; then
     chmod 700 "$bundle"
   fi

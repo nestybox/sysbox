@@ -1,17 +1,17 @@
-Sysvisor Development: Handy Commands
+Sysboxd Development: Handy Commands
 ====================================
 
-## Manually spawn sysvisor-runc test container
+## Manually spawn sysbox-runc test container
 
 ```
-$ docker run  -it --privileged --rm -v /lib/modules:/lib/modules:ro -v /mnt/extra1/chino-dev/nestybox/sysvisor/sysvisor-runc:/go/src/nestybox/sysvisor-runc runc_dev:master /bin/bash
-$ root@3aa9dca439e2:/go/src/nestybox/sysvisor-runc# bats -t tests/integration
+$ docker run  -it --privileged --rm -v /lib/modules:/lib/modules:ro -v /mnt/extra1/chino-dev/nestybox/sysboxd/sysbox-runc:/go/src/nestybox/sysbox-runc runc_dev:master /bin/bash
+$ root@3aa9dca439e2:/go/src/nestybox/sysbox-runc# bats -t tests/integration
 ```
 
 To run single test:
 
 ```
-$ root@3aa9dca439e2:/go/src/nestybox/sysvisor-runc# bats -t tests/integration/cgroups.bats
+$ root@3aa9dca439e2:/go/src/nestybox/sysbox-runc# bats -t tests/integration/cgroups.bats
 ```
 
 ## Kill a process group

@@ -8,8 +8,8 @@ export DH_VERBOSE = 1
 export SHIFTFS_MOD_NAME = nbox-shiftfs
 
 override_dh_auto_build:
-	# Build sysvisor's components.
-	cd sysvisor && make sysvisor
+	# Build sysboxd's components.
+	cd sysboxd && make sysboxd
 
 override_dh_auto_test:
 
@@ -18,25 +18,25 @@ override_dh_auto_test:
 .ONESHELL:
 SHELL=/bin/bash
 override_dh_auto_install:
-	# Sysvisor binaries will be installed through the regular (makefile) process.
-	install -D -m0755 sysvisor/sysvisor-fs/sysvisor-fs \
-		debian/sysvisor/usr/local/sbin/sysvisor-fs
-	install -D -m0755 sysvisor/sysvisor-mgr/sysvisor-mgr \
-		debian/sysvisor/usr/local/sbin/sysvisor-mgr
-	install -D -m0755 sysvisor/sysvisor-runc/sysvisor-runc \
-		debian/sysvisor/usr/local/sbin/sysvisor-runc
+	# Sysboxd binaries will be installed through the regular (makefile) process.
+	install -D -m0755 sysboxd/sysbox-fs/sysbox-fs \
+		debian/sysboxd/usr/local/sbin/sysbox-fs
+	install -D -m0755 sysboxd/sysbox-mgr/sysbox-mgr \
+		debian/sysboxd/usr/local/sbin/sysbox-mgr
+	install -D -m0755 sysboxd/sysbox-runc/sysbox-runc \
+		debian/sysboxd/usr/local/sbin/sysbox-runc
 
-	# Sysvisor services installation.
-	install -D -m 0644 /sources/sysvisor.service \
-		debian/sysvisor/lib/systemd/system/sysvisor.service
-	install -D -m 0644 /sources/sysvisor-fs.service \
-		debian/sysvisor/lib/systemd/system/sysvisor-fs.service
-	install -D -m 0644 /sources/sysvisor-mgr.service \
-		debian/sysvisor/lib/systemd/system/sysvisor-mgr.service
+	# Sysboxd services installation.
+	install -D -m 0644 /sources/sysboxd.service \
+		debian/sysboxd/lib/systemd/system/sysboxd.service
+	install -D -m 0644 /sources/sysbox-fs.service \
+		debian/sysboxd/lib/systemd/system/sysbox-fs.service
+	install -D -m 0644 /sources/sysbox-mgr.service \
+		debian/sysboxd/lib/systemd/system/sysbox-mgr.service
 
-	# Sysvisor's sysctl.d config-file installation.
-	install -D -m 0644 /sources/sysvisor-systemd.conf \
-		debian/sysvisor/lib/systemd/system/sysvisor-systemd.conf
+	# Sysboxd's sysctl.d config-file installation.
+	install -D -m 0644 /sources/sysboxd-systemd.conf \
+		bian/sysboxd/lib/systemd/system/sysboxd-systemd.conf
 
 	# Iterate through all the kernel-headers present in the build-server and
 	# install the shiftfs modules previously compiled.
@@ -51,7 +51,7 @@ override_dh_auto_install:
 		if [[ -f "$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko" ]]; then
 			echo "Installing $${SHIFTFS_MOD_NAME} module for kernel $${d}"
 			install -D -m 0644 $${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko \
-				debian/sysvisor/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
+				debian/sysboxd/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
 		fi
 	done
 
@@ -59,7 +59,7 @@ override_dh_auto_install:
 override_dh_install:
 	dh_install
 
-# Override dh_usrlocal to prevent error after placing sysvisor binaries in
+# Override dh_usrlocal to prevent error after placing sysboxd binaries in
 # /usr/local path.
 override_dh_usrlocal:
 
@@ -67,4 +67,4 @@ override_dh_usrlocal:
 	dh $@
 
 override_dh_installsystemd:
-	dh_installsystemd sysvisor.service sysvisor-mgr.service sysvisor-fs.service
+	dh_installsystemd sysboxd.service sysbox-mgr.service sysbox-fs.service

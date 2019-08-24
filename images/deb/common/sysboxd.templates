@@ -1,0 +1,13 @@
+
+Template: sysboxd/docker_restart
+Type: boolean
+Description: Automatically restart docker service if needed?
+ Sysboxd's installation may require dockerd process re-initialization. If you
+ answer 'No' here, you will need to manually restart the docker-service if the
+ installation process indicates so.
+
+Template: sysboxd/docker_manual_restart
+Type: note
+Description: Sysboxd configuration changes require a manual docker-service
+ restart!
+

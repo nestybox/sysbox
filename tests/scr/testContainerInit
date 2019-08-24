@@ -6,7 +6,7 @@
 # TODO: Build & install shiftfs (if uid-shift option set)
 #
 
-# Build & install sysvisor
+# Build & install sysboxd
 thisHost=$(hostname)
 
 # Build cookie (to build from scratch when necessary only)
@@ -20,7 +20,7 @@ if [[ "$lastBuildHost" != "$thisHost" ]]; then
   make clean
 fi
 
-make sysvisor --no-print-directory && make install
+make sysboxd --no-print-directory && make install
 
 # Configure dockerd
 mkdir -p /etc/docker
@@ -29,10 +29,10 @@ if [ -z "$SHIFT_UIDS" ]; then
     cat <<EOF > /etc/docker/daemon.json
 {
     "debug": false,
-    "userns-remap": "sysvisor",
+    "userns-remap": "sysboxd",
     "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc"
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc"
         }
     }
 }
@@ -43,8 +43,8 @@ else
     "debug": false,
     "userns-remap": "",
     "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc",
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc",
             "runtimeArgs": [
                 "--no-kernel-check"
             ]
@@ -54,8 +54,8 @@ else
 EOF
 fi
 
-# Start sysvisor
-sysvisor
+# Start sysboxd
+sysboxd
 
 # Start docker
 dockerd > /var/log/dockerd.log 2>&1 &

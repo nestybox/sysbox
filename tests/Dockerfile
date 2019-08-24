@@ -1,22 +1,22 @@
 #
-# Sysvisor Test Container Dockerfile
+# Sysboxd Test Container Dockerfile
 #
-# This Dockerfile creates the sysvisor test container image. The image
-# contains all dependencies needed to build, run, and test sysvisor.
+# This Dockerfile creates the sysboxd test container image. The image
+# contains all dependencies needed to build, run, and test sysboxd.
 #
-# The image does not contain sysvisor itself; the sysvisor repo
+# The image does not contain sysboxd itself; the sysboxd repo
 # must be bind mounted into the image. It can then be built,
 # installed, and executed within the container.
 #
 # The image must be run as a privileged container (i.e., docker run --privileged ...)
-# Refer to the sysvisor Makefile test targets.
+# Refer to the sysboxd Makefile test targets.
 #
 # This Dockerfile is based on a similar Dockerfile in the OCI runc
-# github repo, but adapted to sysvisor testing.
+# github repo, but adapted to sysboxd testing.
 #
 # Instructions:
 #
-# docker build -t sysvisor-test .
+# docker build -t sysboxd-test .
 #
 
 FROM golang:1.12-stretch
@@ -83,7 +83,7 @@ RUN mkdir -p ~/bin/protoc \
     && rm -rf ~/bin/protoc/ \
     && go get -u github.com/golang/protobuf/protoc-gen-go
 
-# install Docker (used by most sysvisor tests to launch sys containers)
+# install Docker (used by most sysboxd tests to launch sys containers)
 RUN apt-get install -y \
        apt-transport-https \
        ca-certificates \
@@ -99,13 +99,13 @@ RUN add-apt-repository \
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# sysvisor deps
+# sysboxd deps
 RUN apt-get update && apt-get install -y \
     fuse
 
-# sysvisor env
-RUN useradd sysvisor \
-    && mkdir -p /var/lib/sysvisorfs
+# sysboxd env
+RUN useradd sysboxd \
+    && mkdir -p /var/lib/sysboxfs
 
 # nestybox docker hub login credentials (insecure)
 COPY .docker/config.json /root/.docker/config.json
@@ -114,5 +114,5 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 
 RUN mkdir -p /root/nestybox
-WORKDIR /root/nestybox/sysvisor
+WORKDIR /root/nestybox/sysboxd
 CMD /bin/bash
