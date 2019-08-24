@@ -8,19 +8,19 @@ load ../helpers/run
 
 @test "/etc/subuid check" {
 
-  # verify sysvisor-mgr --subid-range option works
+  # verify sysbox-mgr --subid-range option works
   sv_mgr_stop
   sv_mgr_start --subid-range 131072
-  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
-  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+  uid_size=$(grep sysboxd /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysboxd /etc/subgid | cut -d":" -f3)
   [ "$uid_size" -eq 131072 ]
   [ "$gid_size" -eq 131072 ]
 
-  # verify sysvisor-mgr default config of /etc/subuid(gid)
+  # verify sysbox-mgr default config of /etc/subuid(gid)
   sv_mgr_stop
   sv_mgr_start
-  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
-  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+  uid_size=$(grep sysboxd /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysboxd /etc/subgid | cut -d":" -f3)
   [ "$uid_size" -eq 268435456 ]
   [ "$gid_size" -eq 268435456 ]
 }
@@ -38,8 +38,8 @@ load ../helpers/run
   declare -a syscont_gids
 
   # ensure the subuid(gid) ranges look good
-  uid_size=$(grep sysvisor /etc/subuid | cut -d":" -f3)
-  gid_size=$(grep sysvisor /etc/subgid | cut -d":" -f3)
+  uid_size=$(grep sysboxd /etc/subuid | cut -d":" -f3)
+  gid_size=$(grep sysboxd /etc/subgid | cut -d":" -f3)
 
   [ "$uid_size" -ge $((65536 * "$num_syscont")) ]
   [ "$gid_size" -ge $((65536 * "$num_syscont")) ]
@@ -103,7 +103,7 @@ load ../helpers/run
 
   # start 3rd sys container and verify this fails due to no uid availability
   # (don't use docker_run() as we want to get the $status and $output)
-  docker run --runtime=sysvisor-runc --rm -d debian:latest tail -f /dev/null 2>&1
+  docker run --runtime=sysbox-runc --rm -d debian:latest tail -f /dev/null 2>&1
   [ "$status" -eq 125 ]
   [[ "$output" =~ "subid allocation failed" ]]
 

@@ -7,10 +7,10 @@
 # when manually reproducing tests.
 #
 
-# sysvisor-fs sys container "/proc" mounts
+# sysbox-fs sys container "/proc" mounts
 SYSFS_PROC="/proc/uptime"
 
-# In the future sysvisor-fs will do these ones too ..
+# In the future sysbox-fs will do these ones too ..
 # SYSFS_PROC="/proc/uptime \
 #             /proc/cpuinfo \
 #             /proc/cgroups \
@@ -23,7 +23,7 @@ SYSFS_PROC="/proc/uptime"
 #             /proc/stat \
 #             /proc/swaps"
 
-# sysvisor-fs sys container "/proc/sys" mounts
+# sysbox-fs sys container "/proc/sys" mounts
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max"
 
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership

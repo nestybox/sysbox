@@ -16,7 +16,7 @@ function teardown() {
 # Lookup/Getattr operation.
 @test "procDiskstats lookup() operation" {
 
-  skip "not a sysvisor-fs mount yet"
+  skip "not a sysbox-fs mount yet"
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]

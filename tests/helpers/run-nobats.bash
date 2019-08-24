@@ -12,13 +12,13 @@
 
 . $(dirname ${BASH_SOURCE[0]})/setup.bash
 
-# Wrapper for sysvisor-runc
+# Wrapper for sysbox-runc
 function sv_runc() {
   __sv_runc "$@"
 }
 
 function docker_run() {
-  docker run --runtime=sysvisor-runc -d "$@"
+  docker run --runtime=sysbox-runc -d "$@"
 }
 
 function docker_stop() {
@@ -33,13 +33,13 @@ function docker_stop() {
 }
 
 function sv_mgr_start() {
-  # Note: must match the way sysvisor-mgr is usually started, except
+  # Note: must match the way sysbox-mgr is usually started, except
   # that we also pass in the "$@".
-  sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1 &
+  sysbox-mgr --log /dev/stdout "$@" > /var/log/sysbox-mgr.log 2>&1 &
   sleep 1
 }
 
 function sv_mgr_stop() {
-  pid=$(pidof sysvisor-mgr)
+  pid=$(pidof sysbox-mgr)
   kill $pid
 }

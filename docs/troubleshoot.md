@@ -3,9 +3,9 @@ Notes on Sysvisor Troubleshooting
 
 # Passing debug flags to Sysvisor from Docker
 
-sysvisor-runc takes several debug flags in its command line. When
-invoking sysvisor-runc via Docker, these options can be passed down
-from Docker to sysvisor-runc by adding the `runtimeArgs` clause in the
+sysbox-runc takes several debug flags in its command line. When
+invoking sysbox-runc via Docker, these options can be passed down
+from Docker to sysbox-runc by adding the `runtimeArgs` clause in the
 `/etc/docker/daemon.json` file.
 
 For example, to disable strict checking for kernel version
@@ -14,8 +14,8 @@ compatiblity, use:
 ```
 {
    "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc",
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc",
             "runtimeArgs": [
                 "--no-kernel-check"
             ]
@@ -24,11 +24,11 @@ compatiblity, use:
 }
 ```
 
-Type `sysvisor-runc --help` for further info on command line flags.
+Type `sysbox-runc --help` for further info on command line flags.
 
-# Troubleshoot a failing sysvisor-runc integration test
+# Troubleshoot a failing sysbox-runc integration test
 
-* sysvisor-runc integration tests use `bats` inside a privileged docker container.
+* sysbox-runc integration tests use `bats` inside a privileged docker container.
 
 * bats provides some info regarding the failure, but it's usually not
   enough to pin-point the problem. Sometimes a manual repro is
@@ -60,7 +60,7 @@ Type `sysvisor-runc --help` for further info on command line flags.
 }
 ```
 
-2) From the host, run the failing test via the sysvisor-runc `make integration` target:
+2) From the host, run the failing test via the sysbox-runc `make integration` target:
 
 ```
 make integration TESTPATH=/mounts.bats
@@ -82,10 +82,10 @@ steps to fail.
 
 Next steps are inside the privileged container.
 
-4) Optional: create a symlink for sysvisor-runc
+4) Optional: create a symlink for sysbox-runc
 
 ```
-ln -s /go/src/github.com/opencontainers/runc/sysvisor-runc /bin/runc
+ln -s /go/src/github.com/opencontainers/runc/sysbox-runc /bin/runc
 ```
 
 5) go to the test directory where the sys container bundle is located:
@@ -97,5 +97,5 @@ cd /root/busyboxtest
 6) Execute runc manually as needed to repro. E.g.,:
 
 ```
-runc --no-sysvisor-mgr --no-sysvisor-fs run test
+runc --no-sysbox-mgr --no-sysbox-fs run test
 ```
