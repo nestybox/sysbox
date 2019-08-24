@@ -14,7 +14,7 @@ SYSVISOR_IMAGE_COMMON := common
 SYSVISOR_IMAGE_SYSTEMD := ../systemd
 SYSVISOR_IMAGE_SOURCES := SYSVISOR_IMAGE_COMMON SYSVISOR_IMAGE_SYSTEMD
 
-SOURCE_FILES =  sysvisor.tgz   \
+SOURCE_FILES =  sysvisor.tgz           \
 		sysvisor.service       \
 		sysvisor-fs.service    \
 		sysvisor-mgr.service   \
@@ -119,7 +119,7 @@ sources/sysvisor.tgz:
 		-v $(SYSVISOR_DIR):/sysvisor \
 		-v $(CURDIR)/$(@D):/v \
 		alpine \
-		tar -C / -czf /v/sysvisor.tgz --exclude .git --exclude='images' sysvisor
+		tar -C / -czf /v/sysvisor.tgz --exclude='images' sysvisor
 
 sources/sysvisor.service: ../systemd/sysvisor.service
 	mkdir -p $(@D)
