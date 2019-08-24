@@ -74,19 +74,11 @@ fi
 #
 ###############################################################################
 
-# Set variables required to satisfy 'changelog' layout requirements.
-EPOCH=1
-EPOCH_SEP=":"
-debSource="$(awk -F ': ' '$1 == "Source" { print $2; exit }' debian/control)"
-debMaintainer="$(awk -F ': ' '$1 == "Maintainer" { print $2; exit }' debian/control)"
-debDate="$(date --rfc-2822)"
-
-# Generate log entry to update 'changelog' file.
-cat > "debian/changelog" <<-EOF
-$debSource (${EPOCH}${EPOCH_SEP}${VERSION}-0~${DISTRO}-${SUITE}) $SUITE; urgency=low
-  * Version: $VERSION
- -- $debMaintainer  $debDate
-EOF
+# Generate debian's changelog file.
+/root/build-deb/changelog_convert.sh
+if [[ ! $? -eq 0 ]]; then
+  exit 1
+fi
 
 # Build the package and copy artifacts to the expected location.
 dpkg-buildpackage -uc -us -I.git
