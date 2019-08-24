@@ -70,8 +70,8 @@ builds is fully eliminated:
     Setting up sysvisor (1:0.0.1-0~ubuntu-disco) ...
 
     Disruptive changes made to docker configuration. Restarting docker service...
-    Created symlink /etc/systemd/system/sysvisor.service.wants/sysvisor-fs.service → /lib/systemd/system/sysvisor-fs.service.
-    Created symlink /etc/systemd/system/sysvisor.service.wants/sysvisor-mgr.service → /lib/systemd/system/sysvisor-mgr.service.
+    Created symlink /etc/systemd/system/sysvisor.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+    Created symlink /etc/systemd/system/sysvisor.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
     Created symlink /etc/systemd/system/multi-user.target.wants/sysvisor.service → /lib/systemd/system/sysvisor.service.
     ```
 
@@ -80,8 +80,8 @@ Sysvisor's daemons should be running by now...
 
     ```
     $ systemctl list-units -t service --all | grep sysvisor
-    sysvisor-fs.service                   loaded    active   running Sysvisor-fs component
-    sysvisor-mgr.service                  loaded    active   running Sysvisor-mgr component
+    sysbox-fs.service                   loaded    active   running Sysvisor-fs component
+    sysbox-mgr.service                  loaded    active   running Sysvisor-mgr component
     sysvisor.service                      loaded    active   exited  Sysvisor General Service
     ```
 
@@ -126,8 +126,8 @@ images                           // Image-creation sub-tree
 ├── rpm                          // RPM-specific instructions (TBD)
 │   └── Makefile
 └── systemd                      // Systemd's units corresponding to Sysvisor's daemons
-    ├── sysvisor-fs.service
-    ├── sysvisor-mgr.service
+    ├── sysbox-fs.service
+    ├── sysbox-mgr.service
     ├── sysvisor.service
     └── sysvisor-systemd.conf
 ```
@@ -158,7 +158,7 @@ manually/automatically should the installer consider it appropriated.
 * Verify that Sysvisor is being installed over a supported Linux
 distribution and a supported Linux kernel.
 
-* Creates sysvisor-fs mountpoint.
+* Creates sysbox-fs mountpoint.
 
 * Allows unprivileged users to create user namespaces.
 
@@ -170,9 +170,9 @@ utilization of 'userns-remap' knob (i.e. kernels < 5.0).
 
 * Creates/Adjusts docker config file in order to:
     - Create/Delete a 'sysvisor' userns-remap entry.
-    - Add/Delete sysvisor-runc runtime entry.
+    - Add/Delete sysbox-runc runtime entry.
 
 * Restart/Sighup dockerd to have daemon.json changes being absorbed.
 
 * Create/Delete sysvisor's systemd service in charge of managing
-sysvisor-fs and sysvisor-mgr daemons.
+sysbox-fs and sysbox-mgr daemons.

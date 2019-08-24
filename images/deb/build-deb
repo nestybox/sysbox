@@ -6,24 +6,24 @@
 set -x
 set -e
 
-# Untar Sysvisor sources.
-mkdir -p /root/build-deb/sysvisor
-tar -C /root/build-deb -xzf /sources/sysvisor.tgz
+# Untar Sysboxd sources.
+mkdir -p /root/build-deb/sysboxd
+tar -C /root/build-deb -xzf /sources/sysboxd.tgz
 
-# Obtain Sysvisor version out of the source tree.
-VERSION=$(cat /root/build-deb/sysvisor/VERSION)
+# Obtain sysboxd version out of the source tree.
+VERSION=$(cat /root/build-deb/sysboxd/VERSION)
 
 # Shiftfs module-name
 shiftfs_mod_name="nbox-shiftfs"
 
 # Path of shiftfs module.
-SHIFTFS_MODULE_DIR=sysvisor/shiftfs/${DISTRO}-${SUITE}
+SHIFTFS_MODULE_DIR=sysboxd/shiftfs/${DISTRO}-${SUITE}
 
 ###############################################################################
 #
 # Create shiftfs-dkms debian package. This will be a traditional / full-blown
 # package including source-code and changelogs. The obtained binary modules
-# (*.ko files) will be later on included in the final sysvisor debian package.
+# (*.ko files) will be later on included in the final sysboxd debian package.
 #
 ###############################################################################
 
@@ -68,7 +68,7 @@ fi
 
 ###############################################################################
 #
-# Create sysvisor's debian package. Note that the generated package will
+# Create sysboxd's debian package. Note that the generated package will
 # include all the traditional debian artifacts (tar, dsc, deb, etc), thereby,
 # we should ensure that only the *.deb file (binaries) is externally shared.
 #
@@ -83,4 +83,4 @@ fi
 # Build the package and copy artifacts to the expected location.
 dpkg-buildpackage -uc -us -I.git
 mkdir -p /build
-mv -v /root/sysvisor* /build
+mv -v /root/sysbox* /build

@@ -3,7 +3,7 @@
 # Copyright: (C) 2019 Nestybox Inc.  All rights reserved.
 #
 
-# Sysvisor kernel requirements matrix:
+# Sysboxd kernel requirements matrix:
 #
 #   +========================================================================================+
 #   |  Supported Distributions  |  Supported Kernels  |  uid-shift mode  |   regular mode    |
@@ -30,8 +30,8 @@
 
 
 # At the moment, only Ubuntu distro is supported.
-declare -A sysvisor_support_matrix
-sysvisor_support_matrix=(
+declare -A sysboxd_support_matrix
+sysboxd_support_matrix=(
     ["Ubuntu 19.04"]="5.0"
     ["Ubuntu 18.10"]="4.18"
     ["Ubuntu 18.04"]="4.15"
@@ -91,7 +91,7 @@ version_compare() {
 }
 
 #
-# Enforce Sysvisor's kernel-requirements matrix.
+# Enforce sysboxd's kernel-requirements matrix.
 #
 verify_compatibility() {
 
@@ -102,14 +102,14 @@ verify_compatibility() {
 
     # Iterate through the support_matrix and verify that minimum requirements
     # are met.
-    for distro in "${!sysvisor_support_matrix[@]}"; do
+    for distro in "${!sysboxd_support_matrix[@]}"; do
 
         # Verify distro compatibility.
         if [[ ${distro} = ${cur_distro} ]]; then
             found_supported_distro=true
 
             # Verify kernel compatibility.
-            version_compare ${cur_kernel} ${sysvisor_support_matrix[$distro]}
+            version_compare ${cur_kernel} ${sysboxd_support_matrix[$distro]}
             if [[ $? -le 1 ]]; then
                 found_supported_kernel=true
             fi
@@ -131,7 +131,7 @@ verify_compatibility() {
 
 case "$1" in
     install)
-        # Verify that Sysvisor's system requirements are met.
+        # Verify that sysboxd's system requirements are met.
         verify_compatibility
 
         exit 0

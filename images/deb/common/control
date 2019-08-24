@@ -1,4 +1,4 @@
-Source: sysvisor
+Source: sysboxd
 Section: admin
 Priority: optional
 Maintainer: Nestybox <contact@nestybox.com>
@@ -6,9 +6,9 @@ Build-Depends: debhelper (>= 11),
                bash,
 Standards-Version: 4.1.4
 Homepage: nestybox.com
-Vcs-Git: git://github.com/nestybox/sysvisor.git
+Vcs-Git: git://github.com/nestybox/sysboxd.git
 
-Package: sysvisor
+Package: sysboxd
 Architecture: linux-any
 Depends: ${shlibs:Depends},
          ${misc:Depends},
@@ -17,5 +17,5 @@ Depends: ${shlibs:Depends},
          fuse,
          lsb-release
 Description: System-containers runtime
- Sysvisor is a container runtime that enables the creation of
+ Sysboxd is a container runtime that enables the creation of
   system containers.

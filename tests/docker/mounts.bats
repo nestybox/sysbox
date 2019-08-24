@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Test that docker storage mounts work as expected when using sysvisor
+# Test that docker storage mounts work as expected when using sysboxd
 #
 
 load ../helpers/run
@@ -39,7 +39,7 @@ load ../helpers/run
 @test "docker bind mount" {
 
   # when using uid shifting, the bind source must be accessible by root on the host only
-  # in order to pass the sysvisor-runc security check.
+  # in order to pass the sysbox-runc security check.
   if [ -n "$SHIFT_UIDS" ]; then
     testDir="/root/testVol"
   else
@@ -114,7 +114,7 @@ load ../helpers/run
 
   if [ -n "$SHIFT_UIDS" ]; then
     # verify that a bind mount fails when using uid shifting and the source path is accessible by non-root
-    docker run --runtime=sysvisor-runc -d --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null
+    docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null
     [ "$status" -eq 125 ]
     [[ "$output" =~ "shiftfs mountpoint security check failed" ]]
   else

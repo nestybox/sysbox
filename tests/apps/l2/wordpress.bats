@@ -15,7 +15,7 @@ function wait_for_inner_dockerd() {
   # Deploy a wordpress container inside the sys container and verifies it works.
 
   # launch a sys container; we use a ubuntu-based sys container to
-  # work-around sysvisor issue #270.
+  # work-around sysboxd issue #270.
   SYSCONT_NAME=$(docker_run --rm --hostname sc nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
 
   # launch docker inside the sys container

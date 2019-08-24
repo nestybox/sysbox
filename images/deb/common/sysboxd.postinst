@@ -12,8 +12,8 @@ set -e
 dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
 
-# Sysvisor-fs' default mountpoint path.
-sysvisorfs_mountpoint="/var/lib/sysvisorfs"
+# sysbox-fs' default mountpoint path.
+sysboxfs_mountpoint="/var/lib/sysboxfs"
 
 # Shiftfs' minimum-supported kernel
 SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
@@ -26,15 +26,15 @@ shiftfs_mod_name_shell="nbox_shiftfs"
 uid_shift_mode=false
 
 
-# Creates sysvisor-fs mountpoint.
-create_sysvisorfs_mountpoint() {
+# Creates sysbox-fs mountpoint.
+create_sysboxfs_mountpoint() {
 
-    if [[ -d ${sysvisorfs_mountpoint} ]]; then
+    if [[ -d ${sysboxfs_mountpoint} ]]; then
         return
     fi
 
-    mkdir -p ${sysvisorfs_mountpoint}
-    if [[ ! -d ${sysvisorfs_mountpoint} ]]; then
+    mkdir -p ${sysboxfs_mountpoint}
+    if [[ ! -d ${sysboxfs_mountpoint} ]]; then
         exit 1
     fi
 }
@@ -48,21 +48,21 @@ enable_unprivileged_userns() {
     fi
 }
 
-# Adds user/group in charge of running all sysvisor components.
-add_sysvisor_user() {
+# Adds user/group in charge of running all sysboxd components.
+add_sysboxd_user() {
 
-    if ! getent passwd | grep "^sysvisor:" >/dev/null 2>&1; then
-        useradd -r -s /bin/false sysvisor
+    if ! getent passwd | grep "^sysboxd:" >/dev/null 2>&1; then
+        useradd -r -s /bin/false sysboxd
     fi
 
-    # Temporarily adding a static subordinate UIDs/GIDs range for sysvisor user.
-    # A more proper logic will be soon implemented by sysvisor-mgr, and then,
+    # Temporarily adding a static subordinate UIDs/GIDs range for sysboxd user.
+    # A more proper logic will be soon implemented by sysbox-mgr, and then,
     # the following instructions shall be eliminated from here.
-    if ! egrep "^sysvisor:" /etc/subuid >/dev/null 2>&1; then
-        sed -i "\$asysvisor:1000000:65536" /etc/subuid
+    if ! egrep "^sysboxd:" /etc/subuid >/dev/null 2>&1; then
+        sed -i "\$asysboxd:1000000:65536" /etc/subuid
     fi
-    if ! egrep "^sysvisor:" /etc/subgid >/dev/null 2>&1; then
-        sed -i "\$asysvisor:1000000:65536" /etc/subgid
+    if ! egrep "^sysboxd:" /etc/subgid >/dev/null 2>&1; then
+        sed -i "\$asysboxd:1000000:65536" /etc/subgid
     fi
 }
 
@@ -102,7 +102,7 @@ load_uid_shift_module() {
     uid_shift_mode=true
 }
 
-# Create/Modify dockerd configuration to satisfy Sysvisor's requirements.
+# Create/Modify dockerd configuration to satisfy Sysboxd's requirements.
 #
 # There are two operation-modes that dictate the presence/absence of
 # a 'userns-remap' entry in dockerd's config file:
@@ -110,10 +110,10 @@ load_uid_shift_module() {
 # 1) uid-shifting mode: In this case no 'userns-remap' entry is required in
 #    dockerd's configuration.
 # 2) regular mode: In this mode a 'userns-remap' entry is required by making
-#    use of the 'sysvisor' uid.
+#    use of the 'sysboxd' uid.
 #
 # Regardless of the oper-mode being elected, dockerd config file must be always
-# updated to introduce the sysvisor-runc runtime.
+# updated to introduce the sysbox-runc runtime.
 adjust_docker_config() {
 
     local docker_restart_required=false
@@ -131,14 +131,14 @@ adjust_docker_config() {
     # off.
     if [[ ${uid_shift_mode} = false ]]; then
         # If no 'userns-remap' key-entry is present, or if its associated value
-        # is empty, proceed to create a key and set its value to 'sysvisor' user.
+        # is empty, proceed to create a key and set its value to 'sysboxd' user.
         # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
         # it displays inconsistent behavior), hence the need for the auxiliar
         # 'tmp' file.
         if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = false ]] ||
             [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"\"" ]]; then
 
-            jq --indent 4 '. + {"userns-remap": "sysvisor"}' \
+            jq --indent 4 '. + {"userns-remap": "sysboxd"}' \
                 ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
             docker_restart_required=true
@@ -146,9 +146,9 @@ adjust_docker_config() {
 
     else
         # If uid_shift_mode is enabled verify that no 'userns-remap' entry exists
-        # for 'sysvisor' user, and if that's the case, proceed to eliminate it.
+        # for 'sysboxd' user, and if that's the case, proceed to eliminate it.
         if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = true ]] &&
-            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysvisor\"" ]]; then
+            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysboxd\"" ]]; then
 
             jq 'del(."userns-remap")' \
                 ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
@@ -163,14 +163,14 @@ adjust_docker_config() {
 
     # If no 'runtimes' key-entry is present, proceed to add one.
     if [[ $(jq 'has("runtimes")' ${dockerCfgFile}) = false ]]; then
-        jq --indent 4 '. + {"runtimes": {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}}' \
+        jq --indent 4 '. + {"runtimes": {"sysbox-runc": {"path": "/usr/local/sbin/sysbox-runc"}}}' \
             ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
         docker_sighup_required=true
 
-    # If no 'sysvisor-runc' runtime entry is present, proceed to add it.
-    elif [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockerCfgFile}) = false ]]; then
-        jq --indent 4 '.runtimes |= . + {"sysvisor-runc": {"path": "/usr/local/sbin/sysvisor-runc"}}' \
+    # If no 'sysbox-runc' runtime entry is present, proceed to add it.
+    elif [[ $(jq '.runtimes | has("sysbox-runc")' ${dockerCfgFile}) = false ]]; then
+        jq --indent 4 '.runtimes |= . + {"sysbox-runc": {"path": "/usr/local/sbin/sysbox-runc"}}' \
             ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
         docker_sighup_required=true
@@ -192,9 +192,9 @@ adjust_docker_config() {
         # pre-installation time, we will either inform user of the need to restart
         # dockerd, or we will automatically do it as part of this installation
         # process.
-        db_get sysvisor/docker_restart
+        db_get sysboxd/docker_restart
         if [ "$RET" = "false" ]; then
-            db_input critical sysvisor/docker_manual_restart || true
+            db_input critical sysboxd/docker_manual_restart || true
             db_stop
             echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
         else
@@ -208,20 +208,20 @@ adjust_docker_config() {
     fi
 }
 
-config_sysvisor() {
+config_sysboxd() {
 
-    # Ensure sysvisor-fs' default mountpoint is created in the file-system.
-    create_sysvisorfs_mountpoint
+    # Ensure sysbox-fs' default mountpoint is created in the file-system.
+    create_sysboxfs_mountpoint
 
     # Allows user-namespaces creation for unprivileged users. This change will
     # persist through system reboots by relying on a sysctl.d config-file to be
     # generated as part of this package's installation process.
     enable_unprivileged_userns
 
-	# Add 'sysvisor' user to host a large pool of subordinate UIDs/GIDs to be
+	# Add 'sysboxd' user to host a large pool of subordinate UIDs/GIDs to be
     # shared across all system-containers. This user must match the one defined
     # in the docker configuration file.
-    add_sysvisor_user
+    add_sysboxd_user
 
     # Load our shiftfs module if its requirements are properly met.
     load_uid_shift_module
@@ -233,8 +233,8 @@ config_sysvisor() {
 
 case "$1" in
     configure)
-        # Adjust system's configuration to satisfy Sysvisor requirements.
-        config_sysvisor
+        # Adjust system's configuration to satisfy Sysboxd requirements.
+        config_sysboxd
 
         # Avoid calling exit() here to allow debhelper tools to add their
         # auto-generated code further below.

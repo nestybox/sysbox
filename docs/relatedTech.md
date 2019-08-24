@@ -1,4 +1,4 @@
-Technologies related to sysvisor-runc
+Technologies related to sysbox-runc
 =====================================
 
 * [LXD](https://linuxcontainers.org/lxd/)

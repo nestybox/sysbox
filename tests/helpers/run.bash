@@ -33,13 +33,13 @@ run_only_test_num() {
   fi
 }
 
-# Wrapper for sysvisor-runc using bats
+# Wrapper for sysbox-runc using bats
 function sv_runc() {
   run __sv_runc "$@"
 
   # Some debug information to make life easier. bats will only print it if the
   # test failed, in which case the output is useful.
-  echo "sysvisor-runc $@ (status=$status):" >&2
+  echo "sysbox-runc $@ (status=$status):" >&2
   echo "$output" >&2
 }
 
@@ -57,9 +57,9 @@ function __docker() {
   command docker "$@"
 }
 
-# Executes docker run with sysvisor-runc; returns the container id
+# Executes docker run with sysbox-runc; returns the container id
 function docker_run() {
-  docker run --runtime=sysvisor-runc -d "$@"
+  docker run --runtime=sysbox-runc -d "$@"
   [ "$status" -eq 0 ]
 
   docker ps --format "{{.ID}}"
@@ -91,13 +91,13 @@ function bats_bg() {
 }
 
 function sv_mgr_start() {
-  # Note: must match the way sysvisor-mgr is usually started, except
+  # Note: must match the way sysbox-mgr is usually started, except
   # that we also pass in the "$@".
-  bats_bg sysvisor-mgr --log /dev/stdout "$@" > /var/log/sysvisor-mgr.log 2>&1
+  bats_bg sysbox-mgr --log /dev/stdout "$@" > /var/log/sysbox-mgr.log 2>&1
   sleep 1
 }
 
 function sv_mgr_stop() {
-  pid=$(pidof sysvisor-mgr)
+  pid=$(pidof sysbox-mgr)
   kill $pid
 }

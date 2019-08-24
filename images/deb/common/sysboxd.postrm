@@ -16,12 +16,12 @@ dockerCfgFile="${dockerCfgDir}/daemon.json"
 shiftfs_mod_name="nbox-shiftfs"
 
 # Note: As per Debian packaging policies, package elimination should not remove
-# logfiles. Therefore we shouldn't delete the 'sysvisor' user/group previously
-# created by Sysvisor's installation process, as it would leave files with
+# logfiles. Therefore we shouldn't delete the 'sysboxd' user/group previously
+# created by Sysboxd's installation process, as it would leave files with
 # dangling ownership.
 
 
-# Unload shiftfs module. Note that by the time this function is invoked, sysvisor
+# Unload shiftfs module. Note that by the time this function is invoked, sysboxd
 # service should have been already stopped by debian's prerm installation script.
 unload_uid_shift_module() {
 
@@ -35,7 +35,7 @@ unload_uid_shift_module() {
     fi
 }
 
-# Modify dockerd configuration to eliminate Sysvisor's associated entries.
+# Modify dockerd configuration to eliminate Sysboxd's associated entries.
 adjust_docker_config() {
 
     local docker_restart_required=false
@@ -46,9 +46,9 @@ adjust_docker_config() {
         return
     fi
 
-    # Eliminate sysvisor's userns-remap entry if present.
+    # Eliminate sysboxd's userns-remap entry if present.
     if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = true ]] &&
-        [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysvisor\"" ]]; then
+        [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysboxd\"" ]]; then
 
         jq 'del(."userns-remap")' \
             ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
@@ -56,11 +56,11 @@ adjust_docker_config() {
         docker_restart_required=true
     fi
 
-    # Eliminate sysvisor's runtime entry if present.
+    # Eliminate sysbox's runtime entry if present.
     if [[ $(jq 'has("runtimes")' ${dockerCfgFile}) = true ]] &&
-         [[ $(jq '.runtimes | has("sysvisor-runc")' ${dockerCfgFile}) = true ]]; then
+         [[ $(jq '.runtimes | has("sysbox-runc")' ${dockerCfgFile}) = true ]]; then
 
-        jq 'del(.runtimes."sysvisor-runc")' \
+        jq 'del(.runtimes."sysbox-runc")' \
             ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
         docker_sighup_required=true
@@ -81,9 +81,9 @@ adjust_docker_config() {
         # installation time, we will either inform user of the need to restart
         # dockerd, or we will automatically do it as part of this uninstallation
         # process.
-        db_get sysvisor/docker_restart
+        db_get sysboxd/docker_restart
         if [ "$RET" = "false" ]; then
-            db_input critical sysvisor/docker_manual_restart || true
+            db_input critical sysboxd/docker_manual_restart || true
             echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
         else
             echo -e "\nDisruptive changes made to docker configuration. Restarting docker service..."
@@ -101,12 +101,12 @@ case "$1" in
     purge)
 
         # TBD! Ideally, we should be able to unload shiftfs module at purge
-        # time, but that requires the capability of sysvisor service of being
+        # time, but that requires the capability of sysboxd service of being
         # able to stop all the system containers. Will comment this instruction
         # till this logic is available.
         # unload_uid_shift_module
 
-        # Adjust docker config to eliminate entries added by Sysvisor's
+        # Adjust docker config to eliminate entries added by Sysboxd's
         # installation process.
         adjust_docker_config
     ;;

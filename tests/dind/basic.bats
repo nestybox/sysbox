@@ -92,8 +92,8 @@ EOF
 
 @test "dind image cache vol" {
 
-  # TODO:
-  #
+  skip "TODO"
+
   # start the sys container, mount a docker volume on the inner Docker's image cache
   #
   # create some inner containers

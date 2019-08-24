@@ -12,12 +12,12 @@ function wait_for_nginx() {
 
 @test "l1 nginx basic" {
 
-  # Deploys an nginx container with sysvisor-runc
+  # Deploys an nginx container with sysbox-runc
 
   # this html file will be passed to the nginx container via a bind-mount
   #
   # Note that we place it in /root which has 700 permissions; this is
-  # a requirement imposed by sysvisor when using uid-shifting: the bind
+  # a requirement imposed by sysboxd when using uid-shifting: the bind
   # source must be within a path searchable by true root only.
 
   tmpdir="/root/nginx"

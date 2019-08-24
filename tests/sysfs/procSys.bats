@@ -21,7 +21,7 @@ function teardown() {
 }
 
 # compares /proc/* listings between a sys-container and unshare-all
-# (there are expected to match, except for files emulated by sysvisor-fs)
+# (there are expected to match, except for files emulated by sysbox-fs)
 function compare_syscont_unshare() {
   sc_list=$1
   ns_list=$2
@@ -63,8 +63,8 @@ function compare_syscont_unshare() {
   [ "$status" -eq 0 ]
 
   # By default ipv6 should be enabled within a system container
-  # launched by sysvisor-runc directly (e.g., without docker) Note
-  # that in system container launched with docker + sysvisor-runc,
+  # launched by sysbox-runc directly (e.g., without docker) Note
+  # that in system container launched with docker + sysbox-runc,
   # docker (somehow) disables ipv6.
   sv_runc exec syscont sh -c "cat $disable_ipv6"
   [ "$status" -eq 0 ]
@@ -263,7 +263,7 @@ function compare_syscont_unshare() {
 
 @test "/proc/sys concurrent intra-container access" {
 
-  skip "Sysvisor issue #246"
+  skip "issue #246"
 
   num_workers=10
 
@@ -368,9 +368,9 @@ EOF
 
 @test "/proc/sys access frequency" {
 
-  skip "Sysvisor issue #246"
+  skip "issue #246"
 
-  # verify sysvisor-fs handles a high access frequency properly
+  # verify sysbox-fs handles a high access frequency properly
   num_workers=10
 
   # worker script (periodically polls a /proc/sys file)
@@ -460,7 +460,7 @@ EOF
   [ "$status" -eq 0 ]
   val="$output"
 
-  # As non-root, read a /proc/sys file; sysvisor-fs should allow this
+  # As non-root, read a /proc/sys file; sysbox-fs should allow this
   sv_runc exec syscont sh -c "runuser -l someuser -c \"cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
   [ "$status" -eq 0 ]
   [ $output -eq $val ]
@@ -468,7 +468,7 @@ EOF
 
 @test "/proc/sys write-permission check" {
 
-  skip "Sysvisor issue #259"
+  skip "issue #259"
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
@@ -481,7 +481,7 @@ EOF
   val="$output"
   new_val=$(( $val + 1 ))
 
-  # As root, write a /proc/sys read-write file; sysvisor-fs should allow this
+  # As root, write a /proc/sys read-write file; sysbox-fs should allow this
   sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
   [ "$status" -eq 0 ]
 
@@ -492,7 +492,7 @@ EOF
   [ $val -eq $new_val ]
   new_val=$(( $val + 1 ))
 
-  # As non-root, write to the same file; sysvisor-fs should disallow this
+  # As non-root, write to the same file; sysbox-fs should disallow this
   sv_runc exec syscont sh -c "runuser -l someuser -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
   [ "$status" -ne 0 ]
   [[ "$output" =~ *"Operation not permitted"* ]]
@@ -502,7 +502,7 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" -eq $val ]
 
-  # As root, write a /proc/sys read-only file; sysvisor-fs should disallow this
+  # As root, write a /proc/sys read-only file; sysbox-fs should disallow this
   sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/kernel/cap_last_cap\""
   [ "$status" -eq 1 ]
   [[ "$output" =~ *"Permission denied"* ]]
@@ -510,7 +510,7 @@ EOF
 
 # @test "/proc/sys capability checking" {
 #
-#   # TODO: verify sysvisor-fs checking of capabilities
+#   # TODO: verify sysbox-fs checking of capabilities
 #
 #   # verify that a non-root process with CAP_DAC_OVERRIDE and
 #   # CAP_DAC_READ_SEARCH is allowed to modify a /proc/sys file

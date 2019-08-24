@@ -1,73 +1,73 @@
-Sysvisor Design Notes
+Sysboxd Design Notes
 =====================
 
-The document describes the design of sysvisor, capturing primarily low
+The document describes the design of sysboxd, capturing primarily low
 level design issues.
 
-Refer to the [sysvisor README file](https://github.com/nestybox/sysvisor/blob/master/README.md) for a general intro into sysvisor.
+Refer to the [sysboxd README file](../README.md) for a general intro into sysboxd.
 
 # Architecture
 
-Sysvisor is comprised on 3 main components:
+Sysboxd is comprised on 3 main components:
 
-* sysvisor-runc: fork of the OCI runc, customized for running system containers.
+* sysbox-runc: fork of the OCI runc, customized for running system containers.
 
-* sysvisor-fs: FUSE-based filesystem, handles emulation of ceratain
+* sysbox-fs: FUSE-based filesystem, handles emulation of ceratain
   files in the system container's rootfs, in particular those under
   "/proc/sys".
 
-* sysvisor-mgr: a daemon that provides services to sysvisor-runc and
-  sysvisor-fs. For example, it manages assignment of exclusive user
+* sysbox-mgr: a daemon that provides services to sysbox-runc and
+  sysbox-fs. For example, it manages assignment of exclusive user
   namespace subuid mappings to system containers.
 
-sysvisor-runc is the frontend for sysvisor; higher layers (e.g.,
-Docker or Kubernetes via containerd) invoke sysvisor-runc to
+sysbox-runc is the frontend for sysboxd; higher layers (e.g.,
+Docker or Kubernetes via containerd) invoke sysbox-runc to
 launch system containers.
 
-sysvisor-runc is a fork of the [OCI runc](https://github.com/opencontainers/runc),
+sysbox-runc is a fork of the [OCI runc](https://github.com/opencontainers/runc),
 but has been modified to run system containers. It's mostly but not
 totally OCI compatible (see section on System Container Spec
 Requirements below for details).
 
-sysvisor-fs and sysvisor-mgr are the backends for sysvisor. Communication
-between sysvisor components is done via gRPC.
+sysbox-fs and sysbox-mgr are the backends for sysboxd. Communication
+between sysboxd components is done via gRPC.
 
 # System Container Spec Requirements & Overrides
 
-The following are requirements that Sysvisor places on the OCI spec
+The following are requirements that Sysboxd places on the OCI spec
 (i.e., config.json) for a system container.
 
 In cases where the system container spec does not meet these
-requirements, depending on the specific config Sysvisor may bail (with
+requirements, depending on the specific config Sysboxd may bail (with
 an informative error) or override the config when spawning the
 container (with an appropriate log message).
 
 ## Init Process
 
-* Sysvisor honors the init process selected for the system container
+* Sysboxd honors the init process selected for the system container
   via the spec's `Process` object.
 
 * Normally, we expect that the init process in a system container will
   be an init daemon (e.g., systemd). But that's not always true, and
-  Sysvisor will execute whatever entry point is specified in the spec.
+  Sysboxd will execute whatever entry point is specified in the spec.
 
 ## Capabilities
 
-* If the `Process` object indicates a uid of 0, sysvisor gives that
+* If the `Process` object indicates a uid of 0, sysboxd gives that
   process full capabilities regardless of what the system container's
   spec indicates.
 
   - This applies to processes that enter the system container via any
-    of the defined entry points (i.e., `sysvisor-runc run` or
-    `sysvisor-runc exec`).
+    of the defined entry points (i.e., `sysbox-runc run` or
+    `sysbox-runc exec`).
 
-* If the `Process` object indicates a uid != 0, sysvisor gives that
+* If the `Process` object indicates a uid != 0, sysboxd gives that
   process the capabilities defined in the spec; if none are defined,
   it gets no capabilities.
 
   - This applies to processes that enter the system container via any
-    of the defined entry points (i.e., `sysvisor-runc run` or
-    `sysvisor-runc exec`).
+    of the defined entry points (i.e., `sysbox-runc run` or
+    `sysbox-runc exec`).
 
 * Processes created inside the system container (i.e., children of the
   sys container's init process) get capabilities per Linux rules (see
@@ -84,7 +84,7 @@ container (with an appropriate log message).
   - network
 
 * The system container spec may optionally include the
-  following namespaces; if not present, Sysvisor will add them.
+  following namespaces; if not present, Sysboxd will add them.
 
   - user
   - cgroup
@@ -99,7 +99,7 @@ container (with an appropriate log message).
 
 * However, it's critical to prevent a root process in the system
   container from changing the cgroup resources assigned to the system
-  container itself. To do this, Sysvisor creates two cgroup
+  container itself. To do this, Sysboxd creates two cgroup
   directories for each system container on the host:
 
   `/sys/fs/cgroup/<controller>/<syscont-id>/`
@@ -110,34 +110,34 @@ container (with an appropriate log message).
   The system container has no visibility and permissions to access it.
 
 * The second directory is exposed inside the system container.
-  Sysvisor gives the root user in the system container full access to
+  Sysboxd gives the root user in the system container full access to
   it (i.e., mounts it read-write as the system container's cgroup root, and
   changes the ownership on the host to match the system container's
   root process uid(gid)).
 
-* In addition, Sysvisor uses the cgroup namespace to hide the host
+* In addition, Sysboxd uses the cgroup namespace to hide the host
   path for the cgroup root inside the system container.
 
 ## Read-only paths
 
-* Sysvisor will honor read-only paths in the system container
+* Sysboxd will honor read-only paths in the system container
   spec, except when these correspond to paths managed by
-  sysvisor-fs.
+  sysbox-fs.
 
-  - The rationale is that sysvisor-fs paths are required for system
-    container operation; thus sysvisor-fs decides whether to
+  - The rationale is that sysbox-fs paths are required for system
+    container operation; thus sysbox-fs decides whether to
     how to expose the path.
 
   - This may change in the future as use cases arise.
 
 ## Masked paths
 
-* Sysvisor will honor masked paths in the system container
+* Sysboxd will honor masked paths in the system container
   spec, except when these correspond to paths managed by
-  sysvisor-fs.
+  sysbox-fs.
 
-  - The rationale is that sysvisor-fs paths are required for system
-    container operation; thus sysvisor-fs decides whether to
+  - The rationale is that sysbox-fs paths are required for system
+    container operation; thus sysbox-fs decides whether to
     how to expose the path.
 
   - This may change in the future as use cases arise.
@@ -148,37 +148,37 @@ container (with an appropriate log message).
 
 ## uid(gid) mappings
 
-* If the container spec specifies uid(gid) mapping, sysvisor honors it
+* If the container spec specifies uid(gid) mapping, sysboxd honors it
 
-  - sysvisor does not record the mapping in this case
+  - sysboxd does not record the mapping in this case
 
-  - sysvisor requires that the mapping be for a range of >= 64K uid(gid)s per container.
+  - sysboxd requires that the mapping be for a range of >= 64K uid(gid)s per container.
 
     - This is necessary to support running most Linux distros inside a
       system container (e.g., Debian uses uid 65534 as "nobody").
 
-  - sysvisor does not require that the mappings between containers be non-overlapping
-    in this case; sysvisor honors the given map, regardless of whether it overlaps
+  - sysboxd does not require that the mappings between containers be non-overlapping
+    in this case; sysboxd honors the given map, regardless of whether it overlaps
     with other containers.
 
     - It's up to the higher layer to provide non-overlapping uid
       mappings between containers for strong container->container
       isolation.
 
-* Otherwise, sysvisor generates the uid(gid) mapping
+* Otherwise, sysboxd generates the uid(gid) mapping
 
-  - the mapping is generated from the subuid/subgid range for user "sysvisor"
+  - the mapping is generated from the subuid/subgid range for user "sysboxd"
 
   - each sys container is given an exclusive portion of the subuid(gid) range (for strong isolation)
 
   - if the subuid(gid) range is exhausted, action is determined by subuid(gid)
     range exhaust policy setting.
 
-  - sysvisor allocations are always for 64K uid(gid)s
+  - sysboxd allocations are always for 64K uid(gid)s
 
 ### subuid(gid) range exhaust policy
 
-This policy dictates how sysvisor reacts to subuid(gid) range
+This policy dictates how sysboxd reacts to subuid(gid) range
 exhaustion when uid(gid) auto allocation is enabled.
 
 - Re-use: re-use uid(gid) mappings; this may cause multiple sys
@@ -187,19 +187,19 @@ exhaustion when uid(gid) auto allocation is enabled.
 
 - No-Reuse: do not launch sys container.
 
-This policy can be configured via sysvisor-mgr's `subid-policy`
+This policy can be configured via sysbox-mgr's `subid-policy`
 command line option.
 
 # uid(gid) shifting
 
-sysvisor-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) to support Docker
+sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) to support Docker
 containers when the Docker daemon is configured without userns-remap
 (as it is by default).
 
 In this case the system container rootfs files are owned by true
 root and are normally located under `/var/lib/docker/...`.
 
-When a user launches the system container with Docker, sysvisor-runc
+When a user launches the system container with Docker, sysbox-runc
 detects that the container does not have a uid(gid) mapping and
 generates one. It then creates the container and mounts shiftfs on the
 system container's rootfs. This allows the system container's root
@@ -218,17 +218,17 @@ TARGET                                SOURCE                                    
 
 Notice how shiftfs is mounted on the container's rootfs.
 
-uid(gid) shifting is not used by sysvisor when Docker userns-remap is
+uid(gid) shifting is not used by sysboxd when Docker userns-remap is
 enabled, as in this case Docker ensures that the container's rootfs is
 owned by the same host user that maps to the container's root
-user. Sysvisor-runc detects this situation and does not use shiftfs on
+user. Sysboxd-runc detects this situation and does not use shiftfs on
 the container rootfs.
 
 Here is an example of a system container mounts with Docker userns-remap
 (i.e., without uid(gid) shifting):
 
 ```
-$ docker run -it --rm --runtime=sysvisor-runc debian:latest
+$ docker run -it --rm --runtime=sysbox-runc debian:latest
 root@92ce5789c394:/# findmnt
 TARGET                                SOURCE                                      FSTYPE   OPTIONS
 /                                     /dev/sda[/var/lib/docker/231072.231072/btrfs/subvolumes/70d8a082b1d2f0fab5b918aa634d7448fd19292db1b3ae721be68172022b9522]
@@ -245,7 +245,7 @@ no need to).
 ## Shiftfs on Bind Mount Sources
 
 In addition to mounting shiftfs on the container's rootfs,
-sysvisor-runc also mounts shiftfs on the source directory of bind
+sysbox-runc also mounts shiftfs on the source directory of bind
 mounts specified in the container's runc spec, if they meet
 the following conditions:
 
@@ -261,17 +261,17 @@ the following conditions:
 * The bind mount source uid:gid do not match the uid:gid assigned
   to the container's root process.
 
-This way, sysvisor-runc supports uid(gid) shifting on Docker
+This way, sysbox-runc supports uid(gid) shifting on Docker
 volume or bind mounts.
 
-For example, the following command causes sysvisor-runc to mount shiftfs
+For example, the following command causes sysbox-runc to mount shiftfs
 on directory `/tmp/my-vol`.
 
 ```
-$ docker run --runtime sysvisor-runc --mount type=bind,source=/tmp/my-vol,target=/mnt/shared ...
+$ docker run --runtime sysbox-runc --mount type=bind,source=/tmp/my-vol,target=/mnt/shared ...
 ```
 
-This also allows sysvisor-runc to support sharing of volumes across
+This also allows sysbox-runc to support sharing of volumes across
 system containers.
 
 Without shiftfs, mounting a shared volume across system containers is
@@ -289,20 +289,20 @@ By using uid(gid) shifting, the shared volume can be owned by true
 root (with read-write permissions given to true root only) yet
 be shared by multiple system containers.
 
-## Sysvisor and Docker userns-remap
+## Sysboxd and Docker userns-remap
 
-Based on the above, the following is sysvisor's behavior with respect
+Based on the above, the following is sysboxd's behavior with respect
 to Docker userns remap:
 
 | Docker userns-remap | Description |
 |---------------------|-------------|
-| disabled            | sysvisor will allocate exclusive uid(gid) mappings per sys container and perform uid(gid) shifting. |
+| disabled            | sysboxd will allocate exclusive uid(gid) mappings per sys container and perform uid(gid) shifting. |
 |                     | Strong container-to-host isolation. |
 |                     | Strong container-to-container isolation. |
 |                     | Storage efficient (shared Docker images). |
 |                     | Requires shiftfs module in kernel. |
 |                     |
-| enabled             | sysvisor will honor Docker's uid(gid) mappings. |
+| enabled             | sysboxd will honor Docker's uid(gid) mappings. |
 |                     | uid(gid) shifting won't be used because container uid(gid) mappings match rootfs owner. |
 |                     | Strong container-to-host isolation. |
 |                     | Reduced container-to-container isolation (same uid(gid) range). |
@@ -311,12 +311,12 @@ to Docker userns remap:
 
 # System container /var/lib/docker mount
 
-Sysvisor automatically creates and bind-mounts a host volume inside the
+Sysboxd automatically creates and bind-mounts a host volume inside the
 system container's `/var/lib/docker` directory.
 
 This functionality is needed in order to:
 
-* Remove the need to place sysvisor system container images in a
+* Remove the need to place sysboxd system container images in a
   filesystem that supports Docker-in-Docker (e.g., btrfs).
 
 * Allow Docker-in-Docker when the outer Docker system container is
@@ -325,12 +325,12 @@ This functionality is needed in order to:
   `/var/lib/docker/`, but overlayfs does not work when mounted on top
   of shiftfs, so shiftfs can't be mounted on `/var/lib/docker`.
 
-See sysvisor github issue #46 (https://github.com/nestybox/sysvisor/issues/46) for
+See sysboxd github issue #46 (https://github.com/nestybox/sysvisor/issues/46) for
 further details.
 
 The host volume that is bind mounted on the system container's
-`/var/lib/docker` is simply a directory inside sysvisor-mgr's
-data-root (`/var/lib/sysvisor`). This directory is created by sysvisor
+`/var/lib/docker` is simply a directory inside sysbox-mgr's
+data-root (`/var/lib/sysboxd`). This directory is created by sysboxd
 when the container launches, and deleted when the container stops. In
 other words, the volume / directory only exists for the life of the
 system container.
@@ -343,14 +343,14 @@ Docker).
 
 A couple of details:
 
-* When creating the host volume directory, Sysvisor sets the directory's
+* When creating the host volume directory, Sysboxd sets the directory's
   uid:gid ownership to match the uid:gid of the root inside the system
   container. This way system container root processes can access
   `/var/lib/docker` inside the system container.
 
-* Sysvisor deals with the case where the system container image has
+* Sysboxd deals with the case where the system container image has
   contents in `/var/lib/docker` prior to launching the system
-  container.  In this case, sysvisor copies those contents to the
+  container.  In this case, sysboxd copies those contents to the
   newly created volume and sets the uid:gid ownership appropriately
   before performing the bind mount of the volume on top of the
   container's `/var/lib/docker/`.
@@ -358,25 +358,25 @@ A couple of details:
 ## Implementation
 
 The creation and deletion of the host volume to be mounted on `/var/lib/docker`
-is done by sysvisor-mgr.
+is done by sysbox-mgr.
 
-When a system container starts, sysvisor-runc requests a supplementary
-mount config from sysvisor-mgr. sysvisor-mgr then creates the host
-volume in its data-root (`/var/lib/sysvisor`) and returns a mount
-config to sysvisor-runc. sysvisor-runc then applies the mount config
+When a system container starts, sysbox-runc requests a supplementary
+mount config from sysbox-mgr. sysbox-mgr then creates the host
+volume in its data-root (`/var/lib/sysboxd`) and returns a mount
+config to sysbox-runc. sysbox-runc then applies the mount config
 (i.e., bind mounts the host volume to the container's `/var/lib/docker`).
 
-When a system container stops, sysvisor-runc requests that sysvisor-mgr
-release any resources associated with the container. sysvisor-mgr proceeds
+When a system container stops, sysbox-runc requests that sysbox-mgr
+release any resources associated with the container. sysbox-mgr proceeds
 to remove the host volume associated with the container.
 
-# sysvisor-fs File Emulation
+# sysbox-fs File Emulation
 
 **TODO** Complete this section
 
 # Rootless mode
 
-Sysvisor will initially not support running rootless (i.e.,
+Sysboxd will initially not support running rootless (i.e.,
 without root permissions on the host).
 
 In the future we should consider adding this to allow regular

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #
-# script to run sysvisor integration tests
+# script to run sysboxd integration tests
 #
 
 progName=$(basename "$0")
@@ -20,9 +20,9 @@ if [ $# -eq 1 ]; then
   printf "\nExecuting $1 ... \n"
   bats --tap $1
 else
-  printf "\nExecuting sysvisor-mgr tests ... \n"
+  printf "\nExecuting sysbox-mgr tests ... \n"
   bats --tap tests/sysmgr
-  printf "\nExecuting sysvisor-fs tests ... \n"
+  printf "\nExecuting sysbox-fs tests ... \n"
   bats --tap tests/sysfs
   printf "\nExecuting docker tests ... \n"
   bats --tap tests/docker

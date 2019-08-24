@@ -1,15 +1,15 @@
-[submodule "sysvisor-fs"]
-	path = sysvisor-fs
-	url = git@github.com:nestybox/sysvisor-fs.git
-[submodule "sysvisor-runc"]
-	path = sysvisor-runc
-	url = git@github.com:nestybox/sysvisor-runc.git
-[submodule "sysvisor-protobuf"]
-	path = sysvisor-ipc
-	url = git@github.com:nestybox/sysvisor-ipc.git
-[submodule "sysvisor-mgr"]
-	path = sysvisor-mgr
-	url = git@github.com:nestybox/sysvisor-mgr.git
+[submodule "sysbox-fs"]
+	path = sysbox-fs
+	url = git@github.com:nestybox/sysbox-fs.git
+[submodule "sysbox-runc"]
+	path = sysbox-runc
+	url = git@github.com:nestybox/sysbox-runc.git
+[submodule "sysbox-ipc"]
+	path = sysbox-ipc
+	url = git@github.com:nestybox/sysbox-ipc.git
+[submodule "sysbox-mgr"]
+	path = sysbox-mgr
+	url = git@github.com:nestybox/sysbox-mgr.git
 [submodule "shiftfs"]
 	path = shiftfs
 	url = git@github.com:nestybox/shiftfs.git

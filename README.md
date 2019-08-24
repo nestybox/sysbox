@@ -1,20 +1,18 @@
-Nestybox Sysvisor
-=================
+Nestybox Sysboxd
+================
 
 ## Introduction
 
-Sysvisor is a container runtime that enables creation of system
-containers.
+Sysboxd is a daemon that enables creation of system containers.
 
 A system container is a container whose main purpose is to package and
 deploy a full operating system environment; see
 [here](https://github.com/nestybox/nestybox#system-containers) for
 more info.
 
-Sysvisor system containers use all Linux namespaces (including the
+Sysboxd system containers use all Linux namespaces (including the
 user-namespace) and cgroups for strong isolation from the underlying
 host and other containers.
-
 
 ## Key Features
 
@@ -38,8 +36,8 @@ host and other containers.
     same user-id/group-id mapping, reducing container-to-container
     isolation.
 
-  - Without userns-remap, Sysvisor manages the container's user
-    namespace; Sysvisor assigns *exclusive* user-id/group-id mappings
+  - Without userns-remap, Sysboxd manages the container's user
+    namespace; Sysboxd assigns *exclusive* user-id/group-id mappings
     to each container, for improved container-to-container isolation.
 
 * Supports running Docker *inside* the system container.
@@ -52,44 +50,42 @@ host and other containers.
 
 The following sections describe how to use each of these features.
 
+## Sysboxd Components
 
-## Sysvisor Components
+Sysboxd is made up of the following components:
 
-Sysvisor is made up of the following components:
+* sysbox-runc
 
-* sysvisor-runc
+* sysbox-fs
 
-* sysvisor-fs
+* sysbox-mgr
 
-* sysvisor-mgr
+sysbox-runc is the program that creates system containers. It's the
+frontend of sysbox: higher layers (e.g., Docker) invoke sysbox-runc to
+launch system containers.
 
-
-sysvisor-runc is the program that creates containers. It's the
-frontend of sysvisor: higher layers (e.g., Docker) invoke
-sysvisor-runc to launch system containers.
-
-sysvisor-fs is a file-system-in-user-space (FUSE) that emulates
-portions of the container's filesystem, in particular the `/proc/sys`
+sysbox-fs is a file-system-in-user-space (FUSE) that emulates portions
+of the container's filesystem, in particular the `/proc/sys`
 directory. It's purpose is to expose system resources inside the
 system container with proper isolation from the host.
 
-sysvisor-mgr is a daemon that provides services to sysvisor-runc and
-sysvisor-fs. For example, it manages assignment of exclusive user
+sysbox-mgr is a daemon that provides services to sysbox-runc and
+sysbox-fs. For example, it manages assignment of exclusive user
 namespace subuid mappings to system containers.
 
-Together, sysvisor-fs and sysvisor-mgr are the backends for
-sysvisor. Communication between sysvisor components is done via gRPC.
+Together, sysbox-fs and sysbox-mgr are the backends for
+sysbox. Communication between Sysboxd components is done via gRPC.
 
 
 ## Supported Linux Distros
 
-When using Sysvisor with Docker userns-remap:
+When using Sysboxd with Docker userns-remap:
 
 * Ubuntu 18.04 (Bionic)
 * Ubuntu 18.10 (Cosmic)
 * Ubuntu 19.04 (Disco)
 
-When using Sysvisor without Docker userns-remap:
+When using Sysboxd without Docker userns-remap:
 
 * Ubuntu 19.04 (Disco)
 
@@ -107,59 +103,59 @@ When using Sysvisor without Docker userns-remap:
   sudo sh -c "echo 1 > /proc/sys/kernel/unprivileged_userns_clone"
   ```
 
-* User "sysvisor" must be created in the system:
+* User "sysbox" must be created in the system:
 
   ```
-  $ sudo useradd sysvisor
+  $ sudo useradd sysbox
   ```
 
 ## Building & Installing
 
 ```
-$ make sysvisor
+$ make sysbox
 $ sudo make install
 ```
 
-Launch Sysvisor with:
+Launch Sysboxd with:
 
 ```
-$ sudo sysvisor &
+$ sudo sysbox &
 ```
 
-This launches the sysvisor-fs and sysvisor-mgr daemons. The daemons
-will log into `/var/log/sysvisor-fs.log` and
-`/var/log/sysvisor-mgr.log` (these logs are useful for
+This launches the sysbox-fs and sysbox-mgr daemons. The daemons
+will log into `/var/log/sysbox-fs.log` and
+`/var/log/sysbox-mgr.log` (these logs are useful for
 troubleshooting).
 
 
 ## Usage
 
 The easiest way to create system containers is to use Docker in
-conjunction with Sysvisor. It's also possible to use Sysvisor directly
+conjunction with Sysboxd. It's also possible to use Sysboxd directly
 (without Docker), but it's a lower level interface and thus a bit more
 cumbersome to use.
 
-### Docker + Sysvisor
+### Docker + Sysboxd
 
 Start by configuring the Docker daemon by creating or editing the
 `/etc/docker/daemon.json` file:
 
 ```
 {
-   "userns-remap": "sysvisor",
+   "userns-remap": "sysbox",
    "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc"
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc"
         }
     }
 }
 ```
 
-Create a 'sysvisor' user that matches the one configured above in
+Create a 'sysbox' user that matches the one configured above in
 "userns-remap" section.
 
 ```
-$ sudo useradd sysvisor
+$ sudo useradd sysbox
 ```
 
 Then re-start the Docker daemon. In hosts with systemd:
@@ -171,7 +167,7 @@ $ sudo systemctl restart docker.service
 Finally, launch system containers with Docker:
 
 ```
-$ docker run --runtime=sysvisor-runc \
+$ docker run --runtime=sysbox-runc \
     --rm -it --hostname syscont \
     debian:latest
 root@syscont:/#
@@ -182,7 +178,7 @@ software such as another Docker daemon to spawn app containers. See
 section System Container below for further info on this.
 
 
-### Docker + Sysvisor (without userns-remap)
+### Docker + Sysboxd (without userns-remap)
 
 In the prior section, the Docker daemon was configured with the
 `userns-remap` option. This causes Docker to enable the user namespace
@@ -199,14 +195,14 @@ for all containers. That is, all containers will map to the *same*
 non-root uid(gids) on the host. A process that escapes the container
 would have permission to access the data of other containers.
 
-To improve on this, Sysvisor supports running system containers
-*without* Docker `userns-remap`. In this mode, Sysvisor (rather than
+To improve on this, Sysboxd supports running system containers
+*without* Docker `userns-remap`. In this mode, Sysboxd (rather than
 Docker) manages the user-namespace uid(gid) mappings on the host. This
 results in strong container-to-host and container-to-container
 isolation. A process that escapes the container would have no
 permission to access the data of other containers.
 
-To work without `userns-remap`, Sysvisor requires that a filesystem
+To work without `userns-remap`, Sysboxd requires that a filesystem
 overlay module called `shiftfs` be loaded in the kernel. See section
 "Shiftfs Module" below for details on how to do this.
 
@@ -216,8 +212,8 @@ Once shiftfs is loaded in the kernel, simply configure the
 ```
 {
    "runtimes": {
-        "sysvisor-runc": {
-            "path": "/usr/local/sbin/sysvisor-runc"
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc"
         }
     }
 }
@@ -232,17 +228,17 @@ $ sudo systemctl restart docker.service
 And launch system containers with Docker:
 
 ```
-$ docker run --runtime=sysvisor-runc \
+$ docker run --runtime=sysbox-runc \
     --rm -it --hostname syscont \
     debian:latest
 root@syscont:/#
 ```
 
-### Sysvisor CLI
+### Sysboxd CLI
 
 It easiest to use a higher-level container manager to spawn containers
 (e.g., Docker), but it's also possible to launch containers directly
-via the sysvisor-runc command line.
+via the sysbox-runc command line.
 
 As the root user, follow these steps:
 
@@ -255,10 +251,10 @@ As the root user, follow these steps:
 # docker export $(docker create debian:latest) | tar -C rootfs -xvf -
 ```
 
-2) Create the OCI spec for the container, using the `sysvisor-runc --spec` command:
+2) Create the OCI spec for the container, using the `sysbox-runc --spec` command:
 
 ```
-# sysvisor-runc spec
+# sysbox-runc spec
 ```
 
 This will create a default OCI spec (i.e., `config.json` file) for the container.
@@ -268,10 +264,10 @@ This will create a default OCI spec (i.e., `config.json` file) for the container
 Choose an ID for the container and run:
 
 ```
-# sysvisor-runc run mycontainerid
+# sysbox-runc run mycontainerid
 ```
 
-Use `sysvisor-runc --help` command for help on all commands supported by Sysvisor.
+Use `sysbox-runc --help` command for help on all commands supported by Sysboxd.
 
 ## System Container
 
@@ -299,7 +295,7 @@ be potentially given an exclusive uid(gid) range on the host, and thus
 may not have access to the shared storage (unless such storage has lax
 permissions).
 
-Sysvisor system containers support storage sharing between multiple
+Sysboxd system containers support storage sharing between multiple
 system containers, without lax permissions and in spite of the fact
 that each system container may be assigned a different uid/gid range
 on the host.
@@ -318,13 +314,13 @@ sudo mkdir <path/to/shared/dir>
 Then simply bind-mount the volume into the system container(s):
 
 ```
-$ docker run --runtime=sysvisor-runc \
+$ docker run --runtime=sysbox-runc \
     --rm -it --hostname syscont \
     --mount type=bind,source=<path/to/shared/dir>,target=</mount/path/inside/container>  \
     debian:latest
 ```
 
-When the system container is launched this way, Sysvisor will notice
+When the system container is launched this way, Sysboxd will notice
 that bind mounted volume is owned by `root:root` and will mount
 shiftfs on top of it, such that the container can have access to
 it. Repeating this for multiple system containers will give all of
@@ -343,8 +339,8 @@ filesystem that performs uid and gid shifting betweeen user
 namespaces.
 
 shiftfs was originally written by James Bottomley and has been
-modified by Nestybox (bug fixes, adaptation to supported Sysvisor
-distros, etc.). See [here](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) for details on shiftfs.
+modified by Nestybox (bug fixes, adaptation to supported Sysboxd
+distros, etc.). See [here](https://github.com/nestybox/sysbox/blob/master/shiftfs/README.md) for details on shiftfs.
 
 ### Installation
 
@@ -362,18 +358,18 @@ Remove the module with:
 sudo rmmod shiftfs
 ```
 
-## Sysvisor Testing
+## Sysboxd Testing
 
-The Sysvisor test suite is made up of the following:
+The Sysboxd test suite is made up of the following:
 
-* sysvisor-mgr unit tests
-* sysvisor-fs unit tests
-* sysvisor-runc unit and integration tests
-* sysvisor integration tests (these test sysvisor runc, mgr, and fs together).
+* sysbox-mgr unit tests
+* sysbox-fs unit tests
+* sysbox-runc unit and integration tests
+* Sysboxd integration tests (these test all components together)
 
 ### Running the entire suite
 
-To run the entire Sysvisor test suite:
+To run the entire Sysboxd test suite:
 
 ```
 $ make test
@@ -382,45 +378,45 @@ $ make test
 This command runs all test targets (i.e., unit and integration
 tests).
 
-*Note*: This includes sysvisor integration tests with and without
+*Note*: This includes Sysboxd integration tests with and without
 uid-shifting. Thus the shiftfs module be loaded in the kernel *prior*
 to running this command. See above for info on loading shiftfs.
 
-### Running the sysvisor integration tests only
+### Running the Sysboxd integration tests only
 
 Without uid-shifting:
 
 ```
-$ make test-sysvisor
+$ make test-sysbox
 ```
 
 With uid-shifting:
 
 ```
-$ make test-sysvisor-shiftuid
+$ make test-sysbox-shiftuid
 ```
 
 It's also possible to run a specific integration test with:
 
 ```
-$ make test-sysvisor TESTPATH=<test-name>
+$ make test-sysbox TESTPATH=<test-name>
 ```
 
-For example, to run all sysvisor-fs handler tests:
+For example, to run all sysbox-fs handler tests:
 
 ```
-$ make test-sysvisor TESTPATH=tests/sysfs
+$ make test-sysbox TESTPATH=tests/sysfs
 ```
 
 Or to run one specific hanlder test:
 
 ```
-$ make test-sysvisor TESTPATH=tests/sysfs/disable_ipv6.bats
+$ make test-sysbox TESTPATH=tests/sysfs/disable_ipv6.bats
 ```
 
 ### Running the unit tests
 
-To run unit tests for one of the Sysvisor components (e.g., sysvisor-fs, sysvisor-mgr, etc.)
+To run unit tests for one of the Sysboxd components (e.g., sysbox-fs, sysbox-mgr, etc.)
 
 ```
 $ make test-runc
@@ -442,16 +438,16 @@ To run a single test:
 $ make test-shiftfs TESTPATH=shiftfs/pjdfstest/tests/open
 ```
 
-### More on Sysvisor integration tests
+### More on Sysboxd integration tests
 
-The Sysvisor integration Makefile target (`test-sysvisor`) spawns a
+The Sysboxd integration Makefile target (`test-sysbox`) spawns a
 Docker privileged container using the image in tests/Dockerfile.
 
-It then mounts the developer's Sysvisor directory into the privileged
-container, builds and installs Sysvisor *inside* of it, and runs the
+It then mounts the developer's Sysboxd directory into the privileged
+container, builds and installs Sysboxd *inside* of it, and runs the
 tests in directory `tests/`.
 
-These tests use the ["bats"](https://github.com/nestybox/sysvisor/blob/master/README.md)
+These tests use the ["bats"](https://github.com/nestybox/sysbox/blob/master/README.md)
 test framework, which is pre-installed in the privileged container
 image.
 
@@ -459,7 +455,7 @@ In order to launch the privileged container, Docker must be present in
 the host and configured without userns-remap (as userns-remap is not
 compatible with privileged containers). Make sure the
 `/etc/docker/daemon.json` file is not configured with the
-`userns-remap` option prior to running the Sysvisor integration tests.
+`userns-remap` option prior to running the Sysboxd integration tests.
 
 Also, in order to debug, it's sometimes useful to launch the Docker
 privileged container and get a shell in it. This can be done with:
@@ -475,7 +471,7 @@ $ make test-shell-shiftuid
 ```
 
 The latter command configures docker inside the privileged test
-container without userns remap, thus forcing sysvisor to use
+container without userns remap, thus forcing Sysboxd to use
 uid-shifting.
 
 ### Testing Shiftfs
@@ -500,10 +496,10 @@ shiftfs is supported.
 
 The test suite creates directories on the host which it mounts into
 the privileged test container. The programs running inside the
-privileged container (e.g., docker, sysvisor, etc) place data in these
+privileged container (e.g., docker, sysbox, etc) place data in these
 directories.
 
-The sysvisor test targets do not cleanup the contents of these
+The Sysboxd test targets do not cleanup the contents of these
 directories so as to allow their reuse between test runs in order to
 speed up testing (e.g., to avoid having the test container download
 fresh docker images between subsequent test runs).
@@ -521,10 +517,10 @@ container.
 
 ## Troubleshooting
 
-Refer to the Sysvisor [troubleshooting notes](https://github.com/nestybox/sysvisor/blob/master/docs/troubleshoot.md).
+Refer to the Sysboxd [troubleshooting notes](docs/troubleshoot.md).
 
 ## Debugging
 
-Refer to the Sysvisor [debugging notes](https://github.com/nestybox/sysvisor/blob/master/docs/debug.md)
+Refer to the Sysboxd [debugging notes](docs/debug.md)
 for detailed information on the sequence of steps required to debug
-Sysvisor modules.
+Sysboxd modules.

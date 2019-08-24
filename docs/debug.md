@@ -1,27 +1,27 @@
-Sysvisor debugging notes
+Sysboxd debugging notes
 ========================
 
 
 # Debugging image
 
-Before initiating a debugging session, we must ensure that the binaries that we will be operating on have been built with compiler-optimizations disabled. The following sysvisor Makefile targets have been created for this purpose:
+Before initiating a debugging session, we must ensure that the binaries that we will be operating on have been built with compiler-optimizations disabled. The following sysboxd Makefile targets have been created for this purpose:
 
 ```
-sysvisor-debug
-sysvisor-runc-debug
-sysvisor-fs-debug
-sysvisor-mgr-debug
+sysboxd-debug
+sysbox-runc-debug
+sysbox-fs-debug
+sysbox-mgr-debug
 ```
 
 Example:
 
 ```
-$ make sysvisor-debug && sudo make install
+$ make sysboxd-debug && sudo make install
 ```
 
 In some cases, it's desirable to debug process initialization phases, so in those cases we must pick a convenient location where to place a `sleep` instruction that provides user with enough time to launch the debugger.
 
-Example (sysvisor-runc):
+Example (sysbox-runc):
 
 ```
 diff --git a/create.go b/create.go
@@ -34,14 +34,12 @@ index bb551950..a2b29beb 100644
         "os"
 +       "time"
 
-        "github.com/opencontainers/runc/libsysvisor/sysvisor"
-        "github.com/urfave/cli"
 @@ -59,6 +60,7 @@ command(s) that get executed on start, edit the args parameter of the spec. See
                 if err := revisePidFile(context); err != nil {
                         return err
                 }
 +               time.Sleep(time.Second * 30)
-                if err := sysvisor.CheckHostConfig(context); err != nil {
+                if err := sysbox.CheckHostConfig(context); err != nil {
                         return err
                 }
 
@@ -61,13 +59,13 @@ $ go get -u github.com/derekparker/delve/cmd/dlv
 - Change working directory to the location that contains the source files of the the binary to debug:
 
 ```
-rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysvisor/sysvisor-runc
+rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysboxd/sysbox-runc
 ```
 
 * Attaching to a running process:
 
 ```
-rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysvisor/sysvisor-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysboxd/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
 ```
 
 Notice that to allow Golang runtime to operate as we expect, we must export the existing Golang related env-vars to the newly-spawn delve process.
