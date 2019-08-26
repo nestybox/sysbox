@@ -1,10 +1,12 @@
 Sysboxd debugging notes
 ========================
 
+## Debugging image
 
-# Debugging image
-
-Before initiating a debugging session, we must ensure that the binaries that we will be operating on have been built with compiler-optimizations disabled. The following sysboxd Makefile targets have been created for this purpose:
+Before initiating a debugging session, we must ensure that the
+binaries that we will be operating on have been built with
+compiler-optimizations disabled. The following sysboxd Makefile
+targets have been created for this purpose:
 
 ```
 sysboxd-debug
@@ -19,7 +21,10 @@ Example:
 $ make sysboxd-debug && sudo make install
 ```
 
-In some cases, it's desirable to debug process initialization phases, so in those cases we must pick a convenient location where to place a `sleep` instruction that provides user with enough time to launch the debugger.
+In some cases, it's desirable to debug process initialization phases,
+so in those cases we must pick a convenient location where to place a
+`sleep` instruction that provides user with enough time to launch the
+debugger.
 
 Example (sysbox-runc):
 
@@ -39,16 +44,22 @@ index bb551950..a2b29beb 100644
                         return err
                 }
 +               time.Sleep(time.Second * 30)
-                if err := sysbox.CheckHostConfig(context); err != nil {
+                if err := sysvisor.CheckHostConfig(context); err != nil {
                         return err
                 }
 
 ```
 
-# Debugger instructions
+## Debugger instructions
 
-
-Even though GDB offers Golang support, in reality there are a few key features missing today, such as proper understanding of Golang's concurrency constructs (e.g. goroutines). In consequence, in this document i will be focusing on Delve debugger, which is not as feature-rich as the regular GDB, but it fully supports Golang's runtime. Luckily, most of the existing Delve instructions fully match GDB ones, so i will mainly concentrate on those that (slightly) deviate.
+Even though GDB offers Golang support, in reality there are a few key
+features missing today, such as proper understanding of Golang's
+concurrency constructs (e.g. goroutines). In consequence, in this
+document i will be focusing on Delve debugger, which is not as
+feature-rich as the regular GDB, but it fully supports Golang's
+runtime. Luckily, most of the existing Delve instructions fully match
+GDB ones, so i will mainly concentrate on those that (slightly)
+deviate.
 
 * Installation:
 
@@ -56,7 +67,8 @@ Even though GDB offers Golang support, in reality there are a few key features m
 $ go get -u github.com/derekparker/delve/cmd/dlv
 ```
 
-- Change working directory to the location that contains the source files of the the binary to debug:
+- Change working directory to the location that contains the source
+  files of the the binary to debug:
 
 ```
 rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysboxd/sysbox-runc
@@ -68,12 +80,15 @@ rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysboxd/sysbox-runc
 rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysboxd/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
 ```
 
-Notice that to allow Golang runtime to operate as we expect, we must export the existing Golang related env-vars to the newly-spawn delve process.
+Notice that to allow Golang runtime to operate as we expect, we must
+export the existing Golang related env-vars to the newly-spawn delve
+process.
 
 
 * Setting break-points:
 
-Depending on the level of granularity required, we can set breakpoints attending to either one of these approches:
+Depending on the level of granularity required, we can set breakpoints
+attending to either one of these approches:
 
     - Package + Receiver + Method: (dlv) b libcontainer.(*initProcess).start
     - File + Line:                 (dlv) b process_linux.go:290

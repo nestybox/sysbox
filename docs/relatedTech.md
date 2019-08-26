@@ -6,3 +6,5 @@ Technologies related to sysbox-runc
 * [Usernetes](https://github.com/rootless-containers/usernetes)
 
 * [Podman & Userns](https://opensource.com/article/18/12/podman-and-user-namespaces)
+
+* [LXE](https://github.com/automaticserver/lxe)

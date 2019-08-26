@@ -1,7 +1,13 @@
 Notes on Sysvisor Troubleshooting
 =================================
 
-# Passing debug flags to Sysvisor from Docker
+The customer docs for sysboxd contain basic info on
+troubleshooting. See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/troubleshoot.md).
+
+The following is additional troubleshooting information meant for
+Nestybox's internal use only.
+
+## Passing debug flags to Sysvisor from Docker
 
 sysbox-runc takes several debug flags in its command line. When
 invoking sysbox-runc via Docker, these options can be passed down
@@ -26,7 +32,7 @@ compatiblity, use:
 
 Type `sysbox-runc --help` for further info on command line flags.
 
-# Troubleshoot a failing sysbox-runc integration test
+## Debug a failing sysbox-runc integration test
 
 * sysbox-runc integration tests use `bats` inside a privileged docker container.
 
