@@ -176,13 +176,7 @@ __App container__
 
 __System container__
 
-- A system container is a container whose main purpose is to package and
-  deploy a full operating system environment (e.g., init process, system
-  daemons, libraries, utilities, etc.)
-
-- A system container provides enviroment inside of which application
-  containers can be deployed (e.g., by running Docker and Kubernetes
-  inside the system container).
+- See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/system-containers.md).
 
 - A system container presents a more complete abstraction of a virtual
   host to its processes compared to an app container (i.e., a larger
@@ -192,7 +186,6 @@ __System container__
 
 - May be stateless or require some persistent state to be stored in
   the host in between executions (via volume mounts).
-
 
 # Root User
 
