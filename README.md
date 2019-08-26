@@ -12,7 +12,7 @@ usage, design, etc. Those are found in the [sysboxd external repo](https://githu
 This repo contains the source code for sysboxd, as well as additional
 docs that are for Nestybox's internal use only.
 
-## Building & Installing
+## Building & Installing from Source
 
 ```
 $ make sysbox
