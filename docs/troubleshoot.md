@@ -1,13 +1,13 @@
-Notes on Sysvisor Troubleshooting
+Notes on Sysboxd Troubleshooting
 =================================
 
 The customer docs for sysboxd contain basic info on
-troubleshooting. See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/troubleshoot.md).
+troubleshooting. See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/troubleshoot.md).
 
 The following is additional troubleshooting information meant for
 Nestybox's internal use only.
 
-## Passing debug flags to Sysvisor from Docker
+## Passing debug flags to Sysboxd from Docker
 
 sysbox-runc takes several debug flags in its command line. When
 invoking sysbox-runc via Docker, these options can be passed down
