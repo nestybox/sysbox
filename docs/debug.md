@@ -44,7 +44,7 @@ index bb551950..a2b29beb 100644
                         return err
                 }
 +               time.Sleep(time.Second * 30)
-                if err := sysvisor.CheckHostConfig(context); err != nil {
+                if err := sysbox.CheckHostConfig(context); err != nil {
                         return err
                 }
 

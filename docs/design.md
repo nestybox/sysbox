@@ -2,14 +2,14 @@ Sysboxd Design Notes
 =====================
 
 The customer docs for sysboxd contain basic info on its design.
-See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/design.md).
+See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/design.md).
 
 The following is additional design information meant for Nestybox's
 internal use only.
 
 ## OCI compatibility
 
-See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/design.md#oci-compatibility)
+See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/design.md#oci-compatibility)
 for info on Sysboxd's OCI compatibility.
 
 Additional info below.
@@ -144,7 +144,7 @@ command line option.
 
 ## uid(gid) shifting
 
-sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysvisor/blob/master/shiftfs/README.md) to support Docker
+sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysboxd/blob/master/shiftfs/README.md) to support Docker
 containers when the Docker daemon is configured without userns-remap
 (as it is by default).
 
@@ -277,7 +277,7 @@ This functionality is needed in order to:
   `/var/lib/docker/`, but overlayfs does not work when mounted on top
   of shiftfs, so shiftfs can't be mounted on `/var/lib/docker`.
 
-See sysboxd github issue #46 (https://github.com/nestybox/sysvisor/issues/46) for
+See sysboxd github issue #46 (https://github.com/nestybox/sysboxd/issues/46) for
 further details.
 
 The host volume that is bind mounted on the system container's

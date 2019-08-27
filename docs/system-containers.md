@@ -2,7 +2,7 @@ System Containers
 =================
 
 The customer docs for sysboxd contain a description of system containers.
-See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/system-containers.md).
+See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/system-containers.md).
 
 The following is additional information meant for Nestybox's internal
 use only.
