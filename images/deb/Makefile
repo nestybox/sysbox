@@ -115,12 +115,11 @@ clean: ## Remove build artifacts
 
 sources/sysboxd.tgz:
 	mkdir -p $(@D)
-	docker run --rm -i -w /v \
-		-v $(SYSBOXD_DIR):/sysboxd \
-		-v $(CURDIR)/$(@D):/v \
-		alpine \
-
-		tar -C / -czf /v/sysboxd.tgz --exclude='images' sysvisor
+	docker run --rm -i -w /v                                         \
+		-v $(SYSBOXD_DIR):/sysboxd                               \
+		-v $(CURDIR)/$(@D):/v                                    \
+		alpine                                                   \
+		tar -C / -czf /v/sysboxd.tgz --exclude='images' sysboxd
 
 sources/sysboxd.service: ../systemd/sysboxd.service
 	mkdir -p $(@D)
