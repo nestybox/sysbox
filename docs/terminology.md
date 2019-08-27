@@ -176,7 +176,7 @@ __App container__
 
 __System container__
 
-- See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/system-containers.md).
+- See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/system-containers.md).
 
 - A system container presents a more complete abstraction of a virtual
   host to its processes compared to an app container (i.e., a larger

@@ -7,7 +7,7 @@ Sysboxd is software that integrates with Docker and allows it to
 create system containers.
 
 The customer docs for sysboxd contain a lot of info on installation,
-usage, design, etc. Those are found in the [sysboxd external repo](https://github.com/nestybox/sysvisor-external)
+usage, design, etc. Those are found in the [sysboxd external repo](https://github.com/nestybox/sysboxd-external)
 
 This repo contains the source code for sysboxd, as well as additional
 docs that are for Nestybox's internal use only.

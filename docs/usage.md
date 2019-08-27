@@ -2,7 +2,7 @@ Sysboxd Usage Notes
 ====================
 
 The customer docs for sysboxd contain the sysboxd user's guide.
-See [here](https://github.com/nestybox/sysvisor-external/blob/master/docs/usage.md).
+See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/usage.md).
 
 The following is additional usage info meant for Nestybox's internal
 use only.
