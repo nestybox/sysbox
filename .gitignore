@@ -1,4 +1,4 @@
-# Ignore sysvisor build token
+# Ignore sysboxd's build token
 .buildinfo
 
 # Ignore virtual-studio-code metadata
