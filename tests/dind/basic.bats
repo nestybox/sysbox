@@ -89,23 +89,3 @@ EOF
   docker image rm ${image}
   rm ${file}
 }
-
-@test "dind image cache vol" {
-
-  skip "TODO"
-
-  # start the sys container, mount a docker volume on the inner Docker's image cache
-  #
-  # create some inner containers
-  #
-  # stop and remove the container
-  #
-  # start a new container, mount the same docker volume on the inner Docker's image cache
-  #
-  # verify the inner docker image from the prior container is there (docker image ls)
-  #
-  # stop the container
-  #
-  # remove the vol
-
-}
