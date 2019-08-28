@@ -64,6 +64,7 @@ load ../helpers/run
   if [ -n "$SHIFT_UIDS" ]; then
     [[ "$output" =~ "${testDir} on /mnt/testVol type nbox_shiftfs" ]]
   else
+    # overlay because we are running in the test container
     [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
   fi
 
@@ -126,6 +127,54 @@ load ../helpers/run
   rmdir ${testDir}
 }
 
+@test "docker bind mount on var-lib-docker" {
+
+  testDir="/root/var-lib-docker"
+  mkdir ${testDir}
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    chown -R 165536:165536 ${testDir}
+  fi
+
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker busybox tail -f /dev/null)
+
+  docker exec "$SYSCONT_NAME" sh -c "mount | grep \"on \/var\/lib\/docker\""
+  [ "$status" -eq 0 ]
+
+  if [ -n "$SHIFT_UIDS" ]; then
+    [[ "$output" =~ "${testDir} on /var/lib/docker type nbox_shiftfs" ]]
+  else
+    # overlay because we are running in the test container
+    [[ "$output" =~ "overlay on /var/lib/docker type overlay" ]]
+  fi
+
+  # verify the container can write and read from the bind mount
+  docker exec "$SYSCONT_NAME" sh -c "echo someData > /var/lib/docker/testData"
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/testData"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "someData" ]]
+
+  # verify the host sees the changes
+  run cat "${testDir}/testData"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "someData" ]]
+
+  # re-start the container, verify the mount contents are still there
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker busybox tail -f /dev/null)
+
+  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/testData"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "someData" ]]
+
+  # cleanup
+  docker_stop "$SYSCONT_NAME"
+  rm -r ${testDir}
+}
 
 @test "docker shared volume mount" {
 
