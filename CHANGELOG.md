@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2019-08-28
 ### Added
   * Initial public release.
   * Added external documentation: README, user-guide, design-guide, etc.
