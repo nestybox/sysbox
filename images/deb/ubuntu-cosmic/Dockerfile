@@ -51,5 +51,6 @@ RUN mkdir -p ~/bin/protoc \
 
 WORKDIR /root/build-deb
 COPY build-deb /root/build-deb/build-deb
+COPY changelog_convert.sh /root/build-deb/changelog_convert.sh
 
 ENTRYPOINT ["/root/build-deb/build-deb"]
