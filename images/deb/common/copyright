@@ -3,12 +3,9 @@ Upstream-Name: Nestybox Sysboxd
 Upstream-Contact: Nestybox Inc <contact@nestybox.com>
 
 Disclaimer:
- This package is not part of the GNU/Linux Debian distribution.  It is
- provided in the non-free archive area as a convenience to Debian users.
- The contents of this package cannot be distributed as part of the Debian
- distribution because the NESTYBOX Software License covering it is not a free
- software license.  No modifications of the included binaries are
- permitted, and the binaries are not distributed with source code.
+ This package is not part of the GNU/Linux Debian distribution.
+ No modifications of the included binaries, and no other uses or
+ further distributions of the included binaries, are permitted.
 
 Files: *
 Copyright: 2019 Nestybox Inc.  All rights reserved.
