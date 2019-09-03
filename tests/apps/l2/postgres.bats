@@ -21,7 +21,7 @@ function wait_for_inner_postgres() {
 
   # launch sys container; bind-mount the postgres script into it
   SYSCONT_NAME=$(docker_run --rm \
-                   nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
@@ -49,7 +49,7 @@ function wait_for_inner_postgres() {
   # container and verifies postgres client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
