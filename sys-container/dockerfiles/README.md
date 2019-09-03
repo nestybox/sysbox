@@ -1,4 +1,15 @@
-# Dockerfiles for system container images
+Dockerfiles for system container images
+=======================================
+
+The Dockerfiles in the sub-directories correspond to system container
+images meant for internal use within Nestybox.
+
+**Note**: when pushing these to the Nestybox DockerHub repos, make sure they are pushed to private repos.
+
+The Dockerfiles for system container images meant for our customers
+are stored in the sysboxd external repo. The resulting images are
+pushed into Nestybox's public repos on DockerHub.
+
 
 ## To build an image:
 
@@ -10,23 +21,28 @@ $ docker build .
 
 ## Image tagging
 
-Tag the image with "nestybox/sys-container:<image-description>"
+Tag the sys container image with a short name that describes its
+contents. E.g.,:
 
 ```
-$ docker tag nestybox/sys-container:debian-plus-docker
+$ docker tag <image-tag> nestybox/ubuntu-disco-docker-dbg:latest
 ```
 
-## Image push / pull
+## Image push
 
-To push an image to the nestybox repo:
-
-```
-$ docker login nestybox
-$ docker push nestybox/sys-container:debian-plus-docker
-```
-
-To pull an image from the repo:
+To push the sys container image to the Nestybox repo on DockerHub:
 
 ```
-$ docker pull nestybox/sys-container:debian-plus-docker
+$ docker login
+$ docker push nestybox/ubuntu-disco-docker-dbg:latest
+```
+
+**Note**: images intended for internal use must be stored in a private Nestybox repo.
+
+## Image pull
+
+To pull an image from the private repo:
+
+```
+$ docker pull nestybox/ubuntu-disco-docker-dbg:latest
 ```

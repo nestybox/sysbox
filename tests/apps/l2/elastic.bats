@@ -20,7 +20,7 @@ function wait_for_inner_elasticSearch() {
   # another container can send logs to it.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:ubuntu-plus-docker tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"

@@ -32,7 +32,7 @@ EOF
   # launch sys container; bind-mount the mysql script into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/mysql-scr.txt,target=/mysql-scr.txt \
-                   nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
@@ -65,7 +65,7 @@ EOF
   # container and verifies mysql client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/sys-container:debian-plus-docker tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
