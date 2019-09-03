@@ -1,5 +1,5 @@
 #
-# debian base image + (official) docker
+# Debian Stretch + Docker
 #
 # Instructions for docker installation taken from:
 # https://docs.docker.com/install/linux/docker-ce/debian/
@@ -7,14 +7,6 @@
 
 FROM debian:stretch
 RUN apt-get update
-
-# Useful utilities
-RUN apt-get install -y \
-       procps \
-       nano \
-       strace \
-       net-tools \
-       wget
 
 # Docker install
 RUN apt-get install -y \
@@ -31,6 +23,14 @@ RUN add-apt-repository \
        stable"
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Debug utilities
+RUN apt-get install -y \
+       procps \
+       nano \
+       strace \
+       net-tools \
+       wget
 
 #
 # The following steps could be used as an alternative to the

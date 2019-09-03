@@ -1,5 +1,5 @@
 #
-# ubuntu base image + (official) docker
+# Ubuntu Disco + Docker
 #
 # Instructions for docker installation taken from:
 # https://docs.docker.com/install/linux/docker-ce/ubuntu/
@@ -7,15 +7,6 @@
 
 FROM ubuntu:disco
 RUN apt-get update
-
-# Useful utilities
-RUN apt-get install -y \
-       procps \
-       nano \
-       strace \
-       net-tools \
-       less \
-       wget
 
 # Docker install
 RUN apt-get install -y \
@@ -34,3 +25,13 @@ RUN add-apt-repository \
        stable edge test"
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Debug utilities
+RUN apt-get install -y \
+       procps \
+       nano \
+       strace \
+       net-tools \
+       less \
+       wget \
+       iproute2
