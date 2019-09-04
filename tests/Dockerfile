@@ -19,7 +19,7 @@
 # docker build -t sysboxd-test .
 #
 
-FROM golang:1.12-stretch
+FROM golang:1.13.0-buster
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -37,7 +37,6 @@ RUN apt-get update && apt-get install -y \
     libaio-dev \
     libcap-dev \
     libprotobuf-dev \
-    libprotobuf-c0-dev \
     libnl-3-dev \
     libnet-dev \
     libseccomp2 \
@@ -50,15 +49,14 @@ RUN apt-get update && apt-get install -y \
     unzip \
     time \
     net-tools \
+    lsb-release \
     --no-install-recommends \
     && apt-get clean
 
 # Activate golang's modules functionality and install its latest (top-of-tree) binary.
 # These instructions may be eliminated upon arrival of 1.13 release (ETA: Aug-2019).
 ENV GO111MODULE=on
-RUN go get golang.org/dl/gotip \
-    && gotip download \
-    && gotip env -w GONOSUMDB=/root/nestybox
+RUN go env -w GONOSUMDB=/root/nestybox
 
 # Add a dummy user for the rootless integration tests; needed by the
 # `git clone` operations below.
