@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2019-09-04
+### Added
+  * Extend installer support to latest Ubuntu kernel (5.0.0-27).
+
 ## [0.1.0] - 2019-08-28
 ### Added
   * Initial public release.
