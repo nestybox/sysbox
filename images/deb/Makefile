@@ -26,7 +26,7 @@ SOURCES=$(addprefix sources/, $(SOURCE_FILES))
 # We are temporarily skipping these settings as we are relying on Go's
 # top-of-tree (till 1.13 comes out).
 GO_BASE_IMAGE=golang
-GO_VERSION:=1.12.5
+GO_VERSION:=1.13
 GO_IMAGE=$(GO_BASE_IMAGE):$(GO_VERSION)
 
 CHOWN:=docker run --rm -v $(CURDIR):/v -w /v alpine chown

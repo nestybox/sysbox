@@ -32,12 +32,9 @@ ENV SUITE disco
 
 COPY --from=golang /usr/local/go /usr/local/go
 
-# Activate golang's modules functionality and install its latest (top-of-tree) binary.
-# These instructions may be eliminated upon arrival of 1.13 release (ETA: Aug-2019).
+# Explicit activation of go-module feature (by default in 'auto' mode as per Go 1.13).
 ENV GO111MODULE=on
-RUN go get golang.org/dl/gotip \
-    && gotip download \
-    && gotip env -w GONOSUMDB=github.com/nestybox
+RUN go env -w GONOSUMDB=github.com/nestybox
 
 # install protoc compiler for gRPC
 RUN mkdir -p ~/bin/protoc \
