@@ -7,7 +7,7 @@ images meant for internal use within Nestybox.
 **Note**: when pushing these to the Nestybox DockerHub repos, make sure they are pushed to private repos.
 
 The Dockerfiles for system container images meant for our customers
-are stored in the sysboxd external repo. The resulting images are
+are stored in the sysbox external repo. The resulting images are
 pushed into Nestybox's public repos on DockerHub.
 
 

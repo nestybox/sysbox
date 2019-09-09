@@ -1,8 +1,8 @@
-Sysboxd Usage Notes
+Sysbox Usage Notes
 ====================
 
-The customer docs for sysboxd contain the sysboxd user's guide.
-See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/usage.md).
+The customer docs for sysbox contain the sysbox user's guide.
+See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/usage.md).
 
 The following is additional usage info meant for Nestybox's internal
 use only.
@@ -19,7 +19,7 @@ be potentially given an exclusive uid(gid) range on the host, and thus
 may not have access to the shared storage (unless such storage has lax
 permissions).
 
-Sysboxd system containers support storage sharing between multiple
+Sysbox system containers support storage sharing between multiple
 system containers, without lax permissions and in spite of the fact
 that each system container may be assigned a different uid/gid range
 on the host.
@@ -44,7 +44,7 @@ $ docker run --runtime=sysbox-runc \
     debian:latest
 ```
 
-When the system container is launched this way, Sysboxd will notice
+When the system container is launched this way, Sysbox will notice
 that bind mounted volume is owned by `root:root` and will mount
 shiftfs on top of it, such that the container can have access to
 it. Repeating this for multiple system containers will give all of

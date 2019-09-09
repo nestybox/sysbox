@@ -10,7 +10,7 @@ TEST_VOL2=$2
 if [[ "$SHIFT_UIDS" == "true" ]]; then
   DISTRO=$(lsb_release -i | awk '{print $3}')
   if [ "$DISTRO" != "Ubuntu" ]; then
-    printf "\nError: sysboxd uid shifting is only supported on Ubuntu hosts.\n\n"
+    printf "\nError: sysbox uid shifting is only supported on Ubuntu hosts.\n\n"
     exit 1
   fi
 fi

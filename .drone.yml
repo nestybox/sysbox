@@ -30,7 +30,7 @@ steps:
 #- name: build
 #  image: golang:1.12.9
 #  commands:
-#  - make sysboxd
+#  - make sysbox
 #  environment:
 #    GOARCH: amd64
 #    GOOS: linux
