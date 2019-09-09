@@ -1,13 +1,13 @@
-Notes on Sysboxd Troubleshooting
+Notes on Sysbox Troubleshooting
 =================================
 
-The customer docs for sysboxd contain basic info on
-troubleshooting. See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/troubleshoot.md).
+The customer docs for sysbox contain basic info on
+troubleshooting. See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/troubleshoot.md).
 
 The following is additional troubleshooting information meant for
 Nestybox's internal use only.
 
-## Passing debug flags to Sysboxd from Docker
+## Passing debug flags to Sysbox from Docker
 
 sysbox-runc takes several debug flags in its command line. When
 invoking sysbox-runc via Docker, these options can be passed down

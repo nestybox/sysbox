@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #
-# script to run sysboxd integration tests
+# script to run sysbox integration tests
 #
 
 progName=$(basename "$0")

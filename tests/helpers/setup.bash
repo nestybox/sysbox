@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# sysboxd integration test setup helpers
+# sysbox integration test setup helpers
 #
 # Note: based on a similar file in the OCI runc integration tests
 #

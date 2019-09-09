@@ -17,7 +17,7 @@ function wait_for_nginx() {
   # this html file will be passed to the nginx container via a bind-mount
   #
   # Note that we place it in /root which has 700 permissions; this is
-  # a requirement imposed by sysboxd when using uid-shifting: the bind
+  # a requirement imposed by sysbox when using uid-shifting: the bind
   # source must be within a path searchable by true root only.
 
   tmpdir="/root/nginx"

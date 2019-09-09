@@ -14,8 +14,8 @@ load ../helpers/run
   # verify things look good inside the sys container
   #
 
-  # "/var/lib/docker" should be mounted to "/var/lib/sysboxd/docker/<syscont-name>"; note
-  # that in the privileged test container the "/var/lib/sysboxd" is itself a mount-point,
+  # "/var/lib/docker" should be mounted to "/var/lib/sysbox/docker/<syscont-name>"; note
+  # that in the privileged test container the "/var/lib/sysbox" is itself a mount-point,
   # so it won't show up in findmnt; thus we just grep for "docker/<syscont-name>"
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"docker/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
@@ -29,17 +29,17 @@ load ../helpers/run
   # verify things look good on the host
   #
 
-  # there should be a dir with the container's name under /var/lib/sysboxd/docker
-  run ls /var/lib/sysboxd/docker/
+  # there should be a dir with the container's name under /var/lib/sysbox/docker
+  run ls /var/lib/sysbox/docker/
   [ "$status" -eq 0 ]
   [[ ${lines[0]} =~ "$SYSCONT_NAME" ]]
 
-  # and that dir should have ownership matching the sysboxd user
-  run sh -c "cat /etc/subuid | grep sysboxd | cut -d\":\" -f2"
+  # and that dir should have ownership matching the sysbox user
+  run sh -c "cat /etc/subuid | grep sysbox | cut -d\":\" -f2"
   [ "$status" -eq 0 ]
   SYSBOXD_UID="$output"
 
-  run sh -c "stat /var/lib/sysboxd/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOXD_UID\""
+  run sh -c "stat /var/lib/sysbox/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOXD_UID\""
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
@@ -87,22 +87,22 @@ load ../helpers/run
   docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
   [ "$status" -eq 0 ]
 
-  run cat "/var/lib/sysboxd/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/docker/$sc_id/test"
   [ "$status" -eq 0 ]
   [[ "$output" == "data" ]]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  run cat "/var/lib/sysboxd/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/docker/$sc_id/test"
   [ "$status" -eq 0 ]
 
   docker rm "$SYSCONT_NAME"
 
-  run cat "/var/lib/sysboxd/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/docker/$sc_id/test"
   [ "$status" -eq 1 ]
 
-  run cat "/var/lib/sysboxd/docker/$sc_id"
+  run cat "/var/lib/sysbox/docker/$sc_id"
   [ "$status" -eq 1 ]
 }
 
@@ -134,7 +134,7 @@ load ../helpers/run
 #@test "sys-mgr dsVolMgr copy-up" {
   #
   # TODO: verify dsVolMgr copy-up by creating a sys container image with contents in /var/lib/docker
-  # and checking that the contents are copied to the /var/lib/sysboxd/docker/<syscont-name> and
+  # and checking that the contents are copied to the /var/lib/sysbox/docker/<syscont-name> and
   # that they have the correct ownership. There is a dsVolMgr unit test that verifies this already,
   # but an integration test would be good too.
   #

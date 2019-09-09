@@ -1,13 +1,13 @@
-# Sysboxd unit to act as a wrapper of sysboxd's inner components/daemons:
+# Sysbox unit to act as a wrapper of sysbox's inner components/daemons:
 # sysbox-mgr and sysboxysbox-fs.
 [Unit]
-Description=Sysboxd General Service
+Description=Sysbox General Service
 
 [Service]
 Type=oneshot
 # Execute a dummy program.
 ExecStart=/bin/true
-# Sysboxd service shall be considered 'active' after start.
+# Sysbox service shall be considered 'active' after start.
 RemainAfterExit=yes
 
 [Install]

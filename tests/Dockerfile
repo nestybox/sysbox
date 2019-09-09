@@ -1,22 +1,22 @@
 #
-# Sysboxd Test Container Dockerfile
+# Sysbox Test Container Dockerfile
 #
-# This Dockerfile creates the sysboxd test container image. The image
-# contains all dependencies needed to build, run, and test sysboxd.
+# This Dockerfile creates the sysbox test container image. The image
+# contains all dependencies needed to build, run, and test sysbox.
 #
-# The image does not contain sysboxd itself; the sysboxd repo
+# The image does not contain sysbox itself; the sysbox repo
 # must be bind mounted into the image. It can then be built,
 # installed, and executed within the container.
 #
 # The image must be run as a privileged container (i.e., docker run --privileged ...)
-# Refer to the sysboxd Makefile test targets.
+# Refer to the sysbox Makefile test targets.
 #
 # This Dockerfile is based on a similar Dockerfile in the OCI runc
-# github repo, but adapted to sysboxd testing.
+# github repo, but adapted to sysbox testing.
 #
 # Instructions:
 #
-# docker build -t sysboxd-test .
+# docker build -t sysbox-test .
 #
 
 FROM golang:1.13.0-buster
@@ -82,7 +82,7 @@ RUN mkdir -p ~/bin/protoc \
     && rm -rf ~/bin/protoc/ \
     && go get -u github.com/golang/protobuf/protoc-gen-go
 
-# install Docker (used by most sysboxd tests to launch sys containers)
+# install Docker (used by most sysbox tests to launch sys containers)
 RUN apt-get install -y \
        apt-transport-https \
        ca-certificates \
@@ -98,12 +98,12 @@ RUN add-apt-repository \
 RUN apt-get update
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# sysboxd deps
+# sysbox deps
 RUN apt-get update && apt-get install -y \
     fuse
 
-# sysboxd env
-RUN useradd sysboxd \
+# sysbox env
+RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
 
 # nestybox docker hub login credentials (insecure)
@@ -113,5 +113,5 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 
 RUN mkdir -p /root/nestybox
-WORKDIR /root/nestybox/sysboxd
+WORKDIR /root/nestybox/sysbox
 CMD /bin/bash

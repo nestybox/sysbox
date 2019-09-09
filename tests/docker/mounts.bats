@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Test that docker storage mounts work as expected when using sysboxd
+# Test that docker storage mounts work as expected when using sysbox
 #
 
 load ../helpers/run
