@@ -1,24 +1,24 @@
-Sysboxd's Releasing Process
+Sysbox's Releasing Process
 ===========================
 
 During the execution of the following steps, no change should be pushed to any of the following repositories:
 
-- sysboxd
+- sysbox
 - sysbox-fs
 - sysbox-ipc
 - sysbox-mgr
 - sysbox-runc
 - shiftfs
 - fuse
-- sysboxd-staging
-- sysboxd-external
+- sysbox-staging
+- sysbox-external
 
-# Sysboxd repository changes
+# Sysbox repository changes
 
 1) Create a new workspace from scratch:
 
     ```
-    $ git clone --recursive git@github.com:nestybox/sysboxd.git
+    $ git clone --recursive git@github.com:nestybox/sysbox.git
     ```
 
 2) Create new release branch (the name itself doesn't really matter):
@@ -71,14 +71,14 @@ that the "UNRELEASED" attribute is eliminated.
 6) Verify generated debian-changelog matches our expectations:
 
     ```
-    $ dpkg -x images/deb/debbuild/ubuntu-bionic/sysboxd_0.1.0-0~ubuntu-bionic_amd64.deb sysboxd-deb-data
-    $ gunzip -c sysboxd-deb-data/usr/share/doc/sysboxd/changelog.Debian.gz
+    $ dpkg -x images/deb/debbuild/ubuntu-bionic/sysbox_0.1.0-0~ubuntu-bionic_amd64.deb sysbox-deb-data
+    $ gunzip -c sysbox-deb-data/usr/share/doc/sysbox/changelog.Debian.gz
     ```
 
 7) Test image:
 
     ```
-    $ sudo dpkg -i images/deb/debbuild/ubuntu-bionic/sysboxd_0.1.0-0~ubuntu-bionic_amd64.deb
+    $ sudo dpkg -i images/deb/debbuild/ubuntu-bionic/sysbox_0.1.0-0~ubuntu-bionic_amd64.deb
     ```
 
 8) Push above changes as well as the newly generated tag:
@@ -87,22 +87,22 @@ that the "UNRELEASED" attribute is eliminated.
     $ git push origin release_v0.1.0 --follow-tags
     ```
 
-9) Rebase-merge changes from Github's web-UI into sysboxd's master branch.
+9) Rebase-merge changes from Github's web-UI into sysbox's master branch.
 
 
-# Sysboxd-staging/external repository changes.
+# Sysbox-staging/external repository changes.
 
-## Sysboxd-staging vs Sysboxd-external
+## Sysbox-staging vs Sysbox-external
 
-Sysboxd-staging's goal is to serve as a staging ground for the changes that will be eventually published to sysboxd-external repository.
+Sysbox-staging's goal is to serve as a staging ground for the changes that will be eventually published to sysbox-external repository.
 
-To simplify the synchronization task between sysboxd-staging and his public counterpart, we will always perform changes over sysboxd-staging, and will only write to sysboxd-external once that the git-log history in sysboxd-staging has been properly arranged to display one single entry per release milestone. See example below:
+To simplify the synchronization task between sysbox-staging and his public counterpart, we will always perform changes over sysbox-staging, and will only write to sysbox-external once that the git-log history in sysbox-staging has been properly arranged to display one single entry per release milestone. See example below:
 
-sysboxd-staging:
+sysbox-staging:
 
     ```
     $ git log --oneline
-    1303bc7 (HEAD -> release_v0.1.0, tag: v0.1.0, sysboxd-external/new_v0.1.0, sysboxd-external/master) Release v0.1.0
+    1303bc7 (HEAD -> release_v0.1.0, tag: v0.1.0, sysbox-external/new_v0.1.0, sysbox-external/master) Release v0.1.0
     51fbe06 Internal release v0.0.1 (for testing purposes)
     ```
 
@@ -114,12 +114,12 @@ sysbox-external:
     51fbe06 Internal release v0.0.1 (for testing purposes)
     ``` 
 
-## Releasing steps (sysboxd-staging)
+## Releasing steps (sysbox-staging)
 
-1) Clone sysboxd-staging into a new workspace:
+1) Clone sysbox-staging into a new workspace:
 
     ```
-    $ git clone git@github.com:nestybox/sysboxd-staging.git
+    $ git clone git@github.com:nestybox/sysbox-staging.git
     ```
 
 2) Create a new release branch (again, the name doesn't really matter):
@@ -129,10 +129,10 @@ sysbox-external:
     ```
 
 
-3) Replace this repo's CHANGELOG.md file with the one from sysboxd's repository:
+3) Replace this repo's CHANGELOG.md file with the one from sysbox's repository:
 
     ```
-    rmolina@dev-bionic:~/wsp/08-27-2019/sysboxd-staging$ cp ../sysboxd/CHANGELOG.md .
+    rmolina@dev-bionic:~/wsp/08-27-2019/sysbox-staging$ cp ../sysbox/CHANGELOG.md .
     ```
 
 3) Commit above change locally.
@@ -149,8 +149,8 @@ all bundled into a single commit-id:
     $ git rebase -i HEAD~3  [ where '3' indicates how many commits we want to squash ]
     ```
 
-5) As we did in sysboxd's repo, create a new annotated-tag corresponding to the release that we
-want to create (which should be matching the one added in sysboxd's repo).
+5) As we did in sysbox's repo, create a new annotated-tag corresponding to the release that we
+want to create (which should be matching the one added in sysbox's repo).
 
     ```
     $ git tag -a v0.1.0 -m "Release v0.1.0"
@@ -163,46 +163,46 @@ in step 4)
     $ git show v0.1.0
     ``` 
 
-7) Push the CHANGELOG.md changes, the new tag, and the git-log modifications into sysboxd-staging remote:
+7) Push the CHANGELOG.md changes, the new tag, and the git-log modifications into sysbox-staging remote:
 
     ```
     $ git push origin release_v0.1.0 --follow-tags
     ```
 
-## Releasing steps (sysboxd-external)
+## Releasing steps (sysbox-external)
 
-8) Within sysboxd-staging workspace (step 7 above), add a new remote corresponding to sysboxd-external repository:
-
-    ```
-    $ git remote add sysboxd-external git@github.com:nestybox/sysboxd-external.git
-    ```
-
-9) Fetch sysboxd-external latest changes in master branch:
+8) Within sysbox-staging workspace (step 7 above), add a new remote corresponding to sysbox-external repository:
 
     ```
-    $ git fetch sysboxd-external master
+    $ git remote add sysbox-external git@github.com:nestybox/sysbox-external.git
     ```
 
-10) Create a new branch based off of sysboxd-external's master:
+9) Fetch sysbox-external latest changes in master branch:
 
     ```
-    git checkout -b release_v0.1.0_external remotes/sysboxd-external/master
+    $ git fetch sysbox-external master
     ```
 
-11) Cherry-pick the commit-id previously pushed into sysboxd-staging corresponding to the new release being created:
+10) Create a new branch based off of sysbox-external's master:
+
+    ```
+    git checkout -b release_v0.1.0_external remotes/sysbox-external/master
+    ```
+
+11) Cherry-pick the commit-id previously pushed into sysbox-staging corresponding to the new release being created:
 
     ```
     $ git log release_v0.1.0 --oneline
     $ git cherry-pick <commit-id>
     ```
 
-12) Push the changes (should be a single commit-id) into sysboxd-external's remote:
+12) Push the changes (should be a single commit-id) into sysbox-external's remote:
 
     ```
-    git push sysboxd-external release_v0.1.0_external --follow-tags
+    git push sysbox-external release_v0.1.0_external --follow-tags
     ```
 
 # Upload images
 
 At this point this is a manual process that entails copying every *.deb file and adding into the release
-section of sysboxd-external's repository. This process should be optimized soon.
+section of sysbox-external's repository. This process should be optimized soon.

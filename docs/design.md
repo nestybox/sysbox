@@ -1,31 +1,31 @@
-Sysboxd Design Notes
+Sysbox Design Notes
 =====================
 
-The customer docs for sysboxd contain basic info on its design.
-See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/design.md).
+The customer docs for sysbox contain basic info on its design.
+See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/design.md).
 
 The following is additional design information meant for Nestybox's
 internal use only.
 
 ## OCI compatibility
 
-See [here](https://github.com/nestybox/sysboxd-external/blob/master/docs/design.md#oci-compatibility)
-for info on Sysboxd's OCI compatibility.
+See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/design.md#oci-compatibility)
+for info on Sysbox's OCI compatibility.
 
 Additional info below.
 
 ### Init Process
 
-* Sysboxd honors the init process selected for the system container
+* Sysbox honors the init process selected for the system container
   via the spec's `Process` object.
 
 * Normally, we expect that the init process in a system container will
   be an init daemon (e.g., systemd). But that's not always true, and
-  Sysboxd will execute whatever entry point is specified in the spec.
+  Sysbox will execute whatever entry point is specified in the spec.
 
 ### Capabilities
 
-* If the `Process` object indicates a uid of 0, sysboxd gives that
+* If the `Process` object indicates a uid of 0, sysbox gives that
   process full capabilities regardless of what the system container's
   spec indicates.
 
@@ -33,7 +33,7 @@ Additional info below.
     of the defined entry points (i.e., `sysbox-runc run` or
     `sysbox-runc exec`).
 
-* If the `Process` object indicates a uid != 0, sysboxd gives that
+* If the `Process` object indicates a uid != 0, sysbox gives that
   process the capabilities defined in the spec; if none are defined,
   it gets no capabilities.
 
@@ -55,7 +55,7 @@ Additional info below.
 
 * However, it's critical to prevent a root process in the system
   container from changing the cgroup resources assigned to the system
-  container itself. To do this, Sysboxd creates two cgroup
+  container itself. To do this, Sysbox creates two cgroup
   directories for each system container on the host:
 
   `/sys/fs/cgroup/<controller>/<syscont-id>/`
@@ -66,17 +66,17 @@ Additional info below.
   The system container has no visibility and permissions to access it.
 
 * The second directory is exposed inside the system container.
-  Sysboxd gives the root user in the system container full access to
+  Sysbox gives the root user in the system container full access to
   it (i.e., mounts it read-write as the system container's cgroup root, and
   changes the ownership on the host to match the system container's
   root process uid(gid)).
 
-* In addition, Sysboxd uses the cgroup namespace to hide the host
+* In addition, Sysbox uses the cgroup namespace to hide the host
   path for the cgroup root inside the system container.
 
 ### Read-only paths
 
-* Sysboxd will honor read-only paths in the system container
+* Sysbox will honor read-only paths in the system container
   spec, except when these correspond to paths managed by
   sysbox-fs.
 
@@ -88,7 +88,7 @@ Additional info below.
 
 ### Masked paths
 
-* Sysboxd will honor masked paths in the system container
+* Sysbox will honor masked paths in the system container
   spec, except when these correspond to paths managed by
   sysbox-fs.
 
@@ -100,37 +100,37 @@ Additional info below.
 
 ## uid(gid) mappings
 
-* If the container spec specifies uid(gid) mapping, sysboxd honors it
+* If the container spec specifies uid(gid) mapping, sysbox honors it
 
-  - sysboxd does not allocate the mapping in this case
+  - sysbox does not allocate the mapping in this case
 
-  - sysboxd requires that the mapping be for a range of >= 64K uid(gid)s per container.
+  - sysbox requires that the mapping be for a range of >= 64K uid(gid)s per container.
 
     - This is necessary to support running most Linux distros inside a
       system container (e.g., Debian uses uid 65534 as "nobody").
 
-  - sysboxd does not require that the mappings between containers be non-overlapping
-    in this case; sysboxd honors the given map, regardless of whether it overlaps
+  - sysbox does not require that the mappings between containers be non-overlapping
+    in this case; sysbox honors the given map, regardless of whether it overlaps
     with other containers.
 
     - It's up to the higher layer to provide non-overlapping uid
       mappings between containers for strong container->container
       isolation.
 
-* Otherwise, sysboxd allocates the uid(gid) mapping
+* Otherwise, sysbox allocates the uid(gid) mapping
 
-  - the mapping is allocated from the subuid/subgid range for user "sysboxd"
+  - the mapping is allocated from the subuid/subgid range for user "sysbox"
 
   - each sys container is given an exclusive portion of the subuid(gid) range (for strong isolation)
 
   - if the subuid(gid) range is exhausted, action is determined by subuid(gid)
     range exhaust policy setting.
 
-  - sysboxd allocations are always for 64K uid(gid)s
+  - sysbox allocations are always for 64K uid(gid)s
 
 ### subuid(gid) range exhaust policy
 
-This policy dictates how sysboxd reacts to subuid(gid) range
+This policy dictates how sysbox reacts to subuid(gid) range
 exhaustion when uid(gid) auto allocation is enabled.
 
 - Re-use: re-use uid(gid) mappings; this may cause multiple sys
@@ -144,7 +144,7 @@ command line option.
 
 ## uid(gid) shifting
 
-sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysboxd/blob/master/shiftfs/README.md) to support Docker
+sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysbox/blob/master/shiftfs/README.md) to support Docker
 containers when the Docker daemon is configured without userns-remap
 (as it is by default).
 
@@ -170,10 +170,10 @@ TARGET                                SOURCE                                    
 
 Notice how shiftfs is mounted on the container's rootfs.
 
-uid(gid) shifting is not used by sysboxd when Docker userns-remap is
+uid(gid) shifting is not used by sysbox when Docker userns-remap is
 enabled, as in this case Docker ensures that the container's rootfs is
 owned by the same host user that maps to the container's root
-user. Sysboxd-runc detects this situation and does not use shiftfs on
+user. Sysbox-runc detects this situation and does not use shiftfs on
 the container rootfs.
 
 Here is an example of a system container mounts with Docker userns-remap
@@ -241,20 +241,20 @@ By using uid(gid) shifting, the shared volume can be owned by true
 root (with read-write permissions given to true root only) yet
 be shared by multiple system containers.
 
-## Sysboxd and Docker userns-remap
+## Sysbox and Docker userns-remap
 
-Based on the above, the following is sysboxd's behavior with respect
+Based on the above, the following is sysbox's behavior with respect
 to Docker userns remap:
 
 | Docker userns-remap | Description |
 |---------------------|-------------|
-| disabled            | sysboxd will allocate exclusive uid(gid) mappings per sys container and perform uid(gid) shifting. |
+| disabled            | sysbox will allocate exclusive uid(gid) mappings per sys container and perform uid(gid) shifting. |
 |                     | Strong container-to-host isolation. |
 |                     | Strong container-to-container isolation. |
 |                     | Storage efficient (shared Docker images). |
 |                     | Requires the Nestybox shiftfs module in kernel. |
 |                     |
-| enabled             | sysboxd will honor Docker's uid(gid) mappings. |
+| enabled             | sysbox will honor Docker's uid(gid) mappings. |
 |                     | uid(gid) shifting won't be used because container uid(gid) mappings match rootfs owner. |
 |                     | Strong container-to-host isolation. |
 |                     | Reduced container-to-container isolation (same uid(gid) range). |
@@ -263,12 +263,12 @@ to Docker userns remap:
 
 ## System container /var/lib/docker mount
 
-Sysboxd automatically creates and bind-mounts a host volume inside the
+Sysbox automatically creates and bind-mounts a host volume inside the
 system container's `/var/lib/docker` directory.
 
 This functionality is needed in order to:
 
-* Remove the need to place sysboxd system container images in a
+* Remove the need to place sysbox system container images in a
   filesystem that supports Docker-in-Docker (e.g., btrfs).
 
 * Allow Docker-in-Docker when the outer Docker system container is
@@ -277,12 +277,12 @@ This functionality is needed in order to:
   `/var/lib/docker/`, but overlayfs does not work when mounted on top
   of shiftfs, so shiftfs can't be mounted on `/var/lib/docker`.
 
-See sysboxd github issue #46 (https://github.com/nestybox/sysboxd/issues/46) for
+See sysbox github issue #46 (https://github.com/nestybox/sysbox/issues/46) for
 further details.
 
 The host volume that is bind mounted on the system container's
 `/var/lib/docker` is simply a directory inside sysbox-mgr's
-data-root (`/var/lib/sysboxd`). This directory is created by sysboxd
+data-root (`/var/lib/sysbox`). This directory is created by sysbox
 when the container launches, and deleted when the container stops. In
 other words, the volume / directory only exists for the life of the
 system container.
@@ -295,14 +295,14 @@ Docker).
 
 A couple of details:
 
-* When creating the host volume directory, Sysboxd sets the directory's
+* When creating the host volume directory, Sysbox sets the directory's
   uid:gid ownership to match the uid:gid of the root inside the system
   container. This way system container root processes can access
   `/var/lib/docker` inside the system container.
 
-* Sysboxd deals with the case where the system container image has
+* Sysbox deals with the case where the system container image has
   contents in `/var/lib/docker` prior to launching the system
-  container.  In this case, sysboxd copies those contents to the
+  container.  In this case, sysbox copies those contents to the
   newly created volume and sets the uid:gid ownership appropriately
   before performing the bind mount of the volume on top of the
   container's `/var/lib/docker/`.
@@ -314,7 +314,7 @@ is done by sysbox-mgr.
 
 When a system container starts, sysbox-runc requests a supplementary
 mount config from sysbox-mgr. sysbox-mgr then creates the host
-volume in its data-root (`/var/lib/sysboxd`) and returns a mount
+volume in its data-root (`/var/lib/sysbox`) and returns a mount
 config to sysbox-runc. sysbox-runc then applies the mount config
 (i.e., bind mounts the host volume to the container's `/var/lib/docker`).
 
@@ -324,7 +324,7 @@ to remove the host volume associated with the container.
 
 ## Rootless mode
 
-Sysboxd will initially not support running rootless (i.e.,
+Sysbox will initially not support running rootless (i.e.,
 without root permissions on the host).
 
 In the future we should consider adding this to allow regular

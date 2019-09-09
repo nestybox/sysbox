@@ -1,15 +1,15 @@
-Sysboxd debugging notes
+Sysbox debugging notes
 ========================
 
 ## Debugging image
 
 Before initiating a debugging session, we must ensure that the
 binaries that we will be operating on have been built with
-compiler-optimizations disabled. The following sysboxd Makefile
+compiler-optimizations disabled. The following sysbox Makefile
 targets have been created for this purpose:
 
 ```
-sysboxd-debug
+sysbox-debug
 sysbox-runc-debug
 sysbox-fs-debug
 sysbox-mgr-debug
@@ -18,7 +18,7 @@ sysbox-mgr-debug
 Example:
 
 ```
-$ make sysboxd-debug && sudo make install
+$ make sysbox-debug && sudo make install
 ```
 
 In some cases, it's desirable to debug process initialization phases,
@@ -71,13 +71,13 @@ $ go get -u github.com/derekparker/delve/cmd/dlv
   files of the the binary to debug:
 
 ```
-rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysboxd/sysbox-runc
+rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
 ```
 
 * Attaching to a running process:
 
 ```
-rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysboxd/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
 ```
 
 Notice that to allow Golang runtime to operate as we expect, we must

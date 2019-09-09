@@ -48,21 +48,21 @@ enable_unprivileged_userns() {
     fi
 }
 
-# Adds user/group in charge of running all sysboxd components.
-add_sysboxd_user() {
+# Adds user/group in charge of running all sysbox components.
+add_sysbox_user() {
 
-    if ! getent passwd | grep "^sysboxd:" >/dev/null 2>&1; then
-        useradd -r -s /bin/false sysboxd
+    if ! getent passwd | grep "^sysbox:" >/dev/null 2>&1; then
+        useradd -r -s /bin/false sysbox
     fi
 
-    # Temporarily adding a static subordinate UIDs/GIDs range for sysboxd user.
+    # Temporarily adding a static subordinate UIDs/GIDs range for sysbox user.
     # A more proper logic will be soon implemented by sysbox-mgr, and then,
     # the following instructions shall be eliminated from here.
-    if ! egrep "^sysboxd:" /etc/subuid >/dev/null 2>&1; then
-        sed -i "\$asysboxd:1000000:65536" /etc/subuid
+    if ! egrep "^sysbox:" /etc/subuid >/dev/null 2>&1; then
+        sed -i "\$asysbox:1000000:65536" /etc/subuid
     fi
-    if ! egrep "^sysboxd:" /etc/subgid >/dev/null 2>&1; then
-        sed -i "\$asysboxd:1000000:65536" /etc/subgid
+    if ! egrep "^sysbox:" /etc/subgid >/dev/null 2>&1; then
+        sed -i "\$asysbox:1000000:65536" /etc/subgid
     fi
 }
 
@@ -102,7 +102,7 @@ load_uid_shift_module() {
     uid_shift_mode=true
 }
 
-# Create/Modify dockerd configuration to satisfy Sysboxd's requirements.
+# Create/Modify dockerd configuration to satisfy Sysbox's requirements.
 #
 # There are two operation-modes that dictate the presence/absence of
 # a 'userns-remap' entry in dockerd's config file:
@@ -110,7 +110,7 @@ load_uid_shift_module() {
 # 1) uid-shifting mode: In this case no 'userns-remap' entry is required in
 #    dockerd's configuration.
 # 2) regular mode: In this mode a 'userns-remap' entry is required by making
-#    use of the 'sysboxd' uid.
+#    use of the 'sysbox' uid.
 #
 # Regardless of the oper-mode being elected, dockerd config file must be always
 # updated to introduce the sysbox-runc runtime.
@@ -131,14 +131,14 @@ adjust_docker_config() {
     # off.
     if [[ ${uid_shift_mode} = false ]]; then
         # If no 'userns-remap' key-entry is present, or if its associated value
-        # is empty, proceed to create a key and set its value to 'sysboxd' user.
+        # is empty, proceed to create a key and set its value to 'sysbox' user.
         # Note that 'jq' does not provide 'in-place' editing capabilities (i.e.
         # it displays inconsistent behavior), hence the need for the auxiliar
         # 'tmp' file.
         if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = false ]] ||
             [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"\"" ]]; then
 
-            jq --indent 4 '. + {"userns-remap": "sysboxd"}' \
+            jq --indent 4 '. + {"userns-remap": "sysbox"}' \
                 ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
 
             docker_restart_required=true
@@ -146,9 +146,9 @@ adjust_docker_config() {
 
     else
         # If uid_shift_mode is enabled verify that no 'userns-remap' entry exists
-        # for 'sysboxd' user, and if that's the case, proceed to eliminate it.
+        # for 'sysbox' user, and if that's the case, proceed to eliminate it.
         if [[ $(jq 'has("userns-remap")' ${dockerCfgFile}) = true ]] &&
-            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysboxd\"" ]]; then
+            [[ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"sysbox\"" ]]; then
 
             jq 'del(."userns-remap")' \
                 ${dockerCfgFile} > tmp.json && mv tmp.json ${dockerCfgFile}
@@ -192,9 +192,9 @@ adjust_docker_config() {
         # pre-installation time, we will either inform user of the need to restart
         # dockerd, or we will automatically do it as part of this installation
         # process.
-        db_get sysboxd/docker_restart
+        db_get sysbox/docker_restart
         if [ "$RET" = "false" ]; then
-            db_input critical sysboxd/docker_manual_restart || true
+            db_input critical sysbox/docker_manual_restart || true
             db_stop
             echo -e "\nDisruptive changes made to dockerd configuration. Please restart docker service!"
         else
@@ -208,7 +208,7 @@ adjust_docker_config() {
     fi
 }
 
-config_sysboxd() {
+config_sysbox() {
 
     # Ensure sysbox-fs' default mountpoint is created in the file-system.
     create_sysboxfs_mountpoint
@@ -218,10 +218,10 @@ config_sysboxd() {
     # generated as part of this package's installation process.
     enable_unprivileged_userns
 
-	# Add 'sysboxd' user to host a large pool of subordinate UIDs/GIDs to be
+	# Add 'sysbox' user to host a large pool of subordinate UIDs/GIDs to be
     # shared across all system-containers. This user must match the one defined
     # in the docker configuration file.
-    add_sysboxd_user
+    add_sysbox_user
 
     # Load our shiftfs module if its requirements are properly met.
     load_uid_shift_module
@@ -233,8 +233,8 @@ config_sysboxd() {
 
 case "$1" in
     configure)
-        # Adjust system's configuration to satisfy Sysboxd requirements.
-        config_sysboxd
+        # Adjust system's configuration to satisfy Sysbox requirements.
+        config_sysbox
 
         # Avoid calling exit() here to allow debhelper tools to add their
         # auto-generated code further below.

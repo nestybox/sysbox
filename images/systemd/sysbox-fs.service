@@ -1,9 +1,9 @@
 [Unit]
 Description=Sysbox-fs component
-# When systemd stops or restarts the sysboxd.service, the action is propagated
+# When systemd stops or restarts the sysbox.service, the action is propagated
 # to this unit.
-PartOf=sysboxd.service
-After=sysboxd.service
+PartOf=sysbox.service
+After=sysbox.service
 # sysbox-fs should always start after sysbox-mgr.
 After=sysbox-mgr.service
 
@@ -15,6 +15,6 @@ ExecStart=/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log
 Restart=on-failure
 
 [Install]
-# This unit should be only started after sysboxd.service has completed its
+# This unit should be only started after sysbox.service has completed its
 # initialization.
-WantedBy=sysboxd.service
+WantedBy=sysbox.service

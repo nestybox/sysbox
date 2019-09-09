@@ -1,15 +1,15 @@
-Nestybox Sysboxd
+Nestybox Sysbox
 ================
 
 ## Introduction
 
-Sysboxd is software that integrates with Docker and allows it to
+Sysbox is software that integrates with Docker and allows it to
 create system containers.
 
-The customer docs for sysboxd contain a lot of info on installation,
-usage, design, etc. Those are found in the [sysboxd external repo](https://github.com/nestybox/sysboxd-external)
+The customer docs for sysbox contain a lot of info on installation,
+usage, design, etc. Those are found in the [sysbox external repo](https://github.com/nestybox/sysbox-external)
 
-This repo contains the source code for sysboxd, as well as additional
+This repo contains the source code for sysbox, as well as additional
 docs that are for Nestybox's internal use only.
 
 ## Building & Installing from Source
@@ -19,7 +19,7 @@ $ make sysbox
 $ sudo make install
 ```
 
-Launch Sysboxd with:
+Launch Sysbox with:
 
 ```
 $ sudo sysbox &
@@ -30,18 +30,18 @@ will log into `/var/log/sysbox-fs.log` and
 `/var/log/sysbox-mgr.log` (these logs are useful for
 troubleshooting).
 
-## Sysboxd Testing
+## Sysbox Testing
 
-The Sysboxd test suite is made up of the following:
+The Sysbox test suite is made up of the following:
 
 * sysbox-mgr unit tests
 * sysbox-fs unit tests
 * sysbox-runc unit and integration tests
-* Sysboxd integration tests (these test all components together)
+* Sysbox integration tests (these test all components together)
 
 ### Running the entire suite
 
-To run the entire Sysboxd test suite:
+To run the entire Sysbox test suite:
 
 ```
 $ make test
@@ -50,45 +50,45 @@ $ make test
 This command runs all test targets (i.e., unit and integration
 tests).
 
-*Note*: This includes Sysboxd integration tests with and without
+*Note*: This includes Sysbox integration tests with and without
 uid-shifting. Thus the shiftfs module be loaded in the kernel *prior*
 to running this command. See above for info on loading shiftfs.
 
-### Running the Sysboxd integration tests only
+### Running the Sysbox integration tests only
 
 Without uid-shifting:
 
 ```
-$ make test-sysboxd
+$ make test-sysbox
 ```
 
 With uid-shifting:
 
 ```
-$ make test-sysboxd-shiftuid
+$ make test-sysbox-shiftuid
 ```
 
 It's also possible to run a specific integration test with:
 
 ```
-$ make test-sysboxd TESTPATH=<test-name>
+$ make test-sysbox TESTPATH=<test-name>
 ```
 
 For example, to run all sysbox-fs handler tests:
 
 ```
-$ make test-sysboxd TESTPATH=tests/sysfs
+$ make test-sysbox TESTPATH=tests/sysfs
 ```
 
 Or to run one specific hanlder test:
 
 ```
-$ make test-sysboxd TESTPATH=tests/sysfs/disable_ipv6.bats
+$ make test-sysbox TESTPATH=tests/sysfs/disable_ipv6.bats
 ```
 
 ### Running the unit tests
 
-To run unit tests for one of the Sysboxd components (e.g., sysbox-fs, sysbox-mgr, etc.)
+To run unit tests for one of the Sysbox components (e.g., sysbox-fs, sysbox-mgr, etc.)
 
 ```
 $ make test-runc
@@ -110,13 +110,13 @@ To run a single test:
 $ make test-shiftfs TESTPATH=shiftfs/pjdfstest/tests/open
 ```
 
-### More on Sysboxd integration tests
+### More on Sysbox integration tests
 
-The Sysboxd integration Makefile target (`test-sysboxd`) spawns a
+The Sysbox integration Makefile target (`test-sysbox`) spawns a
 Docker privileged container using the image in tests/Dockerfile.
 
-It then mounts the developer's Sysboxd directory into the privileged
-container, builds and installs Sysboxd *inside* of it, and runs the
+It then mounts the developer's Sysbox directory into the privileged
+container, builds and installs Sysbox *inside* of it, and runs the
 tests in directory `tests/`.
 
 These tests use the ["bats"](https://github.com/nestybox/sysbox/blob/master/README.md)
@@ -127,7 +127,7 @@ In order to launch the privileged container, Docker must be present in
 the host and configured without userns-remap (as userns-remap is not
 compatible with privileged containers). Make sure the
 `/etc/docker/daemon.json` file is not configured with the
-`userns-remap` option prior to running the Sysboxd integration tests.
+`userns-remap` option prior to running the Sysbox integration tests.
 
 Also, in order to debug, it's sometimes useful to launch the Docker
 privileged container and get a shell in it. This can be done with:
@@ -143,7 +143,7 @@ $ make test-shell-shiftuid
 ```
 
 The latter command configures docker inside the privileged test
-container without userns remap, thus forcing Sysboxd to use
+container without userns remap, thus forcing Sysbox to use
 uid-shifting.
 
 From within the test shell, run a test with:
@@ -177,7 +177,7 @@ the privileged test container. The programs running inside the
 privileged container (e.g., docker, sysbox, etc) place data in these
 directories.
 
-The Sysboxd test targets do not cleanup the contents of these
+The Sysbox test targets do not cleanup the contents of these
 directories so as to allow their reuse between test runs in order to
 speed up testing (e.g., to avoid having the test container download
 fresh docker images between subsequent test runs).
@@ -195,14 +195,14 @@ container.
 
 ## Usage
 
-Refer to the Sysboxd [Usage docs](docs/usage.md).
+Refer to the Sysbox [Usage docs](docs/usage.md).
 
 ## Troubleshooting
 
-Refer to the Sysboxd [troubleshooting notes](docs/troubleshoot.md).
+Refer to the Sysbox [troubleshooting notes](docs/troubleshoot.md).
 
 ## Debugging
 
-Refer to the Sysboxd [debugging notes](docs/debug.md)
+Refer to the Sysbox [debugging notes](docs/debug.md)
 for detailed information on the sequence of steps required to debug
-Sysboxd modules.
+Sysbox modules.

@@ -1,7 +1,7 @@
 SHELL:=/bin/bash
 ARCH:=$(shell uname -m)
 
-# Sysboxd source-code locations.
+# Sysbox source-code locations.
 SYSBOXD_DIR  := $(CURDIR)/../..
 SYSBOX_FS   := $(SYSBOXD_DIR)/sysbox-fs
 SYSBOX_IPC  := $(SYSBOXD_DIR)/sysbox-ipc
@@ -9,16 +9,16 @@ SYSBOX_MGR  := $(SYSBOXD_DIR)/sysbox-mgr
 SYSBOX_RUNC := $(SYSBOXD_DIR)/sysbox-runc
 SYSBOXD_SOURCE_CODE := SYSBOX_FS SYSBOX_IPC SYSBOX_MGR SYSBOX_RUNC
 
-# Sysboxd build-instructions locations.
+# Sysbox build-instructions locations.
 SYSBOXD_IMAGE_COMMON := common
 SYSBOXD_IMAGE_SYSTEMD := ../systemd
 SYSBOXD_IMAGE_SOURCES := SYSBOXD_IMAGE_COMMON SYSBOXD_IMAGE_SYSTEMD
 
-SOURCE_FILES =  sysboxd.tgz           \
-		sysboxd.service       \
+SOURCE_FILES =  sysbox.tgz           \
+		sysbox.service       \
 		sysbox-fs.service     \
 		sysbox-mgr.service    \
-		sysboxd-systemd.conf
+		sysbox-systemd.conf
 
 SOURCES=$(addprefix sources/, $(SOURCE_FILES))
 
@@ -100,15 +100,15 @@ clean: ## Remove build artifacts
 	[ ! -d sources ] || $(CHOWN) -R $(shell id -u):$(shell id -g) sources
 	$(RM) -r sources
 
-sources/sysboxd.tgz:
+sources/sysbox.tgz:
 	mkdir -p $(@D)
 	docker run --rm -i -w /v \
-		-v $(SYSBOXD_DIR):/sysboxd \
+		-v $(SYSBOXD_DIR):/sysbox \
 		-v $(CURDIR)/$(@D):/v \
 		alpine \
-		tar -C / -czf /v/sysboxd.tgz --exclude .git --exclude='images' sysboxd
+		tar -C / -czf /v/sysbox.tgz --exclude .git --exclude='images' sysbox
 
-sources/sysboxd.service: ../systemd/sysboxd.service
+sources/sysbox.service: ../systemd/sysbox.service
 	mkdir -p $(@D)
 	cp $< $@
 
@@ -120,6 +120,6 @@ sources/sysbox-mgr.service: ../systemd/sysbox-mgr.service
 	mkdir -p $(@D)
 	cp $< $@
 
-sources/sysboxd-systemd.conf: ../systemd/sysboxd-systemd.conf
+sources/sysbox-systemd.conf: ../systemd/sysbox-systemd.conf
 	mkdir -p $(@D)
 	cp $< $@
