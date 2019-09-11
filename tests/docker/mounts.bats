@@ -6,6 +6,10 @@
 
 load ../helpers/run
 
+function wait_for_nested_dockerd {
+  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
+}
+
 @test "docker vol mount" {
 
   docker volume create testVol
@@ -129,6 +133,9 @@ load ../helpers/run
 
 @test "docker bind mount on var-lib-docker" {
 
+  # verify that sysbox ignores user bind-mounts on the sys container's
+  # /var/lib/docker, as those are managed by sysbox-mgr
+
   testDir="/root/var-lib-docker"
   mkdir ${testDir}
 
@@ -136,68 +143,44 @@ load ../helpers/run
     chown -R 165536:165536 ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker busybox tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "mount | grep \"on \/var\/lib\/docker\""
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
+
+  line=$(echo $output | tr -s ' ')
+
+  mountDest=$(echo "$line" | cut -d" " -f 1)
+  mountSrc=$(echo "$line" | cut -d" " -f 2)
+  mountFs=$(echo "$line" | cut -d" " -f 3)
 
   if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$output" =~ "${testDir} on /var/lib/docker type nbox_shiftfs" ]]
+    [[ "$mountSrc" =~ "sysbox/docker" ]]
+    [[ "$mountFs" != "nbox_shiftfs" ]]
   else
-    # overlay because we are running in the test container
-    [[ "$output" =~ "overlay on /var/lib/docker type overlay" ]]
+    [[ "$mountSrc" =~ "sysbox/docker" ]]
   fi
 
-  # verify the container can write and read from the bind mount
-  docker exec "$SYSCONT_NAME" sh -c "echo someData > /var/lib/docker/testData"
+  # Let's run an inner container to verify the docker inside the sys container
+  # can work with /var/lib/docker without problems
+
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/testData"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "someData" ]]
+  wait_for_nested_dockerd
 
-  # verify the host sees the changes
-  run cat "${testDir}/testData"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "someData" ]]
-
-  # re-start the container, verify the mount contents are still there
-  docker_stop "$SYSCONT_NAME"
+  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker busybox tail -f /dev/null)
-
-  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/testData"
+  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
-  [[ "$output" == "someData" ]]
+  INNER_CONT_NAME="$output"
+
+  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" =~ "BusyBox" ]]
 
   # cleanup
   docker_stop "$SYSCONT_NAME"
   rm -r ${testDir}
-}
-
-@test "docker shared volume mount" {
-
-  skip "TODO"
-
-  # test that a volume mount can be shared among many containers
-
-}
-
-@test "docker shared bind mount" {
-
-  skip "TODO"
-
-  # test that a bind mount can be shared among many containers
-
-}
-
-@test "docker vol mount with contents" {
-
-  skip "TODO"
-}
-
-@test "docker bind mount with contents" {
-
-  skip "TODO"
 }
