@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     sudo \
     gawk \
+    git \
     iptables \
     jq \
     pkg-config \
