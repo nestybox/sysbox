@@ -37,9 +37,9 @@ load ../helpers/run
   # and that dir should have ownership matching the sysbox user
   run sh -c "cat /etc/subuid | grep sysbox | cut -d\":\" -f2"
   [ "$status" -eq 0 ]
-  SYSBOXD_UID="$output"
+  SYSBOX_UID="$output"
 
-  run sh -c "stat /var/lib/sysbox/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOXD_UID\""
+  run sh -c "stat /var/lib/sysbox/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOX_UID\""
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
