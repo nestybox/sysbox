@@ -2,17 +2,17 @@ SHELL:=/bin/bash
 ARCH:=$(shell uname -m)
 
 # Sysbox source-code locations.
-SYSBOXD_DIR  := $(CURDIR)/../..
-SYSBOX_FS   := $(SYSBOXD_DIR)/sysbox-fs
-SYSBOX_IPC  := $(SYSBOXD_DIR)/sysbox-ipc
-SYSBOX_MGR  := $(SYSBOXD_DIR)/sysbox-mgr
-SYSBOX_RUNC := $(SYSBOXD_DIR)/sysbox-runc
-SYSBOXD_SOURCE_CODE := SYSBOX_FS SYSBOX_IPC SYSBOX_MGR SYSBOX_RUNC
+SYSBOX_DIR  := $(CURDIR)/../..
+SYSBOX_FS   := $(SYSBOX_DIR)/sysbox-fs
+SYSBOX_IPC  := $(SYSBOX_DIR)/sysbox-ipc
+SYSBOX_MGR  := $(SYSBOX_DIR)/sysbox-mgr
+SYSBOX_RUNC := $(SYSBOX_DIR)/sysbox-runc
+SYSBOX_SOURCE_CODE := SYSBOX_FS SYSBOX_IPC SYSBOX_MGR SYSBOX_RUNC
 
 # Sysbox build-instructions locations.
-SYSBOXD_IMAGE_COMMON := common
-SYSBOXD_IMAGE_SYSTEMD := ../systemd
-SYSBOXD_IMAGE_SOURCES := SYSBOXD_IMAGE_COMMON SYSBOXD_IMAGE_SYSTEMD
+SYSBOX_IMAGE_COMMON := common
+SYSBOX_IMAGE_SYSTEMD := ../systemd
+SYSBOX_IMAGE_SOURCES := SYSBOX_IMAGE_COMMON SYSBOX_IMAGE_SYSTEMD
 
 SOURCE_FILES =  sysbox.tgz           \
 		sysbox.service       \
@@ -33,7 +33,7 @@ CHOWN:=docker run --rm -v $(CURDIR):/v -w /v alpine chown
 
 DOCKER_BUILD=docker build                                  \
 	--build-arg GO_IMAGE=$(GO_IMAGE)                   \
-	--build-arg COMMON_FILES=$(SYSBOXD_IMAGE_COMMON)   \
+	--build-arg COMMON_FILES=$(SYSBOX_IMAGE_COMMON)    \
 	-t rpmbuild-$@/$(ARCH)                             \
 	-f $(CURDIR)/$@/Dockerfile .
 
@@ -103,7 +103,7 @@ clean: ## Remove build artifacts
 sources/sysbox.tgz:
 	mkdir -p $(@D)
 	docker run --rm -i -w /v \
-		-v $(SYSBOXD_DIR):/sysbox \
+		-v $(SYSBOX_DIR):/sysbox \
 		-v $(CURDIR)/$(@D):/v \
 		alpine \
 		tar -C / -czf /v/sysbox.tgz --exclude .git --exclude='images' sysbox
