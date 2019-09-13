@@ -206,3 +206,9 @@ in step 4)
 
 At this point this is a manual process that entails copying every *.deb file and adding into the release
 section of sysbox-external's repository. This process should be optimized soon.
+
+# nbox-shiftfs-staging/external repository changes.
+
+As part of the releasing process we must also generate a tag for nbox-shiftfs repositories, as shiftfs code and the associated documentation is subject to change at any point in time.
+
+The sequence of steps to follow to update these two repos is pretty much identical to the one we went through for sysbox-staging/external, so please refer to the above section for the details.
