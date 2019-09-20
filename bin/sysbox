@@ -17,7 +17,7 @@ set +e
 for ((i = 0; i < 10; i++)); do
   if [ -f /var/log/sysbox-mgr.log ] && [ -f /var/log/sysbox-fs.log ]; then
     mgr_up=$(grep -c "Listening on" /var/log/sysbox-mgr.log)
-    fs_up=$(grep -c "Starting to serve sysbox-fs" /var/log/sysbox-fs.log)
+    fs_up=$(grep -c "Initiating sysbox-fs main-loop" /var/log/sysbox-fs.log)
     if [ "$mgr_up" -eq 1 ] && [ "$fs_up" -eq 1 ]; then
       exit 0
     fi
