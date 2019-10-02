@@ -147,8 +147,8 @@ function setup_bundle() {
     chown -R "$UID_MAP":"$GID_MAP" "$bundle"
   fi
 
-  # Restrict path to bundle when using uid-shift, as required by
-  # sysbox-runc's shiftfs mount security check
+  # Restrict search access to bundle when using uid-shift, to ensure Sysbox
+  # can deal with this.
   if [ -n "$SHIFT_UIDS" ]; then
     chmod 700 "$bundle"
   fi
