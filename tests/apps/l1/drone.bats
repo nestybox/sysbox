@@ -38,7 +38,7 @@ function wait_for_init() {
                     --env=DRONE_USER_CREATE=username:nestybox,admin:true,token:55f24eb3d61ef6ac5e83d55017860000 \
                     --publish=80:80 --publish=443:443 \
                     --mount type=bind,source=${tmpdir}/drone-with-go,target=/root/drone-with-go \
-                    -d --rm --name=drone nestybox/ubuntu-bionic-docker-drone)
+                    -d --rm --name=drone nestybox/ubuntu-bionic-drone-server)
 
     wait_for_init
 

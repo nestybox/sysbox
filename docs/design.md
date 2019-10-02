@@ -144,7 +144,7 @@ command line option.
 
 ## uid(gid) shifting
 
-sysbox-runc uses the [shiftfs Linux kernel module](https://github.com/nestybox/sysbox/blob/master/shiftfs/README.md) to support Docker
+Sysbox-runc uses the Ubuntu shiftfs module to help setup system
 containers when the Docker daemon is configured without userns-remap
 (as it is by default).
 
@@ -207,9 +207,6 @@ the following conditions:
 * The bind mount source is not directly above the container's rootfs
   (to avoid shiftfs-on-shifts mounts).
 
-* The bind mount source is not on tmpfs with the exception of Docker
-  `/dev/shm` mounts (to avoid github issue #123).
-
 * The bind mount source uid:gid do not match the uid:gid assigned
   to the container's root process.
 
@@ -252,14 +249,14 @@ to Docker userns remap:
 |                     | Strong container-to-host isolation. |
 |                     | Strong container-to-container isolation. |
 |                     | Storage efficient (shared Docker images). |
-|                     | Requires the Nestybox shiftfs module in kernel. |
+|                     | Requires the shiftfs module in kernel. |
 |                     |
 | enabled             | sysbox will honor Docker's uid(gid) mappings. |
 |                     | uid(gid) shifting won't be used because container uid(gid) mappings match rootfs owner. |
 |                     | Strong container-to-host isolation. |
 |                     | Reduced container-to-container isolation (same uid(gid) range). |
 |                     | Storage efficient (shared Docker images). |
-|                     | Does not require the Nestybox shiftfs module in kernel. |
+|                     | Does not require the shiftfs module in kernel. |
 
 ## System container /var/lib/docker mount
 

@@ -111,6 +111,7 @@ COPY .docker/config.json /root/.docker/config.json
 
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
+COPY bin/userns_child_exec /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox

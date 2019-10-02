@@ -22,7 +22,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type nbox_shiftfs" ]]
+    [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type shiftfs" ]]
   else
     [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
   fi
@@ -42,14 +42,7 @@ function wait_for_nested_dockerd {
 
 @test "docker bind mount" {
 
-  # when using uid shifting, the bind source must be accessible by root on the host only
-  # in order to pass the sysbox-runc security check.
-  if [ -n "$SHIFT_UIDS" ]; then
-    testDir="/root/testVol"
-  else
-    testDir="/testVol"
-  fi
-
+  testDir="/testVol"
   mkdir ${testDir}
 
   # without docker userns-remap, the bind source must be accessible by
@@ -66,7 +59,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$output" =~ "${testDir} on /mnt/testVol type nbox_shiftfs" ]]
+    [[ "$output" =~ "${testDir} on /mnt/testVol type shiftfs" ]]
   else
     # overlay because we are running in the test container
     [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
@@ -112,25 +105,6 @@ function wait_for_nested_dockerd {
   docker_stop "$SYSCONT_NAME"
 }
 
-@test "docker bind mount security check" {
-
-  testDir="/testVol"
-  mkdir ${testDir}
-
-  if [ -n "$SHIFT_UIDS" ]; then
-    # verify that a bind mount fails when using uid shifting and the source path is accessible by non-root
-    docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null
-    [ "$status" -eq 125 ]
-    [[ "$output" =~ "shiftfs mountpoint security check failed" ]]
-  else
-    # verify that a bind mount passes without uid shifting if the source path is accessible by non-root
-    SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null)
-    docker_stop "$SYSCONT_NAME"
-  fi
-
-  rmdir ${testDir}
-}
-
 @test "docker bind mount on var-lib-docker" {
 
   # verify that sysbox ignores user bind-mounts on the sys container's
@@ -156,7 +130,7 @@ function wait_for_nested_dockerd {
 
   if [ -n "$SHIFT_UIDS" ]; then
     [[ "$mountSrc" =~ "sysbox/docker" ]]
-    [[ "$mountFs" != "nbox_shiftfs" ]]
+    [[ "$mountFs" != "shiftfs" ]]
   else
     [[ "$mountSrc" =~ "sysbox/docker" ]]
   fi
