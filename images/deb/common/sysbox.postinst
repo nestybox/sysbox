@@ -15,16 +15,55 @@ dockerCfgFile="${dockerCfgDir}/daemon.json"
 # sysbox-fs' default mountpoint path.
 sysboxfs_mountpoint="/var/lib/sysboxfs"
 
-# Shiftfs' minimum-supported kernel
-SHIFTFS_MIN_SUPPORTED_KERNEL="5.0.0"
+# Shiftfs' minimum (oldest) Ubuntu kernel supported.
+shiftfs_min_supported_kernel="5.0.0.21"
 
-# Shiftfs module-name
-shiftfs_mod_name="nbox-shiftfs"
-shiftfs_mod_name_shell="nbox_shiftfs"
 
-# Global var to track the activation/support of uid-shifting functionality.
-uid_shift_mode=false
+# Compare two versions in SemVer format.
+#
+# Examples:  (1.0.1, 1.0.1) = 0
+#            (1.0.1, 1.0.2) = 2
+#            (1.0.1, 1.0.0) = 1
+#            (1, 1.0) = 0
+#            (3.0.4.10, 3.0.4.2) = 1
+#            (5.0.0-11, 5.0.0-9) = 2
+#
+version_compare() {
 
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+
+    # Define delimiter as both "." and "-" to cover all version formats.
+    local IFS=".-"
+    local i ver1=($1) ver2=($2)
+
+    # Fill empty fields in ver1 with zeros.
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # Fill empty fields in ver2 with zeros.
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+
+    return 0
+}
 
 # Creates sysbox-fs mountpoint.
 create_sysboxfs_mountpoint() {
@@ -56,42 +95,6 @@ add_sysbox_user() {
     fi
 }
 
-# Function to asses the possibility of activating uid-shifting mode, and load the
-# corresponding kernel module if expected requirements are met.
-load_uid_shift_module() {
-
-    local cur_kernel=$(uname -r)
-    local cur_kernel_major=$(uname -r | cut -d'.' -f1)
-    local shiftfs_kernel_major=$(echo ${SHIFTFS_MIN_SUPPORTED_KERNEL} | cut -d'.' -f1)
-
-    # Check if the existing kernel matches shiftfs' requirements, otherwise
-    # return as there's nothing else to be done here.
-    if [[ ${cur_kernel_major} -lt ${shiftfs_kernel_major} ]]; then
-        return
-    fi
-
-    # Exit here if the package being installed doesn't include a shiftfs module
-    # built for a kernel version that matches the current one.
-    if ! dpkg -L $DPKG_MAINTSCRIPT_PACKAGE | egrep "${cur_kernel}.*${shiftfs_mod_name}.*.ko" >/dev/null 2>&1; then
-        return
-    fi
-
-    # Verify if there's an existing shiftfs module already loaded, and if that's
-    # the case, unload it prior to the installation of the new one.
-    if lsmod | grep ${shiftfs_mod_name_shell} >/dev/null 2>&1; then
-        if ! rmmod ${shiftfs_mod_name} >/dev/null 2>&1; then
-            return
-        fi
-    fi
-
-    if ! insmod /lib/modules/${cur_kernel}/updates/dkms/${shiftfs_mod_name}.ko >/dev/null 2>&1; then
-        return
-    fi
-
-    # Enabling uid-shifting mode.
-    uid_shift_mode=true
-}
-
 # Create/Modify dockerd configuration to satisfy Sysbox's requirements.
 #
 # There are two operation-modes that dictate the presence/absence of
@@ -106,8 +109,17 @@ load_uid_shift_module() {
 # updated to introduce the sysbox-runc runtime.
 adjust_docker_config() {
 
+    local uid_shift_mode=false
     local docker_restart_required=false
     local docker_sighup_required=false
+
+    # Determine the operational mode [ 1) or 2) ] based on the kernel version
+    # being utilized.
+    local cur_kernel=$(uname -r | cut -d'-' -f1-2)
+    version_compare ${cur_kernel} ${shiftfs_min_supported_kernel} && :
+    if [[ $? -le 1 ]]; then
+        uid_shift_mode=true
+    fi
 
     # If no dockerd default config-file exist, or if there's no content on it,
     # create one with a bare json layout.
@@ -212,9 +224,6 @@ config_sysbox() {
     # shared across all system-containers. This user must match the one defined
     # in the docker configuration file.
     add_sysbox_user
-
-    # Load our shiftfs module if its requirements are properly met.
-    load_uid_shift_module
 
     # Adjust dockerd configuration.
     adjust_docker_config

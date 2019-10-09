@@ -13,59 +13,6 @@ tar -C /root/build-deb -xzf /sources/sysbox.tgz
 # Obtain sysbox version out of the source tree.
 VERSION=$(cat /root/build-deb/sysbox/VERSION)
 
-# Shiftfs module-name
-shiftfs_mod_name="nbox-shiftfs"
-
-# Path of shiftfs module.
-SHIFTFS_MODULE_DIR=sysbox/shiftfs/${DISTRO}-${SUITE}
-
-###############################################################################
-#
-# Create shiftfs-dkms debian package. This will be a traditional / full-blown
-# package including source-code and changelogs. The obtained binary modules
-# (*.ko files) will be later on included in the final sysbox debian package.
-#
-###############################################################################
-
-if [[ -d ${SHIFTFS_MODULE_DIR} ]]; then
-  cd ${SHIFTFS_MODULE_DIR}
-
-  # Set variables required to satisfy 'changelog' layout requirements.
-  EPOCH=1
-  EPOCH_SEP=":"
-  debSource="$(awk -F ': ' '$1 == "Source" { print $2; exit }' debian/control)"
-  debMaintainer="$(awk -F ': ' '$1 == "Maintainer" { print $2; exit }' debian/control)"
-  debDate="$(date --rfc-2822)"
-
-  # Generate log entry to update 'changelog' file.
-  cat > "debian/changelog" <<-EOF
-$debSource (${EPOCH}${EPOCH_SEP}${VERSION}-0~${DISTRO}-${SUITE}) $SUITE; urgency=low
-  * Version: $VERSION
- -- $debMaintainer  $debDate
-EOF
-
-  # Identify kernel headers not compatible with Nestybox's shiftfs module (only
-  # +5.x at this point), and temporarily move them outside the standard /lib/module
-  # path. This is just a hack to prevent shiftfs-dkms' module compilation
-  # failures while trying to build over a non-supported (<5.x) kernel.
-  mkdir -p /lib/modules/tmp
-
-  find /lib/modules -mindepth 1 -maxdepth 1 -type d \
-    ! -name '5.*' -exec bash -c 'mkdir -p /lib/modules/tmp && mv {} /lib/modules/tmp/' \;
-
-  # Build shiftfs-dkms debian package.
-  dpkg-buildpackage -uc -us -I.git
-
-  # Installing shiftfs-dkms module into the builder container.
-  dpkg -i ../${shiftfs_mod_name}-dkms_${VERSION}-0~${DISTRO}-${SUITE}_*.deb
-
-  find /lib/modules/tmp -mindepth 1 -maxdepth 1 -type d \
-    ! -name '5.*' -exec mv {} /lib/modules/ \;
-
-  cd -
-fi
-
-
 ###############################################################################
 #
 # Create sysbox's debian package. Note that the generated package will

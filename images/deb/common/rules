@@ -4,9 +4,6 @@
 # debugging purposes.
 export DH_VERBOSE = 1
 
-# Shiftfs module name.
-export SHIFTFS_MOD_NAME = nbox-shiftfs
-
 override_dh_auto_build:
 	# Build sysbox's components.
 	cd sysbox && make sysbox
@@ -37,24 +34,6 @@ override_dh_auto_install:
 	# Sysbox's sysctl.d config-file installation.
 	install -D -m 0644 /sources/sysbox-systemd.conf \
 		bian/sysbox/lib/systemd/system/sysbox-systemd.conf
-
-	# Iterate through all the kernel-headers present in the build-server and
-	# install the shiftfs modules previously compiled.
-	for d in /lib/modules/*; do
-
-		kernel_major_no=$$(echo $$d | cut -d"/" -f4 | cut -d"." -f1)
-		if [[ $${kernel_major_no} -lt 5 ]]; then
-			echo "Skipping kernel $${d}"
-			continue
-		fi
-
-		if [[ -f "$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko" ]]; then
-			echo "Installing $${SHIFTFS_MOD_NAME} module for kernel $${d}"
-			install -D -m 0644 $${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko \
-				debian/sysbox/$${d}/updates/dkms/$${SHIFTFS_MOD_NAME}.ko
-		fi
-	done
-
 
 override_dh_install:
 	dh_install
