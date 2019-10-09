@@ -27,6 +27,7 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 # Debug utilities
 RUN apt-get install -y \
        procps \
+       psmisc \
        nano \
        strace \
        net-tools \
