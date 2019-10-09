@@ -3,6 +3,8 @@
 # Copyright: (C) 2019 Nestybox Inc.  All rights reserved.
 #
 
+set -e
+
 # Sysbox kernel requirements matrix:
 #
 #   +========================================================================================+
@@ -109,7 +111,7 @@ verify_compatibility() {
             found_supported_distro=true
 
             # Verify kernel compatibility.
-            version_compare ${cur_kernel} ${sysbox_support_matrix[$distro]}
+            version_compare ${cur_kernel} ${sysbox_support_matrix[$distro]} && :
             if [[ $? -le 1 ]]; then
                 found_supported_kernel=true
             fi
