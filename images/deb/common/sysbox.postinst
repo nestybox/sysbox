@@ -54,16 +54,6 @@ add_sysbox_user() {
     if ! getent passwd | grep "^sysbox:" >/dev/null 2>&1; then
         useradd -r -s /bin/false sysbox
     fi
-
-    # Temporarily adding a static subordinate UIDs/GIDs range for sysbox user.
-    # A more proper logic will be soon implemented by sysbox-mgr, and then,
-    # the following instructions shall be eliminated from here.
-    if ! egrep "^sysbox:" /etc/subuid >/dev/null 2>&1; then
-        sed -i "\$asysbox:1000000:65536" /etc/subuid
-    fi
-    if ! egrep "^sysbox:" /etc/subgid >/dev/null 2>&1; then
-        sed -i "\$asysbox:1000000:65536" /etc/subgid
-    fi
 }
 
 # Function to asses the possibility of activating uid-shifting mode, and load the
