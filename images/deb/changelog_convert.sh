@@ -64,9 +64,9 @@ print_tag_header() {
     local unreleased=$2
 
     if [[ $unreleased = true ]]; then
-        echo -e "sysbox ($tag-0~${DISTRO}-${SUITE}) ${SUITE} UNRELEASED; urgency=medium\n"
+        echo -e "sysbox ($tag-0.${DISTRO}-${SUITE}) ${SUITE} UNRELEASED; urgency=medium\n"
     else
-        echo -e "sysbox ($tag-0~${DISTRO}-${SUITE}) ${SUITE} unstable; urgency=medium\n"
+        echo -e "sysbox ($tag-0.${DISTRO}-${SUITE}) ${SUITE} unstable; urgency=medium\n"
     fi
 }
 
