@@ -1,16 +1,16 @@
 #!/usr/bin/env bats
 
 #
-# Integration test to verify exclusive uid/gid allocation per sys container
+# Integration test to verify the sysbox-mgr subid allocator.
 #
 
 load ../helpers/run
 
 @test "/etc/subuid check" {
 
-  # verify sysbox-mgr --subid-range option works
+  # verify sysbox-mgr --subid-range-size option works
   sv_mgr_stop
-  sv_mgr_start --subid-range 131072
+  sv_mgr_start --subid-range-size 131072
   uid_size=$(grep sysbox /etc/subuid | cut -d":" -f3)
   gid_size=$(grep sysbox /etc/subgid | cut -d":" -f3)
   [ "$uid_size" -eq 131072 ]
@@ -92,9 +92,10 @@ load ../helpers/run
   fi
 
   sv_mgr_stop
-  sv_mgr_start --subid-policy "no-reuse" --subid-range 131072
+  sv_mgr_start --subid-policy "no-reuse" --subid-range-size 131072
 
   # start two sys containers
+  declare -a syscont_name
   num_syscont=2
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
@@ -119,17 +120,16 @@ load ../helpers/run
 
 @test "uid reuse" {
 
-  skip "unstable test"
-
   if [ -z "$SHIFT_UIDS" ]; then
     skip "uid shifting disabled"
   fi
 
   sv_mgr_stop
-  sv_mgr_start --subid-range 131072
+  sv_mgr_start --subid-range-size 131072
 
   # Start 4 sys containers; the first two should get new ids; the last
   # two should get re-used ids.
+  declare -a syscont_name
   num_syscont=4
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
@@ -140,6 +140,7 @@ load ../helpers/run
     syscont_uids[$i]="$output"
 
     docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'"
+
     [ "$status" -eq 0 ]
     syscont_gids[$i]="$output"
   done
@@ -157,6 +158,77 @@ load ../helpers/run
   done
 
   # cleanup
+  sv_mgr_stop
+  sv_mgr_start
+}
+
+@test "ident-map basic" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "uid shifting disabled"
+  fi
+
+  # restart sysbox-mgr in ident-map mode
+  sv_mgr_stop
+  sv_mgr_start --subid-ident-map
+
+  # launch X sys containers and verify they have their uid(gid)s identity-mapped
+  declare -a syscont_name
+  num_syscont=4
+
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$1 \$2 \$3}'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "0065536" ]]
+
+    docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$1 \$2 \$3}'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "0065536" ]]
+  done
+
+  # stop the sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker_stop "${syscont_name[$i]}"
+  done
+
+  # restart sysbox-mgr in regular mode
+  sv_mgr_stop
+  sv_mgr_start
+}
+
+@test "ident-map dind" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "uid shifting disabled"
+  fi
+
+  # restart sysbox-mgr in ident-map mode
+  sv_mgr_stop
+  sv_mgr_start --subid-ident-map
+
+  # launch X sys containers and verify they can run docker inside
+  declare -a syscont_name
+  num_syscont=1
+
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    docker exec "${syscont_name[$i]}" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
+    [ "$status" -eq 0 ]
+  done
+
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker exec "${syscont_name[$i]}" sh -c "docker run hello-world"
+    [ "$status" -eq 0 ]
+  done
+
+  # stop the sys containers
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    docker_stop "${syscont_name[$i]}"
+  done
+
+  # restart sysbox-mgr in regular mode
   sv_mgr_stop
   sv_mgr_start
 }
