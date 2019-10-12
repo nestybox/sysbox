@@ -6,6 +6,10 @@
 
 load ../helpers/run
 
+function setup {
+  run_only_test "docker bind mount on var-lib-docker"
+}
+
 function wait_for_nested_dockerd {
   retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
@@ -107,9 +111,6 @@ function wait_for_nested_dockerd {
 
 @test "docker bind mount on var-lib-docker" {
 
-  # verify that sysbox ignores user bind-mounts on the sys container's
-  # /var/lib/docker, as those are managed by sysbox-mgr
-
   testDir="/root/var-lib-docker"
   mkdir ${testDir}
 
@@ -128,11 +129,15 @@ function wait_for_nested_dockerd {
   mountSrc=$(echo "$line" | cut -d" " -f 2)
   mountFs=$(echo "$line" | cut -d" " -f 3)
 
+  # when using uid shifting, sysbox ignores user bind-mounts on the
+  # sys container's /var/lib/docker as we don't yet support them in
+  # this mode (see sysbox issue #336)
+
   if [ -n "$SHIFT_UIDS" ]; then
     [[ "$mountSrc" =~ "sysbox/docker" ]]
     [[ "$mountFs" != "shiftfs" ]]
   else
-    [[ "$mountSrc" =~ "sysbox/docker" ]]
+    [[ "$mountSrc" =~ "$testDir" ]]
   fi
 
   # Let's run an inner container to verify the docker inside the sys container
