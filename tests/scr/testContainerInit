@@ -3,8 +3,6 @@
 #
 # Test container initialization script
 #
-# TODO: Build & install shiftfs (if uid-shift option set)
-#
 
 # Build & install sysbox
 thisHost=$(hostname)
