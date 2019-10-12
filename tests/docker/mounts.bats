@@ -6,10 +6,6 @@
 
 load ../helpers/run
 
-function setup {
-  run_only_test "docker bind mount on var-lib-docker"
-}
-
 function wait_for_nested_dockerd {
   retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
 }
