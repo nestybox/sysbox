@@ -20,20 +20,22 @@ function wait_for_inner_postgres() {
   # postgres works
 
   # launch sys container; bind-mount the postgres script into it
-  SYSCONT_NAME=$(docker_run --rm \
-                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  # must choose "overlay" driver to avoid an "overlay2" driver bug
+  # (https://stackoverflow.com/questions/45731683/docker-pull-operation-not-permitted)
+  docker exec "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner postgres container; bind-mount the postgres script into it
-  docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres1 \
-                                     postgres:alpine"
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/postgres_alpine.tar"
+  docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres1 postgres:alpine"
   [ "$status" -eq 0 ]
 
   wait_for_inner_postgres
+  sleep 2
 
   docker exec "$SYSCONT_NAME" sh -c "docker exec postgres1 sh -c 'psql -U postgres -c \\\\l'"
   [ "$status" -eq 0 ]
@@ -49,10 +51,10 @@ function wait_for_inner_postgres() {
   # container and verifies postgres client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -62,6 +64,7 @@ function wait_for_inner_postgres() {
   [ "$status" -eq 0 ]
 
   # launch an inner postgres server container; connect it to the network.
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/postgres_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres-server \
                                      --network postgres-net \
                                      postgres:alpine"

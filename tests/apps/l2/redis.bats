@@ -29,14 +29,15 @@ EOF
   # launch sys container; bind-mount the redis script into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/redis-scr.txt,target=/redis-scr.txt \
-                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+                   nestybox/test-syscont:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner redis container; bind-mount the redis script into it
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/redis_5.0.5_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name redis1 \
                                      --mount type=bind,source=/redis-scr.txt,target=/redis-scr.txt \
                                      redis:5.0.5-alpine"
@@ -61,10 +62,10 @@ EOF
   # container and verifies redis client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -74,6 +75,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # launch an inner redis server container; connect it to the network.
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/redis_5.0.5_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name redis-server \
                                      --network redis-net \
                                      redis:5.0.5-alpine"
