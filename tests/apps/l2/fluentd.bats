@@ -20,10 +20,10 @@ function wait_for_inner_fluentd() {
   # another container can send logs to it.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -38,6 +38,7 @@ function wait_for_inner_fluentd() {
   docker exec "$SYSCONT_NAME" sh -c "chmod 777 /fluentd/log"
 
   # launch the inner fluentd container
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/fluentd_edge.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --rm --name fluentd \
                                      --network fluentd-net \
                                      -v /fluentd/log:/fluentd/log \
@@ -52,6 +53,7 @@ function wait_for_inner_fluentd() {
   fluentd_ip=$output
 
   # generate a stdout log; should be sent to the fluentd container
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/python_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run --name logger \
                                      --network fluentd-net \
                                      --log-driver=fluentd \

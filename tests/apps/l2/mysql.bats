@@ -32,19 +32,20 @@ EOF
   # launch sys container; bind-mount the mysql script into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/mysql-scr.txt,target=/mysql-scr.txt \
-                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+                   nestybox/test-syscont tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner mysql container; bind-mount the mysql script into it
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/mysql_server_5.6.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name mysql1 \
                                      --mount type=bind,source=/mysql-scr.txt,target=/mysql-scr.txt \
                                      -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
                                      -e MYSQL_LOG_CONSOLE=true \
-                                     mysql/mysql-server:latest"
+                                     mysql/mysql-server:5.6"
   [ "$status" -eq 0 ]
 
   wait_for_inner_mysql
@@ -63,12 +64,17 @@ EOF
 
   # Deploys mysql server and client containers inside the sys
   # container and verifies mysql client can access the server.
+  #
+  # Note: decided to use mysql 5.6 server to avoid 'caching_sha2_password' problem
+  # (see https://tableplus.com/blog/2018/07/failed-to-load-caching-sha2-password-authentication-plugin-solved.html)
+  # it's possible to use mysqel 8.0 server, but then the client must be a
+  # ubuntu image which is a bit too heavy for an already painfully slow test.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -79,27 +85,26 @@ EOF
 
   # launch an inner mysql server container; connect it to the network;
   # allow connections from any host without password
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/mysql_server_5.6.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name mysql-server \
                                      --network mysql-net \
                                      -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
                                      -e MYSQL_LOG_CONSOLE=true \
                                      -e MYSQL_ROOT_HOST=% \
-                                     mysql/mysql-server:latest"
+                                     mysql/mysql-server:5.6"
   [ "$status" -eq 0 ]
 
   wait_for_inner_mysql
 
-  # launch an inner mysql client container; connect it to the network;
-  # must use ubuntu image instead of debian as it has a recent version
-  # of the mysql-client (older versions fail to connect due to lack of
-  # 'caching_sha2_password' plugin).
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/alpine_3.10.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name mysql-client \
                                      --network mysql-net \
-                                     ubuntu:latest tail -f /dev/null"
+                                     alpine:3.10 tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec mysql-client sh -c \"apt-get update && apt-get install -y mysql-client\""
+  docker exec "$SYSCONT_NAME" sh -c "docker exec mysql-client sh -c \"apk update && apk add mysql-client\""
   [ "$status" -eq 0 ]
+
 
   # use the mysql client to create and query a database on the server
   docker exec "$SYSCONT_NAME" sh -c "docker exec mysql-client sh -c \"echo 'SHOW DATABASES;' | mysql -h mysql-server\""

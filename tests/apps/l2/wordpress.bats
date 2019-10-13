@@ -14,12 +14,11 @@ function wait_for_inner_dockerd() {
 
   # Deploy a wordpress container inside the sys container and verifies it works.
 
-  # launch a sys container; we use a ubuntu-based sys container to
-  # work-around sysbox issue #270.
+  # launch a sys container; we use a ubuntu-based sys container to work-around sysbox issue #270.
   SYSCONT_NAME=$(docker_run --rm --hostname sc nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -29,7 +28,8 @@ function wait_for_inner_dockerd() {
   [ "$status" -eq 0 ]
 
   # launch an inner database (mysql) container; required by wordpress; we use
-  # mysql version 5.7 as the latest (8.0) is not compatible with wordpress.
+  # mysql version 5.6 as the latest (8.0) is not compatible with wordpress.
+  #docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/mysql_server_5.6.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name mysql \
                                      --network wp-net \
                                      -e MYSQL_ALLOW_EMPTY_PASSWORD=true \

@@ -31,15 +31,16 @@ EOF
   # launch a sys container
   SYSCONT_NAME=$(docker_run --rm \
                  --mount type=bind,source="${HOME}"/prometheus.yml,target=/root/prometheus.yml \
-                 nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+                 nestybox/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner prometheus container
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/prometheus.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --rm --name prometheus \
                                      --mount type=bind,source=/root/prometheus.yml,target=/etc/prometheus/prometheus.yml \
                                      -p 9090:9090 \

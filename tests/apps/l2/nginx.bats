@@ -31,18 +31,19 @@ EOF
   # launch sys container; bind-mount the index.html into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/index.html,target=/html/index.html \
-                   nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+                   nestybox/test-syscont:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner nginx container; bind-mount the html directory.
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/nginx_mainline_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name nginx \
                                      --mount type=bind,source=/html,target=/usr/share/nginx/html,readonly \
                                      -p 8080:80 \
-                                     nginx:latest"
+                                     nginx:mainline-alpine"
   [ "$status" -eq 0 ]
 
   wait_for_inner_nginx
@@ -66,10 +67,10 @@ EOF
   # container and verifies nginx client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -80,17 +81,19 @@ EOF
 
   # launch an inner nginx server container; connect it to the network;
   # allow connections from any host without password
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/nginx_mainline_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name nginx-server \
                                      --network nginx-net \
-                                     nginx:latest"
+                                     nginx:mainline-alpine"
   [ "$status" -eq 0 ]
 
   wait_for_inner_nginx
 
   # launch an inner nginx client container; connect it to the network;
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/alpine_3.10.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name nginx-client \
                                      --network nginx-net \
-                                     busybox:latest tail -f /dev/null"
+                                     alpine:3.10 tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   # use the client to access the nginx server

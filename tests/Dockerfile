@@ -109,6 +109,7 @@ RUN useradd sysbox \
 # nestybox docker hub login credentials (insecure)
 COPY .docker/config.json /root/.docker/config.json
 
+# test scripts
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY bin/userns_child_exec /usr/bin
