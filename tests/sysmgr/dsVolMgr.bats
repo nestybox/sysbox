@@ -8,7 +8,7 @@ load ../helpers/run
 
 @test "dsVolMgr basic" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   #
   # verify things look good inside the sys container
@@ -50,7 +50,7 @@ load ../helpers/run
   # Verify the sys container docker-store vol persists across container
   # start-stop-start events
 
-  SYSCONT_NAME=$(docker_run nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
   [ "$status" -eq 0 ]
@@ -77,7 +77,7 @@ load ../helpers/run
   # Verify the sys container docker-store vol is removed when a
   # container is removed
 
-  SYSCONT_NAME=$(docker_run nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # short ID -> full ID
   run sh -c "docker inspect \"$SYSCONT_NAME\" | jq '.[0] | .Id' | sed 's/\"//g'"
@@ -108,7 +108,7 @@ load ../helpers/run
 
 @test "dsVolMgr consecutive restart" {
 
-  SYSCONT_NAME=$(docker_run nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
   [ "$status" -eq 0 ]
