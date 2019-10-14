@@ -114,7 +114,7 @@ function wait_for_nested_dockerd {
     chown -R 165536:165536 ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
