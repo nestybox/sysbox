@@ -14,7 +14,7 @@ function setup() {
 
 @test "shiftfsMgr basic" {
 
-  SYSCONT_NAME=$(docker_run --rm debian:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep shiftfs"
@@ -52,7 +52,7 @@ function setup() {
   declare -a syscont_name
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" debian:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   done
 
   # verify shiftfs mounts on each look good
@@ -117,7 +117,7 @@ function setup() {
   [ "$status" -eq 0 ]
 
   # Launch sys container with bind mount
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target debian:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/target" | wc -l'
@@ -151,7 +151,7 @@ function setup() {
   run touch "$test_file"
   [ "$status" -eq 0 ]
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${test_file},target=/mnt/testFile debian:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${test_file},target=/mnt/testFile nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/testFile" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
@@ -212,7 +212,7 @@ function setup() {
   [ "$status" -eq 0 ]
 
   # Launch sys container with bind mount
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target debian:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # Verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/target" | wc -l'

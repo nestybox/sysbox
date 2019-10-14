@@ -14,7 +14,7 @@ function wait_for_nested_dockerd {
 
 @test "dind basic" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
@@ -29,7 +29,7 @@ function wait_for_nested_dockerd {
 
 @test "dind busybox" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]
@@ -56,16 +56,15 @@ function wait_for_nested_dockerd {
   file="/root/Dockerfile"
 
   cat << EOF > ${file}
-FROM debian:latest
+FROM alpine:3.10
 MAINTAINER Nestybox
-RUN apt-get update
-RUN apt-get install -y nginx
+RUN apk update && apk add nginx
 COPY . /root
 EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
   [ "$status" -eq 0 ]

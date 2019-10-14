@@ -8,7 +8,7 @@ load ../helpers/run
 
 @test "basic sys container" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" hostname syscont
   [ "$status" -eq 0 ]
@@ -21,7 +21,7 @@ load ../helpers/run
 }
 
 @test "docker --init" {
-  SYSCONT_NAME=$(docker_run --init --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --init --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" pstree
   [ "$status" -eq 0 ]
