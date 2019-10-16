@@ -131,7 +131,28 @@ load ../helpers/run
   docker rm "$SYSCONT_NAME"
 }
 
-#@test "sys-mgr dsVolMgr copy-up" {
+@test "dsVolMgr disable-docker-mount" {
+
+  sv_mgr_stop
+  sv_mgr_start --disable-docker-mount
+
+  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+  # when using uid shifting, `--disable-docker-mount` is ignored; otherwise it's honored.
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"docker/$SYSCONT_NAME\""
+  if [ -n "$SHIFT_UIDS" ]; then
+    [ "$status" -eq 0 ]
+  else
+    [ "$status" -eq 1 ]
+  fi
+
+  docker_stop "$SYSCONT_NAME"
+
+  sv_mgr_stop
+  sv_mgr_start
+}
+
+#@test "dsVolMgr copy-up" {
   #
   # TODO: verify dsVolMgr copy-up by creating a sys container image with contents in /var/lib/docker
   # and checking that the contents are copied to the /var/lib/sysbox/docker/<syscont-name> and

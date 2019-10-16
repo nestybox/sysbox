@@ -172,7 +172,7 @@ load ../helpers/run
   sv_mgr_stop
   sv_mgr_start --subid-ident-map
 
-  # launch X sys containers and verify they have their uid(gid)s identity-mapped
+  # launch multiple sys containers and verify they have their uid(gid)s identity-mapped
   declare -a syscont_name
   num_syscont=4
 
@@ -208,9 +208,9 @@ load ../helpers/run
   sv_mgr_stop
   sv_mgr_start --subid-ident-map
 
-  # launch X sys containers and verify they can run docker inside
+  # launch multiple sys containers and verify they can run docker inside
   declare -a syscont_name
-  num_syscont=1
+  num_syscont=2
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)

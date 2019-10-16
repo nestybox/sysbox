@@ -14,6 +14,9 @@ function setup() {
 
 @test "shiftfsMgr basic" {
 
+  run sh -c 'findmnt | grep shiftfs'
+  [ "$status" -eq 1 ]
+
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
@@ -46,6 +49,9 @@ function setup() {
 }
 
 @test "shiftfsMgr multiple syscont" {
+
+  run sh -c 'findmnt | grep shiftfs'
+  [ "$status" -eq 1 ]
 
   # num_syscont must be >= 2
   num_syscont=2
@@ -109,6 +115,9 @@ function setup() {
   # directory that is already marked with shiftfs
   #
 
+  run sh -c 'findmnt | grep shiftfs'
+  [ "$status" -eq 1 ]
+
   # Create a tmp directory to serve as a bind-mount into a sys container
   bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
 
@@ -145,6 +154,9 @@ function setup() {
   #
   # Test scenario where sys container is launched with a bind mount of a file (not a directory)
   #
+
+  run sh -c 'findmnt | grep shiftfs'
+  [ "$status" -eq 1 ]
 
   bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
   test_file="$bind_src/testFile"
