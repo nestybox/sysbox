@@ -95,8 +95,12 @@ RUN add-apt-repository \
        "deb [arch=amd64] https://download.docker.com/linux/debian \
        $(lsb_release -cs) \
        stable"
-RUN apt-get update
-RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+
+# bash completion
+RUN apt-get update && apt-get install bash-completion
+RUN echo ". /etc/bash_completion" >> /etc/bash.bashrc
 
 # sysbox deps
 RUN apt-get update && apt-get install -y \
