@@ -52,7 +52,7 @@ function wait_for_inner_elasticSearch() {
   docker exec "$SYSCONT_NAME" sh -c "docker exec client sh -c \"apk update && apk add curl\""
   [ "$status" -eq 0 ]
 
-  sleep 6
+  sleep 10
 
   docker exec "$SYSCONT_NAME" sh -c "docker exec client sh -c \"curl -s -X GET \"elasticSearch:9200\"\""
   [ "$status" -eq 0 ]
