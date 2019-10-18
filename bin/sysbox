@@ -8,8 +8,8 @@ set -e
 
 mkdir -p /var/lib/sysboxfs
 
-sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
+sysbox-fs --log-level=debug --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+sysbox-mgr --log-level=debug --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
 
 set +e
 
