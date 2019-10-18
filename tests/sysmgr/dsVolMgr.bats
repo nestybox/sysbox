@@ -116,7 +116,7 @@ load ../helpers/run
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  for i in $(seq 1 5); do
+  for i in $(seq 1 4); do
     docker start "$SYSCONT_NAME"
     [ "$status" -eq 0 ]
 
@@ -152,9 +152,43 @@ load ../helpers/run
   sv_mgr_start
 }
 
-#@test "dsVolMgr copy-up" {
+@test "dsVolMgr sync-out" {
+
+  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
+
+  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/docker/dummyFile"
+  [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  # verify that dummy file was sync'd to the sys container's rootfs
+  run ls "$rootfs/var/lib/docker"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "dummyFile" ]]
+
+  docker start "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/docker/dummyFile"
+  [ "$status" -eq 0 ]
+
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  # verify that dummy file removal was sync'd to the sys container's rootfs
+  run ls "$rootfs/var/lib/docker"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "" ]]
+
+  docker_stop "$SYSCONT_NAME"
+  docker rm "$SYSCONT_NAME"
+}
+
+#@test "dsVolMgr sync-in" {
   #
-  # TODO: verify dsVolMgr copy-up by creating a sys container image with contents in /var/lib/docker
+  # TODO: verify dsVolMgr sync-in by creating a sys container image with contents in /var/lib/docker
   # and checking that the contents are copied to the /var/lib/sysbox/docker/<syscont-name> and
   # that they have the correct ownership. There is a dsVolMgr unit test that verifies this already,
   # but an integration test would be good too.
