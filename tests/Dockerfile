@@ -104,7 +104,8 @@ RUN echo ". /etc/bash_completion" >> /etc/bash.bashrc
 
 # sysbox deps
 RUN apt-get update && apt-get install -y \
-    fuse
+    fuse \
+    rsync
 
 # sysbox env
 RUN useradd sysbox \

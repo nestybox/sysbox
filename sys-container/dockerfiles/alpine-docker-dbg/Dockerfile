@@ -6,4 +6,5 @@ RUN apk update && apk add \
     docker \
     findmnt \
     nano \
-    strace
+    strace \
+    tree
