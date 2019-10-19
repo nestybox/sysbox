@@ -69,6 +69,7 @@ function wait_for_nested_dockerd {
 
   # cleanup
   docker_stop "$SYSCONT_NAME"
+  docker image rm nestybox/sc-with-inner-img:latest
   docker image prune -f
   popd
 
@@ -138,4 +139,5 @@ function wait_for_nested_dockerd {
 
   # cleanup
   docker_stop "$SYSCONT_NAME"
+  docker image rm nestybox/alpine-docker-dbg:commit
 }
