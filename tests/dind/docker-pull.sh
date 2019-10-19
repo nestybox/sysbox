@@ -12,4 +12,4 @@ docker pull alpine:latest
 # dockerd cleanup (remove the .pid file as otherwise it prevents
 # dockerd from launching correctly inside sys container)
 kill $dockerd_pid
-rm /var/run/docker.pid
+rm -f /var/run/docker.pid
