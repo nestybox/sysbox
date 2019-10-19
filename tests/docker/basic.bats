@@ -7,7 +7,6 @@
 load ../helpers/run
 
 @test "basic sys container" {
-
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" hostname syscont
