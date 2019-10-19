@@ -32,7 +32,8 @@ if [ -z "$SHIFT_UIDS" ]; then
         "sysbox-runc": {
             "path": "/usr/local/sbin/sysbox-runc"
         }
-    }
+    },
+    "default-runtime": "sysbox-runc"
 }
 EOF
 else
@@ -47,7 +48,8 @@ else
                 "--no-kernel-check"
             ]
         }
-    }
+    },
+    "default-runtime": "sysbox-runc"
 }
 EOF
 fi
