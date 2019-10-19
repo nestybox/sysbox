@@ -29,7 +29,7 @@ function docker_stop() {
     return 0
   fi
 
-  docker stop -t 0 "$id"
+  docker stop -t0 "$id"
 }
 
 function sv_mgr_start() {
@@ -42,4 +42,15 @@ function sv_mgr_start() {
 function sv_mgr_stop() {
   pid=$(pidof sysbox-mgr)
   kill $pid
+}
+
+function dockerd_start() {
+  dockerd "$@" > /var/log/dockerd.log 2>&1 &
+  sleep 2
+}
+
+function dockerd_stop() {
+  pid=$(pidof dockerd)
+  kill $pid
+  if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
 }
