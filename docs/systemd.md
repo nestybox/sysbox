@@ -1,7 +1,10 @@
-Sysbox's Systemd Feature
+Sysbox's Systemd Support
 =========================
 
-This document outlines the set of requirements needed by systemd to operate in container environments, and how these ones are being satisfied by Sysbox's implementation. I'm also highlighting some of the problems that we have encountered and their solutions.
+This document outlines the set of requirements needed by systemd to
+operate in container environments, and how these ones are being
+satisfied by Sysbox's implementation. I'm also highlighting some of
+the problems that we have encountered and their solutions.
 
 
 # Requirements & Solutions
@@ -21,46 +24,50 @@ This document outlines the set of requirements needed by systemd to operate in c
     Solution: Ignored for now.
 
 
-4) "/proc/sys" and the entirety of "/sys" should ideally be mounted as read-only
-to avoid the possibility of containers altering the host kernel's configuration
-settings. Systemd and various other tools have been modified to detect
-whether these file-systems are read-only, and will behave accordingly.
+4) "/proc/sys" and the entirety of "/sys" should ideally be mounted as
+   read-only to avoid the possibility of containers altering the host
+   kernel's configuration settings. Systemd and various other tools
+   have been modified to detect whether these file-systems are
+   read-only, and will behave accordingly.
 
-    Solution: No changes here. Sysbox-runc mounts "/proc/sys" in read-write mode,
-whereas "/sys" is mounted as read-only. Deeper levels of "/sys" hierarchy are
-mounted as read-write, including "/sys/fs/cgroup".
+    Solution: No changes here. Sysbox-runc mounts "/proc/sys" in
+    read-write mode, whereas "/sys" is mounted as read-only. Deeper
+    levels of "/sys" hierarchy are mounted as read-write, including
+    "/sys/fs/cgroup".
 
 
-5) "/dev" to be mounted on a container-basis as tmpfs resource, and bind mount some
-suitable TTY to /dev/console.
+5) "/dev/kmsg" to be mounted on a container-basis as tmpfs resource, and bind mount some
+   suitable TTY to /dev/console.
 
     Solution: Systemd, and concretelly journald, demands the presence of "/dev/kmsg"
-for its regular I/O operations. This device is not exposed by runc during container
-creation. "Kind" folks have workaround'ed this issue by making a soft-link between
-"/dev/kmsg" and "/dev/console" in their (container) entrypoint scripts. However,
-this seems to be a bad idea as per systemd folks: "do not cross-link /dev/kmsg with
-/dev/console. They are different things, you cannot link them to each other".
+    for its regular I/O operations. This device is not exposed by runc during container
+    creation. "Kind" folks have workaround'ed this issue by making a
+    soft-link between "/dev/kmsg" and "/dev/console" in their (container)
+    entrypoint scripts. However, this seems to be a bad idea as per
+    systemd folks: "do not cross-link /dev/kmsg with /dev/console. They
+    are different things, you cannot link them to each other".
 
     In sysbox's case we have opted for a simpler solution: we are exposing "/dev/kmsg"
-as a tmpfs resource.
+    as a tmpfs resource.
 
 
 6) Create device nodes for /dev/null, /dev/zero, /dev/full, /dev/random,
-/dev/urandom, /dev/tty, /dev/ptmx in /dev.
+   /dev/urandom, /dev/tty, /dev/ptmx in /dev.
 
     Solution: No changes here, sysbox-runc is already creating most of these.
 
 
 7) Make sure to set up the "devices" cgroup controller so that no other devices but
-the above ones may be created in the container.
+   the above ones may be created in the container.
 
-    Solution: Ignored for now.
+    Solution: When using Docker to run sys containers, this restriction is placed by
+    Docker in the system container's config.json file.
 
 
 8) "/run" and "/run/lock" are expected.
 
     Solution: Sysbox-runc is adjusting incoming specs to add tmpfs mounts for these two
-resources.
+    resources.
 
 9) "/tmp" is expected.
 
@@ -69,7 +76,8 @@ resources.
 
 10) "/var/log/journal" is expected by journald to dump all received logs.
 
-    Solution: I initially tried to mount tmpfs over /var/log/journal, but then i hit this issue when unmounting this resource during container shutdown:
+    Solution: I initially tried to mount tmpfs over /var/log/journal, but
+    then i hit this issue when unmounting this resource during container shutdown:
 
     ```console
     [  OK  ] Stopped Network Name Resolution.
@@ -77,30 +85,36 @@ resources.
     [  OK  ] Stopped Permit User Sessions.
     ```
 
-    This one looks to be a known [issue](https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1788048) that hasn't been fully fixed in systemd yet. For the time being i have decided to avoid mounting this file, which doesn't seem to have any impact on journald functionality.
-
+    This one looks to be a known [issue](https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1788048)
+    that hasn't been fully fixed in systemd yet. For the time being i have decided to avoid mounting
+    this file, which doesn't seem to have any impact on journald functionality.
 
 11) Systemd does not exit on SIGTERM. Systemd defines that shutdown signal as
-SIGRTMIN+3, however, "docker stop" sends the usual SIGTERM one.
+    SIGRTMIN+3, however, "docker stop" sends the usual SIGTERM one.
 
     Solution: Enforce the proper shutdown signal in the sys-container Dockerfile --
-"STOPSIGNAL SIGRTMIN+3". We should explore the possibility of hardcoding this
-option in sysbox-runc to ease end-user's life.
+    "STOPSIGNAL SIGRTMIN+3". We should explore the possibility of hardcoding this
+    option in sysbox-runc to ease end-user's life.
 
 
-12) Set "container" environment variable to allow systemd (and other code) to identify
-  that it is executed within a container. With this in place the
-  "ConditionVirtualization" setting in unit files will work properly. See
-  [here](https://www.freedesktop.org/software/systemd/man/systemd.unit.html)
-  for more details.
+12) Set "container" environment variable to allow systemd (and other
+    code) to identify that it is executed within a container. With
+    this in place the "ConditionVirtualization" setting in unit files
+    will work properly. See
+    [here](https://www.freedesktop.org/software/systemd/man/systemd.unit.html)
+    for more details.
 
-    Solution: For the time being we are expecting the user to be the one setting this
-env-var. As per the above doc, the best-match for our case seems to be
-"privilege-user" value, but "docker" seems to be working fine too. These are the
-values that we should encourage our users.
+    Solution: For the time being we are expecting the user to be the
+    one setting this env-var. As per the above doc, the best-match for
+    our case seems to be "privilege-user" value, but "docker" seems to
+    be working fine too. These are the values that we should encourage
+    our users.
 
-13) Systemd requires access to a 'configfs' and a 'debugfs' file-system for the proper operation of [systemd-modules-load.service](https://github.com/systemd/systemd/blob/99f57a4fea76ab86cf1bd64e44eabf7cea9a3d95/units/sys-kernel-config.mount). These file-systems are expected to be mounted in '/sys/kernel/config' and
-'/sys/kernel/debug' respectively.
+13) Systemd requires access to a 'configfs' and a 'debugfs'
+    file-system for the proper operation of
+    [systemd-modules-load.service](https://github.com/systemd/systemd/blob/99f57a4fea76ab86cf1bd64e44eabf7cea9a3d95/units/sys-kernel-config.mount). These
+    file-systems are expected to be mounted in '/sys/kernel/config'
+    and '/sys/kernel/debug' respectively.
 
     ```console
     [FAILED] Failed to mount Kernel Debug File System.
@@ -109,16 +123,27 @@ values that we should encourage our users.
     ...
     ```
 
-    Solution: Even though LXD mounts these file-systems, they are limiting what can be seen/done through the utilization of [customized](https://github.com/lxc/lxd/blob/master/lxd/apparmor/apparmor.go) apparmor profiles, which makes sense given the sensitive nature of the information being exposed.
+    Solution: Even though LXD mounts these file-systems, they are limiting what can be seen/done
+    through the utilization of [customized](https://github.com/lxc/lxd/blob/master/lxd/apparmor/apparmor.go)
+    apparmor profiles, which makes sense given the sensitive nature of the information being exposed.
 
-    We could mimic this apparmor-based approach, but it would require certain level of complexity that may not be strictly needed in this case. In fact, i have noticed that systemd doesn't really do much with these file-systems, and there's no need to have a full-blown hierarchy of files/dirs under them. Thereby, the solution to this is issue is to expose dummy (tmpfs-based) resources:
+    We could mimic this apparmor-based approach, but it would require certain level
+    of complexity that may not be strictly needed in this case. In fact, i have noticed
+    that systemd doesn't really do much with these file-systems, and there's no
+    need to have a full-blown hierarchy of files/dirs under them. Thereby,
+    the solution to this is issue is to expose dummy (tmpfs-based) resources:
 
     ```console
     |-/sys/kernel/config      tmpfs     tmpfs    rw,nosuid,nodev,noexec,relatime,uid=165536,gid=165536
     |-/sys/kernel/debug       tmpfs     tmpfs    rw,nosuid,nodev,noexec,relatime,uid=165536,gid=165536
     ```
 
-14) By default systemd enables 'getty.service' to enforce authentication-based access to the system. Users accessing container's console (i.e. 'docker run') will encounter a 'login' prompt once the container is fully initialized. The problem for us here is: which default user do we provide, and more importantly, how do we create it in a programmatic maneer?
+14) By default systemd enables 'getty.service' to enforce
+    authentication-based access to the system. Users accessing
+    container's console (i.e. 'docker run') will encounter a 'login'
+    prompt once the container is fully initialized. The problem for us
+    here is: which default user do we provide, and more importantly,
+    how do we create it in a programmatic maneer?
 
     Solution: The user himself will need to create this default user through the utilization of this (or similar) Dockerfile instruction:
 
@@ -131,7 +156,9 @@ values that we should encourage our users.
 
 15) Dbus unable to initialize.
 
-    Let's start with some background info first. In a nutshell, D-Bus is a message bus system, a simple way for applications to talk to one another (yet another ipc library). There are [multiple](https://www.freedesktop.org/wiki/Software/DbusProjects/) applications relying on the services it offers.
+    Let's start with some background info first. In a nutshell, D-Bus is a message bus system, a simple way for
+    applications to talk to one another (yet another ipc library). There are [multiple](https://www.freedesktop.org/wiki/Software/DbusProjects/)
+    applications relying on the services it offers.
 
     ```console
     root@testing-1:~# hostnamectl
@@ -165,7 +192,11 @@ values that we should encourage our users.
 
 
 
-Note: I'm deliveratily obviating the requirements to allow the integration of the container's systemd with the host's one, so that system-containers can be potentially managed from the host. I'm also ignoring the container-cgroup settings associated to systemd demands. TBD.
+Note: I'm deliveratily obviating the requirements to allow the
+integration of the container's systemd with the host's one, so that
+system-containers can be potentially managed from the host. I'm also
+ignoring the container-cgroup settings associated to systemd
+demands. TBD.
 
 
 # References
