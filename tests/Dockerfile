@@ -111,7 +111,7 @@ RUN apt-get update && apt-get install -y \
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
 
-# nestybox docker hub login credentials (insecure)
+# nestybox docker hub login credentials (unsecure)
 COPY .docker/config.json /root/.docker/config.json
 
 # test scripts
