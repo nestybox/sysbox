@@ -1,5 +1,5 @@
 # Sysbox unit to act as a wrapper of sysbox's inner components/daemons:
-# sysbox-mgr and sysboxysbox-fs.
+# sysbox-mgr and sysbox-fs.
 [Unit]
 Description=Sysbox General Service
 
