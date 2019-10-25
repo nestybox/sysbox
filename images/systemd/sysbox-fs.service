@@ -10,9 +10,11 @@ After=sysbox-mgr.service
 [Service]
 # Initialize sysbox-fs daemon.
 ExecStart=/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log
-# Restart service upon detection of non-zero exit code, i.e. when terminated by
-# a signal other than SIGHUP, SIGINT, SIGTERM or SIGPIPE.
-Restart=on-failure
+# Restart service upon detection of daemon's termination, and do so regardless of
+# the termination cause.
+Restart=always
+RestartSec=1
+StartLimitInterval=0
 
 [Install]
 # This unit should be only started after sysbox.service has completed its
