@@ -15,7 +15,8 @@ Depends: ${shlibs:Depends},
          debconf,
          jq,
          fuse,
-         lsb-release
+         lsb-release,
+         rsync
 Description: System-containers runtime
  Sysbox is a container runtime that enables the creation of
   system containers.
