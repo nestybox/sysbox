@@ -100,6 +100,7 @@ function sv_mgr_start() {
 function sv_mgr_stop() {
   pid=$(pidof sysbox-mgr)
   kill $pid
+  sleep 1
 }
 
 function dockerd_start() {
