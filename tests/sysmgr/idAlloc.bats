@@ -130,6 +130,9 @@ load ../helpers/run
   # Start 4 sys containers; the first two should get new ids; the last
   # two should get re-used ids.
   declare -a syscont_name
+  declare -a syscont_uids
+  declare -a syscont_gids
+
   num_syscont=4
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
@@ -145,12 +148,20 @@ load ../helpers/run
     syscont_gids[$i]="$output"
   done
 
-  # verify
-  [ ${syscont_uids[0]} -eq ${syscont_uids[2]} ]
-  [ ${syscont_uids[1]} -eq ${syscont_uids[3]} ]
+  # verify uid & gid match
+  for i in $(seq 0 $(("$num_syscont" - 1))); do
+    [ ${syscont_uids[$i]} -eq ${syscont_gids[$i]} ]
+  done
 
-  [ ${syscont_gids[0]} -eq ${syscont_gids[2]} ]
-  [ ${syscont_gids[1]} -eq ${syscont_gids[3]} ]
+  # verify uid & gid for the first two containers are different
+  [ ${syscont_uids[0]} -ne ${syscont_uids[1]} ]
+  [ ${syscont_gids[0]} -ne ${syscont_gids[1]} ]
+
+  # verify uid & gid for the first two and last two containers match
+  [ ${syscont_uids[0]} -eq ${syscont_uids[2]} ] || [ ${syscont_uids[0]} -eq ${syscont_uids[3]} ]
+  [ ${syscont_uids[1]} -eq ${syscont_uids[2]} ] || [ ${syscont_uids[1]} -eq ${syscont_uids[3]} ]
+  [ ${syscont_gids[0]} -eq ${syscont_gids[2]} ] || [ ${syscont_gids[0]} -eq ${syscont_gids[3]} ]
+  [ ${syscont_gids[1]} -eq ${syscont_gids[2]} ] || [ ${syscont_gids[1]} -eq ${syscont_gids[3]} ]
 
   # stop the sys containers
   for i in $(seq 0 $(("$num_syscont" - 1))); do
