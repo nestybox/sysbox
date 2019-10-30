@@ -4,17 +4,31 @@ FROM ${GO_IMAGE} as golang
 
 FROM ${BUILD_IMAGE}
 
-RUN apt-get update &&  \
-    apt-get install -y \
-    curl               \
-    devscripts         \
-    equivs             \
-    git                \
-    wget               \
-    pkg-config         \
-    libnet-dev         \
-    libseccomp2        \
-    libseccomp-dev
+RUN apt-get update &&                            \
+    apt-get install -y --no-install-recommends   \
+    build-essential                              \
+    ca-certificates                              \
+    devscripts                                   \
+    equivs                                       \
+    git                                          \
+    wget                                         \
+    pkg-config                                   \
+    libnet-dev                                   \
+    libseccomp2                                  \
+    libseccomp-dev                               \
+    unzip &&                                     \
+                                                 \
+    # Housekeeping
+    apt-get clean -y &&                          \
+    rm -rf                                       \
+       /var/cache/debconf/*                      \
+       /var/lib/apt/lists/*                      \
+       /var/log/*                                \
+       /tmp/*                                    \
+       /var/tmp/*                                \
+       /usr/share/doc/*                          \
+       /usr/share/man/*                          \
+       /usr/share/local/*
 
 ARG GO_VERSION
 ENV GOPATH /go
