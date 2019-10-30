@@ -14,7 +14,7 @@ function wait_for_nested_dockerd {
 
 @test "build with inner images" {
 
-  # Reconfigure default docker runtime in the host to sysbox-runc
+  # Reconfigure Docker's default runtime to sysbox-runc
   #
   # Note: for some reason this does not work on bats. I worked-around
   # it by configuring the docker daemon in the sysbox test container
@@ -26,17 +26,30 @@ function wait_for_nested_dockerd {
   # mv /tmp/tmp.json /etc/docker/daemon.json
   # dockerd_start
 
+  # randomly pre-mount shiftfs on /lib/modules/<kernel-version>, to test whether the sysbox-mgr
+  # shiftfs manager detects and skips mounting shiftfs on this directory
+
+  local premount="false"
+  if [[ $((RANDOM % 2)) == "0" ]]; then
+    mount -t shiftfs -o mark /lib/modules/$(uname -r) /lib/modules/$(uname -r)
+    premount="true"
+  fi
+
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
+  docker image rm -f nestybox/sc-with-inner-img:latest
+  [ "$status" -eq 0 ]
   docker build --no-cache -t nestybox/sc-with-inner-img:latest .
   [ "$status" -eq 0 ]
 
-  # run generated container
+  docker image prune -f
+  [ "$status" -eq 0 ]
+
+  # run generated container to confirm that images are embedded in it
   SYSCONT_NAME=$(docker_run --rm nestybox/sc-with-inner-img:latest tail -f /dev/null)
 
-  # confirm that images are embedded in it
-  docker exec "$SYSCONT_NAME" sh -c "rm -f /var/run/docker.pid && dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -45,9 +58,6 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   images="$output"
-
-  run echo "$images"
-  [ "$status" -eq 0 ]
 
   run sh -c "echo \"$images\" | grep busybox"
   [ "$status" -eq 0 ]
@@ -71,9 +81,14 @@ function wait_for_nested_dockerd {
   docker_stop "$SYSCONT_NAME"
   docker image rm nestybox/sc-with-inner-img:latest
   docker image prune -f
+
+  if [[ $premount == "true" ]]; then
+    umount /lib/modules/$(uname -r)
+  fi
+
   popd
 
-  # revert dockerd config
+  # revert dockerd default runtime config
   # dockerd_stop
   # mv /etc/docker/daemon.json.bak /etc/docker/daemon.json
   # dockerd_start
@@ -88,6 +103,9 @@ function wait_for_nested_dockerd {
 
   wait_for_nested_dockerd
 
+  docker exec "$SYSCONT_NAME" sh -c "echo testdata > /root/testfile"
+  [ "$status" -eq 0 ]
+
   docker exec "$SYSCONT_NAME" sh -c "docker pull busybox:latest"
   [ "$status" -eq 0 ]
 
@@ -95,6 +113,8 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   # commit the sys container image
+  docker image rm -f nestybox/alpine-docker-dbg:commit
+  [ "$status" -eq 0 ]
   docker commit "$SYSCONT_NAME" nestybox/alpine-docker-dbg:commit
   [ "$status" -eq 0 ]
 
@@ -104,8 +124,16 @@ function wait_for_nested_dockerd {
   # launch a sys container with the committed image
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:commit)
 
-  # make sure to remove docker.pid before launching docker (it's in the committed image)
-  docker exec "$SYSCONT_NAME" sh -c "rm -f /var/run/docker.pid && dockerd > /var/log/dockerd-log 2>&1 &"
+  # verify testfile is present
+  docker exec "$SYSCONT_NAME" sh -c "cat /root/testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "testdata" ]]
+
+  # make sure to remove docker.pid & containerd.pid before launching docker (it's in the committed image)
+  docker exec "$SYSCONT_NAME" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -115,9 +143,6 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   images="$output"
-
-  run echo "$images"
-  [ "$status" -eq 0 ]
 
   run sh -c "echo \"$images\" | grep busybox"
   [ "$status" -eq 0 ]
