@@ -9,7 +9,7 @@ load ../../helpers/run
 function wait_for_init() {
     #
     # For systemd to be deemed as fully initialized, we must have at least
-    # these four processes running:
+    # these four processes running.
     #
     # admin@sys-cont:~$ ps -ef | grep systemd
     # root       273     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-journald
@@ -17,8 +17,11 @@ function wait_for_init() {
     # message+   844     1  0 Oct22 ?        00:00:00 /usr/bin/dbus-daemon --system --systemd-activation
     # root       871     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-logind
     #
-    retry_run 20 1 eval "__docker exec $SYSCONT_NAME \
-        ps -ef | egrep "systemd" | wc -l | egrep [4-9]+"
+    retry 10 1 __docker exec "$SYSCONT_NAME" \
+        sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
+
+    # And we also have to wait for systemd to initialize all other services
+    sleep 3
 }
 
 function check_systemd_mounts() {
@@ -52,12 +55,9 @@ function check_systemd_mounts() {
     wait_for_init
 
     # Verify that systemd has been properly initialized (no major errors observed).
-    run docker exec "$SYSCONT_NAME" sh -c "systemctl status"
-    echo "status = ${status}"
-    echo "output = ${output}"
-    echo "lines = ${lines[2]}"
+    docker exec "$SYSCONT_NAME" sh -c "systemctl status"
     [ "$status" -eq 0 ]
-    [[ "${lines[2]}" =~ "State: running" ]]
+    [[ "${lines[1]}" =~ "State: running" ]]
 
     # Verify that systemd's required resources are properly mounted.
     check_systemd_mounts
@@ -110,12 +110,9 @@ function check_systemd_mounts() {
     wait_for_init
 
     # Verify that systemd has been properly initialized (no major errors observed).
-    run docker exec "$SYSCONT_NAME" sh -c "systemctl status"
-    echo "status = ${status}"
-    echo "output = ${output}"
-    echo "lines = ${lines[2]}"
+    docker exec "$SYSCONT_NAME" sh -c "systemctl status"
     [ "$status" -eq 0 ]
-    [[ "${lines[2]}" =~ "State: running" ]]
+    [[ "${lines[1]}" =~ "State: running" ]]
 
     # Verify that mount overlaps have been identified and replaced as per systemd
     # demands.
