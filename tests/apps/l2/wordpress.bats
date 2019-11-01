@@ -12,6 +12,8 @@ function wait_for_inner_dockerd() {
 
 @test "l2 wordpress basic" {
 
+  skip "unstable"
+
   # Deploy a wordpress container inside the sys container and verifies it works.
 
   # launch a sys container; we use a ubuntu-based sys container to work-around sysbox issue #270.

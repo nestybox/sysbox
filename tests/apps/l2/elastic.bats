@@ -16,6 +16,8 @@ function wait_for_inner_elasticSearch() {
 
 @test "l2 elasticSearch basic" {
 
+  skip "unstable"
+
   # Inside the sys container, deploys an elasticSearch container and verifies
   # another container can send logs to it.
 
