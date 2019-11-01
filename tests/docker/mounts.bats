@@ -122,21 +122,11 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   line=$(echo $output | tr -s ' ')
-
-  mountDest=$(echo "$line" | cut -d" " -f 1)
   mountSrc=$(echo "$line" | cut -d" " -f 2)
   mountFs=$(echo "$line" | cut -d" " -f 3)
 
-  # when using uid shifting, sysbox ignores user bind-mounts on the
-  # sys container's /var/lib/docker as we don't yet support them in
-  # this mode (see sysbox issue #336)
-
-  if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$mountSrc" =~ "sysbox/docker" ]]
-    [[ "$mountFs" != "shiftfs" ]]
-  else
-    [[ "$mountSrc" =~ "$testDir" ]]
-  fi
+  [[ "$mountSrc" =~ "$testDir" ]]
+  [[ "$mountFs" != "shiftfs" ]]
 
   # Let's run an inner container to verify the docker inside the sys container
   # can work with /var/lib/docker without problems

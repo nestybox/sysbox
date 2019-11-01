@@ -24,7 +24,7 @@ function docker_run() {
 function docker_stop() {
   [[ "$#" == 1 ]]
 
-  id="$1"
+  local id="$1"
   if [ -z "$id" ]; then
     return 0
   fi
@@ -49,7 +49,7 @@ function sv_mgr_stop() {
     systemctl stop sysbox
     sleep 1
   else
-    pid=$(pidof sysbox-mgr)
+    local pid=$(pidof sysbox-mgr)
     kill $pid
     sleep 1
   fi
@@ -70,7 +70,7 @@ function dockerd_stop() {
     systemctl stop docker.service
     sleep 1
   else
-    pid=$(pidof dockerd)
+    local pid=$(pidof dockerd)
     kill $pid
     sleep 1
     if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
