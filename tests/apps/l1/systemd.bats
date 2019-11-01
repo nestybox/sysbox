@@ -17,11 +17,17 @@ function wait_for_init() {
     # message+   844     1  0 Oct22 ?        00:00:00 /usr/bin/dbus-daemon --system --systemd-activation
     # root       871     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-logind
     #
-    retry 10 1 __docker exec "$SYSCONT_NAME" \
-        sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
 
-    # And we also have to wait for systemd to initialize all other services
-    sleep 3
+    # XXX: For some reason the following retry is not working under
+    # bats, which complains with "BATS_ERROR_STACK_TRACE: bad array
+    # subscript" every so often. It's related to the pipe into grep.
+    # As a work-around, we just wait for a few seconds for Systemd to
+    # initialize.
+
+    #retry 10 1 __docker exec "$SYSCONT_NAME" \
+    #    sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
+
+    sleep 5
 }
 
 function check_systemd_mounts() {
@@ -73,21 +79,15 @@ function check_systemd_mounts() {
     # state.
     docker exec "$SYSCONT_NAME" sh -c \
         "systemctl status systemd-journald.service | egrep \"active \(running\)\""
-    echo "status = ${status}"
-    echo "output = ${output}"
     [ "$status" -eq 0 ]
 
     docker exec "$SYSCONT_NAME" systemctl restart systemd-journald.service
-    echo "status = ${status}"
-    echo "output = ${output}"
     [ "$status" -eq 0 ]
 
     sleep 2
 
     docker exec "$SYSCONT_NAME" sh -c \
         "systemctl status systemd-journald.service | egrep \"active \(running\)\""
-    echo "status = ${status}"
-    echo "output = ${output}"
     [ "$status" -eq 0 ]
 
     # Cleanup
