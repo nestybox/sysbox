@@ -267,7 +267,7 @@ test-mgr-local: sysmgr-grpc-proto
 ##@ Images handling targets
 
 image: ## Image creation / elimination sub-menu
-	$(MAKE) -C images --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
+	$(MAKE) -C image --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
 
 #
 # Misc targets
