@@ -17,6 +17,8 @@ function wait_for_inner_mysql() {
 
 @test "l2 mysql basic" {
 
+  skip "unstable"
+
   # Deploys a mysql container inside the sys container and verifies
   # mysql works
 
@@ -61,6 +63,8 @@ EOF
 }
 
 @test "l2 mysql client-server" {
+
+  skip "unstable"
 
   # Deploys mysql server and client containers inside the sys
   # container and verifies mysql client can access the server.
