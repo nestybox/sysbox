@@ -27,7 +27,7 @@ function wait_for_init() {
     #retry 10 1 __docker exec "$SYSCONT_NAME" \
     #    sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
 
-    sleep 5
+    sleep 15
 }
 
 function check_systemd_mounts() {
