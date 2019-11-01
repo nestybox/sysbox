@@ -19,7 +19,8 @@
 # docker build -t sysbox-test .
 #
 
-FROM golang:1.13.0-buster
+#FROM golang:1.13.0-buster
+FROM ubuntu:disco
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -51,13 +52,21 @@ RUN apt-get update && apt-get install -y \
     time \
     net-tools \
     lsb-release \
+    wget \
+    ca-certificates \
     --no-install-recommends \
     && apt-get clean
 
-# Activate golang's modules functionality and install its latest (top-of-tree) binary.
-# These instructions may be eliminated upon arrival of 1.13 release (ETA: Aug-2019).
-ENV GO111MODULE=on
-RUN go env -w GONOSUMDB=/root/nestybox
+# Install Golang 1.13 release and explicitly activate modules functionality.
+RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz && \
+    /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN go env -w GONOSUMDB=/root/nestybox && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    chmod -R 777 "$GOPATH"
 
 # Add a dummy user for the rootless integration tests; needed by the
 # `git clone` operations below.
@@ -89,12 +98,12 @@ RUN apt-get install -y \
        curl \
        gnupg2 \
        software-properties-common
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 RUN apt-key fingerprint 0EBFCD88
 RUN add-apt-repository \
-       "deb [arch=amd64] https://download.docker.com/linux/debian \
-       $(lsb_release -cs) \
-       stable"
+        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+        $(lsb_release -cs) \
+        stable"
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
