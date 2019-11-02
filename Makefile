@@ -3,6 +3,8 @@
 #
 # TODO:
 # - Add installation package target
+# - Eliminate image-build targets (e.g. ubuntu-bionic) from here. This is a hack to
+#   workaround an unsolved issue, but it hurts on my eyes.
 
 .PHONY: sysbox sysbox-static \
 	sysbox-runc sysbox-runc-static sysbox-runc-debug \
@@ -17,8 +19,10 @@
 	test-fs-local test-mgr-local \
 	test-shiftfs test-shiftfs-local \
 	test-img test-cleanup \
+	image \
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
+	build-deb ubuntu-bionic ubuntu-cosmic ubuntu-disco \
 	clean
 
 export SHELL=bash
@@ -38,7 +42,6 @@ endif
 ifeq ($(HOSTNAME),)
 export HOSTNAME=$(shell hostname)
 endif
-
 
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
@@ -62,6 +65,12 @@ endif
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
+TEST_INSTALLER_IMAGE := sysbox-installer-test
+TEST_INSTALLER_DOCKERFILE := Dockerfile.installer
+
+# Sysbox image-generation globals utilized during the testing of sysbox installer.
+IMAGE_VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
+IMAGE_PATH := "image/deb/debbuild/ubuntu-disco/"
 
 # volumes to mount into the privileged test container's `/var/lib/docker` and
 # `/var/lib/sysbox`; this is required so that the docker and sysbox-runc instances
@@ -157,17 +166,20 @@ uninstall: ## Uninstall all sysbox binaries
 	rm -f $(INSTALL_DIR)/sysbox-runc
 
 #
-# test targets
+# Test targets
 # (these run within a test container, so they won't messup your host)
 #
 
-DOCKER_RUN := docker run -it --privileged --rm --hostname sysbox-test \
-			-v $(CURDIR):$(PROJECT)             \
-			-v /lib/modules:/lib/modules:ro     \
-			-v $(TEST_VOL1):/var/lib/docker     \
-			-v $(TEST_VOL2):/var/lib/sysbox   \
-			-v $(GOPATH)/pkg/mod:/go/pkg/mod    \
+DOCKER_RUN := docker run -it --privileged --rm                        \
+			--hostname sysbox-test                        \
+			--name sysbox-test                            \
+			-v $(CURDIR):$(PROJECT)                       \
+			-v /lib/modules:/lib/modules:ro               \
+			-v $(TEST_VOL1):/var/lib/docker               \
+			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			$(TEST_IMAGE)
+
 
 ##@ Testing targets
 
@@ -232,6 +244,7 @@ test-cleanup: test-img
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
 
+
 #
 # Local test targets (these are invoked from within the test container
 # by the test target above); in theory they can run directly on a dev
@@ -260,6 +273,58 @@ test-fs-local: sysfs-grpc-proto
 test-mgr-local: sysmgr-grpc-proto
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
+
+#
+# Test Sysbox Installer
+#
+
+DOCKER_RUN_INSTALLER := docker run -d --rm --privileged               \
+			--hostname sysbox-installer-test              \
+			--name sysbox-installer-test                  \
+			-v $(CURDIR):$(PROJECT)                       \
+			-v /lib/modules:/lib/modules:ro               \
+			-v $(TEST_VOL1):/var/lib/docker               \
+			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			--mount type=tmpfs,destination=/run           \
+			--mount type=tmpfs,destination=/run/lock      \
+			--mount type=tmpfs,destination=/tmp           \
+			$(TEST_INSTALLER_IMAGE)
+
+
+DOCKER_EXEC_INSTALLER := docker exec -it sysbox-installer-test
+DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
+
+##@ Installer Testing targets
+
+test-installer: ## Run installer integration tests
+test-installer: test-img-installer test-cntr-installer
+	@printf "\n** Running installer integration tests **\n\n"
+	# TODO: Replace with testcase stack to execute.
+	$(DOCKER_EXEC_INSTALLER) /bin/bash
+
+test-shell-installer: ## Get a shell in the test-installer container (useful for debug)
+test-shell-installer: test-img-installer test-cntr-installer
+	$(DOCKER_EXEC_INSTALLER) /bin/bash
+
+test-cntr-installer: ## Launch test-installer container and build / install sysbox
+test-cntr-installer: test-img-installer
+	# TODO: Stop / eliminate container if already running.
+	$(DOCKER_RUN_INSTALLER)
+	@printf "\n** Cleaning previously built artifacts **\n\n"
+	@make image clean
+	@printf "\n** Building the sysbox deb package installer **\n\n"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "sleep 10 && make image build-deb ubuntu-disco"
+	@printf "\n** Installing sysbox deb package **\n\n"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+		DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_PATH}/sysbox_${IMAGE_VERSION}-0.ubuntu-disco_amd64.deb"
+
+test-img-installer: ## Build test-installer container image
+test-img-installer: test-img
+	@printf "\n** Building the test-installer container image**\n\n"
+	@cd $(TEST_DIR) && docker build -t $(TEST_INSTALLER_IMAGE) -f $(TEST_INSTALLER_DOCKERFILE) .
+
+
 #
 # Images targets
 #
@@ -267,7 +332,7 @@ test-mgr-local: sysmgr-grpc-proto
 ##@ Images handling targets
 
 image: ## Image creation / elimination sub-menu
-	$(MAKE) -C image --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
+	$(MAKE) -C $@ --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
 
 #
 # Misc targets
