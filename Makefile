@@ -192,7 +192,7 @@ test-sysbox: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
-test-sysbox-shiftuid: ## Run sysbox intergration tests with uid-shifting
+test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting
 test-sysbox-shiftuid: test-img
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
@@ -297,17 +297,35 @@ DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
 
 ##@ Installer Testing targets
 
-test-installer: ## Run installer integration tests
-test-installer: test-img-installer test-cntr-installer
-	@printf "\n** Running installer integration tests **\n\n"
-	# TODO: Replace with testcase stack to execute.
-	$(DOCKER_EXEC_INSTALLER) /bin/bash
+test-installer: ## Run all sysbox's integration tests suites on installer container
+test-installer: test-sysbox-installer test-sysbox-shiftuid-installer test-shiftfs-installer
 
-test-shell-installer: ## Get a shell in the test-installer container (useful for debug)
+test-sysbox-installer: ## Run sysbox's integration tests on installer container
+test-sysbox-installer: test-img-installer test-cntr-installer
+	@printf "\n** Running sysbox integration tests over installer container **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-sysbox-local TESTPATH=$(TESTPATH)"
+
+test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on installer container
+test-sysbox-shiftuid-installer: test-img-installer test-cntr-installer
+	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
+	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SHIFT_UIDS=true && \
+		make test-sysbox-local TESTPATH=$(TESTPATH)"
+
+test-shiftfs-installer: ## Run shiftfs tests on installer container
+test-shiftfs-installer: test-img-installer test-cntr-installer
+	@printf "\n** Running shiftfs tests **\n\n"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-ovfs-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-tmpfs-local TESTPATH=$(TESTPATH)"
+
+test-shell-installer: ## Get a shell in the installer container (useful for debug)
 test-shell-installer: test-img-installer test-cntr-installer
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) /bin/bash
 
-test-cntr-installer: ## Launch test-installer container and build / install sysbox
+test-cntr-installer: ## Launch installer container and build / install sysbox
 test-cntr-installer: test-img-installer
 	# TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
@@ -319,7 +337,7 @@ test-cntr-installer: test-img-installer
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
 		DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_PATH}/sysbox_${IMAGE_VERSION}-0.ubuntu-disco_amd64.deb"
 
-test-img-installer: ## Build test-installer container image
+test-img-installer: ## Build installer container image
 test-img-installer: test-img
 	@printf "\n** Building the test-installer container image**\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_INSTALLER_IMAGE) -f $(TEST_INSTALLER_DOCKERFILE) .
