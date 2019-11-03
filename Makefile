@@ -70,7 +70,7 @@ TEST_INSTALLER_DOCKERFILE := Dockerfile.installer
 
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
 IMAGE_VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
-IMAGE_PATH := "image/deb/debbuild/ubuntu-disco/"
+IMAGE_PATH := image/deb/debbuild/ubuntu-disco/
 
 # volumes to mount into the privileged test container's `/var/lib/docker` and
 # `/var/lib/sysbox`; this is required so that the docker and sysbox-runc instances
@@ -329,10 +329,12 @@ test-cntr-installer: ## Launch installer container and build / install sysbox
 test-cntr-installer: test-img-installer
 	# TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
+ifeq (,$(wildcard $(IMAGE_PATH)/sysbox_$(IMAGE_VERSION)-0.ubuntu-disco_amd64.deb))
 	@printf "\n** Cleaning previously built artifacts **\n\n"
 	@make image clean
 	@printf "\n** Building the sysbox deb package installer **\n\n"
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "sleep 10 && make image build-deb ubuntu-disco"
+endif
 	@printf "\n** Installing sysbox deb package **\n\n"
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
 		DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_PATH}/sysbox_${IMAGE_VERSION}-0.ubuntu-disco_amd64.deb"
