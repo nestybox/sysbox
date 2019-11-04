@@ -3,16 +3,14 @@
 TEST_VOL1=$1
 TEST_VOL2=$2
 
-# if using shiftfs, check that the host meets sysbox-runc distro
-# requirements (this can be checked from within the test container
-# since its docker image may be based from another distro)
+# Check that the host meets sysbox-runc distro requirements (this
+# can't be checked from within the test container since its docker
+# image may be based on another distro)
 
-if [[ "$SHIFT_UIDS" == "true" ]]; then
-  DISTRO=$(lsb_release -i | awk '{print $3}')
-  if [ "$DISTRO" != "Ubuntu" ]; then
-    printf "\nError: sysbox uid shifting is only supported on Ubuntu hosts.\n\n"
-    exit 1
-  fi
+DISTRO=$(lsb_release -i | awk '{print $3}')
+if [ "$DISTRO" != "Ubuntu" ]; then
+  printf "\nError: sysbox uid shifting is only supported on Ubuntu hosts.\n\n"
+  exit 1
 fi
 
 # See Makefile for description of test volumes

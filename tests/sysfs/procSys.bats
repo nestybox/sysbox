@@ -108,6 +108,9 @@ function compare_syscont_unshare() {
   [ "$status" -eq 0 ]
   sc_proc_sys="$output"
 
+  # XXX: work-around for issue #443
+  sc_proc_sys=$(echo "$sc_proc_sys" | sed 's/\/proc\/sys\/fs\/binfmt_misc\///g')
+
   # unshare all ns and get the list of dirs under /proc/sys
   ns_proc_sys=$(unshare_all sh -c "${walk_proc}")
 
@@ -131,6 +134,10 @@ function compare_syscont_unshare() {
   sv_runc exec syscont sh -c "${l_proc_sys_dirs}"
   [ "$status" -eq 0 ]
   sc_proc_sys_dirs="$output"
+
+  # XXX: work-around for issue #443
+  sc_proc_sys_files=$(echo "$sc_proc_sys_files" | sed 's/.*\/proc\/sys\/fs\/binfmt_misc\/.*//g')
+  sc_proc_sys_dirs=$(echo "$sc_proc_sys_dirs" | sed 's/.*\/proc\/sys\/fs\/binfmt_misc\/.*//g')
 
   ns_proc_sys_files=$(unshare_all sh -c "${l_proc_sys_files}")
   ns_proc_sys_dirs=$(unshare_all sh -c "${l_proc_sys_dirs}")

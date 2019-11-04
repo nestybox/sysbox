@@ -43,12 +43,13 @@ function wait_for_nested_dockerd {
 @test "docker bind mount" {
 
   testDir="/testVol"
-  mkdir ${testDir}
+  mkdir -p ${testDir}
 
   # without docker userns-remap, the bind source must be accessible by
   # the container's user ID.
   if [ -z "$SHIFT_UIDS" ]; then
-    chown -R 165536:165536 ${testDir}
+    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+    chown -R $subid:$subid ${testDir}
   fi
 
   # start the container
@@ -108,10 +109,11 @@ function wait_for_nested_dockerd {
 @test "docker bind mount on var-lib-docker" {
 
   testDir="/root/var-lib-docker"
-  mkdir ${testDir}
+  mkdir -p ${testDir}
 
   if [ -z "$SHIFT_UIDS" ]; then
-    chown -R 165536:165536 ${testDir}
+    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+    chown -R $subid:$subid ${testDir}
   fi
 
   SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
