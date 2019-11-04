@@ -275,7 +275,7 @@ test-mgr-local: sysmgr-grpc-proto
 
 
 #
-# Test Sysbox Installer
+# Test Sysbox Installer targets
 #
 
 DOCKER_RUN_INSTALLER := docker run -d --rm --privileged               \
@@ -298,36 +298,32 @@ DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
 ##@ Installer Testing targets
 
 test-installer: ## Run all sysbox's integration tests suites on installer container
-test-installer: test-sysbox-installer test-sysbox-shiftuid-installer test-shiftfs-installer
+test-installer: test-sysbox-installer test-sysbox-shiftuid-installer
 
 test-sysbox-installer: ## Run sysbox's integration tests on installer container
 test-sysbox-installer: test-img-installer test-cntr-installer
 	@printf "\n** Running sysbox integration tests over installer container **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on installer container
 test-sysbox-shiftuid-installer: test-img-installer test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
 	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SHIFT_UIDS=true && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
-
-test-shiftfs-installer: ## Run shiftfs tests on installer container
-test-shiftfs-installer: test-img-installer test-cntr-installer
-	@printf "\n** Running shiftfs tests **\n\n"
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-ovfs-local TESTPATH=$(TESTPATH)"
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-shiftfs-tmpfs-local TESTPATH=$(TESTPATH)"
 
 test-shell-installer: ## Get a shell in the installer container (useful for debug)
 test-shell-installer: test-img-installer test-cntr-installer
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash
 
 test-cntr-installer: ## Launch installer container and build / install sysbox
 test-cntr-installer: test-img-installer
-	# TODO: Stop / eliminate container if already running.
+        # TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
 ifeq (,$(wildcard $(IMAGE_PATH)/sysbox_$(IMAGE_VERSION)-0.ubuntu-disco_amd64.deb))
 	@printf "\n** Cleaning previously built artifacts **\n\n"
@@ -343,6 +339,13 @@ test-img-installer: ## Build installer container image
 test-img-installer: test-img
 	@printf "\n** Building the test-installer container image**\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_INSTALLER_IMAGE) -f $(TEST_INSTALLER_DOCKERFILE) .
+
+#
+# Misc targets
+#
+
+sysbox-runc-recvtty:
+	@cd $(SYSRUNC_DIR) && make recvtty
 
 
 #

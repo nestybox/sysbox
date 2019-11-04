@@ -9,7 +9,13 @@
 
 SYSCONT_NAME=""
 
-WORK_DIR="/tmp"
+# Note: work-dir must not be on tmpfs; otherwise the sys container
+# fails to launch with "permission-denied" when not using uid-shifting
+# (not sure why, probably related to the tmpfs mount uid(gid)
+# setting).
+mkdir -p /work
+WORK_DIR="/work"
+
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
 RECVTTY="${INTEGRATION_ROOT}/../../sysbox-runc/contrib/cmd/recvtty/recvtty"
 BUNDLES="${INTEGRATION_ROOT}/../../sys-container/bundles"
