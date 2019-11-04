@@ -22,24 +22,24 @@ function setup() {
   # verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep shiftfs"
   [ "$status" -eq 0 ]
-  [[ ${lines[0]} =~ "/ ".+"shiftfs rw,relatime" ]]
-  [[ ${lines[1]} =~ "/etc/resolv.conf".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ ${lines[2]} =~ "/etc/hostname".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ ${lines[3]} =~ "/etc/hosts".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ ${lines[4]} =~ "/lib/modules".+"shiftfs ro,relatime" ]]
+  [[ "${lines[0]}" =~ "/ ".+"shiftfs rw,relatime" ]]
+  [[ "${lines[1]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[2]}" =~ "/etc/hostname".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[3]}" =~ "/etc/hosts".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[4]}" =~ "/lib/modules".+"shiftfs ro,relatime" ]]
 
   # verify things look good on the host
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules"'
+  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | awk "{ print \$3\":\"\$4 }"'
   [ "$status" -eq 0 ]
-  [[ $output =~ "/lib/modules".+"/lib/modules".+"shiftfs rw,relatime,mark" ]]
+  [[ "$output" =~ "/lib/modules/".+"shiftfs" ]]
 
-  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers"'
+  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | awk "{ print \$3\":\"\$4 }"'
   [ "$status" -eq 0 ]
-  [[ $output =~ "/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime,mark" ]]
+  [[ "$output" =~ "/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs" ]]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers"'
   [ "$status" -eq 0 ]
-  [[ $output =~ "/var/lib/docker/".+"shiftfs rw,relatime,mark" ]]
+  [[ "$output" =~ "/var/lib/docker/".+"shiftfs".+"rw,relatime,mark" ]]
 
   docker_stop "$SYSCONT_NAME"
 
@@ -65,22 +65,19 @@ function setup() {
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     docker exec "${syscont_name[$i]}" sh -c "findmnt | grep shiftfs"
     [ "$status" -eq 0 ]
-    [[ ${lines[0]} =~ "/ ".+"shiftfs rw,relatime" ]]
-    [[ ${lines[1]} =~ "/etc/resolv.conf".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ ${lines[2]} =~ "/etc/hostname".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ ${lines[3]} =~ "/etc/hosts".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ ${lines[4]} =~ "/lib/modules".+"shiftfs ro,relatime" ]]
+    [[ "${lines[0]}" =~ "/ ".+"shiftfs rw,relatime" ]]
+    [[ "${lines[1]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+    [[ "${lines[2]}" =~ "/etc/hostname".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+    [[ "${lines[3]}" =~ "/etc/hosts".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+    [[ "${lines[4]}" =~ "/lib/modules".+"shiftfs ro,relatime" ]]
   done
 
   # verify mounts on host look good; there should only be one shiftfs mount on `/lib/modules/<kernel>`
   run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | wc -l'
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
-  for i in $(seq 0 $(("$num_syscont" - 1))); do
-    run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers"'
-    [ "$status" -eq 0 ]
-    [[ $output =~ "/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime,mark" ]]
-  done
+  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
+  [ "$status" -eq 0 ] && [ "$output" -eq "$num_syscont" ]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq "$num_syscont" ]
@@ -90,13 +87,12 @@ function setup() {
     docker_stop "${syscont_name[$i]}"
   done
 
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules"'
+  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | awk "{ print \$3\":\"\$4 }"'
   [ "$status" -eq 0 ]
-  [[ $output =~ "/lib/modules".+"/lib/modules".+"shiftfs rw,relatime,mark" ]]
+  [[ "$output" =~ "/lib/modules/".+"shiftfs" ]]
 
-  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers"'
-  [ "$status" -eq 0 ]
-  [[ $output =~ "/var/lib/docker/containers/${syscont_name[0]}".+"shiftfs rw,relatime,mark" ]]
+  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
+  [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
@@ -119,7 +115,7 @@ function setup() {
   [ "$status" -eq 1 ]
 
   # Create a tmp directory to serve as a bind-mount into a sys container
-  bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
+  bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
 
   # Set a shiftfs mark on the directory
   run mount -t shiftfs -o mark "$bind_src" "$bind_src"
@@ -158,7 +154,7 @@ function setup() {
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
 
-  bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
+  bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
   test_file="$bind_src/testFile"
   run touch "$test_file"
   [ "$status" -eq 0 ]
@@ -178,7 +174,7 @@ function setup() {
 
 @test "shiftfsMgr shiftfs no-exec on host" {
 
-  bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
+  bind_src=$(mktemp -d "/work/bind_src.XXXXXX")
   test_file="$bind_src/testFile"
 
   run touch "$test_file"
@@ -214,7 +210,7 @@ function setup() {
   #
 
   # Create a tmp directory to serve as a bind-mount into a sys container
-  bind_src=$(mktemp -d "/tmp/bind_src.XXXXXX")
+  bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
 
   # Remount the bind source as no-exec
   run mount --bind "$bind_src" "$bind_src"

@@ -38,8 +38,6 @@ function wait_for_nested_dockerd {
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
-  docker image rm -f nestybox/sc-with-inner-img:latest
-  [ "$status" -eq 0 ]
   docker build --no-cache -t nestybox/sc-with-inner-img:latest .
   [ "$status" -eq 0 ]
 
