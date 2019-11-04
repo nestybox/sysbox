@@ -167,7 +167,13 @@ uninstall: ## Uninstall all sysbox binaries
 
 #
 # Test targets
-# (these run within a test container, so they won't messup your host)
+#
+# These targets run Sysbox tests within a privileged test container.
+# they are meant as development tests.
+#
+# We also have targets that run tests within a privileged test
+# container with Systemd + the Sysbox package installed. See "Test
+# Sysbox Installer targets" below.
 #
 
 DOCKER_RUN := docker run -it --privileged --rm                        \
@@ -195,7 +201,7 @@ test-sysbox: test-img
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting
 test-sysbox-shiftuid: test-img
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-runc: ## Run sysbox-runc unit & integration tests
@@ -230,7 +236,7 @@ test-shell: test-img
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
-	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-img: ## Build test container image
@@ -247,7 +253,7 @@ test-cleanup: test-img
 
 #
 # Local test targets (these are invoked from within the test container
-# by the test target above); in theory they can run directly on a dev
+# by the test target above); in theory they can run directly on a host
 # machine, but they require root privileges and might messup the state
 # of the host.
 #
@@ -277,6 +283,10 @@ test-mgr-local: sysmgr-grpc-proto
 #
 # Test Sysbox Installer targets
 #
+# These targets run tests within a privileged test container that has
+# systemd running and inside of which the Sysbox package is installed
+# (just as it would be on a regular host).
+#
 
 DOCKER_RUN_INSTALLER := docker run -d --rm --privileged               \
 			--hostname sysbox-installer-test              \
@@ -297,32 +307,50 @@ DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
 
 ##@ Installer Testing targets
 
-test-installer: ## Run all sysbox's integration tests suites on installer container
+test-installer: ## Run all sysbox's integration tests suites on the installer container
 test-installer: test-sysbox-installer test-sysbox-shiftuid-installer
 
-test-sysbox-installer: ## Run sysbox's integration tests on installer container
-test-sysbox-installer: test-img-installer test-cntr-installer
-	@printf "\n** Running sysbox integration tests over installer container **\n\n"
+test-sysbox-installer: ## Run sysbox's integration tests on the installer container
+test-sysbox-installer: test-cntr-installer
+	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
+		jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
+		mv /tmp/daemon.json /etc/docker/daemon.json && \
+		systemctl restart docker.service"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP_INSTALLER)
 
-test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on installer container
-test-sysbox-shiftuid-installer: test-img-installer test-cntr-installer
+test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on the installer container
+test-sysbox-shiftuid-installer: test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
-	SHIFT_UIDS=true $(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SHIFT_UIDS=true && \
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP_INSTALLER)
 
 test-shell-installer: ## Get a shell in the installer container (useful for debug)
-test-shell-installer: test-img-installer test-cntr-installer
+test-shell-installer: test-cntr-installer
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
-	$(DOCKER_EXEC_INSTALLER) /bin/bash
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
+		jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
+		mv /tmp/daemon.json /etc/docker/daemon.json && \
+		systemctl restart docker.service"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true && bash"
+	$(DOCKER_STOP_INSTALLER)
 
-test-cntr-installer: ## Launch installer container and build / install sysbox
-test-cntr-installer: test-img-installer
+test-shell-shiftuid-installer: ## Get a shell in the installer container with uid-shifting enabled (useful for debug)
+test-shell-shiftuid-installer: test-cntr-installer
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && bash"
+	$(DOCKER_STOP_INSTALLER)
+
+test-cntr-installer: ## Launch the installer container and build & install sysbox package
+test-cntr-installer:
         # TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
 ifeq (,$(wildcard $(IMAGE_PATH)/sysbox_$(IMAGE_VERSION)-0.ubuntu-disco_amd64.deb))
@@ -334,6 +362,11 @@ endif
 	@printf "\n** Installing sysbox deb package **\n\n"
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
 		DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_PATH}/sysbox_${IMAGE_VERSION}-0.ubuntu-disco_amd64.deb"
+        # Some tests require that the Docker default runtime be set to sysbox-runc
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
+		jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+		mv /tmp/daemon.json /etc/docker/daemon.json && \
+		systemctl restart docker.service"
 
 test-img-installer: ## Build installer container image
 test-img-installer: test-img

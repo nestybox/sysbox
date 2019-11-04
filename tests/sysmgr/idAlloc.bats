@@ -10,7 +10,7 @@ load ../helpers/run
 
   # verify sysbox-mgr --subid-range-size option works
   sv_mgr_stop
-  sv_mgr_start --subid-range-size 131072
+  sv_mgr_start "--subid-range-size 131072"
   uid_size=$(grep sysbox /etc/subuid | cut -d":" -f3)
   gid_size=$(grep sysbox /etc/subgid | cut -d":" -f3)
   [ "$uid_size" -eq 131072 ]
@@ -92,7 +92,7 @@ load ../helpers/run
   fi
 
   sv_mgr_stop
-  sv_mgr_start --subid-policy "no-reuse" --subid-range-size 131072
+  sv_mgr_start "--subid-policy no-reuse --subid-range-size 131072"
 
   # start two sys containers
   declare -a syscont_name
@@ -125,7 +125,7 @@ load ../helpers/run
   fi
 
   sv_mgr_stop
-  sv_mgr_start --subid-range-size 131072
+  sv_mgr_start "--subid-range-size 131072"
 
   # Start 4 sys containers; the first two should get new ids; the last
   # two should get re-used ids.
@@ -181,7 +181,7 @@ load ../helpers/run
 
   # restart sysbox-mgr in ident-map mode
   sv_mgr_stop
-  sv_mgr_start --subid-ident-map
+  sv_mgr_start "--subid-ident-map"
 
   # launch multiple sys containers and verify they have their uid(gid)s identity-mapped
   declare -a syscont_name
@@ -217,7 +217,7 @@ load ../helpers/run
 
   # restart sysbox-mgr in ident-map mode
   sv_mgr_stop
-  sv_mgr_start --subid-ident-map
+  sv_mgr_start "--subid-ident-map"
 
   # launch multiple sys containers and verify they can run docker inside
   declare -a syscont_name

@@ -33,25 +33,46 @@ function docker_stop() {
 }
 
 function sv_mgr_start() {
-  # Note: must match the way sysbox-mgr is usually started, except
-  # that we also pass in the "$@".
-  sysbox-mgr --log /dev/stdout "$@" > /var/log/sysbox-mgr.log 2>&1 &
-  sleep 1
+  if [ -n "$SB_INSTALLER" ]; then
+    sed -i "s/^ExecStart=\(.*sysbox-mgr.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-mgr.service
+    systemctl daemon-reload
+    systemctl restart sysbox
+    sleep 3
+  else
+    sysbox-mgr --log /dev/stdout $@ > /var/log/sysbox-mgr.log 2>&1 &
+    sleep 1
+  fi
 }
 
 function sv_mgr_stop() {
-  pid=$(pidof sysbox-mgr)
-  kill $pid
-  sleep 1
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl stop sysbox
+    sleep 1
+  else
+    pid=$(pidof sysbox-mgr)
+    kill $pid
+    sleep 1
+  fi
 }
 
 function dockerd_start() {
-  dockerd "$@" > /var/log/dockerd.log 2>&1 &
-  sleep 2
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl start docker.service
+    sleep 2
+  else
+    dockerd $@ > /var/log/dockerd.log 2>&1 &
+    sleep 2
+  fi
 }
 
 function dockerd_stop() {
-  pid=$(pidof dockerd)
-  kill $pid
-  if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl stop docker.service
+    sleep 1
+  else
+    pid=$(pidof dockerd)
+    kill $pid
+    sleep 1
+    if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
+  fi
 }
