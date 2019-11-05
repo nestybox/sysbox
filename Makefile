@@ -23,6 +23,10 @@
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
 	build-deb ubuntu-bionic ubuntu-cosmic ubuntu-disco \
+	test-installer \
+	test-sysbox-installer test-sysbox-shiftuid-installer \
+	test-shell-installer test-shell-shiftuid-installer \
+	test-cntr-installer test-img-installer \
 	clean
 
 export SHELL=bash
@@ -311,7 +315,8 @@ test-installer: ## Run all sysbox's integration tests suites on the installer co
 test-installer: test-sysbox-installer test-sysbox-shiftuid-installer
 
 test-sysbox-installer: ## Run sysbox's integration tests on the installer container
-test-sysbox-installer: test-cntr-installer
+test-sysbox-installer:
+	make test-cntr-installer
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
@@ -323,7 +328,8 @@ test-sysbox-installer: test-cntr-installer
 	$(DOCKER_STOP_INSTALLER)
 
 test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on the installer container
-test-sysbox-shiftuid-installer: test-cntr-installer
+test-sysbox-shiftuid-installer:
+	make test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
@@ -377,6 +383,7 @@ test-img-installer: test-img
 # Misc targets
 #
 
+# recvtty is a tool inside the sysbox-runc repo that is needed by some integration tests
 sysbox-runc-recvtty:
 	@cd $(SYSRUNC_DIR) && make recvtty
 
