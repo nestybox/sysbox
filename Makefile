@@ -356,7 +356,7 @@ test-shell-shiftuid-installer: test-cntr-installer
 	$(DOCKER_STOP_INSTALLER)
 
 test-cntr-installer: ## Launch the installer container and build & install sysbox package
-test-cntr-installer:
+test-cntr-installer: test-img-installer
         # TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
 ifeq (,$(wildcard $(IMAGE_PATH)/sysbox_$(IMAGE_VERSION)-0.ubuntu-disco_amd64.deb))
