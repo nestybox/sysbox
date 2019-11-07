@@ -33,7 +33,8 @@ export SHELL=bash
 
 # Global env-vars to carry metadata associated to image-builds. This state will
 # be consumed by the sysbox submodules and exposed through the --version cli option.
-export VERSION=${shell cat ./VERSION}
+#export VERSION=${shell cat ./VERSION}
+export VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
 export BUILT_AT=${shell date}
 # We don't want previously-set env-vars to be reset should this makefile is
 # ever visited again in the same building cycle (i.e. docker image builders).
@@ -73,8 +74,10 @@ TEST_INSTALLER_IMAGE := sysbox-installer-test
 TEST_INSTALLER_DOCKERFILE := Dockerfile.installer
 
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
-IMAGE_VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
-IMAGE_PATH := image/deb/debbuild/ubuntu-disco/
+IMAGE_BASE_DISTRO := $(shell lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
+IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
+IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
 # volumes to mount into the privileged test container's `/var/lib/docker` and
 # `/var/lib/sysbox`; this is required so that the docker and sysbox-runc instances
@@ -246,7 +249,8 @@ test-shell-shiftuid: test-img
 test-img: ## Build test container image
 test-img:
 	@printf "\n** Building the test container **\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) .
+	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) \
+		-f Dockerfile.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE) .
 
 test-cleanup: ## Clean up sysbox integration tests (to be run as root)
 test-cleanup: test-img
@@ -324,7 +328,8 @@ test-sysbox-installer:
 		jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
 		mv /tmp/daemon.json /etc/docker/daemon.json && \
 		systemctl restart docker.service"
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true && \
+		make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP_INSTALLER)
 
 test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on the installer container
@@ -338,7 +343,7 @@ test-sysbox-shiftuid-installer:
 	$(DOCKER_STOP_INSTALLER)
 
 test-shell-installer: ## Get a shell in the installer container (useful for debug)
-test-shell-installer: test-cntr-installer
+test-shell-installer: test-img-installer test-cntr-installer
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
@@ -359,15 +364,16 @@ test-cntr-installer: ## Launch the installer container and build & install sysbo
 test-cntr-installer: test-img-installer
         # TODO: Stop / eliminate container if already running.
 	$(DOCKER_RUN_INSTALLER)
-ifeq (,$(wildcard $(IMAGE_PATH)/sysbox_$(IMAGE_VERSION)-0.ubuntu-disco_amd64.deb))
+ifeq (,$(wildcard $(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME)))
 	@printf "\n** Cleaning previously built artifacts **\n\n"
 	@make image clean
 	@printf "\n** Building the sysbox deb package installer **\n\n"
-	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "sleep 10 && make image build-deb ubuntu-disco"
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "sleep 10 && \
+		make image build-deb $(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)"
 endif
 	@printf "\n** Installing sysbox deb package **\n\n"
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
-		DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_PATH}/sysbox_${IMAGE_VERSION}-0.ubuntu-disco_amd64.deb"
+		DEBIAN_FRONTEND=noninteractive dpkg -i $(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME)"
         # Some tests require that the Docker default runtime be set to sysbox-runc
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
 		jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
@@ -377,7 +383,8 @@ endif
 test-img-installer: ## Build installer container image
 test-img-installer: test-img
 	@printf "\n** Building the test-installer container image**\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_INSTALLER_IMAGE) -f $(TEST_INSTALLER_DOCKERFILE) .
+	@cd $(TEST_DIR) && docker build -t $(TEST_INSTALLER_IMAGE) \
+		-f $(TEST_INSTALLER_DOCKERFILE) .
 
 #
 # Misc targets
