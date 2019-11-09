@@ -17,6 +17,10 @@ function sv_runc() {
   __sv_runc "$@"
 }
 
+function __docker() {
+  command docker "$@"
+}
+
 function docker_run() {
   docker run --runtime=sysbox-runc -d "$@"
 }
