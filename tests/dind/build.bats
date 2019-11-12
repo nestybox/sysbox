@@ -30,9 +30,11 @@ function wait_for_nested_dockerd {
   # shiftfs manager detects and skips mounting shiftfs on this directory
 
   local premount="false"
-  if [[ $((RANDOM % 2)) == "0" ]]; then
-    mount -t shiftfs -o mark /lib/modules/$(uname -r) /lib/modules/$(uname -r)
-    premount="true"
+  if [ -n "$SHIFT_UIDS" ]; then
+    if [[ $((RANDOM % 2)) == "0" ]]; then
+      mount -t shiftfs -o mark /lib/modules/$(uname -r) /lib/modules/$(uname -r)
+      premount="true"
+    fi
   fi
 
   # do a docker build with appropriate dockerfile
