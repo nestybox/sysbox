@@ -1,8 +1,8 @@
-Notes on Sysbox Troubleshooting
-=================================
+Notes on Sysbox Troubleshooting (Internal)
+==========================================
 
 The customer docs for sysbox contain basic info on
-troubleshooting. See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/troubleshoot.md).
+troubleshooting. See [here](https://github.com/nestybox/sysbox-staging/blob/master/docs/troubleshoot.md).
 
 The following is additional troubleshooting information meant for
 Nestybox's internal use only.
