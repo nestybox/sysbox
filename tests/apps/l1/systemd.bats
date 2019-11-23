@@ -75,6 +75,11 @@ function check_systemd_mounts() {
         "hostnamectl | egrep -q \"hostname: sys-cont-systemd\""
     [ "$status" -eq 0 ]
 
+    # verify virtualization type
+    docker exec "$SYSCONT_NAME" systemd-detect-virt
+    [ "$status" -eq 0 ]
+    [[ "$output" == "container-other" ]]
+
     # Restart a systemd service (journald) and verify it returns to 'running'
     # state.
     docker exec "$SYSCONT_NAME" sh -c \
