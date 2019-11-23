@@ -1,15 +1,15 @@
-Sysbox Design Notes
-=====================
+Sysbox Design Notes (Internal)
+==============================
 
 The customer docs for sysbox contain basic info on its design.
-See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/design.md).
+See [here](https://github.com/nestybox/sysbox-staging/blob/master/docs/design.md).
 
 The following is additional design information meant for Nestybox's
 internal use only.
 
 ## OCI compatibility
 
-See [here](https://github.com/nestybox/sysbox-external/blob/master/docs/design.md#oci-compatibility)
+See [here](https://github.com/nestybox/sysbox-staging/blob/master/docs/design.md#oci-compatibility)
 for info on Sysbox's OCI compatibility.
 
 Additional info below.
