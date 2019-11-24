@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-# General tests of proc handlers
+# General tests of /proc handlers
 #
 # Handler-specific tests are under the proc<Handler>.bats file.
 
@@ -35,4 +35,21 @@ function teardown() {
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Permission denied" ]]
   done
+}
+
+@test "procfs remount" {
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  # mounting procfs within the sys container works, but the
+  # container's userns prevents access to system-wide resources
+  sv_runc exec syscont sh -c "mkdir /root/proc && mount -t proc proc /root/proc"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "echo 1 > /root/proc/sys/kernel/sysrq"
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ /root/proc/sys/kernel/sysrq:\ Permission\ denied ]]
+
+  sv_runc exec syscont sh -c "umount /root/proc"
+  [ "$status" -eq 0 ]
 }
