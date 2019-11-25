@@ -73,6 +73,9 @@ TEST_IMAGE := sysbox-test
 TEST_INSTALLER_IMAGE := sysbox-installer-test
 TEST_INSTALLER_DOCKERFILE := Dockerfile.installer
 
+# Host kernel info
+KERNEL_REL := $(shell uname -r)
+
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
 IMAGE_BASE_DISTRO := $(shell lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
 IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
@@ -183,14 +186,24 @@ uninstall: ## Uninstall all sysbox binaries
 # Sysbox Installer targets" below.
 #
 
+HEADERS := linux-headers-$(KERNEL_REL)
+
+# hacky: works on ubuntu but may not work on other distros
+HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
+
+# Alternative: reads symlinks and finds longest common prefix with sed (works on shell but fails on makefile for some reason)
+# HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink -f {} \; | uniq | sed -e 's,$,/,;1{h;d;}' -e 'G;s,\(.*/\).*\n\1.*,\1,;h;$!d;s,/$,,' )
+
 DOCKER_RUN := docker run -it --privileged --rm                        \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			-v $(CURDIR):$(PROJECT)                       \
-			-v /lib/modules:/lib/modules:ro               \
 			-v $(TEST_VOL1):/var/lib/docker               \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
+			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
+			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
 			$(TEST_IMAGE)
 
 
