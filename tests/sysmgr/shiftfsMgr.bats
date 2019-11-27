@@ -14,24 +14,41 @@ function setup() {
 
 @test "shiftfsMgr basic" {
 
+  local kernel_rel=$(uname -r)
+
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
 
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep shiftfs"
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep \"^/\""
   [ "$status" -eq 0 ]
-  [[ "${lines[0]}" =~ "/ ".+"shiftfs rw,relatime" ]]
-  [[ "${lines[1]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ "${lines[2]}" =~ "/etc/hostname".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ "${lines[3]}" =~ "/etc/hosts".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ "${lines[4]}" =~ "/lib/modules".+"shiftfs ro,relatime" ]]
+  [[ "$output" =~ "/ ".+"shiftfs rw,relatime" ]]
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/etc\""
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/lib/modules/${kernel_rel}\""
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs ro,relatime" ]]
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs ro,relatime" ]]
 
   # verify things look good on the host
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | awk "{ print \$3\":\"\$4 }"'
+  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules/${kernel_rel}" | awk "{ print \$3\":\"\$4 }"'
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/lib/modules/".+"shiftfs" ]]
+  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
+
+  run sh -c 'findmnt | grep shiftfs | grep "/usr/src/linux-headers-${kernel_rel}" | awk "{ print \$3\":\"\$4 }"'
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | awk "{ print \$3\":\"\$4 }"'
   [ "$status" -eq 0 ]
@@ -50,6 +67,8 @@ function setup() {
 
 @test "shiftfsMgr multiple syscont" {
 
+  local kernel_rel=$(uname -r)
+
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
 
@@ -63,19 +82,33 @@ function setup() {
 
   # verify shiftfs mounts on each look good
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep shiftfs"
+    docker exec "${syscont_name[$i]}" sh -c "findmnt | egrep \"^/\""
     [ "$status" -eq 0 ]
-    [[ "${lines[0]}" =~ "/ ".+"shiftfs rw,relatime" ]]
-    [[ "${lines[1]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ "${lines[2]}" =~ "/etc/hostname".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ "${lines[3]}" =~ "/etc/hosts".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ "${lines[4]}" =~ "/lib/modules".+"shiftfs ro,relatime" ]]
+    [[ "$output" =~ "/ ".+"shiftfs rw,relatime" ]]
+
+    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/etc\""
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+    [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+    [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+
+    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/lib/modules/${kernel_rel}\""
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs ro,relatime" ]]
+
+    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs ro,relatime" ]]
   done
 
-  # verify mounts on host look good; there should only be one shiftfs mount on `/lib/modules/<kernel>`
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | wc -l'
+  # verify mounts on host look good; there should only be one shiftfs mount on lib-modules and kernel-headers
+  run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\" | wc -l"
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
+  run sh -c "mount | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\" | wc -l"
+  [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
+
+  # and there should be a per-container mount on /var/lib/docker/...
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq "$num_syscont" ]
 
@@ -87,9 +120,13 @@ function setup() {
     docker_stop "${syscont_name[$i]}"
   done
 
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules" | awk "{ print \$3\":\"\$4 }"'
+  run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/lib/modules/".+"shiftfs" ]]
+  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
+
+  run sh -c "findmnt | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
