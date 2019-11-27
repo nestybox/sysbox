@@ -1,0 +1,16 @@
+{
+    "plugins": {
+      "remark-toc": {
+        "tight": true,
+        "heading": "contents"
+      },
+      "remark-validate-links": {
+      },
+      "remark-lint": {
+        "no-multiple-toplevel-headings": false,
+        "maximum-line-length": 90,
+        "table-pipe-alignment": true,
+        "table-cell-padding": false
+      }
+    }
+}
