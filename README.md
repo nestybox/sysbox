@@ -1,10 +1,10 @@
-Nestybox Sysbox
-================
+Sysbox: System Container Runtime
+================================
 
 ## Introduction
 
-Sysbox is software that integrates with Docker and allows it to
-create system containers.
+Sysbox is container runtime that integrates with Docker and enables it
+to create system containers.
 
 The customer docs for sysbox contain a lot of info on installation,
 usage, design, etc. Those are found in the [sysbox external repo](https://github.com/nestybox/sysbox-external)
@@ -195,7 +195,7 @@ container.
 
 ## Usage
 
-Refer to the Sysbox [Usage docs](docs/usage.md).
+Refer to the Sysbox [Usage docs](https://github.com/nestybox/sysbox-external/blob/master/docs/usage.md).
 
 ## Troubleshooting
 
