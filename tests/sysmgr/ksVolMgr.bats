@@ -1,12 +1,12 @@
 #!/usr/bin/env bats
 
 #
-# Integration test for the sysbox-mgr docker-store volume manager
+# Integration test for the sysbox-mgr kubelet-store volume manager
 #
 
 load ../helpers/run
 
-@test "dsVolMgr basic" {
+@test "ksVolMgr basic" {
 
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -14,23 +14,23 @@ load ../helpers/run
   # verify things look good inside the sys container
   #
 
-  # "/var/lib/docker" should be mounted to "/var/lib/sysbox/docker/<syscont-name>"; note
+  # "/var/lib/kubelet" should be mounted to "/var/lib/sysbox/kubelet/<syscont-name>"; note
   # that in the privileged test container the "/var/lib/sysbox" is itself a mount-point,
-  # so it won't show up in findmnt; thus we just grep for "docker/<syscont-name>"
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/docker\" | grep \"docker/$SYSCONT_NAME\""
+  # so it won't show up in findmnt; thus we just grep for "kubelet/<syscont-name>"
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/kubelet\" | grep \"kubelet/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
 
-  # ownership of "/var/lib/docker" should be root:root
-  docker exec "$SYSCONT_NAME" sh -c "stat /var/lib/docker | grep Uid"
+  # ownership of "/var/lib/kubelet" should be root:root
+  docker exec "$SYSCONT_NAME" sh -c "stat /var/lib/kubelet | grep Uid"
   [ "$status" -eq 0 ]
-  [[ ${lines[0]} == "Access: (0700/drwx------)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
+  [[ ${lines[0]} == "Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
 
   #
   # verify things look good on the host
   #
 
-  # there should be a dir with the container's name under /var/lib/sysbox/docker
-  run ls /var/lib/sysbox/docker/
+  # there should be a dir with the container's name under /var/lib/sysbox/kubelet
+  run ls /var/lib/sysbox/kubelet/
   [ "$status" -eq 0 ]
   [[ ${lines[0]} =~ "$SYSCONT_NAME" ]]
 
@@ -39,20 +39,20 @@ load ../helpers/run
   [ "$status" -eq 0 ]
   SYSBOX_UID="$output"
 
-  run sh -c "stat /var/lib/sysbox/docker/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOX_UID\""
+  run sh -c "stat /var/lib/sysbox/kubelet/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOX_UID\""
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
 }
 
-@test "dsVolMgr persistence" {
+@test "ksVolMgr persistence" {
 
-  # Verify the sys container docker-store vol persists across container
+  # Verify the sys container kubelet-store vol persists across container
   # start-stop-start events
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/kubelet/test"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
@@ -61,7 +61,7 @@ load ../helpers/run
   docker start "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/test"
+  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/kubelet/test"
   [ "$status" -eq 0 ]
   [[ "$output" == "data" ]]
 
@@ -72,9 +72,9 @@ load ../helpers/run
   [ "$status" -eq 0 ]
 }
 
-@test "dsVolMgr non-persistence" {
+@test "ksVolMgr non-persistence" {
 
-  # Verify the sys container docker-store vol is removed when a
+  # Verify the sys container kubelet-store vol is removed when a
   # container is removed
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -84,33 +84,33 @@ load ../helpers/run
   [ "$status" -eq 0 ]
   sc_id="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/kubelet/test"
   [ "$status" -eq 0 ]
 
-  run cat "/var/lib/sysbox/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/kubelet/$sc_id/test"
   [ "$status" -eq 0 ]
   [[ "$output" == "data" ]]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  run cat "/var/lib/sysbox/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/kubelet/$sc_id/test"
   [ "$status" -eq 0 ]
 
   docker rm "$SYSCONT_NAME"
 
-  run cat "/var/lib/sysbox/docker/$sc_id/test"
+  run cat "/var/lib/sysbox/kubelet/$sc_id/test"
   [ "$status" -eq 1 ]
 
-  run cat "/var/lib/sysbox/docker/$sc_id"
+  run cat "/var/lib/sysbox/kubelet/$sc_id"
   [ "$status" -eq 1 ]
 }
 
-@test "dsVolMgr consecutive restart" {
+@test "ksVolMgr consecutive restart" {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/kubelet/test"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
@@ -120,7 +120,7 @@ load ../helpers/run
     docker start "$SYSCONT_NAME"
     [ "$status" -eq 0 ]
 
-    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/test"
+    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/kubelet/test"
     [ "$status" -eq 0 ]
     [[ "$output" == "data" ]]
 
@@ -131,33 +131,33 @@ load ../helpers/run
   docker rm "$SYSCONT_NAME"
 }
 
-@test "dsVolMgr sync-out" {
+@test "ksVolMgr sync-out" {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
 
-  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/docker/dummyFile"
+  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/kubelet/dummyFile"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
   # verify that dummy file was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/docker"
+  run ls "$rootfs/var/lib/kubelet"
   [ "$status" -eq 0 ]
   [[ "$output" == "dummyFile" ]]
 
   docker start "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/docker/dummyFile"
+  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/kubelet/dummyFile"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
   # verify that dummy file removal was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/docker"
+  run ls "$rootfs/var/lib/kubelet"
   [ "$status" -eq 0 ]
   [[ "$output" == "" ]]
 
@@ -165,10 +165,10 @@ load ../helpers/run
   docker rm "$SYSCONT_NAME"
 }
 
-#@test "dsVolMgr sync-in" {
+#@test "ksVolMgr sync-in" {
   #
-  # TODO: verify dsVolMgr sync-in by creating a sys container image with contents in /var/lib/docker
-  # and checking that the contents are copied to the /var/lib/sysbox/docker/<syscont-name> and
+  # TODO: verify ksVolMgr sync-in by creating a sys container image with contents in /var/lib/kubelet
+  # and checking that the contents are copied to the /var/lib/sysbox/kubelet/<syscont-name> and
   # that they have the correct ownership. There is a volMgr unit test that verifies this already,
   # but an integration test would be good too.
   #
