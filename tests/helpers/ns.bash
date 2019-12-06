@@ -9,6 +9,9 @@
 
 # Linux kernel namespaced resources under /proc/sys
 # (representative list, not exhaustive)
+#
+# List was compiled by looking for read-write files under /proc/sys and
+# it's subdirs, that take ints or bools in their config.
 PROC_SYS_NS=('e=(/proc/sys/net/ipv4/ip_default_ttl INT)' \
              'e=(/proc/sys/net/ipv4/ip_forward BOOL)' \
              'e=(/proc/sys/net/ipv4/tcp_keepalive_time INT)' \
@@ -41,6 +44,21 @@ PROC_SYS_NON_NS=('e=(/proc/sys/abi/vsyscall32 BOOL) '\
                  'e=(/proc/sys/kernel/keys/maxkeys INT)' \
                  'e=(/proc/sys/vm/swappiness INT)' \
                  'e=(/proc/sys/vm/zone_reclaim_mode BOOL)')
+
+# Linux kernel namespaced resources under /sys (representative list,
+# not exhaustive)
+SYS_NS=('e=(/sys/fs/cgroup/memory/memory.swappiness INT) '\
+        'e=(/sys/fs/cgroup/cpu/notify_on_release BOOL) '\
+        'e=(/sys/fs/cgroup/freezer/notify_on_release BOOL)')
+
+# Linux kernel non-namespaced resources under /sys
+# (representative list, not exhaustive)
+SYS_NON_NS=('e=(/sys/kernel/profiling BOOL) '\
+            'e=(/sys/kernel/rcu_normal BOOL) '\
+            'e=(/sys/kernel/rcu_expedited BOOL) '\
+            'e=(/sys/module/kernel/parameters/panic BOOL) '\
+            'e=(/sys/fs/cgroup/rdma/notify_on_release BOOL) '\
+            'e=(/sys/bus/pci/drivers_autoprobe BOOL)')
 
 # unshare all namespaces and execute the given command as a forked process
 function unshare_all() {

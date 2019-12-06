@@ -41,7 +41,7 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  # mounting procfs within the sys container works, but the
+  # mounting procfs within the sys container works, and the
   # container's userns prevents access to system-wide resources
   sv_runc exec syscont sh -c "mkdir /root/proc && mount -t proc proc /root/proc"
   [ "$status" -eq 0 ]

@@ -231,9 +231,8 @@ function compare_syscont_unshare() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  # For each /proc/sys control associated with a namespaced resource,
-  # modify the value in the sys container and check isolation. Then
-  # revert the value in the sys container and re-check.
+  # For each /proc/sys control associated with a non-namespaced resource,
+  # verify that it's not possible to modify its value.
 
   for entry in "${PROC_SYS_NON_NS[@]}"; do
     eval $entry
