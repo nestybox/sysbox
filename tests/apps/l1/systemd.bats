@@ -102,28 +102,33 @@ function check_systemd_mounts() {
 
 @test "systemd mount overlaps" {
 
-    # Launch systemd container.
-    SYSCONT_NAME=$(docker_run -d --rm \
-                    --mount type=tmpfs,destination=/run:ro \
-                    --mount type=tmpfs,destination=/run/lock:ro \
-                    --mount type=tmpfs,destination=/tmp:ro \
-                    --mount type=tmpfs,destination=/sys/kernel/config:ro \
-                    --mount type=tmpfs,destination=/sys/kernel/debug:ro \
-                    --name=sys-cont-systemd \
-                    --hostname=sys-cont-systemd nestybox/ubuntu-bionic-systemd)
+  docker volume create testVol
+  [ "$status" -eq 0 ]
 
-    wait_for_init
+  # Launch systemd container.
+  SYSCONT_NAME=$(docker_run -d --rm \
+                            --mount source=testVol,destination=/run \
+                            --mount source=testVol,destination=/run/lock \
+                            --mount source=testVol,destination=/tmp \
+                            --mount source=testVol,destination=/sys/kernel/config \
+                            --mount source=testVol,destination=/sys/kernel/debug \
+                            --name=sys-cont-systemd \
+                            --hostname=sys-cont-systemd nestybox/ubuntu-bionic-systemd)
 
-    # Verify that systemd has been properly initialized (no major errors observed).
-    docker exec "$SYSCONT_NAME" sh -c "systemctl status"
-    [ "$status" -eq 0 ]
-    [[ "${lines[1]}" =~ "State: running" ]]
+  wait_for_init
 
-    # Verify that mount overlaps have been identified and replaced as per systemd
-    # demands.
-    check_systemd_mounts
+  # Verify that systemd has been properly initialized (no major errors observed).
+  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" =~ "State: running" ]]
 
-    # Cleanup
-    docker_stop "$SYSCONT_NAME"
-    [ "$status" -eq 0 ]
+  # Verify that mount overlaps have been identified and replaced as per systemd
+  # demands.
+  check_systemd_mounts
+
+  # Cleanup
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker volume rm testVol
 }
