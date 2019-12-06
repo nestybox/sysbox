@@ -14,9 +14,6 @@ function teardown() {
 
 @test "sysfs remount" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
-
-  # mounting sysfs within the sys container fails (due to userns)
   sv_runc exec syscont sh -c "mkdir /root/sys && mount -t sysfs sysfs /root/sys"
-  [ "$status" -eq 1 ]
-  [[ "$output" == "mount: permission denied (are you root?)" ]]
+  [ "$status" -eq 0 ]
 }
