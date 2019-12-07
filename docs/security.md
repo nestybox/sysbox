@@ -30,7 +30,7 @@ considered a "known unknown". [1]
 * Dev/test
 * Production
 * Server-side sandboxing
-* Clieng-side sandboxing
+* Client-side sandboxing
 
 ## System Container Security
 
@@ -53,7 +53,8 @@ considered a "known unknown". [1]
   ```
 
 * Mounting of another `/proc` within the sys container is possible,
-  and
+  and comes without sysbox-fs mounts; but is protected via Linux
+  user ns.
 
 * Also, tmpfs mounts over `/proc` is possible. But this only affects
   the sys container processes, no security risk.
@@ -65,6 +66,8 @@ considered a "known unknown". [1]
   - Except for `/sys/fs/cgroup`
 
 * Can `/sys` be unmounted inside a container?
+
+* It's ok if it's read-write too due to Linux userns protection.
 
 ### Syscalls
 
