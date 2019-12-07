@@ -36,7 +36,6 @@ PROC_SYS_NON_NS=('e=(/proc/sys/abi/vsyscall32 BOOL) '\
                  'e=(/proc/sys/fs/pipe-max-size INT) '\
                  'e=(/proc/sys/fs/mount-max INT)' \
                  'e=(/proc/sys/fs/mqueue/msg_max INT)'
-                 'e=(/proc/sys/kernel/cap_last_cap INT)' \
                  'e=(/proc/sys/kernel/shmmni INT)' \
                  'e=(/proc/sys/kernel/sysrq INT)' \
                  'e=(/proc/sys/kernel/threads-max INT) '\
