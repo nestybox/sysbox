@@ -5,7 +5,7 @@
 # https://docs.docker.com/install/linux/docker-ce/debian/
 #
 
-FROM nestybox/debian-disco-docker:latest
+FROM nestybox/debian-stretch-docker:latest
 
 # Debug utilities
 RUN apt-get update && apt-get install -y \
