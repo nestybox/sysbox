@@ -15,7 +15,7 @@
 	url = git@github.com:nestybox/shiftfs.git
 [submodule "lib/seccomp"]
 	path = lib/seccomp
-	url = git@github.com:seccomp/libseccomp.git
+	url = git@github.com:nestybox/libseccomp.git
 [submodule "lib/seccomp-golang"]
 	path = lib/seccomp-golang
-	url = git@github.com:seccomp/libseccomp-golang.git
+	url = git@github.com:nestybox/libseccomp-golang.git
