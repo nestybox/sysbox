@@ -11,6 +11,7 @@
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysfs-grpc-proto sysmgr-grpc-proto \
+	libseccomp \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -54,6 +55,7 @@ SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSFS_GRPC_DIR  := sysbox-ipc/sysboxFsGrpc
 SYSMGR_GRPC_DIR := sysbox-ipc/sysboxMgrGrpc
+LIB_SECCOMP_DIR := lib/seccomp-golang
 SHIFTFS_DIR     := shiftfs
 
 # Consider to have this one moved out within sysbox-runc folder.
@@ -116,7 +118,7 @@ sysbox-static: ## Build all sysbox modules (static linking)
 sysbox-static: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: ## Build sysbox-runc module
-sysbox-runc: sysfs-grpc-proto sysmgr-grpc-proto
+sysbox-runc: libseccomp sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
 sysbox-runc-debug: ## Build sysbox-runc module (compiler optimizations off)
@@ -128,7 +130,7 @@ sysbox-runc-static: sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make static
 
 sysbox-fs: ## Build sysbox-fs module
-sysbox-fs: sysfs-grpc-proto
+sysbox-fs: libseccomp sysfs-grpc-proto
 	@cd $(SYSFS_DIR) && make
 
 sysbox-fs-debug: ## Build sysbox-fs module (compiler optimizations off)
@@ -156,6 +158,9 @@ sysfs-grpc-proto:
 
 sysmgr-grpc-proto:
 	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
+
+libseccomp:
+	$(MAKE) -C lib/seccomp
 
 #
 # install targets (require root privileges)
@@ -453,6 +458,7 @@ clean:
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSFS_GRPC_DIR)/protobuf && make clean
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make clean
+	$(MAKE) -C lib/seccomp clean
 
 # memoize all packages once
 
