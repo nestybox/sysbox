@@ -11,7 +11,6 @@
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysfs-grpc-proto sysmgr-grpc-proto \
-	libseccomp \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -107,6 +106,23 @@ help:
 
 ##@ Building targets
 
+#
+# libseccomp (used by Sysbox components)
+#
+
+LIBSECCOMP := lib/seccomp/src/.libs/libseccomp.a
+LIBSECCOMP_DIR := lib/seccomp
+LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
+LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
+$(LIBSECCOMP): $(LIBSECCOMP_SRC)
+	@echo "Building libseccomp ..."
+	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure && make
+	@echo "Building libseccomp completed."
+
+#
+# sysbox
+#
+
 sysbox: ## Build all sysbox modules
 sysbox: sysbox-runc sysbox-fs sysbox-mgr
 	@echo $(HOSTNAME) > .buildinfo
@@ -118,7 +134,7 @@ sysbox-static: ## Build all sysbox modules (static linking)
 sysbox-static: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: ## Build sysbox-runc module
-sysbox-runc: libseccomp sysfs-grpc-proto sysmgr-grpc-proto
+sysbox-runc: $(LIBSECCOMP) sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
 sysbox-runc-debug: ## Build sysbox-runc module (compiler optimizations off)
@@ -130,7 +146,7 @@ sysbox-runc-static: sysfs-grpc-proto sysmgr-grpc-proto
 	@cd $(SYSRUNC_DIR) && make static
 
 sysbox-fs: ## Build sysbox-fs module
-sysbox-fs: libseccomp sysfs-grpc-proto
+sysbox-fs: $(LIBSECCOMP) sysfs-grpc-proto
 	@cd $(SYSFS_DIR) && make
 
 sysbox-fs-debug: ## Build sysbox-fs module (compiler optimizations off)
@@ -159,8 +175,6 @@ sysfs-grpc-proto:
 sysmgr-grpc-proto:
 	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
 
-libseccomp:
-	$(MAKE) -C lib/seccomp
 
 #
 # install targets (require root privileges)
