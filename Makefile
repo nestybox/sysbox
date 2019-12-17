@@ -472,7 +472,10 @@ clean:
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSFS_GRPC_DIR)/protobuf && make clean
 	cd $(SYSMGR_GRPC_DIR)/protobuf && make clean
-	$(MAKE) -C lib/seccomp clean
+
+clean_libseccomp: ## Clean libseccomp
+clean_libseccomp:
+	cd $(LIBSECCOMP_DIR) && make clean
 
 # memoize all packages once
 
