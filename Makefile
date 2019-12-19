@@ -10,7 +10,7 @@
 	sysbox-runc sysbox-runc-static sysbox-runc-debug \
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
-	sysfs-grpc-proto sysmgr-grpc-proto \
+	sysbox-ipc \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -52,8 +52,7 @@ endif
 SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
-SYSFS_GRPC_DIR  := sysbox-ipc/sysboxFsGrpc
-SYSMGR_GRPC_DIR := sysbox-ipc/sysboxMgrGrpc
+SYSIPC_DIR      := sysbox-ipc
 LIB_SECCOMP_DIR := lib/seccomp-golang
 SHIFTFS_DIR     := shiftfs
 
@@ -134,46 +133,43 @@ sysbox-static: ## Build all sysbox modules (static linking)
 sysbox-static: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: ## Build sysbox-runc module
-sysbox-runc: $(LIBSECCOMP) sysfs-grpc-proto sysmgr-grpc-proto
+sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
 sysbox-runc-debug: ## Build sysbox-runc module (compiler optimizations off)
-sysbox-runc-debug: sysfs-grpc-proto sysmgr-grpc-proto
+sysbox-runc-debug: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
 
 sysbox-runc-static: ## Build sysbox-runc module (static linking)
-sysbox-runc-static: sysfs-grpc-proto sysmgr-grpc-proto
+sysbox-runc-static: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
 
 sysbox-fs: ## Build sysbox-fs module
-sysbox-fs: $(LIBSECCOMP) sysfs-grpc-proto
+sysbox-fs: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make
 
 sysbox-fs-debug: ## Build sysbox-fs module (compiler optimizations off)
-sysbox-fs-debug: sysfs-grpc-proto
+sysbox-fs-debug: sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-debug
 
 sysbox-fs-static: ## Build sysbox-fs module (static linking)
-sysbox-fs-static: sysfs-grpc-proto
+sysbox-fs-static: sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-static
 
 sysbox-mgr: ## Build sysbox-mgr module
-sysbox-mgr: sysmgr-grpc-proto
+sysbox-mgr: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make
 
 sysbox-mgr-debug: ## Build sysbox-mgr module (compiler optimizations off)
-sysbox-mgr-debug: sysmgr-grpc-proto
+sysbox-mgr-debug: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make sysbox-mgr-debug
 
 sysbox-mgr-static: ## Build sysbox-mgr module (static linking)
-sysbox-mgr-static: sysmgr-grpc-proto
+sysbox-mgr-static: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make sysbox-mgr-static
 
-sysfs-grpc-proto:
-	@cd $(SYSFS_GRPC_DIR)/protobuf && make
-
-sysmgr-grpc-proto:
-	@cd $(SYSMGR_GRPC_DIR)/protobuf && make
+sysbox-ipc:
+	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
 
 #
@@ -470,8 +466,7 @@ clean:
 	cd $(SYSRUNC_DIR) && make clean
 	cd $(SYSFS_DIR) && make clean
 	cd $(SYSMGR_DIR) && make clean
-	cd $(SYSFS_GRPC_DIR)/protobuf && make clean
-	cd $(SYSMGR_GRPC_DIR)/protobuf && make clean
+	cd $(SYSIPC_DIR) && make clean
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
