@@ -319,6 +319,18 @@ When a system container stops, sysbox-runc requests that sysbox-mgr
 release any resources associated with the container. sysbox-mgr proceeds
 to remove the host volume associated with the container.
 
+## System Container /var/lib/kubelet mount
+
+Sysbox automatically creates and bind-mounts a host volume inside the
+system container's `/var/lib/kubelet` directory.
+
+This functionality is needed in order to prevent problems with the K8s
+kubelet, which does not recognize `shiftfs` as a supported
+file-system.
+
+The approach taken for `/var/lib/kubelet` mounts is the exact same
+as for `/var/lib/docker` mounts described in the prior section.
+
 ## Rootless mode
 
 Sysbox will initially not support running rootless (i.e.,
@@ -326,3 +338,26 @@ without root permissions on the host).
 
 In the future we should consider adding this to allow regular
 users on a host to launch system containers.
+
+## System Container Syscall Trapping & Emulation
+
+Sysbox supports trapping and emulating some syscalls inside
+a system container.
+
+This is done only on control-path syscalls (not data-path to avoid
+the performance hit) and it's done in order to provide processes inside
+the sys container with a complete abstraction of a "virtual host".
+
+For example, inside a sys container we trap the `mount` system call in
+order to ensure that such mounts always result in the sysbox-fs emulated
+procfs being mounted, rather than the kernel's procfs. This provides
+consistency for the procfs mounts inside the sys container.
+
+To do this trapping and emulation, we use the Linux kernel's seccomp
+BPF filters with the "notification action". Sysbox-runc sets up the
+notification action on the syscalls that must be trapped, and
+sysbox-fs monitors for seccomp notificaitions from the kernel and
+performs the emulation of trapped syscalls.
+
+Much more info on seccomp BPF for syscall trapping can be found
+[here](https://github.com/nestybox/sysbox/blob/master/knowledge-base/syscall-trapping/syscall_seccomp_bpf.md).
