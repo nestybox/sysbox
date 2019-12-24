@@ -7,4 +7,5 @@ RUN apk update && apk add \
     findmnt \
     nano \
     strace \
-    tree
+    tree \
+    libcap
