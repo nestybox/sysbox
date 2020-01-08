@@ -1,5 +1,32 @@
-Sysbox: Procfs Emulation
-========================
+# Sysbox: Procfs Emulation
+
+## Contents
+
+-   [Procfs Background](#procfs-background)
+-   [Procfs in System Containers](#procfs-in-system-containers)
+-   [Procfs inside a Sys Container](#procfs-mounts-inside-a-sys-container)
+-   [Procfs Emulation](#procfs-emulation)
+    -   [Permission Checks](#permission-checks)
+    -   [Procfs Emulation in Inner Containers](#procfs-emulation-in-inner-containers)
+    -   [proc/sys Emulation](#procsys-emulation)
+-   [Intercepting Procfs Mounts Inside a Sys Container](#intercepting-procfs-mounts-inside-a-sys-container)
+    -   [Rationale](#rationale)
+    -   [Mount Syscall Trapping Mechanism](#mount-syscall-trapping-mechanism)
+    -   [Mount Syscall Emulation](#mount-syscall-emulation)
+        -   [Identifying the procfs mount type](#identifying-the-procfs-mount-type)
+        -   [New Procfs Mounts](#new-procfs-mounts)
+        -   [Bind Mounts Over Procfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs-portions-backed-by-sysbox-fs)
+        -   [Remounts Over Procfs Portions Backed by Sysbox-fs](#remounts-over-procfs-portions-backed-by-sysbox-fs)
+        -   [Identifying procfs mounts backed by sysbox-fs](#identifying-procfs-mounts-backed-by-sysbox-fs)
+        -   [Path resolution](#path-resolution)
+        -   [Permission checks](#permission-checks-1)
+        -   [Mount Flags](#mount-flags)
+        -   [Mount options](#mount-options)
+        -   [Read-only and masked paths](#read-only-and-masked-paths)
+        -   [Mount Syscall Emulation Steps](#mount-syscall-emulation-steps)
+-   [Intercepting Procfs Unmounts Inside a Sys Container](#intercepting-procfs-unmounts-inside-a-sys-container)
+    -   [umount2 syscall](#umount2-syscall)
+    -   [Unmount Syscall Emulation Steps](#unmount-syscall-emulation-steps)
 
 ## Procfs Background
 
@@ -72,7 +99,7 @@ Sysbox: Procfs Emulation
   containers, thereby improving the abstraction of a "virtual host"
   presented to processes inside said containers.
 
-## Procfs Mounts inside a Sys Container
+## Procfs inside a Sys Container
 
 * When a sys container starts, Sysbox always mounts the emulated
   procfs at `/proc`.
@@ -88,14 +115,14 @@ Sysbox: Procfs Emulation
   the sys container.
 
 * To handle this, Sysbox traps mount syscalls issued by processes
-  inside the sys container, and if the mount specifies a new procfs
-  mountpoint, Sysbox ensures the mounted procfs is partially
+  inside the sys container, and if the mount type specifies a procfs
+  mount, Sysbox ensures the mounted procfs is partially
   emulated by Sysbox-fs (just as `/proc` inside the sys container is).
 
   - Syscall trapping is done using the Linux kernel's seccomp-bpf
     notification mechanism.
 
-  - See section [Handling procfs Mounts Inside A Sys Container](#detecting-procfs-mounts-inside-a-sys-container) for
+  - See section [Intercepting Procfs Mounts Inside A Sys Container](#intercepting-procfs-mounts-inside-a-sys-container) for
     more info on this.
 
 ## Procfs Emulation
@@ -230,17 +257,28 @@ The emulation is done as follows:
     security reasons we want to avoid sys container processes from
     seeing that mount.
 
-## Handling Procfs Mounts Inside a Sys Container
+## Intercepting Procfs Mounts Inside a Sys Container
 
-This section describes the mechanism used by sysbox to handle
-procfs mounts done by processes inside the sys container.
+This section describes the rationale and mechanism used by sysbox to
+handle procfs mounts done by processes inside the sys container.
 
 This does not include the initial mount of procfs at the sys
 container's `/proc` directory, which is setup via coordination between
 sysbox-runc and sysbox-fs at sys container creation time, before
 the container's init process runs.
 
-### Mount Syscall Trapping
+### Rationale
+
+The rationale for trapping and emulating procfs mounts inside the
+sys container is simple: all mounts of procfs inside the sys container
+must present a consistent view of the system.
+
+For example, when a sys container is created, sysbox-runc mounts a
+partially emulated procfs under `/proc`. If a user creates a procfs
+mount at another directory (e.g., `/root/proc`), she should see the
+partially emulated procfs there too.
+
+### Mount Syscall Trapping Mechanism
 
 Sysbox uses the Linux kernel's seccomp-bpf notification mechanism to
 setup trapping for mount syscalls issued by processes inside the sys
@@ -266,13 +304,54 @@ usual.
 
 ### Mount Syscall Emulation
 
-Sysbox-fs only emulates mount syscalls that create **new** procfs
-mountpoints inside the sys container.
+Sysbox-fs only emulates mount syscalls that do the following inside the
+sys container:
 
-Mount syscalls that mount other filesystem types, create bind mounts,
-or perform remount operations do not require emulation by Sysbox-fs;
-those are simply passed to the Linux kernel. Similarly, unmount
-operations do not require any action by Sysbox-fs.
+1) Create a new procfs mountpoint.
+
+2) Create a bind mount of a procfs file or directory over itself, when
+   that procfs file or directory is backed by sysbox-fs.
+
+   - E.g., `mount --bind /proc/sys /proc/sys`
+   - E.g., `mount --bind /proc/uptime /proc/uptime`
+
+3) Perform a per-mountpoint remount of a procfs file or directory
+backed by sysbox-fs.
+
+The handling for each of these is described below.
+
+Mount syscalls that mount other filesystem types, create other bind
+mounts, or perform other remount operations do not require emulation
+by Sysbox-fs; those are simply passed backed to the Linux kernel.
+
+See section [Intercepting Procfs Unmounts Inside a Sys Container](#intercepting-procfs-unmounts-inside-a-sys-container)
+for cases where sysbox-fs traps and emulates unmount syscalls.
+
+#### Identifying the procfs mount type
+
+To identify the procfs mount type (new, bind, or remount), Sysbox must
+perform a check on the mount syscall's `filesystemtype` and
+`mountflags` as follows:
+
+* New procfs mounts:
+
+  - The `filesystemtype` must indicate "proc".
+
+  - The following `mountflags` must not be set:
+
+    `MS_REMOUNT`, `MS_BIND`, `MS_SHARED`, `MS_PRIVATE`, `MS_SLAVE`, `MS_UNBINDABLE`, `MS_MOVE`.
+
+* Bind mounts:
+
+  - The `mountflags` has `MS_BIND` set and `MS_REMOUNT` cleared.
+
+* Per mountpoint remounts:
+
+  - The `mountflags` has `MS_BIND` and `MS_REMOUNT` set.
+
+See mount(2) for details.
+
+#### New Procfs Mounts
 
 For mount syscalls that setup new procfs mountpoints inside the
 sys container, sysbox should *ideally* perform the following actions:
@@ -296,120 +375,13 @@ mount --bind /var/lib/sysboxfs <target-mountpoint>/swaps
 
 Note that in order for sysbox to do this, it needs to enter the sys
 container's mount namespace yet have access to the host's root
-directory (where `/var/lib/sysboxfs` lives). This is not trivial as
-described in section [Implementation Challenges](#implementation-challenges);
-that same section describes an alternative approach which Sysbox
-currently uses.
+directory (where `/var/lib/sysboxfs` lives). But this is not
+trivial for two reasons:
 
-### Identifying new procfs mounts
-
-To identify a new procfs mount, Sysbox must perform a check on the mount
-syscall's `filesystemtype` and `mountflags` as follows:
-
-* The `filesystemtype` must indicate "proc".
-
-* The following `mountflags` must not be set:
-
-  `MS_REMOUNT`, `MS_BIND`, `MS_SHARED`, `MS_PRIVATE`, `MS_SLAVE`, `MS_UNBINDABLE`, `MS_MOVE`.
-
-* See mount(2) for details.
-
-### Path resolution
-
-Sysbox must perform path resolution on the mount's target path, as
-described in path_resolution(7). That is, it must be able to resolve
-paths that are absolute or relative, and those containing ".", "..",
-and symlinks within them.
-
-NOTE: the target mount path is relative to current-working-dir and
-root-dir associated with the process performing the mount. The latter
-may not necessarily match the sys container's root-dir. Sysbox must
-resolve the path accordingly.
-
-### Permission checks
-
-Sysbox must perform permission checking to ensure the process inside
-the sys container that is performing the procfs mount operation has
-appropriate privileges to do so. The rules are:
-
-* The mounting process must have `CAP_SYS_ADMIN` capability (mounts
-  are not allowed otherwise).
-
-* In addition, the mounting process must have search permission on the
-  the path from it's current working directory to the target
-  directory, or otherwise have `CAP_DAC_READ_SEARCH` and
-  `CAP_DAC_OVERRIDE`. See path_resolution(7) for details.
-
-### Mount Flags
-
-The `mount` syscall takes a number of `mountflags` that specify
-attributes such as read-only mounts, no-exec, access time handling,
-etc. Some of those apply to procfs mounts, most do not.
-
-When emulating new procfs mounts by asking the kernel to mount procfs
-at the target directory inside the sys container, Sysbox should pass
-the given mount flags to the Linux kernel and let it decide which of
-those to honor for the procfs mount.
-
-### Procfs mount options
-
-Per procfs(5), procfs mounts take two mount options: `hidepid` and
-`gid`.
-
-These can be set independently for each procfs mountpoint. Ideally,
-Sysbox would honor these mount options when procfs is mounted within
-the sys container.
-
-Note that these are typically set as follows:
-
-```
-/ # mount -t proc proc /tmp/proc
-/ # mount -o remount,hidepid=2 /tmp/proc
-```
-
-And result in two `mount` syscalls such as:
-
-```
-syscallNum =  165, type = proc, src = proc, target = /tmp/proc, flags = 8000, data =
-syscallNum =  165, type = proc, src = proc, target = /tmp/proc, flags = 208020, data = hidepid=2
-```
-
-Notice that the second syscall uses the `flags` to specify a remount
-operations, and passes the `hidepid` option via the `data`.
-
-### Read-only and masked paths in procfs
-
-A sys container typically has some paths under `/proc` configured as read-only or masked.
-
-For example, when launched with Docker, we see `/proc/keys`,
-`/proc/timer_list` are masked by bind-mounting the `/dev/null` device
-on top of them. Similarly, `/proc/bus`, `/proc/fs` and others are
-configured as read-only.
-
-For consistency between procfs mounted by at the sys conatiner's
-`/proc` and procfs mounted in other mountpoints inside the sys
-container, the same masked paths and read-only paths must be honored
-in the other mountpoints.
-
-### Implementation Challenges
-
-In order to implement the solution described above, Sysbox has the
-following challenges.
-
-#### Mounting /var/lib/sysboxfs
-
-When Sysbox traps the mount syscall and determines that it's setting
-up a new procfs mount inside the sys container, it must request the
-kernel to mount procfs at the target mountpoint and then mount
-sysbox-fs over portions of that newly mounted procfs.
-
-Mounting sysbox-fs on top of the newly mounted procfs requires that
-Sysbox enter the sys container's mount namespace and bind-mount the
-host's `/var/lib/sysboxfs`. But the problem is that when the sysbox
-process enters the sys container's mount-ns via `setns(2)`, the kernel
-does an implicit `chroot` into the sys container's root
-directory. Thus, the sysbox process no longer has access to
-`/var/lib/sysbox` and is not able to perform the mount.
+1) When the sysbox process enters the sys container's mount-ns via
+`setns(2)`, the kernel does an implicit `chroot` into the sys
+container's root directory. Thus, the sysbox process no longer has
+access to `/var/lib/sysbox` and is not able to perform the mount.
 
 Overcoming this requires that sysbox spawn a process that enters the
 sys container mount namespace before the sys container's init process
@@ -417,31 +389,15 @@ does it's pivot root. This way, sysbox can enter the mount namespace
 of said process and perform the bind mount of `/var/lib/sysbox` into
 the target mountpoint inside the sys container.
 
-An alternative solution is described below.
-
-#### Masked and read-only paths
-
-Another problem is related to masked and read-only paths in the
-sys container's `/proc`. Ideally, new mounts of procfs inside
-the sys container have the same masked and read-only paths.
-
-This would require sysbox to remember which files or dirs under
-`/proc` are configured as read-only or masked during sys container
-creation such that those same files/dirs are set accordingly in the
-new procfs mountpoint.
-
-#### Sysbox-fs must track multiple mount points
-
-Finally, sysbox-fs would need to understand that for a given sys
+2) It requires that sysbox-fs track multiple mount points. In other
+words, sysbox-fs would need to understand that for a given sys
 container, there are multiple mount points of procfs backed by
 sysbox-fs and handle the accesses appropriately.
 
-### Alternative Solution
-
-This solution avoids the challenges associated with mounting
-`/var/lib/sysboxfs` inside the sys container by instead bind mounting
-the sysbox-fs backed portions of the sys container's `/proc` over the
-new procfs mountpoint.
+An alternative solution that avoids the challenges associated with
+mounting `/var/lib/sysboxfs` inside the sys container is to instead
+bind mount the sysbox-fs backed portions of the sys container's
+`/proc` over the new procfs mountpoint.
 
 Something equivalent to this command sequence within the sys
 container:
@@ -474,10 +430,70 @@ Cons of this solution:
   on `/proc/sys` (because the latter is bind mounted on the former).
   This is not ideal, but will likely not matter in practice.
 
-#### Handling of Mount Flags in Alternative Solution
+NOTE: We decided to go with this alternative solution as it's simpler
+to implement and has no mayor drawbacks.
 
-The FUSE mount on `/var/lib/sysboxfs` starts with a number of flags
-and data:
+#### Bind Mounts Over Procfs Portions Backed by Sysbox-fs
+
+For mount syscalls that do a self-referencing bind mount on portions
+of procfs backed by sysbox-fs (e.g., `mount --bind /root/proc/sys
+/root/proc/sys`), sysbox-fs only does path resolution and permission
+checking, but otherwise takes no action.
+
+That is, if the path resolution and permission checking steps pass,
+then sysbox-fs tells the kernel to return back to the caller of the
+syscall with a successful status.
+
+We call such bind mounts "superficial".
+
+The rationale for this is:
+
+* Typically, self-referencing bind-mounts over portions of procfs are
+  done in preparation to performing a remount that modifies some
+  attribute of the mount (e.g., some process in the sys container
+  mounts procfs as read-write in `/root/proc` and then sets up a
+  self-referencing bind-mount on `/root/proc/sys` in preparation to
+  make `/root/proc/sys` readonly). Within the sys container however,
+  portions of procfs backed by sysbox-fs are already bind-mounts
+  (e.g., `/root/proc/sys` is already a bind mount backed by
+  sysbox-fs). Thus skipping the bind mount won't have negative effects
+  on a subsequent remount.
+
+* If we were to honor the superficial bind-mount, then we must also honor a
+  corresponding unmount. But this becomes tricky because we also want
+  to ensure a process inside the sys container can't unmount portions
+  of procfs backed by sysbox-fs. We would therefore need some way of
+  differentiating between an umount that is trying to remove portions
+  of procfs backed by sysbox-fs from a unmount that is trying to
+  remove a superficial bind-mount. This requires some sort of reference
+  counting in sysbox-fs for each procfs mountpoint, which is do-able
+  but a bit complex.
+
+* If we were to honor the superficial bind-mount, it would create a
+  bind-mount over the existing bind-mount for these files/directories
+  (as set during a new procfs mount as described in the prior
+  section). This is fine but looks a bit strange.
+
+By not taking any real action on the superficial bind-mount or a
+corresponding unmount, we provide a simple solution to the problem.
+
+The caveat is that a user that does superficial bind mounts over
+procfs portions backed by sysbox-fs will not see them take effect
+(they won't be stacked as he/she may expect).
+
+NOTE: In the future we could improve the solution by doing reference
+counting as described above.
+
+#### Remounts Over Procfs Portions Backed by Sysbox-fs
+
+For mount syscalls that do a per-mountpoint remount on portions of
+procfs backed by sysbox-fs (e.g., `mount -o remount,bind,ro /root/proc/sys`),
+sysbox-fs traps the remount operation.
+
+The trapping is required because of the following:
+
+Portions of procfs backed by sysbox-fs have a set of flags originally
+set by the FUSE lib:
 
 ```
 ├─/var/lib/sysboxfs        sysboxfs                      fuse        rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other
@@ -491,43 +507,152 @@ those flags and data:
 | |-/proc/sys              sysboxfs[/proc/sys]           fuse     rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other
 ```
 
-When an inner container is created, sysbox-fs does a bind mount of the
-`/proc/sys` in the sys container to the `/proc/sys` in the inner
-container; this bind-mount also inherits the above mentioned flags and
-data.
+Similarly, when procfs is mounted inside the sys container,
+sysbox-fs traps the mount operation as described in
+[New Procfs Mounts](#new-procfs-mounts) above
+and creates bind mounts on `<new-procfs-mountpoint>/sys` and others.
+These bind mounts inherit the sysbox-fs flags.
 
 If a process in the inner container then wishes to do a remount
-operation on `/proc/sys` (commonly done by the inner runc to make
-`/proc/sys` are read-only mount, per runc's `readonlyPath()`
-function), it will not be aware that `/proc/sys` is already a
-bind-mount with existing flags. Thus, it will try to perform the
-remount by simply setting the read-only flag. This operation will fail
-with "permission denied" because the `mount` syscall detects that the
-process is in a user-namespace and it's trying to modify a
-mountpoint's flags without honoring existing flags.
+operation on `<new-procfs-mountpoint>/sys` (as commonly done by an
+inner runc to make an inner container's `/proc/sys` are read-only
+mount, per runc's `readonlyPath()` function), it will not be aware
+that `/proc/sys` is already a bind-mount with existing flags. Thus, it
+will try to perform the remount by simply setting the read-only
+flag. This operation will fail with "permission denied" because the
+`mount` syscall detects that the process is in a user-namespace and
+it's trying to modify a mountpoint's flags without honoring existing
+flags.
 
 To overcome this, sysbox-fs traps the bind-mount and remount
-operations when (source = target = "/proc/sys"), enters the mount
-namespace of the process doing the syscall, and performs the
-bind-mount or remount operation but with the correct flags.
+operations, enters the mount namespace of the process doing the
+syscall, and performs the bind-mount or remount operation but with the
+correct flags.
 
-A caveat is that since sysbox-fs only does this for sys container
-bind-mount and remount operations whose source=target=/proc/sys, it
-works for well inner containers (where proc is mounted at `/proc`), but
-does not work well when procfs is mounted at a different path inside
-the sys container (e.g., `/root/proc`). In this case a bind-mount or
-remount operation on `/root/proc/sys` would fail.
+Having explained why the trapping of remounts is required, let's
+now describe how sysbox-fs handles the remount operation.
 
-However, such a remount is a rare thing. And the failure only occurs
-when doing the remount directly with a syscall that does not honor the
-existing mount flags. If done using the "mount" command for example,
-things work because this command does honor the existing flags when
-doing the remount.
+Sysbox-fs traps the remount, does the corresponding path resolution
+and permission checking, and then applies the remount flags as
+follows:
 
-### Procfs Mount Emulation Steps with Alternative Solution
+* Retrieves the flags associated with the existing bind-mount of the
+  target directory (i.e., which has a bind mount backed by sysbox-fs
+  already).
 
-For the alternative solution, Sysbox would follow the following steps
-when trapping a mount syscall:
+* Performs the remount using a combination of the remount flags with
+  the existing bind-mount flags.
+
+* The combination of flags is done as follows currently:
+
+  - If the syscall has the `MS_RDONLY` flag set, this flag is set in the combined flags.
+
+  - If the syscall has the `MS_RDONLY` flag cleared, this flag is cleared in the combined flags.
+
+  - All other flags in the syscall are ignored.
+
+  - All other flags associated with the existing bind-mount are preserved.
+
+The rationale for the flag handling described above is that we are
+restricting the remount flags that can be set on portions of procfs
+backed by sysbox-fs to those that do not conflict in any way with the
+existing bind mount backed by sysbox-fs. Currently we limit this to
+the `MS_RDONLY` flag, but we may expand on this in the near future.
+
+#### Identifying procfs mounts backed by sysbox-fs
+
+When handling bind mounts and remounts, sysbox-fs identifies if a
+mountpoint is backed by sysbox-fs by searching the mountpoint path in
+the `/proc/[pid]/mountinfo` file (where `[pid]` corresponds to the
+process that made the mount syscall).
+
+A mountpoint is backed by sysbox-fs if it's a FUSE mount *and*
+it's a file or subdir of a procfs mountpoint. A procfs mountpoint is one
+that has mount type "proc".
+
+#### Path resolution
+
+Sysbox must perform path resolution on the mount's target path, as
+described in path_resolution(7). That is, it must be able to resolve
+paths that are absolute or relative, and those containing ".", "..",
+and symlinks within them.
+
+NOTE: the target mount path is relative to current-working-dir and
+root-dir associated with the process performing the mount. The latter
+may not necessarily match the sys container's root-dir. Sysbox must
+resolve the path accordingly.
+
+#### Permission checks
+
+Sysbox must perform permission checking to ensure the process inside
+the sys container that is performing the procfs mount operation has
+appropriate privileges to do so. The rules are:
+
+* The mounting process must have `CAP_SYS_ADMIN` capability (mounts
+  are not allowed otherwise).
+
+* In addition, the mounting process must have search permission on the
+  the path from it's current working directory to the target
+  directory, or otherwise have `CAP_DAC_READ_SEARCH` and
+  `CAP_DAC_OVERRIDE`. See path_resolution(7) for details.
+
+#### Mount Flags
+
+The `mount` syscall takes a number of `mountflags` that specify
+attributes such as read-only mounts, no-exec, access time handling,
+etc. Some of those apply to procfs mounts, most do not.
+
+When handling new procfs mounts, sysbox-fs simply passes the given
+mount flags to the Linux kernel when mounting procfs.
+
+When handling remounts over portions of procfs backed by sysbox-fs,
+the flags are handled as described in section [Remounts Over Procfs Portions Backed by Sysbox-fs](#remounts-over-procfs-portions-backed-by-sysbox-fs)
+above.
+
+#### Mount options
+
+Per procfs(5), procfs mounts take two mount options: `hidepid` and
+`gid`.
+
+These can be set independently for each procfs mountpoint. Ideally,
+Sysbox would honor these mount options when procfs is mounted within
+the sys container.
+
+Note that these are typically set as follows:
+
+```
+/ # mount -t proc proc /tmp/proc
+/ # mount -o remount,hidepid=2 /tmp/proc
+```
+
+And result in two `mount` syscalls such as:
+
+```
+syscallNum =  165, type = proc, src = proc, target = /tmp/proc, flags = 8000, data =
+syscallNum =  165, type = proc, src = proc, target = /tmp/proc, flags = 208020, data = hidepid=2
+```
+
+Notice that the second syscall uses the `flags` to specify a remount
+operations, and passes the `hidepid` option via the `data`.
+
+#### Read-only and masked paths
+
+A sys container typically has some paths under `/proc` configured as read-only or masked.
+
+For example, when launched with Docker, we see `/proc/keys`,
+`/proc/timer_list` are masked by bind-mounting the `/dev/null` device
+on top of them. Similarly, `/proc/bus`, `/proc/fs` and others are
+configured as read-only.
+
+For consistency between procfs mounted by at the sys conatiner's
+`/proc` and procfs mounted in other mountpoints inside the sys
+container, the same masked paths and read-only paths must be honored
+in the other mountpoints.
+
+#### Mount Syscall Emulation Steps
+
+Based on the prior sections, Sysbox follows the following steps when
+trapping a mount syscall:
 
 * If the calling process has `CAP_SYS_ADMIN` continue, otherwise
   return an error (EPERM).
@@ -538,7 +663,7 @@ when trapping a mount syscall:
 
     - Emulate as described below
 
-  - Bind-mount or remount on "/proc/sys":
+  - Bind-mount or remount on portions of procfs backed by sysbox-fs:
 
     - Emulate as described below
 
@@ -550,6 +675,11 @@ when trapping a mount syscall:
 * Do path resolution & permission checking
 
   - If this fails, return appropriate error.
+
+* If the syscall is a self-referencing bind-mount (source = destination)
+  on portions of procfs backed by sysbox-fs:
+
+  - No further action; return success on the mount syscall.
 
 * Enter mount ns of the process that made the mount syscall
 
@@ -571,33 +701,49 @@ when trapping a mount syscall:
 
     - Etc.
 
+    - Note: the bind-mounts must honor the MS_RDONLY flag when present
+      in the mount syscall.
+
   - If this operation fails, return the corresponding error.
 
-  - Set the procfs read-only and masked paths at the target mountpoint.
+  - Create the procfs read-only and masked paths at the target mountpoint.
 
     - These are obtained from sysbox-runc during container creation.
 
   - Return success on the mount syscall.
 
-* For bind-mounts or remounts on "/proc/sys" (i.e., source = target = /proc/sys)
+* For remounts on portions of procfs backed by sysbox-fs:
 
-  - Read the existing flags for the "/proc/sys" mount
+  - Read the existing flags for the sysbox-fs backed mount
 
-  - If the operation is a bind-mount that is identical to the existing bind-mount on "/proc/sys", ignore it.
-
-  - If the operation is a bind-mount or remount and it modifies flags,
-    perform the remount with the logical OR of the existing flags and
-    the new flags.
+  - Merge the existing flags with the remount flags as described in
+    [Remounts Over Procfs Portions Backed by Sysbox-fs](#remounts-over-procfs-portions-backed-by-sysbox-fs).
 
   - Return success on the mount syscall.
 
-* NOTE: since sysbox is emulating the mount syscall, it should follow
-  the behavior described in mount(2) and proc(5). It's critical that
-  the process invoking the mount syscall does not notice any
-  difference between how sysbox handles the syscall and how the Linux
-  kernel would handle it.
+* NOTE: It's important that the process invoking the syscall does not
+  notice any difference between how sysbox handles the syscall and how
+  the Linux kernel would handle it.
 
-## Handling Procfs Unmounts Inside a Sys Container
+* NOTE: for errors that occur during the emulation of the procfs mount,
+  we handle them as follows:
+
+  - If the error occurs during process privilege checks, return EPERM.
+
+  - If the error occurs during path resolution, return the appropriate
+    error (e.g., EACCES, ELOOP, ENAMETOOLONG, etc.)
+
+  - If the error is caused when mounting the kernel's procfs, return
+    the corresponding error.
+
+  - Otherwise return EINVAL.
+
+* NOTE: the mount syscall emulation must ensure atomicity: if a step fails,
+  any actions visible to the process that called the mount syscall must
+  be reverted before the mount syscall returns. For example, if one of
+  the sysbox-fs bind mounts fails, any prior mounts must be reverted.
+
+## Intercepting Procfs Unmounts Inside a Sys Container
 
 In addition to procfs mounts, Sysbox also traps and emulates procfs
 unmount operations.
@@ -620,7 +766,7 @@ From a security perspective, it would mean that a process inside the
 sys container would be able to obtain information about the host via
 `/proc` that would normally be hidden inside the sys container.
 
-2) Ensure that unmounts of procfs inside the sys container work
+2) Ensure that unmounts of the entire procfs inside the sys container work
 
 A root user inside the sys container is allowed to unmount procfs
 (just as a root user in a real host would be). In practice this is
@@ -651,26 +797,27 @@ umount <target-mountpoint>/sys
 umount <target-mountpoint>
 ```
 
-
 Sysbox-fs only emulates unmount syscalls which operate on procfs
 mountpoints or the sub-portions of procfs backed by sysbox-fs.
 
-### Sysbox-fs emulates the umount and umount2 syscalls
+### umount2 syscall
 
-Linux supports two syscalls to perform unmounts: `umount` and
-`umount2`. They only differ in that the latter takes a `flags`
-argument controlling the behavior of the unmount operation
-(e.g., `MNT_FORCE`, `MNT_DETACH`, `MNT_EXPIRE`, and `UMOUNT_NOFOLLOW`).
+Linux currently supports one syscall to perform unmounts: `umount2`.
+Previously, `umount` syscall was also supported, but that's not the
+case as of recent kernels.
 
-Sysbox-fs emulates *both* of these system calls. For `umount2`,
-sysbox-fs honors the `flags` arguments by performing the corresponding
+`unmount2` takes a `flags` argument to control the behavior of the
+ unmount operation (e.g., `MNT_FORCE`, `MNT_DETACH`, `MNT_EXPIRE`, and
+ `UMOUNT_NOFOLLOW`).
+
+Sysbox-fs honors the `flags` arguments by performing the corresponding
 unmounts using the same flags.
 
 Note that the `UMOUNT_NOFOLLOW` flag requires that the `umount2`
 syscall does not dereference the unmount target if it's a symbolic
 link.
 
-### Procfs Unmount Emulation Steps
+### Unmount Syscall Emulation Steps
 
 * If the calling process has `CAP_SYS_ADMIN` continue, otherwise
   return an error (EPERM).
@@ -679,9 +826,17 @@ link.
 
   - If path resolution fails, return an appropriate error.
 
-  - NOTE: if the syscall is umount2 with flag `UMOUNT_NOFOLLOW`, then
-    path resolution must not dereference the target mountpoint if it's
+  - NOTE: if the incoming syscall request has the flag `UMOUNT_NOFOLLOW`,
+    then path resolution must not dereference the target mountpoint if it's
     a symlink.
+
+* If the syscall is an unmount on a portion of a procfs mount backed
+  by sysbox-fs:
+
+  - No further action; return success on the unmount syscall.
+
+  - This ensures that users can't unmount portions of procfs backed by sysbox-fs. See
+    [Bind Mounts Over Procfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs-portions-backed-by-sysbox-fs).
 
 * Enter mount ns of the process that made the unmount syscall
 
@@ -690,18 +845,9 @@ link.
 
 * Check the unmount target:
 
-  - If the target is a procfs mount (e.g., sysbox-fs can find this via `/proc/self/mountinfo` by searching for mounttype "proc")
+  - If the target is not a procfs mount (e.g., sysbox-fs can find this via `/proc/self/mountinfo` by searching for mount-type "proc")
 
-    - Emulate as described below.
-
-  - If the target is a sysbox-fs mountpoint under a procfs mount (e.g.,
-    `/proc/sys`, `/proc/uptime`, etc.):
-
-    - Return `EINVAL` (the purpose of this is described in (1) above)
-
-  - Other:
-
-    - Tell the kernel to procss the unmount syscall; no further action
+    - Tell the kernel to process the unmount syscall; no further action
       is necessary.
 
 * At this point we know the unmount target is a procfs mountpoint;
@@ -721,18 +867,30 @@ link.
     umount <target-mountpoint>
     ```
 
-  - When doing the above unmounts, use the `umount` or `umount2`
-    syscall as appropriate depending on the syscall that we are
-    emulating.
-
-  - If emulating `umount2`, then do the above unmounts using the same
-    flags that the trapped syscall uses (e.g., `MNT_DETACH`, etc).
+  - Execute the above mounts using the same flags that the trapped syscall
+    uses (e.g., `MNT_DETACH`, etc).
 
   - Return success on the syscall or failure if any of the above steps
     fails.
 
-* NOTE: since sysbox is emulating the umount or umount2 syscall, it
-  should follow the behavior described in umount(2). It's critical
-  that the process invoking the syscall does not notice any difference
-  between how sysbox handles the syscall and how the Linux kernel
-  would handle it.
+* NOTE: It's important that the process invoking the syscall does not notice
+  any difference between how sysbox handles the syscall and how the Linux
+  kernel would handle it.
+
+* NOTE: for errors that occur during the emulation of the procfs unmount,
+  we handle them as follows:
+
+  - If the error occurs during process privilege checks, return EPERM.
+
+  - If the error occurs during path resolution, return the appropriate
+    error (e.g., EACCES, ELOOP, ENAMETOOLONG, etc.)
+
+  - If the error is caused when unmounting the kernel's procfs, return
+    the corresponding error.
+
+  - Otherwise return EINVAL.
+
+* NOTE: the unmount syscall emulation must ensure atomicity: if a step fails,
+  any actions visible to the process that called the unmount syscall must
+  be reverted before the unmount syscall returns. For example, if one of
+  the sysbox-fs bind unmounts fails, any prior unmounts must be reverted.
