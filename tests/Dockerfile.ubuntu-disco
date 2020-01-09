@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     automake \
     autoconf \
     procps \
+    psmisc \
     nano \
     less \
     curl \
@@ -52,6 +53,7 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     lsb-release \
     wget \
+    lsof \
     ca-certificates \
     --no-install-recommends \
     && apt-get clean
