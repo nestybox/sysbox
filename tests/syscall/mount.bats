@@ -1,40 +1,54 @@
 #!/usr/bin/env bats
 
 #
-# Verify trapping & emulation on "mount" syscall
+# Verify trapping & emulation on "mount" and "unmount2" syscalls
 #
 
 load ../helpers/run
 
+# List of files or dirs under procfs emulated bys sysbox-fs
+procfs_emu=( "sys" "uptime" "swaps" )
+
 # verifies the given sys container path contains a procfs mount backed by sysbox-fs
 function verify_syscont_procfs_mnt() {
-  ! [[ "$#" != 2 ]]
+
+  # argument check
+  ! [[ "$#" < 2 ]]
   local syscont_name=$1
   local mnt_path=$2
+  if [ $# -eq 3 ]; then
+    local readonly=$3
+  fi
 
-  docker exec "$syscont_name" bash -c "mount | grep $mnt_path | grep sysboxfs"
+  if [ -n "$readonly" ]; then
+    opt=\(ro,
+  fi
+
+  docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path type proc $opt\""
   [ "$status" -eq 0 ]
 
-  [[ "${lines[0]}" =~ "sysboxfs on $mnt_path/sys type fuse" ]]
-  [[ "${lines[1]}" =~ "sysboxfs on $mnt_path/uptime type fuse" ]]
-  [[ "${lines[2]}" =~ "sysboxfs on $mnt_path/swaps type fuse" ]]
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "sysboxfs on $mnt_path/$node type fuse $opt" ]]
+  done
 
   true
 }
 
 # unmounts procfs mounts backed by sysbox-fs
+#
 # TODO: remove me once sysbox-fs emulates the umount syscall
 function unmount_syscont_procfs() {
   ! [[ "$#" != 2 ]]
   local syscont_name=$1
   local mnt_path=$2
 
-  docker exec "$syscont_name" bash -c "umount $mnt_path/uptime"
-  [ "$status" -eq 0 ]
-  docker exec "$syscont_name" bash -c "umount $mnt_path/sys"
-  [ "$status" -eq 0 ]
-  docker exec "$syscont_name" bash -c "umount $mnt_path/swaps"
-  [ "$status" -eq 0 ]
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "umount $mnt_path/$node"
+    [ "$status" -eq 0 ]
+  done
+
   docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
@@ -280,11 +294,11 @@ function verify_inner_cont_procfs_mnt() {
   local syscont_name=$1
   local inner_cont_name=$2
 
-  docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"mount | grep sysboxfs\""
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" =~ "sysboxfs on /proc/sys type fuse" ]]
-  [[ "${lines[1]}" =~ "sysboxfs on /proc/uptime type fuse" ]]
-  [[ "${lines[2]}" =~ "sysboxfs on /proc/swaps type fuse" ]]
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"mount | grep /proc/$node\""
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "sysboxfs on /proc/$node type fuse" ]]
+  done
 
   true
 }
@@ -353,6 +367,8 @@ function verify_inner_cont_procfs_mnt() {
 
 @test "mount procfs hidepid" {
 
+  skip "WAITING FOR SYSBOX-FS FIX"
+
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/proc
 
@@ -389,12 +405,7 @@ function verify_inner_cont_procfs_mnt() {
   docker exec "$syscont_name" bash -c "mount -o ro -t proc proc $mnt_path"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont_name" bash -c "mount | grep $mnt_path"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" =~ "proc on /tmp/proc type proc (ro,relatime)" ]]
-  [[ "${lines[1]}" =~ "sysboxfs on /tmp/proc/sys type fuse (ro," ]]
-  [[ "${lines[2]}" =~ "sysboxfs on /tmp/proc/uptime type fuse (ro," ]]
-  [[ "${lines[3]}" =~ "sysboxfs on /tmp/proc/swaps type fuse (ro," ]]
+  verify_syscont_procfs_mnt $syscont_name $mnt_path ro
 
   docker exec "$syscont_name" bash -c "echo 0 > $mnt_path/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 1 ]
@@ -565,10 +576,174 @@ function verify_inner_cont_procfs_mnt() {
   local mnt_proc_masked=$output
 
   [[ "$proc_masked" == "$mnt_proc_masked" ]]
+
+  docker_stop "$syscont_name"
 }
 
-# TODO:
-#
-# Verify hanlding of bind-mounts over procfs
-#
-#
+# Verify sysbox-fs ignores self-referencing bind mounts over procfs sysbox-fs backed submounts
+@test "bind mount ignore" {
+
+  skip "WAITING FOR SYSBOX-FS FIX"
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local mnt_path=/root/l1/l2/proc
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  # self-referencing bind mounts
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "mount --bind $mnt_path/$node $mnt_path/$node"
+    [ "$status" -eq 0 ]
+  done
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  # root user without CAP_SYS_ADMIN can't bind mount
+  docker exec "$syscont_name" bash -c "capsh --inh=\"\" --drop=cap_sys_admin -- -c \"mount --bind $mnt_path/sys $mnt_path/sys\""
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "permission denied" ]]
+
+  # root user without CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH can't bind-mount if path is non-searchable
+  docker exec "$syscont_name" bash -c "chmod 666 /root/l1"
+  docker exec "$syscont_name" bash -c "capsh --inh=\"\" --drop=cap_dac_override,cap_dac_read_search -- -c \"mount --bind $mnt_path/sys $mnt_path/sys\""
+  [ "$status" -ne 0 ]
+  [[ "$output" =~ "Permission denied" ]]
+
+  docker_stop "$syscont_name"
+}
+
+# Verify sysbox-fs handles remounts over sysbox-fs backed portions of procfs correctly
+@test "procfs remount" {
+
+  skip "WAITING FOR SYSBOX-FS FIX"
+
+  # test read-write procfs mount with read-only remounts of proc/sys, proc/uptime, etc.
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local mnt_path=/root/proc
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "mount --bind $mnt_path/$node $mnt_path/$node"
+    [ "$status" -eq 0 ]
+    docker exec "$syscont_name" bash -c "mount -o remount,bind,ro $mnt_path/$node $mnt_path/$node"
+    [ "$status" -eq 0 ]
+    docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node | grep sysboxfs"
+    [ "$status" -eq 0 ]
+
+    [[ "$output" =~ "sysboxfs on $mnt_path/$node type fuse (ro," ]]
+  done
+
+  docker_stop "$syscont_name"
+
+  # test read-only procfs mount with read-write remounts of proc/sys, proc/uptime, etc.
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local mnt_path=/root/proc
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount -o ro -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "mount --bind $mnt_path/$node $mnt_path/$node"
+    [ "$status" -eq 0 ]
+    docker exec "$syscont_name" bash -c "mount -o remount,bind $mnt_path/$node $mnt_path/$node"
+    [ "$status" -eq 0 ]
+    docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node | grep sysboxfs"
+    [ "$status" -eq 0 ]
+
+    [[ "$output" =~ "sysboxfs on $mnt_path/$node type fuse (rw," ]]
+  done
+
+  docker_stop "$syscont_name"
+}
+
+@test "procfs unmount" {
+
+  skip "WAITING FOR SYSBOX-FS FIX"
+
+  # verify that unmounting /proc also unmounts the sysbox-fs backed submounts
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+  docker exec "$syscont_name" bash -c "umount /proc"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount | grep \"proc on /proc\""
+  [ "$status" -eq 1 ]
+  docker exec "$syscont_name" bash -c "mount | grep \"sysboxfs on /proc\""
+  [ "$status" -eq 1 ]
+
+  # mount and unmount /root/proc, verify unmounting proc unmounts the sysbox-fs backed submounts
+
+  local mnt_path=/root/proc
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path\""
+  [ "$status" -eq 1 ]
+  docker exec "$syscont_name" bash -c "mount | grep \"sysboxfs on $mnt_path\""
+  [ "$status" -eq 1 ]
+
+  docker_stop "$syscont_name"
+}
+
+# verify that it's not possible to do unmounts of procfs sysbox-fs backed submounts
+@test "procfs partial unmount" {
+
+  skip "WAITING FOR SYSBOX-FS FIX"
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "umount /proc/$node"
+    [ "$status" -eq 0 ]
+  done
+
+  verify_syscont_procfs_mnt $syscont_name /proc
+
+  # mount proc at /root/proc
+  local mnt_path=/root/proc
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "umount $mnt_path/$node"
+    [ "$status" -eq 0 ]
+  done
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  docker_stop "$syscont_name"
+}
