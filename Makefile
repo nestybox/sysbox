@@ -240,7 +240,7 @@ test-sysbox-shiftuid: test-img
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-runc: ## Run sysbox-runc unit & integration tests
-test-runc: sysfs-grpc-proto sysmgr-grpc-proto
+test-runc: sysbox-ipc
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
@@ -309,10 +309,10 @@ test-shiftfs-tmpfs-local: pjdfstest
 	@printf "\n** shiftfs + tmpfs mount **\n\n"
 	$(SHIFTFS_DIR)/tests/testShiftfs -m tmpfs /var/lib/sysbox $(TESTPATH)
 
-test-fs-local: sysfs-grpc-proto
+test-fs-local: sysbox-ipc
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
 
-test-mgr-local: sysmgr-grpc-proto
+test-mgr-local: sysbox-ipc
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
 
