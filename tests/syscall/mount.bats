@@ -5,36 +5,7 @@
 #
 
 load ../helpers/run
-
-# List of files or dirs under procfs emulated bys sysbox-fs
-procfs_emu=( "sys" "uptime" "swaps" )
-
-# verifies the given sys container path contains a procfs mount backed by sysbox-fs
-function verify_syscont_procfs_mnt() {
-
-  # argument check
-  ! [[ "$#" < 2 ]]
-  local syscont_name=$1
-  local mnt_path=$2
-  if [ $# -eq 3 ]; then
-    local readonly=$3
-  fi
-
-  if [ -n "$readonly" ]; then
-    opt=\(ro,
-  fi
-
-  docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path type proc $opt\""
-  [ "$status" -eq 0 ]
-
-  for node in "${procfs_emu[@]}"; do
-    docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "sysboxfs on $mnt_path/$node type fuse $opt" ]]
-  done
-
-  true
-}
+load ../helpers/syscall
 
 # unmounts procfs mounts backed by sysbox-fs
 #
@@ -289,20 +260,6 @@ function wait_for_nested_dockerd {
   retry_run 10 1 eval "__docker exec $1 docker ps"
 }
 
-function verify_inner_cont_procfs_mnt() {
-  ! [[ "$#" != 2 ]]
-  local syscont_name=$1
-  local inner_cont_name=$2
-
-  for node in "${procfs_emu[@]}"; do
-    docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"mount | grep /proc/$node\""
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "sysboxfs on /proc/$node type fuse" ]]
-  done
-
-  true
-}
-
 @test "mount procfs dind" {
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -319,7 +276,7 @@ function verify_inner_cont_procfs_mnt() {
   [ "$status" -eq 0 ]
   local inner_cont_name="$output"
 
-  verify_inner_cont_procfs_mnt $syscont_name $inner_cont_name
+  verify_inner_cont_procfs_mnt $syscont_name $inner_cont_name /proc
 
   docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"echo 65536 > /proc/sys/net/netfilter/nf_conntrack_max\""
   [ "$status" -eq 1 ]
@@ -344,7 +301,7 @@ function verify_inner_cont_procfs_mnt() {
   [ "$status" -eq 0 ]
   local inner_cont_name="$output"
 
-  verify_inner_cont_procfs_mnt $syscont_name $inner_cont_name
+  verify_inner_cont_procfs_mnt $syscont_name $inner_cont_name /proc priv
 
   # verify that changing nf_conntrack_max within the privileged inner container affects the value in the sys container
   docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"echo 65535 > /proc/sys/net/netfilter/nf_conntrack_max\""
