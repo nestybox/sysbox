@@ -20,12 +20,12 @@ if [ $# -eq 1 ]; then
   printf "\nExecuting $1 ... \n"
   bats --tap $1
 else
-  printf "\nExecuting sysbox-mgr tests ... \n"
-  bats --tap tests/sysmgr
-  printf "\nExecuting sysbox-fs tests ... \n"
-  bats --tap tests/sysfs
-  printf "\nExecuting docker tests ... \n"
-  bats --tap tests/docker
+  #printf "\nExecuting sysbox-mgr tests ... \n"
+  #bats --tap tests/sysmgr
+  #printf "\nExecuting sysbox-fs tests ... \n"
+  #bats --tap tests/sysfs
+  #printf "\nExecuting docker tests ... \n"
+  #bats --tap tests/docker
   printf "\nExecuting dind tests ... \n"
   bats --tap tests/dind
   printf "\nExecuting app tests (l1) ... \n"
