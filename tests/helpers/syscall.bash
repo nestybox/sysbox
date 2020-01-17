@@ -8,7 +8,7 @@
 #
 
 # List of files or dirs under procfs emulated bys sysbox-fs
-procfs_emu=( "sys" "uptime" "swaps" )
+procfs_emu=( "swaps" "sys" "uptime" )
 
 # verifies the given sys container path contains a procfs mount backed by sysbox-fs
 function verify_syscont_procfs_mnt() {
