@@ -7,6 +7,23 @@
 load ../helpers/run
 load ../helpers/syscall
 
+# verifies the given sys container path contains a procfs mount backed by
+# sysbox-fs.
+function verify_syscont_procfs_mnt() {
+  ! [[ "$#" != 2 ]]
+  local syscont_name=$1
+  local mnt_path=$2
+
+  docker exec "$syscont_name" bash -c "mount | grep $mnt_path | grep sysboxfs"
+  [ "$status" -eq 0 ]
+
+  [[ "${lines[0]}" =~ "sysboxfs on $mnt_path/swaps type fuse" ]]
+  [[ "${lines[1]}" =~ "sysboxfs on $mnt_path/sys type fuse" ]]
+  [[ "${lines[2]}" =~ "sysboxfs on $mnt_path/uptime type fuse" ]]
+
+  true
+}
+
 # unmounts procfs mounts backed by sysbox-fs
 #
 # TODO: remove me once sysbox-fs emulates the umount syscall
@@ -15,18 +32,14 @@ function unmount_syscont_procfs() {
   local syscont_name=$1
   local mnt_path=$2
 
-  for node in "${procfs_emu[@]}"; do
-    docker exec "$syscont_name" bash -c "umount $mnt_path/$node"
-    [ "$status" -eq 0 ]
-  done
-
   docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   true
 }
 
-# verify that explicit mounts of procfs inside a sys container are backed by sysbox-fs
+# verify that explicit mounts of procfs inside a sys container are backed by
+# sysbox-fs.
 @test "mount procfs" {
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -324,9 +337,8 @@ function wait_for_nested_dockerd {
 
 @test "mount procfs hidepid" {
 
-  skip "WAITING FOR SYSBOX-FS FIX"
-
-  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  #local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/tmp/proc
 
   docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
@@ -372,8 +384,6 @@ function wait_for_nested_dockerd {
 }
 
 @test "mount procfs remount busy" {
-
-  skip "WAITING FOR SYSBOX-FS FIX"
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/proc
@@ -501,8 +511,6 @@ function wait_for_nested_dockerd {
 # Verify a procfs remount honors the read-only and masked paths in the sys container's /proc mount
 @test "procfs readonly and masked paths" {
 
-  skip "WAITING FOR SYSBOX-FS FIX"
-
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
@@ -517,7 +525,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
   local proc_ro=$output
 
-  docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path\" | grep \"ro,\""
+  docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path\" | grep \"ro,\" | sed \"s/\/root//\""
   [ "$status" -eq 0 ]
   local mnt_proc_ro=$output
 
@@ -528,7 +536,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
   local proc_masked=$output
 
-  docker exec "$syscont_name" bash -c "mount | egrep \"udev on $mnt_path|tmpfs on $mnt_path\""
+  docker exec "$syscont_name" bash -c "mount | egrep \"udev on $mnt_path|tmpfs on $mnt_path\" | sed \"s/\/root//\""
   [ "$status" -eq 0 ]
   local mnt_proc_masked=$output
 
