@@ -7,37 +7,6 @@
 load ../helpers/run
 load ../helpers/syscall
 
-# verifies the given sys container path contains a procfs mount backed by
-# sysbox-fs.
-function verify_syscont_procfs_mnt() {
-  ! [[ "$#" != 2 ]]
-  local syscont_name=$1
-  local mnt_path=$2
-
-  docker exec "$syscont_name" bash -c "mount | grep $mnt_path | grep sysboxfs"
-  [ "$status" -eq 0 ]
-
-  [[ "${lines[0]}" =~ "sysboxfs on $mnt_path/swaps type fuse" ]]
-  [[ "${lines[1]}" =~ "sysboxfs on $mnt_path/sys type fuse" ]]
-  [[ "${lines[2]}" =~ "sysboxfs on $mnt_path/uptime type fuse" ]]
-
-  true
-}
-
-# unmounts procfs mounts backed by sysbox-fs
-#
-# TODO: remove me once sysbox-fs emulates the umount syscall
-function unmount_syscont_procfs() {
-  ! [[ "$#" != 2 ]]
-  local syscont_name=$1
-  local mnt_path=$2
-
-  docker exec "$syscont_name" bash -c "umount $mnt_path"
-  [ "$status" -eq 0 ]
-
-  true
-}
-
 # verify that explicit mounts of procfs inside a sys container are backed by
 # sysbox-fs.
 @test "mount procfs" {
@@ -128,34 +97,34 @@ function unmount_syscont_procfs() {
   docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # relative path
   docker exec "$syscont_name" bash -c "cd /root/l1 && mount -t proc proc l2/proc"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # .. in path
   docker exec "$syscont_name" bash -c "cd /root/l1/l2 && mount -t proc proc ../../../root/l1/l2/proc"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # . in path
   docker exec "$syscont_name" bash -c "cd /root/l1/l2 && mount -t proc proc ./proc"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" bash -c "cd $mnt_path && mount -t proc proc ."
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # relative symlink
@@ -166,7 +135,7 @@ function unmount_syscont_procfs() {
   verify_syscont_procfs_mnt $syscont_name $mnt_path
   docker exec "$syscont_name" bash -c "rm /root/l2link"
   [ "$status" -eq 0 ]
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # relative symlink at end
@@ -177,7 +146,7 @@ function unmount_syscont_procfs() {
   verify_syscont_procfs_mnt $syscont_name $mnt_path
   docker exec "$syscont_name" bash -c "rm /root/proclink"
   [ "$status" -eq 0 ]
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # abs symlink
@@ -188,7 +157,7 @@ function unmount_syscont_procfs() {
   verify_syscont_procfs_mnt $syscont_name $mnt_path
   docker exec "$syscont_name" bash -c "rm /root/abslink"
   [ "$status" -eq 0 ]
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # invalid path
@@ -217,7 +186,7 @@ function unmount_syscont_procfs() {
   docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path
-  unmount_syscont_procfs $syscont_name $mnt_path
+  docker exec "$syscont_name" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
   # root user without CAP_SYS_ADMIN can't mount
@@ -446,11 +415,11 @@ function wait_for_nested_dockerd {
   [ $nf_max_path1 -eq $nf_max_path2 ]
 
   # unmount procfs on the first path and verify the second path is unaffected
-  unmount_syscont_procfs $syscont_name $mnt_path1
+  docker exec "$syscont_name" bash -c "umount $mnt_path1"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path2
 
-  unmount_syscont_procfs $syscont_name $mnt_path2
+  docker exec "$syscont_name" bash -c "umount $mnt_path2"
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont_name"
@@ -548,7 +517,7 @@ function wait_for_nested_dockerd {
 # Verify sysbox-fs ignores self-referencing bind mounts over procfs sysbox-fs backed submounts
 @test "bind mount ignore" {
 
-  skip "WAITING FOR SYSBOX-FS FIX"
+  #skip "WAITING FOR SYSBOX-FS FIX"
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
@@ -586,7 +555,7 @@ function wait_for_nested_dockerd {
 # Verify sysbox-fs handles remounts over sysbox-fs backed portions of procfs correctly
 @test "procfs remount" {
 
-  skip "WAITING FOR SYSBOX-FS FIX"
+  #skip "WAITING FOR SYSBOX-FS FIX"
 
   # test read-write procfs mount with read-only remounts of proc/sys, proc/uptime, etc.
 
@@ -639,19 +608,18 @@ function wait_for_nested_dockerd {
 
 @test "procfs unmount" {
 
-  skip "WAITING FOR SYSBOX-FS FIX"
-
   # verify that unmounting /proc also unmounts the sysbox-fs backed submounts
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont_name" bash -c "umount /proc"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "Invalid argument" ]]
 
   docker exec "$syscont_name" bash -c "mount | grep \"proc on /proc\""
-  [ "$status" -eq 1 ]
+  [ "$status" -eq 0 ]
   docker exec "$syscont_name" bash -c "mount | grep \"sysboxfs on /proc\""
-  [ "$status" -eq 1 ]
+  [ "$status" -eq 0 ]
 
   # mount and unmount /root/proc, verify unmounting proc unmounts the sysbox-fs backed submounts
 
@@ -678,8 +646,6 @@ function wait_for_nested_dockerd {
 
 # verify that it's not possible to do unmounts of procfs sysbox-fs backed submounts
 @test "procfs partial unmount" {
-
-  skip "WAITING FOR SYSBOX-FS FIX"
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
