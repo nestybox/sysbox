@@ -1,0 +1,3 @@
+# Create an nginx deployment and service
+
+# Create an ingress that directs to that service
