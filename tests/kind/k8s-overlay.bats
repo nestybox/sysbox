@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-# Basic tests for deploying a K8s cluster inside system container nodes.
+# Test k8s clusters on top of docker overlay networks
 #
 # NOTE: the "kind cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "kind cluster down"
@@ -26,82 +26,20 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kind cluster up" {
+@test "kind cluster up overlay" {
 
   create_test_dir
 
-  local num_workers=2
-  local kubeadm_join=$(k8s_cluster_setup $num_workers bridge)
+  docker network rm k8s-net0
+  docker network create k8s-net0
+  [ "$status" -eq 0 ]
+
+  local num_workers=1
+  local kubeadm_join=$(k8s_cluster_setup $num_workers k8s-net0)
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/.k8s_num_workers"
   echo $kubeadm_join > "$test_dir/.kubeadm_join"
-}
-
-@test "kind pod" {
-
-  cat > "$test_dir/basic-pod.yaml" <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-EOF
-
-  k8s_create_pod k8s-master "$test_dir/basic-pod.yaml"
-  retry_run 20 2 "k8s_pod_ready k8s-master nginx"
-
-  local pod_ip=$(k8s_pod_ip k8s-master nginx)
-
-  docker exec k8s-master sh -c "curl -s $pod_ip | grep -q \"Welcome to nginx\""
-  [ "$status" -eq 0 ]
-
-  # cleanup
-  k8s_del_pod k8s-master nginx
-  rm "$test_dir/basic-pod.yaml"
-}
-
-@test "kind pod multi-container" {
-
-  cat > "$test_dir/multi-cont-pod.yaml" <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: multi-cont
-spec:
-  containers:
-  - name: alpine1
-    image: alpine
-    command: ["tail"]
-    args: ["-f", "/dev/null"]
-  - name: alpine2
-    image: alpine
-    command: ["tail"]
-    args: ["-f", "/dev/null"]
-EOF
-
-  k8s_create_pod k8s-master "$test_dir/multi-cont-pod.yaml"
-  retry_run 20 2 "k8s_pod_ready k8s-master multi-cont"
-
-  # verify all containers in the pod are sharing the net ns
-
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 readlink /proc/1/ns/net"
-  [ "$status" -eq 0 ]
-  alpine1_ns=$output
-
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 readlink /proc/1/ns/net"
-  [ "$status" -eq 0 ]
-  alpine2_ns=$output
-
-  [ "$alpine1_ns" == "$alpine2_ns" ]
-
-  #cleanup
-
-  k8s_del_pod k8s-master multi-cont
-  rm "$test_dir/multi-cont-pod.yaml"
 }
 
 @test "kind deployment" {
@@ -420,7 +358,7 @@ EOF
   retry_run 20 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip k8s-worker-1)
+  local node_ip=$(k8s_node_ip k8s-worker-0)
   echo "$node_ip nginx.nestykube" >> /etc/hosts
 
   # verify ingress to nginx works
@@ -447,100 +385,15 @@ EOF
   cp /etc/hosts.orig /etc/hosts
 }
 
-# Verifies that pods get re-scheduled when a K8s node goes down
-@test "node down" {
-
-  skip "FAILS: SYSBOX ISSUE #523"
-
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
-  [ "$status" -eq 0 ]
-
-  # modify the tolerations on the deployment such that when a node
-  # goes down, the pods get re-scheduled within seconds (this way we
-  # don't have to wait for the pod-eviction-timeout which defaults to
-  # 5 mins).
-
-  cat > /tmp/depl-patch.yaml <<EOF
-spec:
-  template:
-    spec:
-      tolerations:
-      - key: "node.kubernetes.io/unreachable"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 2
-      - key: "node.kubernetes.io/not-ready"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 2
-EOF
-
-  docker cp /tmp/depl-patch.yaml k8s-master:/tmp/depl-patch.yaml
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl patch deployment nginx --patch \"$(cat /tmp/depl-patch.yaml)\""
-  [ "$status" -eq 0 ]
-
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
-
-  # verify the deployment is up
-  local svc_ip=$(k8s_svc_ip k8s-master default nginx)
-
-  retry_run 20 2 "docker exec k8s-master sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
-  [ "$status" -eq 0 ]
-
-  # check which worker node the pod is scheduled in
-  docker exec k8s-master sh -c "kubectl get pods --selector=app=nginx"
-  [ "$status" -eq 0 ]
-
-  local pod=$(echo "${lines[1]}" | awk '{print $1}')
-  local node=$(k8s_pod_node k8s-master $pod)
-
-  # delete that node from k8s
-  docker exec k8s-master sh -c "kubectl delete node $node"
-  [ "$status" -eq 0 ]
-
-  # bring down that node
-  docker_stop "$node"
-  [ "$status" -eq 0 ]
-
-  # verify deployment is re-scheduled to other worker node(s)
-  retry_run 20 2 "[ ! $(k8s_pod_in_node k8s-master $pod $node) ]"
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
-
-  # verify the service is back up
-  retry_run 20 2 "docker exec k8s-master sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
-
-  # bring the worker node back up
-  # (note: container name = container hostname = kubectl node name)
-  local kubeadm_join=$(cat "$test_dir/.kubeadm_join")
-
-  docker_run --rm --name="$node" --hostname="$node" nestybox/ubuntu-bionic-k8s:latest
-  [ "$status" -eq 0 ]
-
-  wait_for_inner_dockerd $node
-
-  docker exec "$node" sh -c "$kubeadm_join"
-  [ "$status" -eq 0 ]
-
-  retry_run 20 2 "k8s_node_ready k8s-master $node"
-
-  # cleanup
-
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
-  [ "$status" -eq 0 ]
-
-  rm /tmp/depl-patch.yaml
-}
-
-@test "kind cluster down" {
+@test "kind cluster down overlay" {
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
   k8s_cluster_teardown $num_workers
+
+  # wait for cluster teardown to complete
+  sleep 10
+
+  docker network rm k8s-net0
+  [ "$status" -eq 0 ]
+
   remove_test_dir
 }

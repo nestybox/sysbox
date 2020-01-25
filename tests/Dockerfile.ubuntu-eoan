@@ -53,6 +53,9 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     lsb-release \
     wget \
+    lsof \
+    iproute2 \
+    iputils-ping \
     ca-certificates \
     --no-install-recommends \
     && apt-get clean
