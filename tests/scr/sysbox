@@ -1,12 +1,7 @@
 #!/bin/bash
 
 #
-# Launch sysbox (requires root privileges)
-#
-# Note: normally sysbox is installed via a distro-specific package
-# which sets up the sysbox systemd units. This script is meant as a
-# quick alternative to the installer to help launch sysbox when testing
-# it on the host.
+# Launch sysbox inside the test container
 #
 
 set -e
@@ -14,8 +9,15 @@ set -e
 mkdir -p /var/lib/sysboxfs
 
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-sleep 2
-sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log --ignore-handler-errors 2>&1 &
+
+# wait for sysbox-mgr to setup the sysbox work-dir before launching sysbox-fs
+sleep 3
+
+# inside the test container we must ignore sysbox-fs handler errors
+# when accessing procfs and sysfs, because some procfs and sysfs
+# resources are not writeable from within the test container (see
+# sysbox issue #538).
+sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
 
 set +e
 

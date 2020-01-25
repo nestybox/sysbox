@@ -50,7 +50,7 @@ function retry() {
   local i
 
   for ((i = 0; i < attempts; i++)); do
-    "$@"
+    $@
     if [ "$?" -eq 0 ]; then
 	return 0
     fi
@@ -73,8 +73,8 @@ function retry_run() {
   local i
 
   for ((i = 0; i < attempts; i++)); do
-    run "$@"
-    if [ $status -eq 0 ]; then
+    run $@
+    if [ "$status" -eq 0 ]; then
       return 0
     fi
     sleep $delay

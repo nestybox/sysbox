@@ -54,7 +54,11 @@ else
 EOF
 fi
 
-# Start sysbox
+# Inside the test container we start sysbox with a dedicated script
+# that sets some test-specific configs
+INSTALL_DIR="/usr/local/sbin"
+echo "Starting sysbox with test-specific options"
+install -D -m0755 tests/scr/sysbox $INSTALL_DIR/sysbox
 sysbox
 
 # Start docker

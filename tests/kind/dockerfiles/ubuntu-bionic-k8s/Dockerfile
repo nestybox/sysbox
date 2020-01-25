@@ -23,10 +23,18 @@ RUN chmod +x /usr/bin/kube-pull.sh && kube-pull.sh && rm /usr/bin/kube-pull.sh
 COPY daemon.json /etc/docker/
 
 # Debug utilities
-RUN apt-get update && apt-get install --no-install-recommends \
+RUN apt-get update && apt-get install --no-install-recommends -y \
     lsof \
     less \
-    nano
+    nano \
+    psmisc \
+    iproute2 \
+    iputils-ping \
+    jq \
+    net-tools \
+    dnsutils \
+    tcpdump \
+    bridge-utils
 
 # bash completion
 RUN apt-get update && apt-get install bash-completion && echo ". /etc/bash_completion" >> /etc/bash.bashrc
