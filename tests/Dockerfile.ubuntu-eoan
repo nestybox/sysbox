@@ -19,14 +19,13 @@
 # docker build -t sysbox-test .
 #
 
-FROM ubuntu:disco
+FROM ubuntu:eoan
 
 RUN apt-get update && apt-get install -y \
     build-essential \
     automake \
     autoconf \
     procps \
-    psmisc \
     nano \
     less \
     curl \
@@ -53,7 +52,6 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     lsb-release \
     wget \
-    lsof \
     ca-certificates \
     --no-install-recommends \
     && apt-get clean
@@ -96,6 +94,9 @@ RUN mkdir -p ~/bin/protoc \
     && go install github.com/golang/protobuf/protoc-gen-go
 
 # install Docker (used by most sysbox tests to launch sys containers)
+#
+# NOTE: docker does not yet support ubuntu-eoan, so we install the docker for ubuntu-disco.
+#
 RUN apt-get install -y \
        apt-transport-https \
        ca-certificates \
@@ -106,7 +107,7 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 RUN apt-key fingerprint 0EBFCD88
 RUN add-apt-repository \
         "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-        $(lsb_release -cs) \
+        disco \
         stable"
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
