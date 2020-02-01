@@ -92,7 +92,7 @@ RUN mkdir -p ~/bin/protoc \
     && rm -rf ~/bin/protoc/ \
     && GIT_TAG="v1.3.1" \
     && go get -d -u github.com/golang/protobuf/protoc-gen-go \
-    && git -C "$(go env GOPATH)"/src/github.com/golang/protobuf checkout $GIT_TAG \
+    && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null \
     && go install github.com/golang/protobuf/protoc-gen-go
 
 # install Docker (used by most sysbox tests to launch sys containers)
