@@ -270,7 +270,7 @@ function compare_syscont_unshare() {
   cat << EOF > ${HOME}/worker.sh
 #!/bin/bash
 while true; do
-  cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
+  cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout > "\$1"
   sleep 1
 done
 EOF
@@ -281,7 +281,7 @@ EOF
          --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
          alpine:3.10 tail -f /dev/null)
 
-  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   val="$output"
 
@@ -297,7 +297,7 @@ EOF
   done
 
   new_val=$(( $val + 1 ))
-  docker exec "$sc" sh -c "echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  docker exec "$sc" sh -c "echo $new_val > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
 
   sleep 2
@@ -322,8 +322,8 @@ EOF
   cat << EOF > ${HOME}/worker.sh
 #!/bin/bash
 for i in \$(seq 1 $iter); do
-  echo \$i > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout
-  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout)
+  echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout
+  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
   if [ "\$val" != "\$i" ]; then
     echo "fail" > result.txt
     exit
@@ -392,7 +392,7 @@ EOF
   cat << EOF > ${HOME}/worker.sh
 #!/bin/bash
 while true; do
-  cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout > "\$1"
+  cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout > "\$1"
   sleep 1
 done
 EOF
@@ -403,7 +403,7 @@ EOF
          --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
          nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   val="$output"
 
@@ -471,12 +471,12 @@ EOF
   sv_runc exec syscont sh -c "useradd -m someuser"
   [ "$status" -eq 0 ]
 
-  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   val="$output"
 
   # As non-root, read a /proc/sys file; sysbox-fs should allow this
-  sv_runc exec syscont sh -c "runuser -l someuser -c \"cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  sv_runc exec syscont sh -c "runuser -l someuser -c \"cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout\""
   [ "$status" -eq 0 ]
   [ $output -eq $val ]
 }
@@ -491,29 +491,29 @@ EOF
   sv_runc exec syscont sh -c "useradd -m someuser"
   [ "$status" -eq 0 ]
 
-  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   val="$output"
   new_val=$(( $val + 1 ))
 
   # As root, write a /proc/sys read-write file; sysbox-fs should allow this
-  sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout\""
   [ "$status" -eq 0 ]
 
   # Verify write indeed took place
-  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   val="$output"
   [ $val -eq $new_val ]
   new_val=$(( $val + 1 ))
 
   # As non-root, write to the same file; sysbox-fs should disallow this
-  sv_runc exec syscont sh -c "runuser -l someuser -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout\""
+  sv_runc exec syscont sh -c "runuser -l someuser -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout\""
   [ "$status" -ne 0 ]
   [[ "$output" =~ *"Operation not permitted"* ]]
 
   # Verify write did not take place
-  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_icmp_timeout"
+  sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
   [ "$output" -eq $val ]
 

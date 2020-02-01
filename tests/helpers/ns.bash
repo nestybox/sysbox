@@ -20,9 +20,7 @@ PROC_SYS_NS=('e=(/proc/sys/net/ipv4/ip_default_ttl INT)' \
              'e=(/proc/sys/net/ipv6/conf/all/disable_ipv6 BOOL)' \
              'e=(/proc/sys/net/ipv6/conf/all/forwarding BOOL)' \
              'e=(/proc/sys/net/ipv6/conf/default/keep_addr_on_down BOOL)' \
-             'e=(/proc/sys/net/netfilter/nf_conntrack_icmp_timeout INT)' \
-             'e=(/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_time_wait INT)' \
-             'e=(/proc/sys/net/netfilter/nf_conntrack_udp_timeout INT)' \
+             'e=(/proc/sys/net/netfilter/nf_conntrack_frag6_timeout INT)' \
              'e=(/proc/sys/user/max_net_namespaces INT)' \
              'e=(/proc/sys/user/max_pid_namespaces INT)' \
              'e=(/proc/sys/user/max_inotify_watches INT)')
