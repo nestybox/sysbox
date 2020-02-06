@@ -98,6 +98,37 @@ Additional info below.
 
   - This may change in the future as use cases arise.
 
+## Procfs Virtualization
+
+Sysbox performs partial virtualization of the system container's
+procfs (i.e., `/proc`).
+
+The main goals for this are:
+
+1) Make the container feel more like a real host. This in turn
+   increases the types of programs that can run inside the container.
+
+2) Increase isolation between the container and the host.
+
+Currently, Sysbox does virtualization of the following procfs resources:
+
+-   `/proc/uptime`
+
+    -   Shows the uptime of the system container, not the host.
+
+-   `/proc/sys/net/netfilter/nf_conntrack_max`
+
+    -   Sysbox emulates this resource independently per system
+        container, and sets appropriate values in the host kernel's
+        `nf_conntrack_max`.
+
+Note also that by virtue of enabling the Linux user namespace in all
+system containers, kernel resources under `/proc/sys` that are not
+namespaced by Linux (e.g., `/proc/sys/kernel/*`) can't be changed from
+within the system container. This prevents programs running inside the
+system container from writing to these procfs files and affecting
+system-wide settings.
+
 ## uid(gid) mappings
 
 * If the container spec specifies uid(gid) mapping, sysbox honors it
