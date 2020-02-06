@@ -678,3 +678,34 @@ function wait_for_nested_dockerd {
 
   docker_stop "$syscont_name"
 }
+
+# Verify that rbind operations can be successfully completed when there are sysbox-fs
+# emulated procfs and sysfs subtrees. Also, verify that in this scenario, a partial
+# unmount of a sysbox-fs emulated resource is allowed. The goal here is to mimic
+# systemd's expected behavior during 'systemd-resolver' and 'systemd-network' daemon
+# initializations.
+@test "procfs rbind partial unmount" {
+
+  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local mnt_path=/run/systemd/unit-root
+
+  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  # mount-rbind operation to mimic systemd behavior
+  docker exec "$syscont_name" bash -c "mount --rbind / $mnt_path"
+  [ "$status" -eq 0 ]
+  verify_syscont_procfs_mnt $syscont_name $mnt_path/proc
+  #verify_syscont_sysfs_mnt $syscont_name $mnt_path2/sys
+
+  # Unmount procfs sysbox-fs backed submounts. As we are in systemd's path, sysbox-fs
+  # should honor this request.
+  for node in "${procfs_emu[@]}"; do
+    docker exec "$syscont_name" bash -c "umount $mnt_path/$node"
+    [ "$status" -eq 0 ]
+  done
+
+  verify_syscont_procfs_mnt $syscont_name $mnt_path
+
+  docker_stop "$syscont_name"
+}
