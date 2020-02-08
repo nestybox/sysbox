@@ -11,12 +11,12 @@ load ../helpers/run
 
   local sysfs_pid=$(pidof sysbox-fs)
 
-  pre=$(lsof -p $sysfs_pid | grep -c "seccomp notify")
+  pre=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   docker_stop "$syscont_name"
 
-  post=$(lsof -p $sysfs_pid | grep -c "seccomp notify")
+  post=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
   [ $pre -eq $post ]
 }
@@ -26,13 +26,13 @@ load ../helpers/run
 
   local sysfs_pid=$(pidof sysbox-fs)
 
-  pre=$(lsof -p $sysfs_pid | grep -c "seccomp notify")
+  pre=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   docker exec "$syscont_name" echo
   docker_stop "$syscont_name"
 
-  post=$(lsof -p $sysfs_pid | grep -c "seccomp notify")
+  post=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
   [ $pre -eq $post ]
 }
