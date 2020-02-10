@@ -49,6 +49,15 @@ function verify_syscont_procfs_mnt() {
     [[ "$output" =~ "proc on $mnt_path/$node type proc (ro,relatime" ]]
   done
 
+  #
+  # Commenting these ones out to prevent testcases' outcome to diverge
+  # depending on the test-container on which these ones are executed
+  # (i.e. regular 'test' vs 'test-installer'). In the regular 'test'
+  # container, "tmpfs" is mounted over the masked resources, whereas,
+  # in the 'test-installer' case, is "udev" the fstype being mounted
+  # due to the presence of systemd-udev daemon. To avoid differentiated
+  # behaviors, we will comment this checkpoint for now.
+  #
   # for node in "${procfs_masked[@]}"; do
   #   docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
   #   [ "$status" -eq 0 ]
