@@ -246,7 +246,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -271,7 +271,44 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_nested_dockerd $syscont_name
+
+  docker exec "$syscont_name" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "docker ps --format \"{{.ID}}\""
+  [ "$status" -eq 0 ]
+  local inner_cont_name="$output"
+
+  verify_inner_cont_procfs_mnt $syscont_name $inner_cont_name /proc priv
+
+  # verify that changing nf_conntrack_max within the privileged inner container affects the value in the sys container
+  docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"echo 65535 > /proc/sys/net/netfilter/nf_conntrack_max\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "cat /proc/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  [ $output -eq 65535 ]
+
+  # verify that changing nf_conntrack_max within the sys container affects the value in the privileged inner container
+  docker exec "$syscont_name" bash -c "echo 65536 > /proc/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"cat /proc/sys/net/netfilter/nf_conntrack_max\""
+  [ "$status" -eq 0 ]
+  [ $output -eq 65536 ]
+
+  docker_stop "$syscont_name"
+}
+
+@test "mount procfs dind privileged (ubuntu)" {
+
+  local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+
+  docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -477,6 +514,58 @@ function wait_for_nested_dockerd {
   docker_stop "$syscont_name1"
 }
 
+@test "multiple procfs in multiple syscont (ubuntu)" {
+
+  local mnt_path=/tmp/proc
+
+  syscont_name0=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+  syscont_name1=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+
+  # mount proc inside the first sys container
+  docker exec "$syscont_name0" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name0" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  # mount proc inside the other sys container
+  docker exec "$syscont_name1" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name1" bash -c "mount -t proc proc $mnt_path"
+  [ "$status" -eq 0 ]
+
+  # change nf conntrack max in the first syscont and verify that works
+  docker exec "$syscont_name0" bash -c "cat $mnt_path/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  local nf_max0="$output"
+
+  nf_max0=$((nf_max0 - 100))
+
+  docker exec "$syscont_name0" bash -c "echo $nf_max0 > $mnt_path/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont_name0" bash -c "cat /proc/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  [ $output -eq $nf_max0 ]
+
+  docker exec "$syscont_name0" bash -c "cat $mnt_path/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  [ $output -eq $nf_max0 ]
+
+  # the change of nf conntrack max in the first syscont must not affect the other syscont
+  docker exec "$syscont_name1" bash -c "cat /proc/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  [ $output -ne $nf_max0 ]
+
+  docker exec "$syscont_name1" bash -c "cat $mnt_path/sys/net/netfilter/nf_conntrack_max"
+  [ "$status" -eq 0 ]
+  [ $output -ne $nf_max0 ]
+
+  docker_stop "$syscont_name0"
+  docker_stop "$syscont_name1"
+}
+
 # Verify a procfs remount honors the read-only and masked paths in the sys container's /proc mount
 @test "procfs readonly and masked paths" {
 
@@ -517,8 +606,6 @@ function wait_for_nested_dockerd {
 # Verify sysbox-fs ignores self-referencing bind mounts over procfs sysbox-fs backed submounts
 @test "bind mount ignore" {
 
-  #skip "WAITING FOR SYSBOX-FS FIX"
-
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
@@ -554,8 +641,6 @@ function wait_for_nested_dockerd {
 
 # Verify sysbox-fs handles remounts over sysbox-fs backed portions of procfs correctly
 @test "procfs remount" {
-
-  #skip "WAITING FOR SYSBOX-FS FIX"
 
   # test read-write procfs mount with read-only remounts of proc/sys, proc/uptime, etc.
 
@@ -693,7 +778,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   # mount-rbind operation to mimic systemd behavior
-  docker exec "$syscont_name" bash -c "mount --rbind / $mnt_path"
+  docker exec -d "$syscont_name" bash -c "mount --rbind / $mnt_path"
   [ "$status" -eq 0 ]
   verify_syscont_procfs_mnt $syscont_name $mnt_path/proc
   #verify_syscont_sysfs_mnt $syscont_name $mnt_path2/sys
@@ -701,11 +786,11 @@ function wait_for_nested_dockerd {
   # Unmount procfs sysbox-fs backed submounts. As we are in systemd's path, sysbox-fs
   # should honor this request.
   for node in "${procfs_emu[@]}"; do
-    docker exec "$syscont_name" bash -c "umount $mnt_path/$node"
+    docker exec "$syscont_name" bash -c "umount $mnt_path/proc/$node"
     [ "$status" -eq 0 ]
+    docker exec "$syscont_name" bash -c "mount | egrep \"$mnt_path/proc/$node \""
+    [ "$status" -eq 1 ]
   done
-
-  verify_syscont_procfs_mnt $syscont_name $mnt_path
 
   docker_stop "$syscont_name"
 }
