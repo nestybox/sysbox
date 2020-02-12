@@ -28,6 +28,8 @@ else
   bats --tap tests/docker
   printf "\nExecuting dind tests ... \n"
   bats --tap tests/dind
+  printf "\nExecuting kind tests ... \n"
+  bats --tap tests/kind
   printf "\nExecuting app tests (l1) ... \n"
   bats --tap tests/apps/l1
   printf "\nExecuting app tests (l2) ... \n"
