@@ -30,7 +30,7 @@ EOF
 
   SYSCONT_NAME=$(docker_run --rm --mount type=bind,source="${file}",target=/mnt/docker-compose.yml nestybox/ubuntu-disco-compose:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd

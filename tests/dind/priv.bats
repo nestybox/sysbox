@@ -18,7 +18,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -52,7 +52,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -100,7 +100,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -123,7 +123,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -146,7 +146,7 @@ function wait_for_nested_dockerd {
 
   local syscont_name=$(docker_run --rm nestybox/debian-stretch-docker:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -171,7 +171,7 @@ function wait_for_nested_dockerd {
   # launch sys cont
   local syscont_name=$(docker_run --rm nestybox/debian-stretch-docker:latest tail -f /dev/null)
 
-  docker exec "$syscont_name" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd $syscont_name
@@ -184,7 +184,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
   local inner_cont_name="$output"
 
-  docker exec "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"dockerd > /var/log/dockerd-log 2>&1 &\""
+  docker exec -d "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"dockerd > /var/log/dockerd-log 2>&1\""
   [ "$status" -eq 0 ]
 
   sleep 3
