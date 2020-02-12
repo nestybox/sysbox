@@ -25,7 +25,7 @@ function wait_for_inner_elasticSearch() {
   SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd

@@ -49,7 +49,7 @@ function wait_for_nested_dockerd {
   # run generated container to confirm that images are embedded in it
   SYSCONT_NAME=$(docker_run --rm nestybox/sc-with-inner-img:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -98,7 +98,7 @@ function wait_for_nested_dockerd {
 
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -133,7 +133,7 @@ function wait_for_nested_dockerd {
   docker exec "$SYSCONT_NAME" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd

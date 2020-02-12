@@ -26,7 +26,7 @@ function wait_for_nested_dockerd {
   # verify basic docker bridge networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -92,7 +92,7 @@ function wait_for_nested_dockerd {
   # verify basic docker user-defined networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -184,7 +184,7 @@ function wait_for_nested_dockerd {
   # verify basic docker host networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
