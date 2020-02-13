@@ -24,7 +24,7 @@ function wait_for_inner_postgres() {
 
   # must choose "overlay" driver to avoid an "overlay2" driver bug
   # (https://stackoverflow.com/questions/45731683/docker-pull-operation-not-permitted)
-  docker exec "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -54,7 +54,7 @@ function wait_for_inner_postgres() {
   SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
