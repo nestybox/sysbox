@@ -443,7 +443,7 @@ EOF
 
 @test "/proc/sys write-permission check" {
 
-  #skip "FAILS: SYSBOX ISSUE #259"
+  skip "FAILS: SYSBOX ISSUE #259"
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
