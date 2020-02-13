@@ -262,24 +262,26 @@ function compare_syscont_unshare() {
 
 @test "/proc/sys concurrent intra-container access" {
 
-  skip "issue #246"
+  skip "FAILS: SYSBOX ISSUE #246"
 
-  num_workers=10
+  local num_workers=10
+  local work_scr=/tmp/worker.sh
 
   # worker script (periodically polls a /proc/sys file)
-  cat << EOF > ${HOME}/worker.sh
-#!/bin/bash
+  cat << EOF > ${work_scr}
+#!/bin/sh
 while true; do
   cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout > "\$1"
   sleep 1
 done
 EOF
 
-  chmod +x ${HOME}/worker.sh
+  chmod +x ${work_scr}
 
-  sc=$(docker_run --rm \
-         --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
-         alpine:3.10 tail -f /dev/null)
+  local sc=$(docker_run --rm alpine:3.10 tail -f /dev/null)
+
+  docker cp ${work_scr} $sc:/worker.sh
+  [ "$status" -eq 0 ]
 
   docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
@@ -310,7 +312,7 @@ EOF
 
   # cleanup
   docker_stop "$sc"
-  rm ${HOME}/worker.sh
+  rm ${work_scr}
 }
 
 @test "/proc/sys concurrent inter-container access" {
@@ -381,48 +383,6 @@ EOF
   rm ${HOME}/worker.sh
 }
 
-@test "/proc/sys access frequency" {
-
-  skip "issue #246"
-
-  # verify sysbox-fs handles a high access frequency properly
-  num_workers=10
-
-  # worker script (periodically polls a /proc/sys file)
-  cat << EOF > ${HOME}/worker.sh
-#!/bin/bash
-while true; do
-  cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout > "\$1"
-  sleep 1
-done
-EOF
-
-  chmod +x ${HOME}/worker.sh
-
-  sc=$(docker_run --rm \
-         --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
-         nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-
-  docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
-  [ "$status" -eq 0 ]
-  val="$output"
-
-  for i in $(seq 1 $num_workers); do
-    docker exec -d "$sc" sh -c "/worker.sh result_$i.txt"
-    [ "$status" -eq 0 ]
-  done
-
-  for i in $(seq 1 $num_workers); do
-    docker exec "$sc" sh -c "cat result_$i.txt"
-    [ "$status" -eq 0 ]
-    [ "$output" == "$val" ]
-  done
-
-  # cleanup
-  docker_stop "$sc"
-  rm ${HOME}/worker.sh
-}
-
 @test "/proc/sys stat" {
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
@@ -483,7 +443,7 @@ EOF
 
 @test "/proc/sys write-permission check" {
 
-  skip "issue #259"
+  #skip "FAILS: SYSBOX ISSUE #259"
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
