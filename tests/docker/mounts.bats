@@ -12,6 +12,7 @@ function wait_for_nested_dockerd {
 
 @test "docker vol mount" {
 
+  docker volume rm testVol
   docker volume create testVol
   [ "$status" -eq 0 ]
 
@@ -108,6 +109,7 @@ function wait_for_nested_dockerd {
 
 @test "vol mount on /var/lib/docker" {
 
+  docker volume rm testVol
   docker volume create testVol
   [ "$status" -eq 0 ]
 
