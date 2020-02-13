@@ -117,7 +117,7 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   # deploy an inner container
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -183,7 +183,7 @@ function wait_for_nested_dockerd {
   # Let's run an inner container to verify the docker inside the sys container
   # can work with /var/lib/docker without problems
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
@@ -222,7 +222,7 @@ function wait_for_nested_dockerd {
     [ "$gid" -eq "$tgid" ]
   fi
 
-  docker exec "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd-log 2>&1 &"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_nested_dockerd
