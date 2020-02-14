@@ -9,6 +9,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
+load ../helpers/fs
 
 export test_dir="/tmp/k8s-basic-test/"
 export manifest_dir="tests/kind/manifests/"
@@ -445,6 +446,172 @@ EOF
 
   rm $test_dir/nginx-ing.yaml
   cp /etc/hosts.orig /etc/hosts
+}
+
+@test "vol: emptyDir" {
+
+  # pod with two alpine containers sharing a couple of emptydir
+  # volumes, one on-disk and one in-mem.
+  cat > "$test_dir/pod.yaml" <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-cont
+spec:
+  containers:
+  - name: alpine1
+    image: alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /cache
+      name: cache-vol
+    - mountPath: /cache-mem
+      name: cache-vol-mem
+  - name: alpine2
+    image: alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /cache
+      name: cache-vol
+    - mountPath: /cache-mem
+      name: cache-vol-mem
+  volumes:
+  - name: cache-vol
+    emptyDir: {}
+  - name: cache-vol-mem
+    emptyDir:
+      medium: Memory
+EOF
+
+  k8s_create_pod k8s-master "$test_dir/pod.yaml"
+  retry_run 20 2 "k8s_pod_ready k8s-master multi-cont"
+
+  # verify the emptyDir vol is shared correctly by containers (write
+  # from one container, read from the other)
+
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- sh -c \"echo hi > /cache/test\""
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- cat /cache/test"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hi" ]
+
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- sh -c \"echo hello > /cache-mem/test\""
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- cat /cache-mem/test"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hello" ]
+
+  # verify volume permissions inside pod look good
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- sh -c \"ls -l / | grep -w cache | grep -v mem\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "drwxrwxrwx" "root" "root" "$output"
+
+  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- sh -c \"ls -l / | grep -w cache-mem\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "drwxrwxrwt" "root" "root" "$output"
+
+  #cleanup
+  k8s_del_pod k8s-master multi-cont
+  rm "$test_dir/pod.yaml"
+}
+
+@test "vol: hostPath" {
+
+  # create a directory and a file on the k8s-node; each will be
+  # mounted as a hostPath vol into a pod
+  docker exec k8s-worker-0 sh -c "mkdir -p /root/hpdir && echo hi > /root/hpdir/test"
+  [ "$status" -eq 0 ]
+  docker exec k8s-worker-0 sh -c "echo hello > /root/hpfile"
+  [ "$status" -eq 0 ]
+
+  # create a test pod with the hostPath vol; must be scheduled on
+  # k8s-worker-0 since that's where the host volume is at.
+cat > "$test_dir/pod.yaml" <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hp-test
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-worker-0
+  containers:
+  - image: alpine
+    name: alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /hostdir
+      name: hp-dir-vol
+    - mountPath: /hostfile
+      name: hp-file-vol
+  volumes:
+  - name: hp-dir-vol
+    hostPath:
+      path: /root/hpdir
+      type: Directory
+  - name: hp-file-vol
+    hostPath:
+      path: /root/hpfile
+      type: File
+EOF
+
+  k8s_create_pod k8s-master "$test_dir/pod.yaml"
+  retry_run 20 2 "k8s_pod_ready k8s-master hp-test"
+
+  # verify the pod sees the host volumes
+  docker exec k8s-master sh -c "kubectl exec hp-test -- cat /hostdir/test"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hi" ]
+
+  docker exec k8s-master sh -c "kubectl exec hp-test -- cat /hostfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hello" ]
+
+  # write to the volume from the pod, verify the host sees the changes
+
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"echo pod > /hostdir/pod-file\""
+  [ "$status" -eq 0 ]
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"echo pod > /hostfile\""
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-worker-0 sh -c "cat /root/hpdir/pod-file"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  docker exec k8s-worker-0 sh -c "cat /root/hpfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  # verify volume permissions inside pod look good
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"ls -l / | grep hostdir\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "drwxr-xr-x" "root" "root" "$output"
+
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"ls -l / | grep hostfile\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "-rw-r--r--" "root" "root" "$output"
+
+  #cleanup
+  k8s_del_pod k8s-master hp-test
+
+  docker exec k8s-worker-0 sh -c "rm -rf /root/hpdir && rm /root/hpfile"
+  [ "$status" -eq 0 ]
+
+  rm "$test_dir/pod.yaml"
+}
+
+# Verifies that a container within a pod gets re-scheduled when killed
+@test "container down" {
+
+  skip "SKIP: not written yet"
+
+  # See here for ideas:
+  # https://callistaenterprise.se/blogg/teknik/2017/12/20/kubernetes-on-docker-in-docker/
+
 }
 
 # Verifies that pods get re-scheduled when a K8s node goes down
