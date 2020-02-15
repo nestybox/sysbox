@@ -604,14 +604,130 @@ EOF
   rm "$test_dir/pod.yaml"
 }
 
-# Verifies that a container within a pod gets re-scheduled when killed
-@test "container down" {
+@test "vol: local persistent" {
 
-  skip "SKIP: not written yet"
+  # based on:
+  # https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
 
-  # See here for ideas:
-  # https://callistaenterprise.se/blogg/teknik/2017/12/20/kubernetes-on-docker-in-docker/
+  # create backing dir on the host
+  docker exec k8s-worker-0 sh -c "mkdir -p /mnt/pvol"
+  [ "$status" -eq 0 ]
 
+  docker exec k8s-worker-0 sh -c "echo data > /mnt/pvol/pfile"
+  [ "$status" -eq 0 ]
+
+  # create the persistent volume object and associated claim on the k8s cluster
+  cat > "$test_dir/pvol.yaml" <<EOF
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: my-pvol
+  labels:
+    type: local
+spec:
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: pv-demo
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s-worker-0
+  hostPath:
+    path: "/mnt/pvol"
+EOF
+
+  cat > "$test_dir/pvol-claim.yaml" <<EOF
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvol-claim
+spec:
+  storageClassName: pv-demo
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Mi
+EOF
+
+  k8s_apply k8s-master "$test_dir/pvol.yaml"
+  k8s_apply k8s-master "$test_dir/pvol-claim.yaml"
+
+  # create a test pod that mounts the persistent vol; k8s will automatically
+  # schedule the pod on the node where the volume is created.
+cat > "$test_dir/pod.yaml" <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvol-test
+spec:
+  containers:
+  - image: alpine
+    name: alpine
+    command: ['tail', '-f', '/dev/null']
+    volumeMounts:
+    - mountPath: /pvol
+      name: pvol-test
+  volumes:
+  - name: pvol-test
+    persistentVolumeClaim:
+      claimName: pvol-claim
+EOF
+
+  k8s_create_pod k8s-master "$test_dir/pod.yaml"
+  retry_run 20 2 "k8s_pod_ready k8s-master pvol-test"
+
+  # verify pod can read/write volume
+  docker exec k8s-master sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "data" ]
+
+  docker exec k8s-master sh -c "kubectl exec pvol-test -- sh -c \"echo pod > /pvol/pfile\""
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-master sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  # verify host sees volume changes done by pod
+  docker exec k8s-worker-0 sh -c "cat /mnt/pvol/pfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  # delete the pod
+  k8s_del_pod k8s-master pvol-test
+
+  # create another instance of the pod
+  k8s_create_pod k8s-master "$test_dir/pod.yaml"
+  retry_run 20 2 "k8s_pod_ready k8s-master pvol-test"
+
+  # verify pod sees prior changes (volume is persistent)
+  docker exec k8s-master sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  # cleanup
+  k8s_del_pod k8s-master pvol-test
+
+  docker exec k8s-master sh -c "kubectl delete persistentvolumeclaims pvol-claim"
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-master sh -c "kubectl delete persistentvolume my-pvol"
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-worker-0 sh -c "rm -rf /mnt/pvol"
+  [ "$status" -eq 0 ]
+
+  rm "$test_dir/pod.yaml"
+  rm "$test_dir/pvol-claim.yaml"
+  rm "$test_dir/pvol.yaml"
 }
 
 # Verifies that pods get re-scheduled when a K8s node goes down

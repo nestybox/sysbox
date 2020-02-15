@@ -41,11 +41,11 @@ function k8s_node_ip() {
   docker_cont_ip $node
 }
 
-function k8s_create_pod() {
+function k8s_apply() {
   local k8s_master=$1
-  local pod_yaml=$2
+  local yaml=$2
 
-  docker cp $pod_yaml "$k8s_master:/root/tmp.yaml"
+  docker cp $yaml "$k8s_master:/root/tmp.yaml"
   [ "$status" -eq 0 ]
 
   docker exec "$k8s_master" sh -c "kubectl apply -f /root/tmp.yaml"
@@ -53,6 +53,13 @@ function k8s_create_pod() {
 
   docker exec "$k8s_master" sh -c "rm -rf /root/tmp.yaml"
   [ "$status" -eq 0 ]
+}
+
+function k8s_create_pod() {
+  local k8s_master=$1
+  local pod_yaml=$2
+
+  k8s_apply $k8s_master $pod_yaml
 }
 
 function k8s_del_pod() {
