@@ -14,8 +14,8 @@ set -e
 mkdir -p /var/lib/sysboxfs
 
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-sleep 2
-sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log --ignore-handler-errors 2>&1 &
+sleep 3
+sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
 
 set +e
 
