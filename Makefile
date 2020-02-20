@@ -82,14 +82,15 @@ IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
 IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
-# volumes to mount into the privileged test container's `/var/lib/docker` and
-# `/var/lib/sysbox`; this is required so that the docker and sysbox-runc instances
-# inside the privileged container do not run on top of overlayfs as this is not
-# supported. The volumes must not be on a tmpfs directory, as the docker instance inside
-# the privileged test container will mount overlayfs on top, and overlayfs can't be
-# mounted on top of tmpfs.
+# Volumes to mount into the privileged test container. These are
+# required because certain mounts inside the test container can't
+# be backed by overlayfs (e.g., /var/lib/docker, /var/lib/sysbox, etc.).
+# Note that the volumes must not be on tmpfs either, because the
+# docker engine inside the privileged test container will mount overlayfs
+# on top , and overlayfs can't be mounted on top of tmpfs.
 TEST_VOL1 := /var/tmp/sysbox-test-var-lib-docker
 TEST_VOL2 := /var/tmp/sysbox-test-var-lib-sysbox
+TEST_VOL3 := /var/tmp/sysbox-test-scratch
 
 #
 # build targets
@@ -215,6 +216,7 @@ DOCKER_RUN := docker run -it --privileged --rm                        \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(TEST_VOL1):/var/lib/docker               \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
@@ -230,13 +232,13 @@ test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid
 test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-img
 	@printf "\n** Running sysbox integration tests **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting
 test-sysbox-shiftuid: test-img
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-runc: ## Run sysbox-runc unit & integration tests
@@ -266,12 +268,12 @@ test-shiftfs-cleanup: pjdfstest-clean
 
 test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-img: ## Build test container image
@@ -284,7 +286,7 @@ test-cleanup: ## Clean up sysbox integration tests (to be run as root)
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysbox integration tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 
 
 #
@@ -331,6 +333,7 @@ DOCKER_RUN_INSTALLER := docker run -d --rm --privileged               \
 			-v /lib/modules:/lib/modules:ro               \
 			-v $(TEST_VOL1):/var/lib/docker               \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			--mount type=tmpfs,destination=/run           \
 			--mount type=tmpfs,destination=/run/lock      \
@@ -350,7 +353,7 @@ test-sysbox-installer: ## Run sysbox's integration tests on the installer contai
 test-sysbox-installer:
 	make test-cntr-installer
 	@printf "\n** Running sysbox integration tests **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
 		jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
@@ -364,7 +367,7 @@ test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests o
 test-sysbox-shiftuid-installer:
 	make test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
@@ -372,7 +375,7 @@ test-sysbox-shiftuid-installer:
 
 test-shell-installer: ## Get a shell in the installer container (useful for debug)
 test-shell-installer: test-img-installer test-cntr-installer
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
 		jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
@@ -383,7 +386,7 @@ test-shell-installer: test-img-installer test-cntr-installer
 
 test-shell-shiftuid-installer: ## Get a shell in the installer container with uid-shifting enabled (useful for debug)
 test-shell-shiftuid-installer: test-cntr-installer
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_EXEC_INSTALLER) make sysbox-runc-recvtty
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && bash"
 	$(DOCKER_STOP_INSTALLER)
