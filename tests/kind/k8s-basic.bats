@@ -730,46 +730,6 @@ EOF
   rm "$test_dir/pvol.yaml"
 }
 
-<<<<<<< HEAD
-=======
-@test "vol: nfs" {
-
-  # setup an nfs server (in a container on the host)
-  #
-  # NOTE: it would be nice to use a system container as the nfs server.
-  # however, this is currently not possible as the nfs server setup fails
-  # from a non-init user namespace (sysbox issue #559). Thus, we use a
-  # regular docker container with CAP_SYS_ADMIN
-  #
-  # References:
-  # https://help.ubuntu.com/lts/serverguide/network-file-system.html
-  # https://vitux.com/install-nfs-server-and-client-on-ubuntu/
-  # https://github.com/ehough/docker-nfs-server
-
-  local nfs_server=$(nfs_server_start)
-
-  # create a nfs pv and pv-claim in k8s
-  # https://github.com/kubernetes/examples/tree/master/staging/volumes/nfs
-
-  # create a pod that mounts the pv-claim
-
-  # from the pod, access then nfs mount and verify all is good
-
-  # cleanup
-  nfs_server_stop $nfs_server
-}
-
-# Verifies that a container within a pod gets re-scheduled when killed
-@test "container down" {
-
-  skip "SKIP: not written yet"
-
-  # See here for ideas:
-  # https://callistaenterprise.se/blogg/teknik/2017/12/20/kubernetes-on-docker-in-docker/
-
-}
-
->>>>>>> afa980c... First commit of test to verify nfs mounts inside a sys container.
 # Verifies that pods get re-scheduled when a K8s node goes down
 @test "node down" {
 
