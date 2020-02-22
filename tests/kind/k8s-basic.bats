@@ -733,8 +733,6 @@ EOF
 # Verifies that pods get re-scheduled when a K8s node goes down
 @test "node down" {
 
-  skip "FAILS: SYSBOX ISSUE #523"
-
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
   [ "$status" -eq 0 ]
 
@@ -799,7 +797,7 @@ EOF
 
   # bring the worker node back up
   # (note: container name = container hostname = kubectl node name)
-  local kubeadm_join=$(cat "$test_dir/.kubeadm_join")
+  local kubeadm_join=$(cat "$test_dir/.kubeadm_join" | cut -d' ' -f2-)
 
   docker_run --rm --name="$node" --hostname="$node" nestybox/ubuntu-bionic-k8s:latest
   [ "$status" -eq 0 ]
@@ -823,6 +821,7 @@ EOF
 }
 
 @test "kind cluster down" {
+
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
   k8s_cluster_teardown $num_workers
   remove_test_dir

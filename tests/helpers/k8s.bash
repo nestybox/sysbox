@@ -271,7 +271,7 @@ function k8s_cluster_setup() {
   done
 
   for (( i=0; i<$num_workers; i++ )); do
-    retry_run 40 1 "k8s_node-ready ${k8s_worker[$i]}"
+    retry_run 40 1 "k8s_node_ready k8s-master k8s-worker-$i"
   done
 
   echo $kubeadm_join
