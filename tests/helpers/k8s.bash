@@ -230,7 +230,7 @@ function k8s_cluster_setup() {
 
   wait_for_inner_dockerd k8s-master
 
-  docker exec k8s-master sh -c "kubeadm init --pod-network-cidr=$pod_net_cidr"
+  docker exec k8s-master sh -c "kubeadm init --kubernetes-version=v1.17.2 --pod-network-cidr=$pod_net_cidr"
   [ "$status" -eq 0 ]
   local kubeadm_output=$output
 

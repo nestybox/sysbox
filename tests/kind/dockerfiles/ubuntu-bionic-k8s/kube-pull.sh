@@ -6,7 +6,7 @@ dockerd_pid=$!
 sleep 2
 
 # pull inner images
-kubeadm config images pull
+kubeadm config images pull --kubernetes-version=v1.17.2
 docker pull quay.io/coreos/flannel:v0.11.0-amd64
 
 # dockerd cleanup (remove the .pid file as otherwise it prevents
