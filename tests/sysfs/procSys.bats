@@ -262,8 +262,6 @@ function compare_syscont_unshare() {
 
 @test "/proc/sys concurrent intra-container access" {
 
-  skip "FAILS: SYSBOX ISSUE #246"
-
   local num_workers=10
   local work_scr=/tmp/worker.sh
 
@@ -271,7 +269,9 @@ function compare_syscont_unshare() {
   cat << EOF > ${work_scr}
 #!/bin/sh
 while true; do
-  cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout > "\$1"
+  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
+  echo \$val > "\$1"
+  sync
   sleep 1
 done
 EOF
