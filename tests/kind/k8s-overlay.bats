@@ -2,7 +2,7 @@
 
 # Test k8s clusters on top of docker overlay networks
 #
-# NOTE: the "kind cluster up" test must execute before all others,
+# NOTE: the "kind overlay cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "kind cluster down"
 # test must execute after all other tests.
 
@@ -10,7 +10,7 @@ load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
 
-export test_dir="/tmp/k8s-basic-test/"
+export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
 function create_test_dir() {
@@ -26,16 +26,16 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kind cluster up overlay" {
+@test "kind overlay cluster up" {
 
   create_test_dir
 
-  docker network rm k8s-net0
-  docker network create k8s-net0
+  docker network rm k8s-net
+  docker network create k8s-net
   [ "$status" -eq 0 ]
 
   local num_workers=1
-  local kubeadm_join=$(k8s_cluster_setup $num_workers k8s-net0)
+  local kubeadm_join=$(k8s_cluster_setup k8s $num_workers k8s-net)
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/.k8s_num_workers"
@@ -385,14 +385,85 @@ EOF
   cp /etc/hosts.orig /etc/hosts
 }
 
-@test "kind cluster down overlay" {
+@test "kind overlay cluster2 up" {
+
+  docker network rm k8s-net2
+  [ "$status" -eq 0 ]
+
+  docker network create k8s-net2
+  [ "$status" -eq 0 ]
+
+  local num_workers=1
+
+  k8s_cluster_setup cluster2 $num_workers k8s-net2
+
+  # store k8s cluster info so subsequent tests can use it
+  echo $num_workers > "$test_dir/.cluster2_num_workers"
+
+  # launch a k8s deployment
+  docker exec cluster2-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
+  [ "$status" -eq 0 ]
+
+  docker exec cluster2-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  [ "$status" -eq 0 ]
+
+  retry_run 20 2 "k8s_deployment_ready cluster2-master default nginx"
+
+  # create a service and confirm it's there
+  docker exec cluster2-master sh -c "kubectl expose deployment/nginx --port 80"
+  [ "$status" -eq 0 ]
+
+  local svc_ip=$(k8s_svc_ip cluster2-master default nginx)
+
+  docker exec cluster2-master sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
+  [ "$status" -eq 0 ]
+
+  # verify the two k8s clusters are isolated
+
+  ## nodes
+  docker exec k8s-master sh -c "kubectl get nodes cluster2-master"
+  [ "$status" -eq 1 ]
+
+  docker exec k8s-master sh -c "kubectl get nodes cluster2-worker-0"
+  [ "$status" -eq 1 ]
+
+  docker exec cluster2-master sh -c "kubectl get nodes k8s-master"
+  [ "$status" -eq 1 ]
+
+  docker exec cluster2-master sh -c "kubectl get nodes k8s-worker-0"
+  [ "$status" -eq 1 ]
+
+  ## deployments
+  docker exec k8s-master sh -c "kubectl get deployment nginx"
+  [ "$status" -eq 1 ]
+
+  ## services
+  docker exec k8s-master sh -c "kubectl get svc nginx"
+  [ "$status" -eq 1 ]
+
+  # cleanup
+  docker exec cluster2-master sh -c "kubectl delete svc nginx"
+  [ "$status" -eq 0 ]
+
+  docker exec cluster2-master sh -c "kubectl delete deployments.apps nginx"
+  [ "$status" -eq 0 ]
+}
+
+@test "kind overlay cluster down" {
+
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
-  k8s_cluster_teardown $num_workers
+  k8s_cluster_teardown k8s $num_workers
+
+  num_workers=$(cat "$test_dir/.cluster2_num_workers")
+  k8s_cluster_teardown cluster2 $num_workers
 
   # wait for cluster teardown to complete
   sleep 10
 
-  docker network rm k8s-net0
+  docker network rm k8s-net
+  [ "$status" -eq 0 ]
+
+  docker network rm k8s-net2
   [ "$status" -eq 0 ]
 
   remove_test_dir

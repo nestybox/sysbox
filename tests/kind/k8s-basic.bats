@@ -11,7 +11,7 @@ load ../helpers/docker
 load ../helpers/k8s
 load ../helpers/fs
 
-export test_dir="/tmp/k8s-basic-test/"
+export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
 function create_test_dir() {
@@ -32,7 +32,7 @@ function remove_test_dir() {
   create_test_dir
 
   local num_workers=2
-  local kubeadm_join=$(k8s_cluster_setup $num_workers bridge)
+  local kubeadm_join=$(k8s_cluster_setup k8s $num_workers bridge)
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/.k8s_num_workers"
@@ -821,8 +821,7 @@ EOF
 }
 
 @test "kind cluster down" {
-
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
-  k8s_cluster_teardown $num_workers
+  k8s_cluster_teardown k8s $num_workers
   remove_test_dir
 }
