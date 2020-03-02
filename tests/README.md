@@ -1,5 +1,5 @@
 Sysbox Integration Tests
-==========================
+========================
 
 This directory contains tests to verify sysbox as a whole (i.e.,
 sysbox-runc + sysbox-fs + sysbox-mgr).
