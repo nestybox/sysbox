@@ -443,8 +443,6 @@ EOF
 
 @test "/proc/sys write-permission check" {
 
-  skip "FAILS: SYSBOX ISSUE #259"
-
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -470,7 +468,7 @@ EOF
   # As non-root, write to the same file; sysbox-fs should disallow this
   sv_runc exec syscont sh -c "runuser -l someuser -c \"echo $new_val > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout\""
   [ "$status" -ne 0 ]
-  [[ "$output" =~ *"Operation not permitted"* ]]
+  [[ "$output" =~ "Permission denied" ]]
 
   # Verify write did not take place
   sv_runc exec syscont sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
@@ -480,7 +478,7 @@ EOF
   # As root, write a /proc/sys read-only file; sysbox-fs should disallow this
   sv_runc exec syscont sh -c "runuser -l root -c \"echo $new_val > /proc/sys/kernel/cap_last_cap\""
   [ "$status" -eq 1 ]
-  [[ "$output" =~ *"Permission denied"* ]]
+  [[ "$output" =~ "Permission denied" ]]
 }
 
 # @test "/proc/sys capability checking" {
