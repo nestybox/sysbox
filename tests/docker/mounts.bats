@@ -7,7 +7,8 @@
 load ../helpers/run
 
 function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
+  local syscont=$1
+  retry_run 10 1 eval "__docker exec $syscont docker ps"
 }
 
 @test "docker vol mount" {
@@ -16,10 +17,10 @@ function wait_for_nested_dockerd {
   docker volume create testVol
   [ "$status" -eq 0 ]
 
-  SYSCONT_NAME=$(docker_run --rm --mount source=testVol,target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount source=testVol,target=/mnt/testVol busybox tail -f /dev/null)
 
   # verify the mount was done correctly
-  docker exec "$SYSCONT_NAME" sh -c "mount | grep testVol"
+  docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
   if [ -n "$SHIFT_UIDS" ]; then
@@ -29,15 +30,15 @@ function wait_for_nested_dockerd {
   fi
 
   # verify the container can write and read from the volume
-  docker exec "$SYSCONT_NAME" sh -c "echo someData > /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "echo someData > /mnt/testVol/testData"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "cat /mnt/testVol/testData"
   [ "$status" -eq 0 ]
   [[ "$output" == "someData" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker volume rm testVol
 }
 
@@ -54,10 +55,10 @@ function wait_for_nested_dockerd {
   fi
 
   # start the container
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null)
 
   # verify bind mount was done correctly
-  docker exec "$SYSCONT_NAME" sh -c "mount | grep testVol"
+  docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
   if [ -n "$SHIFT_UIDS" ]; then
@@ -68,10 +69,10 @@ function wait_for_nested_dockerd {
   fi
 
   # verify the container can write and read from the bind mount
-  docker exec "$SYSCONT_NAME" sh -c "echo someData > /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "echo someData > /mnt/testVol/testData"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "cat /mnt/testVol/testData"
   [ "$status" -eq 0 ]
   [[ "$output" == "someData" ]]
 
@@ -81,30 +82,30 @@ function wait_for_nested_dockerd {
   [[ "$output" == "someData" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   rm -r ${testDir}
 }
 
 @test "docker tmpfs mount" {
 
   # start container with tmpfs mount
-  SYSCONT_NAME=$(docker_run --rm --mount type=tmpfs,target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=tmpfs,target=/mnt/testVol busybox tail -f /dev/null)
 
   # verify the mount was done correctly
-  docker exec "$SYSCONT_NAME" sh -c "mount | grep testVol"
+  docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
   [[ "$output" =~ "tmpfs on /mnt/testVol type tmpfs" ]]
 
   # verify the container can write and read from the tmpfs mount
-  docker exec "$SYSCONT_NAME" sh -c "echo someData > /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "echo someData > /mnt/testVol/testData"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /mnt/testVol/testData"
+  docker exec "$syscont" sh -c "cat /mnt/testVol/testData"
   [ "$status" -eq 0 ]
   [[ "$output" == "someData" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 }
 
 @test "vol mount on /var/lib/docker" {
@@ -113,30 +114,30 @@ function wait_for_nested_dockerd {
   docker volume create testVol
   [ "$status" -eq 0 ]
 
-  SYSCONT_NAME=$(docker_run --rm --mount source=testVol,target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount source=testVol,target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
+  docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
 
   # deploy an inner container
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_nested_dockerd $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
   INNER_CONT_NAME="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$syscont" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker volume rm testVol
 }
 
@@ -159,9 +160,9 @@ function wait_for_nested_dockerd {
     chown -R $subid:$subid ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
+  docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
 
   line=$(echo $output | tr -s ' ')
@@ -174,8 +175,8 @@ function wait_for_nested_dockerd {
   # When using uid-shifting, sysbox changes the permissions on the
   # mount source; verify this.
   if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
     tuid=$(stat -c %u "$testDir")
     tgid=$(stat -c %g "$testDir")
     [ "$uid" -eq "$tuid" ]
@@ -185,23 +186,23 @@ function wait_for_nested_dockerd {
   # Let's run an inner container to verify the docker inside the sys container
   # can work with /var/lib/docker without problems
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_nested_dockerd $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
   INNER_CONT_NAME="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$syscont" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 
   # After the container stops, sysbox should revert the ownership on
   # the mount source; verify this.
@@ -213,30 +214,30 @@ function wait_for_nested_dockerd {
   fi
 
   # Let's start a new container with the same bind-mount, and verify the mount looks good
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
     tuid=$(stat -c %u "$testDir")
     tgid=$(stat -c %g "$testDir")
     [ "$uid" -eq "$tuid" ]
     [ "$gid" -eq "$tgid" ]
   fi
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_nested_dockerd $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c 'docker image ls --format "{{.Repository}}"'
+  docker exec "$syscont" sh -c 'docker image ls --format "{{.Repository}}"'
   [ "$status" -eq 0 ]
   images="$output"
 
   run sh -c "echo \"$images\" | grep busybox"
   [ "$status" -eq 0 ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 
   if [ -n "$SHIFT_UIDS" ]; then
     tuid=$(stat -c %u "$testDir")
@@ -260,18 +261,18 @@ function wait_for_nested_dockerd {
     chown -R $subid:$subid ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to fail (multiple containers can't share the same /var/lib/docker mount source)
   run __docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null
   [ "$status" -ne 0 ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 
   sleep 2
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-  docker_stop "$SYSCONT_NAME"
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  docker_stop "$syscont"
 
   rm -r ${testDir}
 }
@@ -349,9 +350,9 @@ function wait_for_nested_dockerd {
     chown -R $subid:$subid ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"\/var\/lib\/kubelet  \""
+  docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/kubelet  \""
   [ "$status" -eq 0 ]
 
   line=$(echo $output | tr -s ' ')
@@ -364,8 +365,8 @@ function wait_for_nested_dockerd {
   # When using uid-shifting, sysbox changes the permissions on the
   # mount source; verify this.
   if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$SYSCONT_NAME" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
     tuid=$(stat -c %u "$testDir")
     tgid=$(stat -c %g "$testDir")
     [ "$uid" -eq "$tuid" ]
@@ -374,7 +375,7 @@ function wait_for_nested_dockerd {
 
   # After the container stops, sysbox should revert the ownership on
   # the mount source; verify this.
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 
   if [ -n "$SHIFT_UIDS" ]; then
     tuid=$(stat -c %u "$testDir")
@@ -398,18 +399,18 @@ function wait_for_nested_dockerd {
     chown -R $subid:$subid ${testDir}
   fi
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to fail (multiple containers can't share the same /var/lib/kubelet mount source)
   run __docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null
   [ "$status" -ne 0 ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 
   sleep 2
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-  docker_stop "$SYSCONT_NAME"
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  docker_stop "$syscont"
 
   rm -r ${testDir}
 }
@@ -464,6 +465,37 @@ function wait_for_nested_dockerd {
     fi
 
     rm -r "${testDir[$i]}"
+  done
+
+}
+
+@test "shiftfs blacklist" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "needs uid shifting"
+  fi
+
+  # this list must match the sysbox-run shiftfs blacklist
+  declare -a blacklist=("/bin" "/sbin" "/usr/bin" "/usr/sbin" "/usr/local/bin" "/usr/loca/sbin" "/dev" "/run" "/var/run")
+  local syscont
+
+  for bind_src in ${blacklist[@]}; do
+
+    run stat $blacklist
+    if [ "$output" -ne 0 ]; then
+      continue
+    fi
+
+    syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist busybox tail -f /dev/null)
+
+    # verify that shiftfs is not mounted on the source or destination of the mount
+    run sh -c "mount | grep \"shiftfs\" | grep \"$blacklist\""
+    [ "$status" -eq 1 ]
+
+    docker exec "$syscont" sh -c "mount | grep \"shiftfs\" | grep \"/mnt/$blacklist\""
+    [ "$status" -eq 1 ]
+
+    docker_stop "$syscont"
   done
 
 }
