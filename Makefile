@@ -315,6 +315,8 @@ test-fs-local: sysbox-ipc
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
 
 test-mgr-local: sysbox-ipc
+	dockerd > /var/log/dockerd.log 2>&1 &
+	sleep 2
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
 
