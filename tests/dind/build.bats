@@ -5,12 +5,7 @@
 #
 
 load ../helpers/run
-
-SYSCONT_NAME=""
-
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
-}
+load ../helpers/docker
 
 @test "build with inner images" {
 
@@ -45,16 +40,17 @@ function wait_for_nested_dockerd {
 
   docker image prune -f
   [ "$status" -eq 0 ]
+  popd
 
   # run generated container to confirm that images are embedded in it
-  SYSCONT_NAME=$(docker_run --rm nestybox/sc-with-inner-img:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm nestybox/sc-with-inner-img:latest tail -f /dev/null)
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c 'docker image ls --format "{{.Repository}}"'
+  docker exec "$syscont" sh -c 'docker image ls --format "{{.Repository}}"'
   [ "$status" -eq 0 ]
 
   images="$output"
@@ -66,27 +62,25 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
-  INNER_CONT_NAME="$output"
+  local inner_cont="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker image rm nestybox/sc-with-inner-img:latest
   docker image prune -f
 
   if [[ $premount == "true" ]]; then
     umount /lib/modules/$(uname -r)
   fi
-
-  popd
 
   # revert dockerd default runtime config
   # dockerd_stop
@@ -96,50 +90,50 @@ function wait_for_nested_dockerd {
 
 @test "commit with inner images" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c "echo testdata > /root/testfile"
+  docker exec "$syscont" sh -c "echo testdata > /root/testfile"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker pull busybox:latest"
+  docker exec "$syscont" sh -c "docker pull busybox:latest"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker pull alpine:latest"
+  docker exec "$syscont" sh -c "docker pull alpine:latest"
   [ "$status" -eq 0 ]
 
   # commit the sys container image
   docker image rm -f nestybox/alpine-docker-dbg:commit
   [ "$status" -eq 0 ]
-  docker commit "$SYSCONT_NAME" nestybox/alpine-docker-dbg:commit
+  docker commit "$syscont" nestybox/alpine-docker-dbg:commit
   [ "$status" -eq 0 ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker image prune -f
 
   # launch a sys container with the committed image
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:commit)
+  syscont=$(docker_run --rm nestybox/alpine-docker-dbg:commit)
 
   # verify testfile is present
-  docker exec "$SYSCONT_NAME" sh -c "cat /root/testfile"
+  docker exec "$syscont" sh -c "cat /root/testfile"
   [ "$status" -eq 0 ]
   [[ "$output" == "testdata" ]]
 
   # make sure to remove docker.pid & containerd.pid before launching docker (it's in the committed image)
-  docker exec "$SYSCONT_NAME" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
+  docker exec "$syscont" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
   [ "$status" -eq 0 ]
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $syscont
 
   # verify images are present
-  docker exec "$SYSCONT_NAME" sh -c 'docker image ls --format "{{.Repository}}"'
+  docker exec "$syscont" sh -c 'docker image ls --format "{{.Repository}}"'
   [ "$status" -eq 0 ]
 
   images="$output"
@@ -151,18 +145,18 @@ function wait_for_nested_dockerd {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
-  INNER_CONT_NAME="$output"
+  local inner_cont="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 
   # cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker image rm nestybox/alpine-docker-dbg:commit
 }
