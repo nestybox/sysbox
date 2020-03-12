@@ -4,6 +4,32 @@
 # Test container initialization script
 #
 
+function retry() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  set +e
+  for ((i = 0; i < attempts; i++)); do
+    $@
+    if [ "$?" -eq 0 ]; then
+      set -e
+      return 0
+    fi
+    sleep $delay
+  done
+
+  set -e
+  echo "Command \"$@\" failed $attempts times. Output: $?"
+  false
+}
+
+#
+# Execution starts here ...
+#
+
 # Build & install sysbox
 thisHost=$(hostname)
 
@@ -54,25 +80,12 @@ else
 EOF
 fi
 
-# Inside the test container we start sysbox with a dedicated script
-# that sets some test-specific configs
-INSTALL_DIR="/usr/local/sbin"
-echo "Starting sysbox with test-specific options"
-install -D -m0755 tests/scr/sysbox $INSTALL_DIR/sysbox
-sysbox
-
 # Start docker
 dockerd > /var/log/dockerd.log 2>&1 &
+retry 10 0.5 docker ps > /dev/null 2>&1
 
-# Wait for docker to be up
-set +e
-
-for ((i = 0; i < 10; i++)); do
-  docker ps > /dev/null 2>&1
-  if [ "$?" -eq 0 ]; then
-    exit 0
-  fi
-  sleep 0.5
-done
-
-exit 1
+# Inside the test container we start sysbox with a dedicated script
+# that sets some test-specific configs
+echo "Starting sysbox with test-specific options"
+install -D -m0755 tests/scr/sysbox /usr/local/sbin/sysbox
+sysbox
