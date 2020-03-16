@@ -75,7 +75,11 @@ function k8s_pod_ready() {
   local pod=$2
   local i
 
-  docker exec "$k8s_master" sh -c "kubectl get pod $pod"
+  if [ $# -eq 3 ]; then
+     local ns="-n $3"
+  fi
+
+  docker exec "$k8s_master" sh -c "kubectl get pod $pod $ns"
   [ "$status" -eq 0 ]
 
   local pod_status="${lines[1]}"
@@ -301,4 +305,20 @@ function k8s_cluster_teardown() {
   done
 
   docker_stop $k8s_master
+}
+
+function helm_v3_install() {
+  local k8s_master=$1
+
+  docker exec "$k8s_master" sh -c "curl -Os https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz && \
+    tar -zxvf helm-v3.1.2-linux-amd64.tar.gz && \
+    mv linux-amd64/helm /usr/local/bin/helm && \
+    helm repo add stable https://kubernetes-charts.storage.googleapis.com/ && \
+    helm repo update"
+  [ "$status" -eq 0 ]
+}
+
+function helm_v3_uninstall() {
+  local k8s_master=$1
+  docker exec "$k8s_master" sh -c "helm reset"
 }
