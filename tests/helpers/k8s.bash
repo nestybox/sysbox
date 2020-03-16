@@ -307,6 +307,54 @@ function k8s_cluster_teardown() {
   docker_stop $k8s_master
 }
 
+# Install Helm v2.
+function helm_v2_install() {
+  local k8s_master=$1
+
+  docker exec "$k8s_master" sh -c "curl -Os https://get.helm.sh/helm-v2.16.3-linux-amd64.tar.gz && \
+    tar -zxvf helm-v2.16.3-linux-amd64.tar.gz && \
+    mv linux-amd64/helm /usr/local/bin/helm && \
+    kubectl create serviceaccount --namespace kube-system tiller
+    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
+    helm init --service-account tiller --upgrade
+    helm repo add stable https://kubernetes-charts.storage.googleapis.com/ && \
+    helm repo update"
+  [ "$status" -eq 0 ]
+
+  sleep 5
+
+  # Identify tiller's pod name.
+  docker exec k8s-master sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  local tiller_pod=$(echo ${output} | awk '{print $2}')
+
+  # Wait till tiller's pod is up and running.
+  retry_run 60 5 "k8s_pod_ready k8s-master $tiller_pod kube-system"  
+}
+
+# Uninstall Helm v2.
+function helm_v2_uninstall() {
+  local k8s_master=$1
+  
+  # Obtain tiller's pod-name.
+  docker exec k8s-master sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  [ "$status" -eq 0 ]
+  local tiller_pod=$(echo ${lines[0]} | awk '{print $2}')
+  
+  # Delete all tiller's deployments.
+  docker exec "$k8s_master" sh -c "kubectl delete deployment tiller-deploy --namespace kube-system"
+  [ "$status" -eq 0 ]
+
+  # Wait till tiller pod is fully destroyed.
+  retry_run 20 2 "[ ! $(k8s_pod_ready k8s-master $tiller_pod kube-system) ]"
+}
+
+# Uninstall Helm v3. Right, much simpler than v2 version above, as there's no need to
+# deal with 'tiller' complexities.
 function helm_v3_install() {
   local k8s_master=$1
 
@@ -318,6 +366,7 @@ function helm_v3_install() {
   [ "$status" -eq 0 ]
 }
 
+# Uninstall Helm v3.
 function helm_v3_uninstall() {
   local k8s_master=$1
   docker exec "$k8s_master" sh -c "helm reset"
