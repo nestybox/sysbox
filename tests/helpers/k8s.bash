@@ -9,13 +9,19 @@ load ../helpers/docker
 # Note: for tests using bats.
 #
 
+function kubeadm_get_token() {
+  local k8s_master=$1
+  local join=$(__docker exec $k8s_master sh -c "kubeadm token create --print-join-command 2> /dev/null")
+  echo $join
+}
+
 function kubectl_config() {
   local node=$1
-  docker exec "$node" sh -c "mkdir -p $HOME/.kube"
+  docker exec "$node" sh -c "mkdir -p /root/.kube"
   [ "$status" -eq 0 ]
-  docker exec "$node" sh -c "cp -i /etc/kubernetes/admin.conf $HOME/.kube/config"
+  docker exec "$node" sh -c "cp -i /etc/kubernetes/admin.conf /root/.kube/config"
   [ "$status" -eq 0 ]
-  docker exec "$node" sh -c "chown $(id -u):$(id -g) $HOME/.kube/config"
+  docker exec "$node" sh -c "chown $(id -u):$(id -g) /root/.kube/config"
   [ "$status" -eq 0 ]
 }
 
@@ -235,7 +241,7 @@ function k8s_cluster_setup() {
   # Deploy the master node
   #
 
-  docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/ubuntu-bionic-k8s:latest
+  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/ubuntu-bionic-k8s:latest)
 
   wait_for_inner_dockerd $k8s_master
 
@@ -245,10 +251,6 @@ function k8s_cluster_setup() {
 
   run sh -c "echo \"$kubeadm_output\" | grep -q \"Your Kubernetes control\-plane has initialized successfully\""
   [ "$status" -eq 0 ]
-
-  run sh -c "echo \"$kubeadm_output\" | grep -A1 \"kubeadm join\""
-  [ "$status" -eq 0 ]
-  local kubeadm_join=$output
 
   kubectl_config $k8s_master
 
@@ -268,13 +270,15 @@ function k8s_cluster_setup() {
   #
 
   declare -a k8s_worker
-  local name
+  local worker_name
 
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
     k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/ubuntu-bionic-k8s:latest)
-    wait_for_inner_dockerd ${k8s_worker[$i]}
+   wait_for_inner_dockerd ${k8s_worker[$i]}
   done
+
+  local kubeadm_join=$(kubeadm_get_token $k8s_master)
 
   for (( i=0; i<$num_workers; i++ )); do
     docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"
