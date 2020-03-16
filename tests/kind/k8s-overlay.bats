@@ -388,8 +388,6 @@ EOF
 @test "kind overlay cluster2 up" {
 
   docker network rm k8s-net2
-  [ "$status" -eq 0 ]
-
   docker network create k8s-net2
   [ "$status" -eq 0 ]
 

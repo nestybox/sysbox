@@ -797,7 +797,8 @@ EOF
 
   # bring the worker node back up
   # (note: container name = container hostname = kubectl node name)
-  local kubeadm_join=$(cat "$test_dir/.kubeadm_join" | cut -d' ' -f2-)
+
+  local kubeadm_join=$(cat "$test_dir/.kubeadm_join")
 
   docker_run --rm --name="$node" --hostname="$node" nestybox/ubuntu-bionic-k8s:latest
   [ "$status" -eq 0 ]
