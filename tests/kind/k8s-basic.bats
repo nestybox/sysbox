@@ -820,6 +820,53 @@ EOF
   rm /tmp/depl-patch.yaml
 }
 
+# Verifies Helm v2 proper operation.
+@test "helm v2 basic" {
+
+  # Install Helm V2.
+  helm_v2_install k8s-master
+
+  # Install new Helm chart.
+  docker exec k8s-master sh -c "helm install stable/nginx-ingress"
+  [ "$status" -eq 0 ]
+
+  sleep 1
+
+  # Verify Helm chart has been properly launched.
+  docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
+  [ "$status" -eq 0 ]
+
+  docker exec k8s-master sh -c "kubectl get pods -o wide"
+  [ "$status" -eq 0 ]
+
+  local pod1_name=$(echo ${lines[1]} | awk '{print $1}')
+  local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
+
+  # Wait till the new pods are fully up and running.
+  retry_run 20 2 "k8s_pod_ready k8s-master $pod1_name"
+  retry_run 20 2 "k8s_pod_ready k8s-master $pod2_name"
+
+  # Check traffic.
+  local pod1_ip=$(k8s_pod_ip k8s-master $pod1_name)
+  docker exec k8s-master sh -c "curl -s $pod1_ip | egrep -q \"nginx\""
+  [ "$status" -eq 0 ]
+
+  # Eliminate installed Helm chart.
+  docker exec k8s-master sh -c "helm ls --all --short | xargs -L1 helm delete --purge"
+  [ "$status" -eq 0 ]
+
+  # Wait till previously allocated pods are eliminated.
+  retry_run 20 2 "[ ! $(k8s_pod_ready k8s-master $pod1_name) ]"
+  retry_run 20 2 "[ ! $(k8s_pod_ready k8s-master $pod2_name) ]"
+
+  # Verify Helm chart is properly eliminated.
+  docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
+  [ "$status" -eq 1 ]
+
+  # Uninstalling Helm.
+  helm_v2_uninstall k8s-master
+}
+
 # Verifies Helm v3 proper operation.
 @test "helm v3 basic" {
 
