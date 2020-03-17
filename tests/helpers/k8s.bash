@@ -316,7 +316,7 @@ function helm_v2_install() {
     mv linux-amd64/helm /usr/local/bin/helm && \
     kubectl create serviceaccount --namespace kube-system tiller
     kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
+    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
     helm init --service-account tiller --upgrade
     helm repo add stable https://kubernetes-charts.storage.googleapis.com/ && \
     helm repo update"
@@ -333,18 +333,18 @@ function helm_v2_install() {
   local tiller_pod=$(echo ${output} | awk '{print $2}')
 
   # Wait till tiller's pod is up and running.
-  retry_run 60 5 "k8s_pod_ready k8s-master $tiller_pod kube-system"  
+  retry_run 60 5 "k8s_pod_ready k8s-master $tiller_pod kube-system"
 }
 
 # Uninstall Helm v2.
 function helm_v2_uninstall() {
   local k8s_master=$1
-  
+
   # Obtain tiller's pod-name.
   docker exec k8s-master sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
   [ "$status" -eq 0 ]
   local tiller_pod=$(echo ${lines[0]} | awk '{print $2}')
-  
+
   # Delete all tiller's deployments.
   docker exec "$k8s_master" sh -c "kubectl delete deployment tiller-deploy --namespace kube-system"
   [ "$status" -eq 0 ]
