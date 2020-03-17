@@ -320,27 +320,30 @@ EOF
   num_sc=5
   iter=20
 
+  local worker_scr=/tmp/worker.sh
+
   # this worker script will run in each sys container
-  cat << EOF > ${HOME}/worker.sh
+  cat << EOF > $worker_scr
 #!/bin/bash
 for i in \$(seq 1 $iter); do
   echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout
   val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
   if [ "\$val" != "\$i" ]; then
-    echo "fail" > result.txt
-    exit
+   echo "fail" > /result.txt
+   exit
   fi
 done
-echo "pass" > result.txt
+echo "pass" > /result.txt
 EOF
 
-  chmod +x ${HOME}/worker.sh
+  chmod +x $worker_scr
 
   # deploy the sys containers
+  declare -a syscont
   for i in $(seq 1 $num_sc); do
-    syscont[$i]=$(docker_run --rm \
-                    --mount type=bind,source="${HOME}"/worker.sh,target=/worker.sh \
-                    nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont[$i]=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    docker cp $worker_scr ${syscont[$i]}:/worker.sh
+    [ "$status" -eq 0 ]
   done
 
   # start the worker script
@@ -356,7 +359,7 @@ EOF
   for i in $(seq 1 $num_sc); do
     local attempts=0
     while true; do
-      if __docker exec ${syscont[$num_sc]} sh -c "cat /result.txt"; then
+      if __docker exec ${syscont[$i]} sh -c "cat /result.txt"; then
         break
       fi
 
@@ -380,7 +383,7 @@ EOF
     docker_stop "$sc"
   done
 
-  rm ${HOME}/worker.sh
+  rm $worker_scr
 }
 
 @test "/proc/sys stat" {
