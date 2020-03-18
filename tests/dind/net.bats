@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/net
+load ../helpers/docker
 
 SYSCONT_NAME=""
 
@@ -17,10 +18,6 @@ function teardown() {
   docker_stop "$SYSCONT_NAME"
 }
 
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
-}
-
 @test "dind bridge net" {
 
   # verify basic docker bridge networking inside a sys container
@@ -29,7 +26,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "docker network ls | awk '{ print \$2 \" \" \$4 }'"
   [ "$status" -eq 0 ]
@@ -95,7 +92,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "ip a"
   [ "$status" -eq 0 ]
@@ -187,7 +184,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --network host --name my_nginx nginx"
   [ "$status" -eq 0 ]

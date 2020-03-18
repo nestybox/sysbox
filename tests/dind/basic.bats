@@ -5,12 +5,9 @@
 #
 
 load ../helpers/run
+load ../helpers/docker
 
 SYSCONT_NAME=""
-
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
-}
 
 @test "dind basic" {
 
@@ -19,7 +16,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "docker run hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
@@ -34,7 +31,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -69,7 +66,7 @@ EOF
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   image="test_nginx"
 

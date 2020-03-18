@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/syscall
+load ../helpers/docker
 
 # verify that explicit mounts of procfs inside a sys container are backed by
 # sysbox-fs.
@@ -238,10 +239,6 @@ load ../helpers/syscall
   docker_stop "$syscont_name"
 }
 
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $1 docker ps"
-}
-
 @test "mount procfs dind" {
 
   local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -249,7 +246,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" bash -c "docker run --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -274,7 +271,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -311,7 +308,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
