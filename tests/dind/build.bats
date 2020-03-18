@@ -160,3 +160,54 @@ load ../helpers/docker
   docker_stop "$syscont"
   docker image rm nestybox/alpine-docker-dbg:commit
 }
+
+@test "commit with removed inner image" {
+
+  # launch a sys container that comes with inner images baked-in
+  local syscont=$(docker_run --rm nestybox/syscont-inner-img tail -f /dev/null)
+
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_inner_dockerd $syscont
+
+  # remove one of the inner images
+  docker exec "$syscont" sh -c "docker image rm busybox"
+  [ "$status" -eq 0 ]
+
+  # commit the sys container image
+  docker image rm -f nestybox/syscont-inner-img:commit
+  docker commit "$syscont" nestybox/syscont-inner-img:commit
+  [ "$status" -eq 0 ]
+
+  docker_stop "$syscont"
+  docker image prune -f
+
+  # launch a sys container with the newly committed image
+  syscont=$(docker_run --rm nestybox/syscont-inner-img:commit)
+
+  # make sure to remove docker.pid & containerd.pid before launching docker (it's in the committed image)
+  docker exec "$syscont" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
+  [ "$status" -eq 0 ]
+
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_inner_dockerd $syscont
+
+  # verify removed image is not present
+  docker exec "$syscont" sh -c 'docker image ls --format "{{.Repository}}"'
+  [ "$status" -eq 0 ]
+
+  images="$output"
+
+  run sh -c "echo \"$images\" | grep -v busybox"
+  [ "$status" -eq 0 ]
+
+  run sh -c "echo \"$images\" | grep alpine"
+  [ "$status" -eq 0 ]
+
+  # cleanup
+  docker_stop "$syscont"
+  docker image rm nestybox/syscont-inner-img:commit
+}
