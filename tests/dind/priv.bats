@@ -9,10 +9,7 @@
 
 load ../helpers/run
 load ../helpers/syscall
-
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $1 docker ps"
-}
+load ../helpers/docker
 
 @test "dind privileged basic" {
 
@@ -21,7 +18,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -55,7 +52,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -103,7 +100,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -126,7 +123,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -149,7 +146,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -174,7 +171,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont_name
+  wait_for_inner_dockerd $syscont_name
 
   # launch priv container inside sys cont
   docker exec "$syscont_name" sh -c "docker run --privileged --rm -d nestybox/alpine-docker:latest tail -f /dev/null"
