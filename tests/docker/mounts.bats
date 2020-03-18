@@ -5,11 +5,7 @@
 #
 
 load ../helpers/run
-
-function wait_for_nested_dockerd {
-  local syscont=$1
-  retry_run 10 1 eval "__docker exec $syscont docker ps"
-}
+load ../helpers/docker
 
 @test "docker vol mount" {
 
@@ -123,7 +119,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont
+  wait_for_inner_dockerd $syscont
 
   docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -189,7 +185,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont
+  wait_for_inner_dockerd $syscont
 
   docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -228,7 +224,7 @@ function wait_for_nested_dockerd {
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd $syscont
+  wait_for_inner_dockerd $syscont
 
   docker exec "$syscont" sh -c 'docker image ls --format "{{.Repository}}"'
   [ "$status" -eq 0 ]

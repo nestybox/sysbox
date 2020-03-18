@@ -5,12 +5,9 @@
 #
 
 load ../helpers/run
+load ../helpers/docker
 
 SYSCONT_NAME=""
-
-function wait_for_nested_dockerd {
-  retry_run 10 1 eval "__docker exec $SYSCONT_NAME docker ps"
-}
 
 @test "compose basic" {
 
@@ -33,7 +30,7 @@ EOF
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_nested_dockerd
+  wait_for_inner_dockerd $SYSCONT_NAME
 
   docker exec "$SYSCONT_NAME" sh -c "cd /mnt && docker-compose up -d"
   [ "$status" -eq 0 ]
