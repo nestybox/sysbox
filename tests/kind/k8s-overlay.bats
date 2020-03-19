@@ -447,6 +447,54 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+# Install Istio and verify the proper operation of its main components through
+# the instantiation of a basic service-mesh. More details here:
+# https://istio.io/docs/setup/getting-started/
+@test "kind istio basic" {
+
+  # Install Istio in original cluster.
+  istio_install k8s-master
+
+  # Deploy Istio sample app.
+  docker exec k8s-master sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
+  [ "$status" -eq 0 ]
+
+  # Obtain list / names of pods launched as part of this app.
+  docker exec k8s-master sh -c "kubectl get pods -o wide"
+  [ "$status" -eq 0 ]
+
+  pod_names[0]=$(echo ${lines[1]} | awk '{print $1}')
+  pod_names[1]=$(echo ${lines[2]} | awk '{print $1}')
+  pod_names[2]=$(echo ${lines[3]} | awk '{print $1}')
+  pod_names[3]=$(echo ${lines[4]} | awk '{print $1}')
+  pod_names[4]=$(echo ${lines[5]} | awk '{print $1}')
+  pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
+
+  # Wait for all the app pods to be ready (istio sidecars will be intantiated too).
+  retry_run 60 5 "k8s_pod_array_ready k8s-master ${pod_names[@]}"
+
+  # Obtain app pods again (after waiting instruction) to dump their state if an
+  # error is eventually encountered.
+  docker exec k8s-master sh -c "kubectl get pods -o wide"
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  # Check if app is running and serving HTML pages.
+  docker exec k8s-master sh -c "kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'"
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  docker exec -d k8s-master sh -c "kubectl exec $output -c ratings -- curl -s productpage:9080/productpage | grep -q \"<title>.*</title>\""
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  # Uninstall Istio in original cluster.
+  istio_uninstall k8s-master
+}
+
 @test "kind overlay cluster down" {
 
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
