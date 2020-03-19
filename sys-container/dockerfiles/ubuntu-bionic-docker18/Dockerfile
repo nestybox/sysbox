@@ -35,3 +35,5 @@ COPY docker-ce_18.09.8_3-0_ubuntu-bionic_amd64.deb /root/
 
 RUN dpkg -i /root/docker-ce-cli_18.09.8_3-0_ubuntu-bionic_amd64.deb
 RUN dpkg -i /root/docker-ce_18.09.8_3-0_ubuntu-bionic_amd64.deb
+
+CMD ["/bin/bash"]
