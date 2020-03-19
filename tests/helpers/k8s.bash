@@ -76,10 +76,13 @@ function k8s_del_pod() {
   [ "$status" -eq 0 ]
 }
 
+# Determines pod readiness (Running) state.
+#  $1 - k8s node to extract info from
+#  $2 - k8s pod to query
+#  $3 - k8s namespace where pod is expected (optional)
 function k8s_pod_ready() {
   local k8s_master=$1
   local pod=$2
-  local i
 
   if [ $# -eq 3 ]; then
      local ns="-n $3"
@@ -97,6 +100,29 @@ function k8s_pod_ready() {
 
   local total=$(sh -c "echo $pod_status | awk '{print \$2}' | cut -d \"/\" -f 2")
   echo $pod_status | awk -v OFS=' ' '{print $1, $2, $3, $4}' | grep -q "$pod $total/$total Running 0"
+}
+
+# Determines readiness (Running) state of all pods within array.
+#  $1 - k8s node to extract info from
+#  $2 - array of k8s pod to query
+#  $3 - k8s namespace where pods are expected (optional)
+function k8s_pod_array_ready() {
+  local k8s_master=$1
+  local pod_array=$2
+  local pod
+
+  if [ $# -eq 3 ]; then
+     local ns="$3"
+  fi
+
+  for pod in "${pod_array[@]}"; do
+    k8s_pod_ready ${k8s_master} ${pod} ${ns}
+    if [ "$?" -ne 0 ]; then
+      return 1
+    fi
+  done
+
+  return 0
 }
 
 # Returns the IP address associated with a given pod
@@ -374,4 +400,31 @@ function helm_v3_install() {
 function helm_v3_uninstall() {
   local k8s_master=$1
   docker exec "$k8s_master" sh -c "helm reset"
+}
+
+# Installs Istio.
+function istio_install() {
+  local k8s_master=$1
+
+  # Bear in mind that the Istio version to download has not been explicitly defined,
+  # which has its pros (test latest releases) & cons (test instability).
+  docker exec "$k8s_master" sh -c "curl -L https://istio.io/downloadIstio | sh - && \
+    cp istio*/bin/istioctl /usr/local/bin/ && \
+    istioctl verify-install && \
+    istioctl manifest apply --set profile=demo && \
+    kubectl label namespace default istio-injection=enabled"
+  [ "$status" -eq 0 ]
+}
+
+# Uninstalls Istio .
+function istio_uninstall() {
+  local k8s_master=$1
+
+  # Run uninstallation script.
+  docker exec "$k8s_master" sh -c "istio-1.5.0/samples/bookinfo/platform/kube/cleanup.sh"
+  [ "$status" -eq 0 ]
+
+  # Remove istio namespace.
+  docker exec "$k8s_master" sh -c kubectl delete ns istio-system
+  [ "$status" -eq 0 ]
 }
