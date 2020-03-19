@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y \
        net-tools \
        wget
 
+CMD ["/bin/bash"]
+
 #
 # The following steps could be used as an alternative to the
 # docker-ce install above. They only install the docker engine.
