@@ -50,7 +50,6 @@ load ../helpers/docker
   # the /var/lib/sysbox/docker/[imgVol|cowVol] dirs should be empty
   # because the container has no inner images.
   run sh -c "ls -l /var/lib/sysbox/docker/imgVol"
-  echo "status = $status"
   [ "$status" -eq 0 ]
   [[ "$output" == "total 0" ]]
 
