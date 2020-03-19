@@ -107,16 +107,24 @@ load ../helpers/docker
   [ "$status" -eq 0 ]
 
   # commit the sys container image
-  docker image rm -f nestybox/alpine-docker-dbg:commit
+  docker image rm -f image-commit
   [ "$status" -eq 0 ]
-  docker commit "$syscont" nestybox/alpine-docker-dbg:commit
+  docker commit "$syscont" image-commit
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
   docker image prune -f
 
+  # verify the committed image has an appropriate size (slightly
+  # bigger than the base image since it includes busybox & alpine)
+  local unique_size=$(__docker system df -v --format '{{json .}}' | jq '.Images[] | select(.Repository == "image-commit") | .UniqueSize' | tr -d '"' | grep -Eo '[[:alpha:]]+|[0-9]+')
+  local num=$(echo $unique_size | awk '{print $1}')
+  local unit=$(echo $unique_size | awk '{print $3}')
+  [ "$num" -lt "10" ]
+  [ "$unit" == "MB" ]
+
   # launch a sys container with the committed image
-  syscont=$(docker_run --rm nestybox/alpine-docker-dbg:commit)
+  syscont=$(docker_run --rm image-commit)
 
   # verify testfile is present
   docker exec "$syscont" sh -c "cat /root/testfile"
@@ -158,7 +166,7 @@ load ../helpers/docker
 
   # cleanup
   docker_stop "$syscont"
-  docker image rm nestybox/alpine-docker-dbg:commit
+  docker image rm image-commit
 }
 
 @test "commit with removed inner image" {
@@ -176,15 +184,15 @@ load ../helpers/docker
   [ "$status" -eq 0 ]
 
   # commit the sys container image
-  docker image rm -f nestybox/syscont-inner-img:commit
-  docker commit "$syscont" nestybox/syscont-inner-img:commit
+  docker image rm -f image-commit
+  docker commit "$syscont" image-commit
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
   docker image prune -f
 
   # launch a sys container with the newly committed image
-  syscont=$(docker_run --rm nestybox/syscont-inner-img:commit)
+  syscont=$(docker_run --rm image-commit)
 
   # make sure to remove docker.pid & containerd.pid before launching docker (it's in the committed image)
   docker exec "$syscont" sh -c "rm -f /var/run/docker.pid && rm -f /run/docker/containerd/containerd.pid"
@@ -209,5 +217,6 @@ load ../helpers/docker
 
   # cleanup
   docker_stop "$syscont"
-  docker image rm nestybox/syscont-inner-img:commit
+  docker image rm image-commit
+  docker image rm nestybox/syscont-inner-img:latest
 }
