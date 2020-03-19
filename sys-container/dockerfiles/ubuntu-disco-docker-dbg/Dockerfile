@@ -17,3 +17,5 @@ RUN apt-get update && apt-get install -y \
        less \
        wget \
        iproute2
+
+CMD ["/bin/bash"]
