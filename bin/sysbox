@@ -1,34 +1,38 @@
 #!/bin/bash
 
 #
-# Launch sysbox (requires root privileges)
+# Launch Sysbox (requires root privileges)
 #
-# Note: normally sysbox is installed via a distro-specific package
-# which sets up the sysbox systemd units. This script is meant as a
-# quick alternative to the installer to help launch sysbox when testing
-# it on the host.
+# Note: normally Sysbox is installed via a distro-specific package
+# which sets up the Sysbox systemd units. This script is meant as a
+# quick alternative to the installer to help launch Sysbox manually
+# (e.g., for testing).
 #
 
-set -e
+# Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
+# (copied from runc/tests/integration/helpers.bash)
+function retry() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    $@
+    if [ "$?" -eq 0 ]; then
+	return 0
+    fi
+    sleep $delay
+  done
+
+  echo "Command \"$@\" failed $attempts times. Output: $?"
+  false
+}
 
 mkdir -p /var/lib/sysboxfs
-
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-sleep 3
+retry 5 1 grep -q Ready /var/log/sysbox-mgr.log
+
 sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-
-set +e
-
-# wait for sysbox-fs and sysbox-mgr
-for ((i = 0; i < 10; i++)); do
-  if [ -f /var/log/sysbox-mgr.log ] && [ -f /var/log/sysbox-fs.log ]; then
-    mgr_up=$(grep -c "Listening on" /var/log/sysbox-mgr.log)
-    fs_up=$(grep -c "Initiating sysbox-fs main-loop" /var/log/sysbox-fs.log)
-    if [ "$mgr_up" -eq 1 ] && [ "$fs_up" -eq 1 ]; then
-      exit 0
-    fi
-  fi
-  sleep 0.5
-done
-
-exit 1
+retry 5 1 grep -q Initiating /var/log/sysbox-fs.log
