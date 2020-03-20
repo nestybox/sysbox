@@ -45,3 +45,9 @@ function docker_root_gid_map() {
   local gid=$(__docker exec "$cont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
   echo $gid
 }
+
+function docker_cont_rootfs() {
+  local cont=$1
+  local rootfs=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.MergedDir | tr -d '"')
+  echo $rootfs
+}
