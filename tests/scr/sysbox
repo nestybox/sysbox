@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Launch sysbox inside the test container
@@ -13,27 +13,40 @@ function retry() {
   shift
   local i
 
+  set +e
   for ((i = 0; i < attempts; i++)); do
     $@
     if [ "$?" -eq 0 ]; then
+        set -e
 	return 0
     fi
     sleep $delay
   done
 
+  set -e
   echo "Command \"$@\" failed $attempts times. Output: $?"
   false
 }
 
-mkdir -p /var/lib/sysboxfs
-sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-retry 5 1 grep -q Ready /var/log/sysbox-mgr.log
+# Increase default inotify resources to meet sys container's demands.
+sysctl -w fs.inotify.max_queued_events=1048576
+sysctl -w fs.inotify.max_user_watches=1048576
+sysctl -w fs.inotify.max_user_instances=1048576
 
-# inside the test container we must ignore sysbox-fs handler errors
-# when accessing procfs and sysfs, because some procfs and sysfs
-# resources are not writeable from within the test container (see
-# sysbox issue #538).
+sleep 1
+
+# start sysbox-mgr
+sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
+retry 10 1 grep -q Ready /var/log/sysbox-mgr.log
+
+# start sysbox-fs
+#
+# Note: inside the test container we must ignore sysbox-fs handler
+# errors when accessing procfs and sysfs, because some procfs and
+# sysfs resources are not writeable from within the test container
+# (see sysbox issue #538).
+mkdir -p /var/lib/sysboxfs
 sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-retry 5 1 grep -q Initiating /var/log/sysbox-fs.log
+retry 10 1 grep -q Initiating /var/log/sysbox-fs.log
 
 exit 0
