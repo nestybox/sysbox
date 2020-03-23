@@ -177,46 +177,72 @@ load ../helpers/docker
 # verify that mounts of procfs inside a sys container undergo correct permission checks
 @test "mount procfs perm" {
 
-  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
-  docker exec "$syscont_name" bash -c "mkdir -p $mnt_path"
+  docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
 
   # root user can mount
-  docker exec "$syscont_name" bash -c "mount -t proc proc $mnt_path"
+  docker exec "$syscont" bash -c "mount -t proc proc $mnt_path"
   [ "$status" -eq 0 ]
-  verify_syscont_procfs_mnt $syscont_name $mnt_path
-  docker exec "$syscont_name" bash -c "umount $mnt_path"
+  verify_syscont_procfs_mnt $syscont $mnt_path
+
+  docker exec "$syscont" bash -c "umount $mnt_path"
+  [ "$status" -eq 0 ]
+
+  # a non-root user can't mount (needs cap_sys_admin)
+  docker exec "$syscont" bash -c "useradd -m -u 1000 someone"
+  [ "$status" -eq 0 ]
+
+  docker exec -u 1000:1000 "$syscont" bash -c "mkdir -p /home/someone/l1/l2/proc && mount -t proc proc /home/someone/l1/l2/proc"
+  [ "$status" -eq 1 ]
+
+  docker_stop "$syscont"
+}
+
+@test "mount procfs capability checks" {
+
+  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local mnt_path=/root/l1/l2/proc
+
+  docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
 
   # root user without CAP_SYS_ADMIN can't mount
-  docker exec "$syscont_name" bash -c "capsh --inh=\"\" --drop=cap_sys_admin -- -c \"mount -t proc proc $mnt_path\""
-  [ "$status" -eq 1 ]
-  [[ "$output" =~ "permission denied" ]]
+  docker exec "$syscont" bash -c "capsh --inh=\"\" --drop=cap_sys_admin -- -c \"mount -t proc proc $mnt_path\""
+  [ "$status" -ne 0 ]
 
   # root user without CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH can't mount if path is non-searchable
-  docker exec "$syscont_name" bash -c "chmod 666 /root/l1"
-  docker exec "$syscont_name" bash -c "capsh --inh=\"\" --drop=cap_dac_override,cap_dac_read_search -- -c \"mount -t proc proc $mnt_path\""
-  [ "$status" -ne 0 ]
-  [[ "$output" =~ "Permission denied" ]]
-  docker exec "$syscont_name" bash -c "chmod 755 /root/l1"
-
-  docker_stop "$syscont_name"
-}
-
-@test "mount procfs non-root" {
-
-  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-
-  # "-D" skips password
-  docker exec "$syscont_name" bash -c "adduser -D -u 1000 someone"
+  docker exec "$syscont" bash -c "chmod 400 /root/l1"
   [ "$status" -eq 0 ]
-  docker exec -u 1000:1000 "$syscont_name" bash -c "mkdir -p ~/l1/l2/proc && mount -t proc proc ~/l1/l2/proc"
-  [ "$status" -eq 1 ]
-  [[ "$output" =~ "permission denied" ]]
 
-  docker_stop "$syscont_name"
+  docker exec "$syscont" bash -c "capsh --inh=\"\" --drop=cap_dac_override,cap_dac_read_search -- -c \"mount -t proc proc $mnt_path\""
+  [ "$status" -ne 0 ]
+
+  # a non-root user with appropriate caps can perform the mount; we use the
+  # mountProcDac program to obtain these caps.
+
+  make -C "$SYSBOX_ROOT/tests/scr/capRaise"
+
+  docker exec "$syscont" bash -c "useradd -u 1000 someone"
+  [ "$status" -eq 0 ]
+
+   # copy mountProcDac program and set file caps on it
+  docker cp "$SYSBOX_ROOT/tests/scr/capRaise/mountProcDac" "$syscont:/usr/bin"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" bash -c "chown someone:someone /usr/bin/mountProcDac"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c 'setcap "cap_sys_admin,cap_dac_read_search,cap_dac_override=p" /usr/bin/mountProcDac'
+  [ "$status" -eq 0 ]
+
+  # perform the mount with mountProcDac
+  docker exec -u 1000:1000 "$syscont" bash -c "mountProcDac $mnt_path"
+  [ "$status" -eq 0 ]
+
+  docker_stop "$syscont"
 }
 
 @test "mount procfs in namespaces" {
