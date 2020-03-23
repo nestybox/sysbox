@@ -59,6 +59,8 @@ function wait_for_init() {
     docker_stop "$SYSCONT_NAME"
     [ "$status" -eq 0 ]
 
+    sleep 3
+
     docker image rm nestybox/ubuntu-bionic-drone-server
     [ "$status" -eq 0 ]
 
