@@ -7,24 +7,24 @@
 load ../helpers/run
 
 @test "basic sys container" {
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" hostname syscont
+  docker exec "$syscont" hostname syscont
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" hostname
+  docker exec "$syscont" hostname
   [ "$status" -eq 0 ]
   [ "$output" = "syscont" ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 }
 
 @test "docker --init" {
-  SYSCONT_NAME=$(docker_run --init --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --init --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" pstree
+  docker exec "$syscont" pstree
   [ "$status" -eq 0 ]
   [[ "$output" == "docker-init---tail" ]]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 }
