@@ -297,16 +297,14 @@ function k8s_cluster_setup() {
 
   declare -a k8s_worker
   local worker_name
-
-  for (( i=0; i<$num_workers; i++ )); do
-    worker_name=${cluster_name}-worker-${i}
-    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/ubuntu-bionic-k8s:latest)
-   wait_for_inner_dockerd ${k8s_worker[$i]}
-  done
-
   local kubeadm_join=$(kubeadm_get_token $k8s_master)
 
   for (( i=0; i<$num_workers; i++ )); do
+    worker_name=${cluster_name}-worker-${i}
+
+    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/ubuntu-bionic-k8s:latest)
+    wait_for_inner_dockerd ${k8s_worker[$i]}
+
     docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"
     [ "$status" -eq 0 ]
   done
@@ -416,7 +414,7 @@ function istio_install() {
   [ "$status" -eq 0 ]
 }
 
-# Uninstalls Istio .
+# Uninstalls Istio.
 function istio_uninstall() {
   local k8s_master=$1
 
