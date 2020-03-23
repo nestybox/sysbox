@@ -484,14 +484,92 @@ EOF
   [[ "$output" =~ "Permission denied" ]]
 }
 
-# @test "/proc/sys capability checking" {
-#
-#   # TODO: verify sysbox-fs checking of capabilities
-#
-#   # verify that a non-root process with CAP_DAC_OVERRIDE and
-#   # CAP_DAC_READ_SEARCH is allowed to modify a /proc/sys file
-#   # use capsh tool
-# }
+@test "/proc/sys common-handler ns" {
+
+  skip "FAILS (SYSBOX ISSUE #590)"
+
+  # Verify sysbox-fs common handler enters namespaces of the process
+  # doing a request to read/write /proc/sys (which may or may not be
+  # the sys containers namespaces).
+
+  # Launch sys container
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  # Modify a sys container procfs resource known to be handled by the
+  # sysbox-fs common-handler.
+  ip_fwd="/proc/sys/net/ipv4/ip_forward"
+
+  sv_runc exec syscont sh -c "echo 0 > $ip_fwd"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "cat $ip_fwd"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  # Inside the sys container, unshare a process and access the same
+  # procfs resource. This verifies if the sysbox-fs common handler
+  # notices that the namespace of the process making the request are
+  # not those of the sys container and deals with that correctly.
+  sv_runc exec syscont sh -c "unshare -i -m -n -p -u -C -f --mount-proc -r cat $ip_fwd"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
+
+  # revert value in sys container
+  sv_runc exec syscont sh -c "echo 1 > $ip_fwd"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "cat $ip_fwd"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
+}
+
+@test "/proc/sys capability checking" {
+
+  # verify that a non-root process with CAP_DAC_* is allowed to modify
+  # a /proc/sys file
+
+  # build the fileDac program
+  make -C "$SYSBOX_ROOT/tests/scr/capRaise"
+
+  # launch sys container
+  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+
+  # add a regular user in it
+  docker exec "$syscont" bash -c "useradd -u 1000 someone"
+  [ "$status" -eq 0 ]
+
+   # copy fileDac program and set file caps on it
+  docker cp "$SYSBOX_ROOT/tests/scr/capRaise/fileDac" "$syscont:/usr/bin"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" bash -c "chown someone:someone /usr/bin/fileDac"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c 'setcap "cap_dac_read_search,cap_dac_override=p" /usr/bin/fileDac'
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c 'getcap /usr/bin/fileDac'
+  [ "$status" -eq 0 ]
+  [[ "$output" == "/usr/bin/fileDac = cap_dac_override,cap_dac_read_search+p" ]]
+
+  # write to /proc/sys as a regular user; should fail
+  docker exec -u 1000:1000 "$syscont" bash -c "echo 0 > /proc/sys/net/ipv4/ip_forward"
+  [ "$status" -eq 1 ]
+
+  # write to /proc/sys as a regular use, but using the fileDac program
+  # (should pass because the program sets the DAC* caps).
+  docker exec -u 1000:1000 "$syscont" bash -c "fileDac write /proc/sys/net/ipv4/ip_forward 0"
+  [ "$status" -eq 0 ]
+
+  docker exec -u 1000:1000 "$syscont" bash -c "fileDac read /proc/sys/net/ipv4/ip_forward"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  # cleanup
+  docker_stop "$syscont"
+  make -C "$SYSBOX_ROOT/tests/scr/capRaise" clean
+}
 
 # @test "/proc/sys timestamps" {
 #
