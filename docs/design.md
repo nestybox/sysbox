@@ -29,21 +29,39 @@ Additional info below.
   process full capabilities regardless of what the system container's
   spec indicates.
 
-  - This applies to processes that enter the system container via any
-    of the defined entry points (i.e., `sysbox-runc run` or
-    `sysbox-runc exec`).
+  ```
+  CapInh: 0000003fffffffff
+  CapPrm: 0000003fffffffff
+  CapEff: 0000003fffffffff
+  CapBnd: 0000003fffffffff
+  CapAmb: 0000003fffffffff
+  ```
 
 * If the `Process` object indicates a uid != 0, sysbox gives that
-  process the capabilities defined in the spec; if none are defined,
-  it gets no capabilities.
+  process the following capabilities:
 
-  - This applies to processes that enter the system container via any
-    of the defined entry points (i.e., `sysbox-runc run` or
-    `sysbox-runc exec`).
+  ```
+  CapInh: 0000000000000000
+  CapPrm: 0000000000000000
+  CapEff: 0000000000000000
+  CapBnd: 0000003fffffffff
+  CapAmb: 0000000000000000
+  ```
+
+* The above applies to processes that enter the system container via
+  any of the defined entry points (i.e., `sysbox-runc run` or
+  `sysbox-runc exec`).
 
 * Processes created inside the system container (i.e., children of the
   sys container's init process) get capabilities per Linux rules (see
   capabilities(7)).
+
+* The above behavior reflects that of a real Linux host.
+
+* Note that unlike the OCI runc, sysbox does not honor the
+  capabilities in the OCI spec. For example, it's not possible to set
+  the capabilities of the sys container's processes via the
+  `docker run --cap-add` or `--cap-drop` options.
 
 ### Cgroups
 
