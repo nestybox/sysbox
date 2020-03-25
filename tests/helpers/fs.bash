@@ -8,11 +8,12 @@
 #
 
 # sysbox-fs sys container "/proc" mounts
-SYSFS_PROC="/proc/uptime"
+SYSFS_PROC="/proc/uptime \
+            /proc/sys \
+            /proc/swaps"
 
 # In the future sysbox-fs will do these ones too ..
-# SYSFS_PROC="/proc/uptime \
-#             /proc/cpuinfo \
+# SYSFS_PROC="/proc/cpuinfo \
 #             /proc/cgroups \
 #             /proc/devices \
 #             /proc/diskstats \
@@ -20,8 +21,7 @@ SYSFS_PROC="/proc/uptime"
 #             /proc/meminfo \
 #             /proc/pagetypeinfo \
 #             /proc/partitions \
-#             /proc/stat \
-#             /proc/swaps"
+#             /proc/stat"
 
 # sysbox-fs sys container "/proc/sys" mounts
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max"
