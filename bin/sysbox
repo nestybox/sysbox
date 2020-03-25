@@ -30,6 +30,11 @@ function retry() {
   false
 }
 
+# Increase default inotify resources to meet sys container's demands.
+sysctl -w fs.inotify.max_queued_events=1048576
+sysctl -w fs.inotify.max_user_watches=1048576
+sysctl -w fs.inotify.max_user_instances=1048576
+
 mkdir -p /var/lib/sysboxfs
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
 retry 5 1 grep -q Ready /var/log/sysbox-mgr.log
