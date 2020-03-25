@@ -8,16 +8,16 @@
 #
 
 # List of files or dirs under procfs emulated bys sysbox-fs
-procfs_emu=( "swaps" "sys" "uptime" )
+PROCFS_EMU=( "swaps" "sys" "uptime" )
 
 # List of procfs files with read-only requirements as per OCI spec
-procfs_rdonly=( "bus" "fs" "irq" "sysrq-trigger" )
+PROCFS_RDONLY=( "bus" "fs" "irq" "sysrq-trigger" )
 
 # List of procfs files that need to be masked as per OCI spec
-procfs_masked=( "kcore" "keys" "timer_list" "sched_debug" )
+PROCFS_MASKED=( "kcore" "keys" "timer_list" "sched_debug" )
 
 # List of procfs files that need to be exposed as tmpfs mounts as per OCI spec
-procfs_tmpfs=( "acpi" "scsi")
+PROCFS_TMPFS=( "acpi" "scsi")
 
 # verifies the given sys container path contains a procfs mount backed by sysbox-fs
 function verify_syscont_procfs_mnt() {
@@ -37,13 +37,13 @@ function verify_syscont_procfs_mnt() {
   docker exec "$syscont_name" bash -c "mount | grep \"proc on $mnt_path type proc $opt\""
   [ "$status" -eq 0 ]
 
-  for node in "${procfs_emu[@]}"; do
+  for node in "${PROCFS_EMU[@]}"; do
     docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "sysboxfs on $mnt_path/$node type fuse $opt" ]]
   done
 
-  for node in "${procfs_rdonly[@]}"; do
+  for node in "${PROCFS_RDONLY[@]}"; do
     docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "proc on $mnt_path/$node type proc (ro,relatime" ]]
@@ -58,13 +58,13 @@ function verify_syscont_procfs_mnt() {
   # due to the presence of systemd-udev daemon. To avoid differentiated
   # behaviors, we will comment this checkpoint for now.
   #
-  # for node in "${procfs_masked[@]}"; do
+  # for node in "${PROCFS_MASKED[@]}"; do
   #   docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
   #   [ "$status" -eq 0 ]
   #   [[ "$output" =~ "udev on $mnt_path/$node type devtmpfs (rw,nosuid,relatime," ]]
   # done
 
-  for node in "${procfs_tmpfs[@]}"; do
+  for node in "${PROCFS_TMPFS[@]}"; do
     docker exec "$syscont_name" bash -c "mount | grep $mnt_path/$node"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "tmpfs on $mnt_path/$node type tmpfs (ro,relatime" ]]
@@ -87,7 +87,7 @@ function verify_inner_cont_procfs_mnt() {
   docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"mount | grep \"proc on $mnt_path type proc \(rw\"\""
   [ "$status" -eq 0 ]
 
-  for node in "${procfs_emu[@]}"; do
+  for node in "${PROCFS_EMU[@]}"; do
     docker exec "$syscont_name" bash -c "docker exec $inner_cont_name sh -c \"mount | grep /proc/$node\""
     [ "$status" -eq 0 ]
 

@@ -486,8 +486,6 @@ EOF
 
 @test "/proc/sys common-handler ns" {
 
-  skip "FAILS (SYSBOX ISSUE #590)"
-
   # Verify sysbox-fs common handler enters namespaces of the process
   # doing a request to read/write /proc/sys (which may or may not be
   # the sys containers namespaces).
@@ -508,10 +506,10 @@ EOF
   [ "$output" -eq 0 ]
 
   # Inside the sys container, unshare a process and access the same
-  # procfs resource. This verifies if the sysbox-fs common handler
-  # notices that the namespace of the process making the request are
+  # procfs resource. This verifies that the sysbox-fs common handler
+  # notices that the namespaces of the process making the request are
   # not those of the sys container and deals with that correctly.
-  sv_runc exec syscont sh -c "unshare -i -m -n -p -u -C -f --mount-proc -r cat $ip_fwd"
+  sv_runc exec syscont sh -c "unshare -i -m -n -p -u -C -f --mount-proc cat $ip_fwd"
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 
