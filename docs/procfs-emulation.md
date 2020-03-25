@@ -669,7 +669,7 @@ trapping a mount syscall:
 
   - Other:
 
-    - Tell the kernel to procss the mount syscall; no further action
+    - Tell the kernel to process the mount syscall; no further action
       is necessary.
 
 * Do path resolution & permission checking
@@ -681,10 +681,16 @@ trapping a mount syscall:
 
   - No further action; return success on the mount syscall.
 
-* Enter mount ns of the process that made the mount syscall
+* Enter all the namespaces of the process that made the mount syscall
 
   - Note that this results in an implicit chroot into the process'
     root-dir.
+
+  - Note that we enter the user-ns too, because otherwise the procfs
+    mount would be done from within the sysbox-fs user-ns (i.e., the
+    host's init user-ns), and this causes an inconsistency: in Linux,
+    mounts done from a init user-ns have different resources exposed
+    to them than mounts done from a non-init user-ns.
 
 * For new procfs mounts:
 
