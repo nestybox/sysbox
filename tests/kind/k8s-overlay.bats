@@ -9,9 +9,14 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
+load ../helpers/sysbox-health
 
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
+
+function teardown() {
+  sysbox_log_check
+}
 
 function create_test_dir() {
   run mkdir -p "$test_dir"

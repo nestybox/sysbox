@@ -10,6 +10,11 @@
 load ../helpers/run
 load ../helpers/nfs
 load ../helpers/docker
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 @test "nfs mount" {
 

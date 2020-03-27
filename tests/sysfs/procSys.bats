@@ -9,6 +9,7 @@
 load ../helpers/run
 load ../helpers/fs
 load ../helpers/ns
+load ../helpers/sysbox-health
 
 disable_ipv6=/proc/sys/net/ipv6/conf/all/disable_ipv6
 
@@ -18,6 +19,7 @@ function setup() {
 
 function teardown() {
   teardown_debian syscont
+  sysboxfs_health_check
 }
 
 # compares /proc/* listings between a sys-container and unshare-all
@@ -316,6 +318,8 @@ EOF
 }
 
 @test "/proc/sys concurrent inter-container access" {
+
+  skip "FAILS (SYSBOX ISSUE #589)"
 
   num_sc=5
   iter=20

@@ -2,6 +2,7 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/sysbox-health
 
 # Container name.
 SYSCONT_NAME=""
@@ -26,6 +27,7 @@ function setup() {
 
 function teardown() {
   teardown_busybox syscont
+  sysbox_log_check
 }
 
 # Lookup/Getattr operation.

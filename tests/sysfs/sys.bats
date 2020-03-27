@@ -4,6 +4,7 @@
 
 load ../helpers/run
 load ../helpers/ns
+load ../helpers/sysbox-health
 
 function setup() {
   setup_busybox
@@ -11,6 +12,7 @@ function setup() {
 
 function teardown() {
   teardown_busybox syscont
+  sysbox_log_check
 }
 
 # Verify that /sys controls for namespaced kernel resources

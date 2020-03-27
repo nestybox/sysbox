@@ -7,6 +7,12 @@
 load ../helpers/run
 load ../helpers/docker
 
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
+
 @test "kill SIGTERM" {
 
   local syscont0=$(docker_run --rm nestybox/syscont-inner-img:latest tail -f /dev/null)

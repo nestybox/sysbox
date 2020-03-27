@@ -28,12 +28,20 @@ else
   bats --tap tests/docker
   printf "\nExecuting dind tests ... \n"
   bats --tap tests/dind
-  printf "\nExecuting kind tests ... \n"
-  bats --tap tests/kind
   printf "\nExecuting app tests (l1) ... \n"
   bats --tap tests/apps/l1
   printf "\nExecuting app tests (l2) ... \n"
   bats --tap tests/apps/l2
+
+  # the kind tests need plenty storage (otherwise kubelet fails);
+  # remove all docker images from prior tests to make room
+  docker image rm $(docker image ls -aq) > /dev/null
+  printf "\nExecuting kind tests ... \n"
+  bats --tap tests/kind
+
+  # this should be the last test
+  printf "\nSysbox health checking ...\n"
+  bats --tap tests/health/sysbox-health.bats
 fi
 
 exit 0

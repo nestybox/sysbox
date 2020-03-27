@@ -10,9 +10,14 @@ load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
 load ../helpers/fs
+load ../helpers/sysbox-health
 
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
+
+function teardown() {
+  sysbox_log_check
+}
 
 function create_test_dir() {
   run mkdir -p "$test_dir"
@@ -31,7 +36,7 @@ function remove_test_dir() {
 
   create_test_dir
 
-  local num_workers=2
+  local num_workers=8
   local kubeadm_join=$(k8s_cluster_setup k8s $num_workers bridge)
 
   # store k8s cluster info so subsequent tests can use it
@@ -113,7 +118,7 @@ EOF
   retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
 
   # scale up
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=8 deployment nginx"
   [ "$status" -eq 0 ]
 
   retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
@@ -140,7 +145,7 @@ EOF
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=8 deployment nginx"
   [ "$status" -eq 0 ]
 
   retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
@@ -384,7 +389,7 @@ EOF
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=8 deployment nginx"
   [ "$status" -eq 0 ]
 
   docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
@@ -824,6 +829,8 @@ EOF
 # Verifies Helm v2 proper operation.
 @test "helm v2 basic" {
 
+  skip "Unstable"
+
   # Install Helm V2.
   helm_v2_install k8s-master
 
@@ -870,6 +877,8 @@ EOF
 
 # Verifies Helm v3 proper operation.
 @test "helm v3 basic" {
+
+  skip "Unstable"
 
   # Install Helm V3.
   helm_v3_install k8s-master
