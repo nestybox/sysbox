@@ -7,6 +7,11 @@
 load ../helpers/run
 load ../helpers/net
 load ../helpers/docker
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 @test "dind bridge net" {
 

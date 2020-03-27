@@ -6,6 +6,7 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/sysbox-health
 
 function setup() {
   setup_busybox
@@ -13,6 +14,7 @@ function setup() {
 
 function teardown() {
   teardown_busybox syscont
+  sysbox_log_check
 }
 
 @test "proc lookup" {

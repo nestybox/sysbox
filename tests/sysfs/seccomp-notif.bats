@@ -5,6 +5,11 @@
 #
 
 load ../helpers/run
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 # verify that sysbox-fs releases the seccomp notify fd when a sys container exits
 @test "sysbox-fs releases notify fd" {

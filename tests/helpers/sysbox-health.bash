@@ -18,7 +18,7 @@ SYSBOX_FS_LOG=/var/log/sysbox-fs.log
 #
 
 function sysboxfs_log_check() {
-  grep -q "ERRO" $SYSBOX_FS_LOG
+  grep "ERRO" $SYSBOX_FS_LOG
   if [ $? -eq 0 ]; then
     return 1
   fi
@@ -51,7 +51,7 @@ function sysboxfs_health_check() {
 #
 
 function sysboxmgr_log_check() {
-  grep -q "ERRO" $SYSBOX_MGR_LOG
+  grep "ERRO" $SYSBOX_MGR_LOG
   if [ $? -eq 0 ]; then
     return 1
   fi
@@ -82,6 +82,32 @@ function sysboxmgr_health_check() {
 #
 # sysbox
 #
+
+function sysbox_log_check() {
+
+  if ! sysboxfs_log_check; then
+    return 1
+  fi
+
+  if ! sysboxmgr_log_check; then
+    return 1
+  fi
+
+  true
+}
+
+function sysbox_ps_check() {
+
+  if ! sysboxfs_ps_check; then
+    return 1
+  fi
+
+  if ! sysboxmgr_ps_check; then
+    return 1
+  fi
+
+  true
+}
 
 function sysbox_health_check() {
 
