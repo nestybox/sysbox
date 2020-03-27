@@ -243,8 +243,8 @@ The emulation is done as follows:
 
 * Otherwise, sysbox-fs does a "passthrough" of the access to the
   kernel's procfs. It does this by entering the namespaces of the
-  process performing the access (except the mount namespace), mounts
-  the kernel's procfs, and performs the corresponding access on it.
+  process performing the access (except the mount namespace) and
+  performing the corresponding access on the host's /proc/sys.
 
   - Note that the namespaces of the process performing the access may
     not be the same namespaces associated with the sys container.  For
@@ -253,9 +253,12 @@ The emulation is done as follows:
     not those of the sys container.
 
   - The reason the sysbox-fs handler does not enter the mount
-    namespace is because it will mount procfs and for isolation and
-    security reasons we want to avoid sys container processes from
-    seeing that mount.
+    namespace is because it wants to access the host's /proc/sys.
+    Had it entered the mount namespace, it would be accessing the
+    sysbox-backed /proc/sys (creating a recursive access). Even
+    though the process accesses the host /proc/sys, by virtue of
+    doing so from within the process namespaces (e.g., user, net, etc),
+    it accesses procfs data associated with those namespaces.
 
 ## Intercepting Procfs Mounts Inside a Sys Container
 
