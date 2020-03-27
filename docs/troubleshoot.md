@@ -105,3 +105,9 @@ cd /root/busyboxtest
 ```
 runc --no-sysbox-mgr --no-sysbox-fs run test
 ```
+
+## Watching Sysbox processes in real time
+
+```
+watch -n 0.2 'pstree -SlpgT | grep -A 10 sysbox-fs'
+```
