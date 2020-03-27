@@ -5,6 +5,11 @@
 #
 
 load ../../helpers/run
+load ../../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 function wait_for_init() {
     #

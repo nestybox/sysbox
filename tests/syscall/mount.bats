@@ -7,6 +7,11 @@
 load ../helpers/run
 load ../helpers/syscall
 load ../helpers/docker
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 #
 # Tests that verify procfs mounts within the sys container

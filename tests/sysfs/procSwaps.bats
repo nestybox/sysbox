@@ -4,6 +4,7 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/sysbox-health
 
 # /proc/swap header
 PROC_SWAPS_HEADER="Filename                                Type            Size    Used    Priority"
@@ -14,6 +15,7 @@ function setup() {
 
 function teardown() {
   teardown_busybox syscont
+  sysbox_log_check
 }
 
 # Lookup/Getattr operation.

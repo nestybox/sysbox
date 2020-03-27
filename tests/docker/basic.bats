@@ -5,6 +5,11 @@
 #
 
 load ../helpers/run
+load ../helpers/sysbox-health
+
+function teardown() {
+  sysbox_log_check
+}
 
 @test "basic sys container" {
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
