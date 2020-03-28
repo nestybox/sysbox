@@ -26,6 +26,13 @@ function sysboxfs_log_check() {
 }
 
 function sysboxfs_ps_check() {
+  # verify sysbox-fs is alive
+  res=$(pidof $SYSBOX_FS_NAME > /dev/null)
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+
+  # verify sysbox-fs has no child processes
   res=$(pgrep -P $(pidof $SYSBOX_FS_NAME))
   if [ $? -eq 0 ]; then
     return 1
@@ -59,6 +66,13 @@ function sysboxmgr_log_check() {
 }
 
 function sysboxmgr_ps_check() {
+  # verify sysbox-mgr is alive
+  res=$(pidof $SYSBOX_MGR_NAME > /dev/null)
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+
+  # verify sysbox-mgr has no child processes
   res=$(pgrep -P $(pidof $SYSBOX_MGR_NAME))
   if [ $? -eq 0 ]; then
     return 1
