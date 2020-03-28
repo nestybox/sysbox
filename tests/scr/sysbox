@@ -28,10 +28,15 @@ function retry() {
   false
 }
 
-# Increase default inotify resources to meet sys container's demands.
+# Increase default inotify resources to meet sys container demands.
 sysctl -w fs.inotify.max_queued_events=1048576
 sysctl -w fs.inotify.max_user_watches=1048576
 sysctl -w fs.inotify.max_user_instances=1048576
+
+# Increase default keyring resources to meet sys container demands.
+# For a k8s cluster:
+# keys = 35 + (workers * 23) + (2 * pods)
+sysctl -w kernel.keys.maxkeys=1000
 
 sleep 1
 
