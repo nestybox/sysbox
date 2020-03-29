@@ -319,8 +319,6 @@ EOF
 
 @test "/proc/sys concurrent inter-container access" {
 
-  skip "FAILS (SYSBOX ISSUE #589)"
-
   num_sc=5
   iter=20
 
@@ -330,14 +328,18 @@ EOF
   cat << EOF > $worker_scr
 #!/bin/bash
 for i in \$(seq 1 $iter); do
-  echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout
+  output=\$(sh -c "echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout" 2>&1)
+  if [ "\$?" -ne 0 ]; then
+    echo "\$HOSTNAME: fail: \$output" > /result.txt
+    exit
+  fi
   val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
   if [ "\$val" != "\$i" ]; then
-   echo "fail" > /result.txt
+   echo "\$HOSTNAME: fail: want \$i, got \$val" > /result.txt
    exit
   fi
 done
-echo "pass" > /result.txt
+echo "\$HOSTNAME: pass" > /result.txt
 EOF
 
   chmod +x $worker_scr
@@ -345,10 +347,13 @@ EOF
   # deploy the sys containers
   declare -a syscont
   for i in $(seq 1 $num_sc); do
-    syscont[$i]=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont[$i]=$(docker_run --rm --hostname="sc_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
     docker cp $worker_scr ${syscont[$i]}:/worker.sh
     [ "$status" -eq 0 ]
   done
+
+  # wait for all sys containers to be up before starting worker scripts
+  sleep 2
 
   # start the worker script
   for sc in ${syscont[@]}; do
