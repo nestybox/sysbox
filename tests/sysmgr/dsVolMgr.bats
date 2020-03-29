@@ -432,3 +432,10 @@ function teardown() {
    docker_stop "${syscont[$i]}"
   done
 }
+
+# @test "innerDockerNonOverlay" {
+
+#   # TODO: write test that verifies things work if sys container's
+#   # inner docker is not using the overlayfs driver.
+
+# }
