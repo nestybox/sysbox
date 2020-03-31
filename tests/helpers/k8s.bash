@@ -238,6 +238,20 @@ function k8s_daemonset_ready() {
   echo $dpl_status | awk -v OFS=' ' '{print $1, $2, $3, $4, $5, $6}' | grep "$ds $total $total $total $total $total"
 }
 
+function k8s_cluster_is_clean() {
+  local k8s_master=$1
+
+  docker exec "$k8s_master" sh -c "kubectl get all"
+  [ "$status" -eq 0 ]
+
+  # Looking for:
+  #
+  # NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+  # service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   24m
+
+  [ "${#lines[@]}" -eq "2" ]
+  echo ${lines[1]} | grep -q "service/kubernetes"
+}
 
 # Deploys a k8s cluster using sys containers; the cluster has one
 # master node and the given number of worker nodes. The cluster uses
@@ -313,8 +327,6 @@ function k8s_cluster_setup() {
     worker_name=${cluster_name}-worker-${i}
     retry_run 40 2 "k8s_node_ready $k8s_master $worker_name"
   done
-
-  echo $kubeadm_join
 }
 
 # Tears-down a k8s cluster created with k8s_cluster_setup().
@@ -353,7 +365,7 @@ function helm_v2_install() {
   sleep 5
 
   # Identify tiller's pod name.
-  docker exec k8s-master sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  docker exec "$k8s_master" sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
@@ -361,7 +373,7 @@ function helm_v2_install() {
   local tiller_pod=$(echo ${output} | awk '{print $2}')
 
   # Wait till tiller's pod is up and running.
-  retry_run 60 5 "k8s_pod_ready k8s-master $tiller_pod kube-system"
+  retry_run 60 5 "k8s_pod_ready $k8s_master $tiller_pod kube-system"
 }
 
 # Uninstall Helm v2.
@@ -369,7 +381,7 @@ function helm_v2_uninstall() {
   local k8s_master=$1
 
   # Obtain tiller's pod-name.
-  docker exec k8s-master sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  docker exec "$k8s_master" sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
   [ "$status" -eq 0 ]
   local tiller_pod=$(echo ${lines[0]} | awk '{print $2}')
 
@@ -378,7 +390,7 @@ function helm_v2_uninstall() {
   [ "$status" -eq 0 ]
 
   # Wait till tiller pod is fully destroyed.
-  retry_run 20 2 "[ ! $(k8s_pod_ready k8s-master $tiller_pod kube-system) ]"
+  retry_run 20 2 "[ ! $(k8s_pod_ready $k8s_master $tiller_pod kube-system) ]"
 }
 
 # Uninstall Helm v3. Right, much simpler than v2 version above, as there's no need to
@@ -425,4 +437,80 @@ function istio_uninstall() {
   # Remove istio namespace.
   docker exec "$k8s_master" sh -c kubectl delete ns istio-system
   [ "$status" -eq 0 ]
+}
+
+# Verifies an nginx ingress controller works; this function assumes
+# the nginx ingress-controller has been deployed to the cluster.
+function verify_nginx_ingress() {
+  local k8s_master=$1
+  local ing_controller=$2
+
+  # We need pods to serve our fake website / service; we use an nginx
+  # server pod and create a service in front of it (note that we could
+  # have chosen any other pod for this purpose); the nginx ingress
+  # controller will redirect traffic to these pods.
+  docker exec $k8s_master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
+  [ "$status" -eq 0 ]
+
+  docker exec $k8s_master sh -c "kubectl expose deployment/nginx --port 80"
+  [ "$status" -eq 0 ]
+
+  retry_run 20 2 "k8s_deployment_ready $k8s_master default nginx"
+
+  # create an ingress rule that maps nginx.nestykube -> nginx service;
+  # this ingress rule is enforced by the nginx ingress controller.
+cat > "$test_dir/nginx-ing.yaml" <<EOF
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: nginx.nestykube
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx
+          servicePort: 80
+EOF
+
+  # apply the ingress rule
+  docker cp $test_dir/nginx-ing.yaml $k8s_master:/root/nginx-ing.yaml
+  [ "$status" -eq 0 ]
+
+  docker exec $k8s_master sh -c "kubectl apply -f /root/nginx-ing.yaml"
+  [ "$status" -eq 0 ]
+
+  # setup the ingress hostname in /etc/hosts
+  cp /etc/hosts /etc/hosts.orig
+  local node_ip=$(k8s_node_ip k8s-worker-1)
+  echo "$node_ip nginx.nestykube" >> /etc/hosts
+
+  # verify ingress to nginx works
+  sleep 1
+
+  docker exec $k8s_master sh -c "kubectl get service/$ing_controller -o json | jq '.spec.ports[0].nodePort'"
+  [ "$status" -eq 0 ]
+  local nodePort=$output
+
+  retry_run 10 2 "wget nginx.nestykube:$nodePort -O $test_dir/index.html"
+
+  grep "Welcome to nginx" $test_dir/index.html
+  rm $test_dir/index.html
+
+  # Cleanup
+  docker exec $k8s_master sh -c "kubectl delete ing nginx"
+  [ "$status" -eq 0 ]
+  docker exec $k8s_master sh -c "kubectl delete svc nginx"
+  [ "$status" -eq 0 ]
+  docker exec $k8s_master sh -c "kubectl delete deployment nginx"
+  [ "$status" -eq 0 ]
+
+  # "cp + rm" because "mv" fails with "resource busy" as /etc/hosts is
+  # a bind-mount inside the container
+  cp /etc/hosts.orig /etc/hosts
+  rm /etc/hosts.orig
 }
