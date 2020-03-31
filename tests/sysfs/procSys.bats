@@ -384,7 +384,7 @@ EOF
   for sc in ${syscont[@]}; do
     docker exec "$sc" sh -c "cat /result.txt"
     [ "$status" -eq 0 ]
-    [ "$output" == "pass" ]
+    [[ "$output" =~ "pass" ]]
   done
 
   # cleanup
