@@ -303,7 +303,7 @@ function k8s_cluster_setup() {
 
   flannel_config $k8s_master
 
-  retry_run 20 2 "k8s_node_ready $k8s_master $k8s_master"
+  retry_run 40 2 "k8s_node_ready $k8s_master $k8s_master"
 
   #
   # Deploy the K8s worker nodes (k8s-worker-<num>)
@@ -390,7 +390,7 @@ function helm_v2_uninstall() {
   [ "$status" -eq 0 ]
 
   # Wait till tiller pod is fully destroyed.
-  retry_run 20 2 "[ ! $(k8s_pod_ready $k8s_master $tiller_pod kube-system) ]"
+  retry_run 40 2 "[ ! $(k8s_pod_ready $k8s_master $tiller_pod kube-system) ]"
 }
 
 # Uninstall Helm v3. Right, much simpler than v2 version above, as there's no need to
@@ -431,11 +431,18 @@ function istio_uninstall() {
   local k8s_master=$1
 
   # Run uninstallation script.
-  docker exec "$k8s_master" sh -c "istio-1.5.0/samples/bookinfo/platform/kube/cleanup.sh"
+  docker exec "$k8s_master" sh -c "istio-*/samples/bookinfo/platform/kube/cleanup.sh"
   [ "$status" -eq 0 ]
 
   # Remove istio namespace.
-  docker exec "$k8s_master" sh -c kubectl delete ns istio-system
+  docker exec "$k8s_master" sh -c "kubectl delete ns istio-system"
+  [ "$status" -eq 0 ]
+
+  docker exec "$k8s_master" sh -c "kubectl label namespace default istio-injection-"
+  [ "$status" -eq 0 ]
+
+  # Remove installation script
+  docker exec "$k8s_master" sh -c "rm -rf istio-*"
   [ "$status" -eq 0 ]
 }
 
@@ -455,7 +462,7 @@ function verify_nginx_ingress() {
   docker exec $k8s_master sh -c "kubectl expose deployment/nginx --port 80"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready $k8s_master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $k8s_master default nginx"
 
   # create an ingress rule that maps nginx.nestykube -> nginx service;
   # this ingress rule is enforced by the nginx ingress controller.

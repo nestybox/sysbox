@@ -35,11 +35,10 @@ function remove_test_dir() {
 
   create_test_dir
 
-  docker network rm k8s-net
   docker network create k8s-net
   [ "$status" -eq 0 ]
 
-  local num_workers=1
+  local num_workers=2
   local kubeadm_join=$(k8s_cluster_setup k8s $num_workers k8s-net)
 
   # store k8s cluster info so subsequent tests can use it
@@ -52,25 +51,25 @@ function remove_test_dir() {
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # scale up
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=4 deployment nginx"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # rollout new nginx image
   docker exec k8s-master sh -c "kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_rollout_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_rollout_ready k8s-master default nginx"
 
   # scale down
   docker exec k8s-master sh -c "kubectl scale --replicas=1 deployment nginx"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # cleanup
   docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
@@ -85,7 +84,7 @@ function remove_test_dir() {
   docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # create a service and confirm it's there
   docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
@@ -149,7 +148,7 @@ EOF
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # create a nodePort service
   docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80 --type NodePort"
@@ -309,7 +308,7 @@ EOF
   docker exec k8s-master sh -c "kubectl apply -f /root/traefik.yaml"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
   local node_ip=$(k8s_node_ip k8s-worker-0)
@@ -332,7 +331,7 @@ EOF
   docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
 
   # create an ingress rule for the nginx service
 cat > "$test_dir/nginx-ing.yaml" <<EOF
@@ -360,7 +359,7 @@ EOF
   docker exec k8s-master sh -c "kubectl apply -f /root/nginx-ing.yaml"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
   local node_ip=$(k8s_node_ip k8s-worker-0)
@@ -392,7 +391,6 @@ EOF
 
 @test "kind overlay cluster2 up" {
 
-  docker network rm k8s-net2
   docker network create k8s-net2
   [ "$status" -eq 0 ]
 
@@ -407,10 +405,10 @@ EOF
   docker exec cluster2-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
   [ "$status" -eq 0 ]
 
-  docker exec cluster2-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec cluster2-master sh -c "kubectl scale --replicas=4 deployment nginx"
   [ "$status" -eq 0 ]
 
-  retry_run 20 2 "k8s_deployment_ready cluster2-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready cluster2-master default nginx"
 
   # create a service and confirm it's there
   docker exec cluster2-master sh -c "kubectl expose deployment/nginx --port 80"
@@ -498,6 +496,8 @@ EOF
 
   # Uninstall Istio in original cluster.
   istio_uninstall k8s-master
+
+  retry_run 40 2 "k8s_cluster_is_clean k8s-master"
 }
 
 @test "kind overlay cluster down" {
