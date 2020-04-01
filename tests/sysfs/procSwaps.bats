@@ -51,5 +51,5 @@ function teardown() {
   sv_runc exec syscont sh -c \
     "echo 1 > /proc/swaps"
   [ "$status" -eq 1 ]
-  [[ "$output" =~ "Permission denied" ]]
+  [[ "$output" =~ "Input/output error" ]]
 }
