@@ -242,15 +242,10 @@ The emulation is done as follows:
   E.g., `/proc/sys/net/netfilter/nf_conntrack_max`
 
 * Otherwise, sysbox-fs does a "passthrough" of the access to the
-  kernel's procfs. It does this by entering the namespaces of the
-  process performing the access (except the mount namespace) and
-  performing the corresponding access on the host's /proc/sys.
-
-  - Note that the namespaces of the process performing the access may
-    not be the same namespaces associated with the sys container.  For
-    example, if the process performing the access is inside an inner
-    container, then its namespaces are those of the inner container,
-    not those of the sys container.
+  kernel's procfs. It does this by dispatching a child process that
+  enters the namespaces of the process performing the access (except
+  the mount namespace) and performs the corresponding access on the
+  host's /proc/sys.
 
   - The reason the sysbox-fs handler does not enter the mount
     namespace is because it wants to access the host's /proc/sys.
@@ -259,6 +254,15 @@ The emulation is done as follows:
     though the process accesses the host /proc/sys, by virtue of
     doing so from within the process namespaces (e.g., user, net, etc),
     it accesses procfs data associated with those namespaces.
+
+  - By virtue of entering the user-ns, the child process gains
+    full capabilities within the user-ns (see user_namespaces(7)).
+
+  - Note that the namespaces of the process performing the access may
+    not be the same namespaces associated with the sys container. For
+    example, if the process performing the access is inside an inner
+    container, then its namespaces are those of the inner container,
+    not those of the sys container.
 
 ## Intercepting Procfs Mounts Inside a Sys Container
 
