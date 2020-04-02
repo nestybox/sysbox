@@ -35,6 +35,8 @@ function remove_test_dir() {
 
   create_test_dir
 
+  run __docker network rm k8s-net
+
   docker network create k8s-net
   [ "$status" -eq 0 ]
 
@@ -390,6 +392,8 @@ EOF
 }
 
 @test "kind overlay cluster2 up" {
+
+  run __docker network rm k8s-net2
 
   docker network create k8s-net2
   [ "$status" -eq 0 ]
