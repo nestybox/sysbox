@@ -337,11 +337,12 @@ DOCKER_RUN_INSTALLER := docker run -d --rm --privileged               \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
+			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
 			--mount type=tmpfs,destination=/run           \
 			--mount type=tmpfs,destination=/run/lock      \
 			--mount type=tmpfs,destination=/tmp           \
 			$(TEST_INSTALLER_IMAGE)
-
 
 DOCKER_EXEC_INSTALLER := docker exec -it sysbox-installer-test
 DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
@@ -407,6 +408,10 @@ endif
 	@printf "\n** Installing sysbox deb package **\n\n"
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
 		DEBIAN_FRONTEND=noninteractive dpkg -i $(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME)"
+        # For the test container, start sysbox-fs with '--ignore-handler-errors' (sysbox issue #538)
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c \
+	"sed -i 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs --ignore-handler-errors/g' /usr/lib/systemd/system/sysbox-fs.service && \
+	systemctl daemon-reload && systemctl restart sysbox.service"
         # Some tests require that the Docker default runtime be set to sysbox-runc
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
 		jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
