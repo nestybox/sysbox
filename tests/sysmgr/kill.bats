@@ -25,9 +25,13 @@ function teardown() {
   docker exec "$syscont0" sh -c "touch /var/lib/docker/testfile"
   [ "$status" -eq 0 ]
 
-  # kill sends SIGTERM by default
-  kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
-  retry_run 5 1 "grep -q Exiting /var/log/sysbox-mgr.log"
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl stop sysbox
+  else
+    # kill sends SIGTERM by default
+    kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
+    retry_run 5 1 "grep -q Exiting /var/log/sysbox-mgr.log"
+  fi
 
   # verify sysbox-mgr has cleaned up it's state on the host correctly
   if [ -n "$SHIFT_UIDS" ]; then
@@ -56,6 +60,10 @@ function teardown() {
   docker_stop "$syscont1"
 
   # restart sysbox
-  bats_bg sysbox
-  sleep 2
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl start sysbox
+  else
+    bats_bg sysbox
+    sleep 2
+  fi
 }
