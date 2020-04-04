@@ -2,6 +2,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/fs
 
 #
 # K8s Test Helper Functions
@@ -29,6 +30,23 @@ function flannel_config() {
   local k8s_master=$1
   docker exec "$k8s_master" sh -c "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
   [ "$status" -eq 0 ]
+}
+
+# Checks that the host has sufficient storage to run K8s clusters
+function k8s_check_sufficient_storage() {
+
+  # K8s requires nodes to have a decent amount of storage (otherwise the
+  # kubelet refuses to deploy pods on the node). Here, we specify that
+  # we need 6GB (~1.8GB for the k8s node image, plus plenty room for
+  # inner containers).
+  #
+  # Note that Sysbox does not yet support virtualizing the storage
+  # space allocated to the K8s node sys-container, so each node sees
+  # the storage space of the host.
+
+  local req_storage=$((6*1024*1024*1024))
+  local avail_storage=$(fs_avail "/")
+  [ "$avail_storage" -ge "$req_storage" ]
 }
 
 function k8s_node_ready() {
