@@ -68,7 +68,7 @@ function teardown() {
     if [[ "$perm" == "-r--r--r--" ]]; then
        sv_runc exec syscont sh -c "echo \"data\" > $file"
        [ "$status" -eq 1 ]
-       [[ "$output" =~ "Input/output error" ]]
+       [[ "$output" =~ "Permission denied" ]]
     fi
   done
 }
