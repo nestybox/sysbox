@@ -33,6 +33,8 @@ function remove_test_dir() {
 
 @test "kind overlay cluster up" {
 
+  k8s_check_sufficient_storage
+
   create_test_dir
 
   run __docker network rm k8s-net
