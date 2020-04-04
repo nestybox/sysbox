@@ -54,3 +54,11 @@ function verify_root_ro() {
 function verify_root_rw() {
   verify_perm_owner "-rw-r--r--" "root" "root" "$@"
 }
+
+# Returns the storage available on the given directory (must be a mountpoint)
+function fs_avail() {
+  dir=$1
+  diskAvail=$(df $dir | grep $dir | awk '{print $4}')
+  # "df" returns storage in units of KB; convert to bytes.
+  echo $(($diskAvail*1024))
+}

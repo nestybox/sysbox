@@ -34,6 +34,8 @@ function remove_test_dir() {
 
 @test "kind cluster up" {
 
+  k8s_check_sufficient_storage
+
   create_test_dir
 
   local num_workers=2
