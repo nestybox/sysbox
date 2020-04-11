@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Integration test for the sysbox-mgr docker-store volume manager
+# Integration test for the sysbox-mgr docker volume manager
 #
 
 load ../helpers/run
@@ -12,7 +12,7 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "dsVolMgr no inner img" {
+@test "dockerVolMgr no inner img" {
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -65,7 +65,7 @@ function teardown() {
   docker_stop "$syscont"
 }
 
-@test "dsVolMgr inner img" {
+@test "dockerVolMgr inner img" {
 
   local syscont=$(docker_run --rm nestybox/syscont-inner-img:latest tail -f /dev/null)
 
@@ -163,9 +163,9 @@ function teardown() {
   [ "$status" -ne 0 ]
 }
 
-# Verify the sys container docker-store vol persists across container
+# Verify the sys container docker vol persists across container
 # start-stop-start events
-@test "dsVolMgr persistence" {
+@test "dockerVolMgr persistence" {
 
   local syscont=$(docker_run nestybox/syscont-inner-img:latest tail -f /dev/null)
 
@@ -234,7 +234,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "dsVolMgr consecutive restart" {
+@test "dockerVolMgr consecutive restart" {
 
   local syscont=$(docker_run nestybox/syscont-inner-img:latest tail -f /dev/null)
 
@@ -298,7 +298,7 @@ function teardown() {
   docker rm "$syscont"
 }
 
-@test "dsVolMgr sync-out" {
+@test "dockerVolMgr sync-out" {
 
   local syscont=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
@@ -332,7 +332,7 @@ function teardown() {
   docker rm "$syscont"
 }
 
-@test "dsVolMgr inner image sharing" {
+@test "dockerVolMgr inner image sharing" {
   local num_syscont=4
   declare -a syscont
 
@@ -374,7 +374,7 @@ function teardown() {
   [ "$output" -eq 0 ]
 }
 
-@test "dsVolMgr inner image removal" {
+@test "dockerVolMgr inner image removal" {
   local num_syscont=2
   local inner_images
 
