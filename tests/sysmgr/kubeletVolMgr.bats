@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Integration test for the sysbox-mgr kubelet-store volume manager
+# Integration test for the sysbox-mgr kubelet volume manager
 #
 
 load ../helpers/run
@@ -11,7 +11,7 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "ksVolMgr basic" {
+@test "kubeletVolMgr basic" {
 
   SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -50,9 +50,9 @@ function teardown() {
   docker_stop "$SYSCONT_NAME"
 }
 
-@test "ksVolMgr persistence" {
+@test "kubeletVolMgr persistence" {
 
-  # Verify the sys container kubelet-store vol persists across container
+  # Verify the sys container kubelet vol persists across container
   # start-stop-start events
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -77,9 +77,9 @@ function teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "ksVolMgr non-persistence" {
+@test "kubeletVolMgr non-persistence" {
 
-  # Verify the sys container kubelet-store vol is removed when a
+  # Verify the sys container kubelet vol is removed when a
   # container is removed
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -111,7 +111,7 @@ function teardown() {
   [ "$status" -eq 1 ]
 }
 
-@test "ksVolMgr consecutive restart" {
+@test "kubeletVolMgr consecutive restart" {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -136,7 +136,7 @@ function teardown() {
   docker rm "$SYSCONT_NAME"
 }
 
-@test "ksVolMgr sync-out" {
+@test "kubeletVolMgr sync-out" {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
@@ -170,9 +170,9 @@ function teardown() {
   docker rm "$SYSCONT_NAME"
 }
 
-#@test "ksVolMgr sync-in" {
+#@test "kubeletVolMgr sync-in" {
   #
-  # TODO: verify ksVolMgr sync-in by creating a sys container image with contents in /var/lib/kubelet
+  # TODO: verify kubeletVolMgr sync-in by creating a sys container image with contents in /var/lib/kubelet
   # and checking that the contents are copied to the /var/lib/sysbox/kubelet/<syscont-name> and
   # that they have the correct ownership. There is a volMgr unit test that verifies this already,
   # but an integration test would be good too.
