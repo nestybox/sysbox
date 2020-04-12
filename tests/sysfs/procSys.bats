@@ -41,6 +41,12 @@ function compare_syscont_unshare() {
   done
 }
 
+function wait_for_inner_dockerd() {
+  cntr_name=$1
+
+  retry_run 10 1 eval "__docker exec $cntr_name docker ps"
+}
+
 @test "disable_ipv6 lookup" {
 
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
@@ -391,6 +397,183 @@ EOF
   for sc in ${syscont[@]}; do
     docker_stop "$sc"
   done
+
+  rm $worker_scr
+}
+
+# Verify that application-level (l2) containers can concurrently access
+# procfs resources. In this case we are creating a single sys-container
+# and instantiating 'num_ac' l2 containers within it. Notice that app
+# containers in this testcase are spawn as 'privileged' to allow write
+# operations to succeed (i.e. procfs mounted as RW).
+@test "/proc/sys concurrent l2 inter-container access (privileged)" {
+
+  num_ac=5
+  iter=20
+
+  local worker_scr=/tmp/worker.sh
+
+  # this worker script will run in each app container
+  cat << EOF > $worker_scr
+#!/bin/bash
+for i in \$(seq 1 $iter); do
+  output=\$(sh -c "echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout" 2>&1)
+  if [ "\$?" -ne 0 ]; then
+    echo "\$HOSTNAME: fail: \$output" > /result.txt
+    exit
+  fi
+  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
+  if [ "\$val" != "\$i" ]; then
+   echo "\$HOSTNAME: fail: want \$i, got \$val" > /result.txt
+   exit
+  fi
+done
+echo "\$HOSTNAME: pass" > /result.txt
+EOF
+
+  chmod +x $worker_scr
+
+  # launch a sys container
+  local syscont=$(docker_run --rm --name syscont nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+  # launch docker inside the sys container
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_inner_dockerd $syscont
+
+  # copy worker script into sys container
+  docker cp $worker_scr $syscont:/worker.sh
+  [ "$status" -eq 0 ]
+
+  # deploy the app (l2) containers
+  declare -a app_cntr
+  for i in $(seq 1 $num_ac); do
+    app_cntr[$i]=$(docker exec $syscont sh -c "docker run -d --privileged --rm \
+      --hostname=\"ac_$i\" --name=\"ac_$i\" bashell/alpine-bash tail -f /dev/null")
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "docker cp /worker.sh ac_$i:/worker.sh"
+    [ "$status" -eq 0 ]
+  done
+
+  # wait for all sys containers to be up before starting worker scripts
+  sleep 3
+
+  # start the worker script
+  for i in $(seq 1 $num_ac); do
+    docker exec "$syscont" sh -c "docker exec ac_$i sh -c /worker.sh"
+    [ "$status" -eq 0 ]
+  done
+
+  # Iterate through all the app containers and wait for workers to finish.
+  # Abort should more than 5 attempts (seconds) are required for any given container.
+  # This constrains the execution interval of this logic to a max of 25 ($num_ac x 5)
+  # seconds.
+  for i in $(seq 1 $num_ac); do
+    local attempts=0
+    while true; do
+      if __docker exec "$syscont" sh -c "docker exec ac_$i sh -c \"cat /result.txt\""; then
+        break
+      fi
+
+      attempts=$((attempts + 1))
+      if [[ ${attempts} -ge 5 ]]; then
+        break
+      fi
+      sleep 1
+    done
+  done
+
+# verify results
+  for i in $(seq 1 $num_ac); do
+    docker exec "$syscont" sh -c "docker exec ac_$i sh -c \"cat /result.txt\""
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "pass" ]]
+  done
+
+  # cleanup
+  docker stop $syscont
+
+  rm $worker_scr
+}
+
+# Same as above but with "unshare" contexts instead of l2 app-containers. The
+# goal here is to test concurrency with all namespaces enabled, but at this
+# point we are leaving user-ns out due to a pending issue preventing procfs
+# mounts to succeed.
+@test "/proc/sys concurrent l2 inter-container access (unshare)" {
+
+  num_un=5
+  iter=20
+
+  local worker_scr=/tmp/worker.sh
+
+  # this worker script will run in each app container
+  cat << EOF > $worker_scr
+#!/bin/bash
+for i in \$(seq 1 $iter); do
+  output=\$(sh -c "echo \$i > /proc/sys/net/netfilter/nf_conntrack_frag6_timeout" 2>&1)
+  if [ "\$?" -ne 0 ]; then
+    echo "\$HOSTNAME: fail: \$output" > /result_\$1.txt
+    exit
+  fi
+  val=\$(cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout)
+  if [ "\$val" != "\$i" ]; then
+   echo "\$HOSTNAME: fail: want \$i, got \$val" > /result_\$1.txt
+   exit
+  fi
+done
+echo "\$HOSTNAME: pass" > /result_\$1.txt
+EOF
+
+  chmod +x $worker_scr
+
+  # launch a sys container
+  local syscont=$(docker_run --rm --name syscont nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+
+  # leave some wiggle room
+  sleep 2
+
+  # copy worker script into sys container
+  docker cp $worker_scr $syscont:/worker.sh
+  [ "$status" -eq 0 ]
+
+  # launch unshare sessions
+  for i in $(seq 1 $num_un); do
+    docker exec -d "$syscont" sh -c "unshare -i -m -n -p -u -f --mount-proc sh -c \"/worker.sh $i\""
+    [ "$status" -eq 0 ]
+  done
+
+  # Iterate through the shared file-system (across unshare sessions) looking
+  # for result files and wait for workers to finish. Abort should more than 5
+  # attempts (seconds) are required for any given container. This constrains
+  # the execution interval of this logic to a max of 25 ($num_un x 5)
+  # seconds.
+  for i in $(seq 1 $num_un); do
+    local attempts=0
+    while true; do
+      if __docker exec "$syscont" sh -c "cat /result_$i.txt"; then
+        break
+      fi
+
+      attempts=$((attempts + 1))
+      if [[ ${attempts} -ge 5 ]]; then
+        break
+      fi
+      sleep 1
+    done
+  done
+
+  # verify results
+  for i in $(seq 1 $num_un); do
+    docker exec "$syscont" sh -c "cat /result_$i.txt"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "pass" ]]
+  done
+
+  # cleanup
+  docker stop $syscont
 
   rm $worker_scr
 }
