@@ -4,28 +4,28 @@
 
 -   [Procfs Background](#procfs-background)
 -   [Sysfs Background](#sysfs-background)
--   [Procfs / Sysfs in System Containers](#procfs-sysfs-in-system-containers)
--   [Procfs / Sysfs inside a Sys Container](#procfs-sysfs-mounts-inside-a-sys-container)
+-   [Procfs / Sysfs in System Containers](#procfs--sysfs-in-system-containers)
+-   [Procfs / Sysfs inside a Sys Container](#procfs--sysfs-mounts-inside-a-sys-container)
 -   [Procfs / Sysfs Emulation](#procfs-sysfs-emulation)
     -   [Permission Checks](#permission-checks)
-    -   [Procfs / Sysfs Emulation in Inner Containers](#procfs-sysfs-emulation-in-inner-containers)
+    -   [Procfs / Sysfs Emulation in Inner Containers](#procfs--sysfs-emulation-in-inner-containers)
     -   [Emulation Details](#emulation-details)
--   [Intercepting Procfs / Sysfs Mounts Inside a Sys Container](#intercepting-procfs-sysfs-mounts-inside-a-sys-container)
+-   [Intercepting Procfs / Sysfs Mounts Inside a Sys Container](#intercepting-procfs--sysfs-mounts-inside-a-sys-container)
     -   [Rationale](#rationale)
     -   [Mount Syscall Trapping Mechanism](#mount-syscall-trapping-mechanism)
     -   [Mount Syscall Emulation](#mount-syscall-emulation)
-        -   [Identifying the procfs / sysfs mount type](#identifying-the-procfs-sysfs-mount-type)
+        -   [Identifying the procfs / sysfs mount type](#identifying-the-procfs--sysfs-mount-type)
         -   [New Procfs / Sysfs Mounts](#new-procfs-sysfs-mounts)
-        -   [Bind Mounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs-sysfs-portions-backed-by-sysbox-fs)
-        -   [Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs-sysfs-portions-backed-by-sysbox-fs)
-        -   [Identifying procfs / sysfs mounts backed by sysbox-fs](#identifying-procfs-sysfs-mounts-backed-by-sysbox-fs)
+        -   [Bind Mounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs--sysfs-portions-backed-by-sysbox-fs)
+        -   [Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs--sysfs-portions-backed-by-sysbox-fs)
+        -   [Identifying procfs / sysfs mounts backed by sysbox-fs](#identifying-procfs--sysfs-mounts-backed-by-sysbox-fs)
         -   [Path resolution](#path-resolution)
         -   [Permission checks](#permission-checks-1)
         -   [Mount Flags](#mount-flags)
         -   [Mount options](#mount-options)
         -   [Read-only and masked paths](#read-only-and-masked-paths)
         -   [Mount Syscall Emulation Steps](#mount-syscall-emulation-steps)
--   [Intercepting Procfs / Sysfs Unmounts Inside a Sys Container](#intercepting-procfs-unmounts-inside-a-sys-container)
+-   [Intercepting Procfs / Sysfs Unmounts Inside a Sys Container](#intercepting-procfs--sysfs-unmounts-inside-a-sys-container)
     -   [umount2 syscall](#umount2-syscall)
     -   [Unmount Syscall Emulation Steps](#unmount-syscall-emulation-steps)
 
@@ -140,7 +140,7 @@ emulation serve the main purpose.
     notification mechanism.
 
   - See section [Intercepting Procfs / Sysfs Mounts Inside A Sys
-    Container](#intercepting-procfs-sysfs-mounts-inside-a-sys-container) for
+    Container](#intercepting-procfs--sysfs-mounts-inside-a-sys-container) for
     more info on this.
 
 ## Procfs / Sysfs Emulation
@@ -372,7 +372,7 @@ Mount syscalls that mount other filesystem types, create other bind
 mounts, or perform other remount operations do not require emulation
 by Sysbox-fs; those are simply passed backed to the Linux kernel.
 
-See section [Intercepting Procfs / Sysfs Unmounts Inside a Sys Container](#intercepting-procfs-sysfs-unmounts-inside-a-sys-container)
+See section [Intercepting Procfs / Sysfs Unmounts Inside a Sys Container](#intercepting-procfs--sysfs-unmounts-inside-a-sys-container)
 for cases where sysbox-fs traps and emulates unmount syscalls.
 
 #### Identifying the procfs / sysfs mount type
@@ -661,7 +661,7 @@ given mount flags to the Linux kernel when mounting procfs / sysfs.
 
 When handling remounts over portions of procfs / sysfs backed by
 sysbox-fs, the flags are handled as described in section
-[Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs-sysfs-portions-backed-by-sysbox-fs)
+[Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs--sysfs-portions-backed-by-sysbox-fs)
 above.
 
 #### Mount options
@@ -781,7 +781,7 @@ trapping a mount syscall:
   - Read the existing flags for the sysbox-fs backed mount
 
   - Merge the existing flags with the remount flags as described in
-    [Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs-sysfs-portions-backed-by-sysbox-fs).
+    [Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs--sysfs-portions-backed-by-sysbox-fs).
 
   - Return success on the mount syscall.
 
@@ -904,7 +904,7 @@ link.
   - No further action; return success on the unmount syscall.
 
   - This ensures that users can't unmount portions of procfs / sysfs
-    backed by sysbox-fs. See [Bind Mounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs-sysfs-portions-backed-by-sysbox-fs).
+    backed by sysbox-fs. See [Bind Mounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs--sysfs-portions-backed-by-sysbox-fs).
 
 * Enter mount ns of the process that made the unmount syscall
 
