@@ -1,12 +1,13 @@
-# Sysbox: Procfs / Sysfs Emulation
+# Sysbox Emulation
 
 ## Contents
 
+-   [Introduction](#introduction)
 -   [Procfs Background](#procfs-background)
 -   [Sysfs Background](#sysfs-background)
 -   [Procfs / Sysfs in System Containers](#procfs--sysfs-in-system-containers)
 -   [Procfs / Sysfs inside a Sys Container](#procfs--sysfs-mounts-inside-a-sys-container)
--   [Procfs / Sysfs Emulation](#procfs-sysfs-emulation)
+-   [Procfs / Sysfs Emulation](#procfs--sysfs-emulation)
     -   [Permission Checks](#permission-checks)
     -   [Procfs / Sysfs Emulation in Inner Containers](#procfs--sysfs-emulation-in-inner-containers)
     -   [Emulation Details](#emulation-details)
@@ -15,7 +16,7 @@
     -   [Mount Syscall Trapping Mechanism](#mount-syscall-trapping-mechanism)
     -   [Mount Syscall Emulation](#mount-syscall-emulation)
         -   [Identifying the procfs / sysfs mount type](#identifying-the-procfs--sysfs-mount-type)
-        -   [New Procfs / Sysfs Mounts](#new-procfs-sysfs-mounts)
+        -   [New Procfs / Sysfs Mounts](#new-procfs--sysfs-mounts)
         -   [Bind Mounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#bind-mounts-over-procfs--sysfs-portions-backed-by-sysbox-fs)
         -   [Remounts Over Procfs / Sysfs Portions Backed by Sysbox-fs](#remounts-over-procfs--sysfs-portions-backed-by-sysbox-fs)
         -   [Identifying procfs / sysfs mounts backed by sysbox-fs](#identifying-procfs--sysfs-mounts-backed-by-sysbox-fs)
@@ -28,6 +29,22 @@
 -   [Intercepting Procfs / Sysfs Unmounts Inside a Sys Container](#intercepting-procfs--sysfs-unmounts-inside-a-sys-container)
     -   [umount2 syscall](#umount2-syscall)
     -   [Unmount Syscall Emulation Steps](#unmount-syscall-emulation-steps)
+
+## Introduction
+
+Sysbox-fs' emulation capabilities are a fundamental component of Sysbox
+runtime. These ones complement sysbox-runc features to offer a more
+complete 'virtual-host' abstraction.
+
+As of today, sysbox-fs supports the (partial) emulation of the
+following components:
+
+  - procfs emulation
+  - sysfs emulation
+  - syscall emulation
+
+This document spells out the details of how this emulation process is
+carried out.
 
 ## Procfs Background
 
