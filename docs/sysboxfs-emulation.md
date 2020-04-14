@@ -848,6 +848,12 @@ From a security perspective, it would mean that a process inside the
 sys container would be able to obtain information about the host via
 `/proc` that would normally be hidden inside the sys container.
 
+In our implementation we make an exception to this rule though. It
+turns out that `systemd` has special requirements to mount and unmount
+procfs in a systemd specific path (i.e. /run/systemd/unit-root). By
+relaxing this requirement we allow systemd to umount and re-mount
+certain procfs nodesthat need to be masked for security concerns.
+
 2) Ensure that unmounts of the entire procfs / sysfs inside the sys
 container work.
 
