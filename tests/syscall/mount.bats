@@ -34,9 +34,9 @@ function teardown() {
   verify_syscont_procfs_mnt $syscont $mnt_path
 
   # verify the newly mounted procfs is protected by the sys container's userns
-  docker exec "$syscont" bash -c "echo 1 > $mnt_path/sys/kernel/sysrq"
+  docker exec "$syscont" bash -c "echo 1 > $mnt_path/sys/kernel/panic_print"
   [ "$status" -eq 1 ]
-  [[ "$output" =~ /root/proc/sys/kernel/sysrq:\ Permission\ denied ]]
+  [[ "$output" =~ /root/proc/sys/kernel/panic_print:\ Permission\ denied ]]
 
   # verify nf_conntrack_max is exposed in $mnt_path and matches the one in /proc
   docker exec "$syscont" bash -c "cat /proc/sys/net/netfilter/nf_conntrack_max"
