@@ -331,6 +331,7 @@ function k8s_cluster_setup() {
   local worker_name
   local kubeadm_join=$(kubeadm_get_token $k8s_master)
 
+  local i
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
 
@@ -357,6 +358,7 @@ function k8s_cluster_teardown() {
   local k8s_master=${cluster_name}-master
   local worker_name
 
+  local i
   for i in `seq 0 $(( $num_workers - 1 ))`; do
     worker_name=${cluster_name}-worker-${i}
     docker_stop $worker_name
