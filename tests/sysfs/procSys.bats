@@ -28,7 +28,10 @@ function compare_syscont_unshare() {
   sc_list=$1
   ns_list=$2
 
-  delta=$(diff --suppress-common-lines <(echo "$sc_list" | sed -e 's/ /\n/g') <(echo "$ns_list" | sed -e 's/ /\n/g') | grep "proc" | sed 's/^< //g')
+  delta=$(diff --suppress-common-lines \
+    <(echo "$sc_list" | sed -e 's/ /\n/g' | sort) \
+    <(echo "$ns_list" | sed -e 's/ /\n/g' | sort) \
+    | grep "proc" | sed 's/^< //g')
 
   for file in $delta; do
     found=false
@@ -37,6 +40,8 @@ function compare_syscont_unshare() {
         found=true
       fi
     done
+    echo "delta = ${delta}"
+    echo "file = ${file}"
     [ "$found" == true ]
   done
 }
