@@ -53,20 +53,19 @@ function verify_syscont_procfs_mnt() {
     [[ "$output" =~ "proc on $mnt_path/$node type proc (ro," ]]
   done
 
-  # TODO: fix this ...
-  #
-  # Commenting these ones out to prevent testcases' outcome to diverge
-  # depending on the test-container on which these ones are executed
-  # (i.e. regular 'test' vs 'test-installer'). In the regular 'test'
-  # container, "tmpfs" is mounted over the masked resources, whereas,
-  # in the 'test-installer' case, is "udev" the fstype being mounted
-  # due to the presence of systemd-udev daemon. To avoid differentiated
-  # behaviors, we will comment this checkpoint for now.
-  #
+  # Note: we skip checking for read-only on procfs masked resources
+  # because sysbox-fs does not currently set them as read-only.  It's
+  # a bug, but a minor one because the resources are masked anyway
+  # (i.e., bind-mounted to /dev/null), so writes are inconsecuential.
+
   # for node in "${PROCFS_MASKED[@]}"; do
   #   docker exec "$syscont" bash -c "mount | grep $mnt_path/$node"
   #   [ "$status" -eq 0 ]
-  #   [[ "$output" =~ "udev on $mnt_path/$node type devtmpfs (rw,nosuid,relatime," ]]
+  #   if [ -n "$SB_INSTALLER" ]; then
+  #     [[ "$output" =~ "udev on $mnt_path/$node type devtmpfs $opt" ]]
+  #   else
+  #     [[ "$output" =~ "tmpfs on $mnt_path/$node type tmpfs $opt" ]]
+  #   fi
   # done
 
   for node in "${PROCFS_TMPFS[@]}"; do
