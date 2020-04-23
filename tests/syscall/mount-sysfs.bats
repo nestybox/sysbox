@@ -329,7 +329,7 @@ function teardown() {
   docker_stop "$syscont"
 }
 
-@test "sysfs remount (filesystem level)" {
+@test "sysfs mount & remount (superblock)" {
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
@@ -340,7 +340,7 @@ function teardown() {
   docker exec "$syscont" bash -c "mount -t sysfs sysfs $mnt_path"
   [ "$status" -eq 0 ]
 
-  # remount to read-only
+  # remount to read-only at super-block level
   docker exec "$syscont" bash -c "mount -o remount,ro $mnt_path"
   [ "$status" -eq 0 ]
 
@@ -355,6 +355,40 @@ function teardown() {
   docker exec "$syscont" bash -c "mount -o remount,rw $mnt_path"
   [ "$status" -eq 0 ]
 
+  verify_syscont_sysfs_mnt $syscont $mnt_path
+
+  docker_stop "$syscont"
+}
+
+@test "/sys remount & mount (superblock)" {
+
+  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local mnt_path=/root/sys
+
+  docker exec "$syscont" bash -c "mkdir -p $mnt_path"
+  [ "$status" -eq 0 ]
+
+  # remount to read-only at super-block level on /sys
+  docker exec "$syscont" bash -c "mount -o remount,ro /sys"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_sysfs_mnt $syscont /sys ro
+
+  docker exec "$syscont" bash -c "mount -t sysfs sysfs $mnt_path"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_sysfs_mnt $syscont $mnt_path ro
+
+  # verify procfs is not affected by read-only remount on sysfs (i.e.,
+  # remount of sysbox-fs managed submounts was applied to the submounts
+  # only, not at the fuse filesystem level).
+  verify_syscont_procfs_mnt $syscont /proc
+
+  # revert remount to read-write (super-block level)
+  docker exec "$syscont" bash -c "mount -o remount,rw /sys"
+  [ "$status" -eq 0 ]
+
+  verify_syscont_sysfs_mnt $syscont /sys
   verify_syscont_sysfs_mnt $syscont $mnt_path
 
   docker_stop "$syscont"
