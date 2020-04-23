@@ -23,8 +23,14 @@ SYSFS_PROC="/proc/uptime \
 #             /proc/partitions \
 #             /proc/stat"
 
-# sysbox-fs sys container "/proc/sys" mounts
-SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max"
+# sysbox-fs' "/proc/sys" emulated nodes. This array is utilized in "procSys.bats"
+# to compare procfs hierarchies inside a sys-container with the one obtained in
+# plain namespaced contexts (unshare). Note that not all emulated resources need
+# to be exposed here, just the ones that mismatch between these two contexts being
+# compared.
+SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
+		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_close_wait \
+		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established"
 
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
