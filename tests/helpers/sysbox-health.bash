@@ -40,6 +40,15 @@ function sysboxfs_ps_check() {
   true
 }
 
+function sysboxfs_mnt_check() {
+  # verify there are no sysbox-fs mounts
+  res=$(mount | grep -c "/var/lib/sysboxfs")
+  if [ $res -ne 0 ]; then
+    return 1
+  fi
+  true
+}
+
 function sysboxfs_health_check() {
 
   if ! sysboxfs_log_check; then
@@ -47,6 +56,10 @@ function sysboxfs_health_check() {
   fi
 
   if ! sysboxfs_ps_check; then
+    return 1
+  fi
+
+  if ! sysboxfs_mnt_check; then
     return 1
   fi
 
@@ -117,6 +130,15 @@ function sysbox_ps_check() {
   fi
 
   if ! sysboxmgr_ps_check; then
+    return 1
+  fi
+
+  true
+}
+
+function sysbox_mnt_check() {
+
+  if ! sysboxfs_mnt_check; then
     return 1
   fi
 
