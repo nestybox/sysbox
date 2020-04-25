@@ -19,14 +19,14 @@ function teardown() {
   # verify things look good inside the sys container
   #
 
-  # "/var/lib/containerd" should be mounted to "/var/lib/sysbox/containerd/<syscont-name>"; note
+  # "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" should be mounted to "/var/lib/sysbox/containerd/<syscont-name>"; note
   # that in the privileged test container the "/var/lib/sysbox" is itself a mount-point,
   # so it won't show up in findmnt; thus we just grep for "containerd/<syscont-name>"
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/containerd\" | grep \"containerd/$SYSCONT_NAME\""
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs\" | grep \"containerd/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
 
-  # ownership of "/var/lib/containerd" should be root:root
-  docker exec "$SYSCONT_NAME" sh -c "stat /var/lib/containerd | grep Uid"
+  # ownership of "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" should be root:root
+  docker exec "$SYSCONT_NAME" sh -c "stat /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs | grep Uid"
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" == "Access: (0700/drwx------)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
 
@@ -57,7 +57,7 @@ function teardown() {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
@@ -66,7 +66,7 @@ function teardown() {
   docker start "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/containerd/test"
+  docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
   [[ "$output" == "data" ]]
 
@@ -89,7 +89,7 @@ function teardown() {
   [ "$status" -eq 0 ]
   sc_id="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
 
   run cat "/var/lib/sysbox/containerd/$sc_id/test"
@@ -115,7 +115,7 @@ function teardown() {
 
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/test"
+  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
@@ -125,7 +125,7 @@ function teardown() {
     docker start "$SYSCONT_NAME"
     [ "$status" -eq 0 ]
 
-    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/containerd/test"
+    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
     [ "$status" -eq 0 ]
     [[ "$output" == "data" ]]
 
@@ -141,28 +141,28 @@ function teardown() {
   SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
 
-  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/containerd/dummyFile"
+  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/dummyFile"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
   # verify that dummy file was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/containerd"
+  run ls "$rootfs/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs"
   [ "$status" -eq 0 ]
   [[ "$output" == "dummyFile" ]]
 
   docker start "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/containerd/dummyFile"
+  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/dummyFile"
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
 
   # verify that dummy file removal was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/containerd"
+  run ls "$rootfs/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs"
   [ "$status" -eq 0 ]
   [[ "$output" == "" ]]
 
