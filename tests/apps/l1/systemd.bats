@@ -190,10 +190,6 @@ function check_systemd_mounts() {
   docker volume rm testVol
 }
 
-function setup() {
-  run_only_test "systemd /proc exposure"
-}
-
 @test "systemd /proc exposure" {
 
   # Verify that /proc nodes that we expose for systemd (/proc/kcore,
