@@ -300,7 +300,9 @@ function teardown() {
 
   # Verify remount of sysfs causes a remount of all submounts.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
+  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -331,7 +333,9 @@ function teardown() {
 
 @test "sysfs mount & remount (superblock)" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
+  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -362,7 +366,9 @@ function teardown() {
 
 @test "/sys remount & mount (superblock)" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
+  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
