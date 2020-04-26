@@ -847,7 +847,7 @@ EOF
   docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl get pods -o wide"
+  docker exec k8s-master sh -c "kubectl get pods -o wide | egrep -q \"nginx-ingress\""
   [ "$status" -eq 0 ]
 
   local pod1_name=$(echo ${lines[1]} | awk '{print $1}')
