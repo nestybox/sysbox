@@ -37,9 +37,7 @@ else
 
   # the kind tests need plenty storage (otherwise kubelet fails);
   # remove all docker images from prior tests to make room
-  docker stop -t0 $(docker ps -aq) > /dev/null
-  docker rm $(docker ps -aq) > /dev/null
-  docker image rm $(docker image ls -aq) > /dev/null
+  docker system prune -a -f
 
   printf "\nExecuting kind tests ... \n"
   bats --tap tests/kind
