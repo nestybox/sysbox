@@ -195,3 +195,132 @@ There's nothing new here, just use the regular `p` (print) instruction. But keep
 ```
 (dlv) config max-string-len 1000
 ```
+
+
+## Useful Debugger Options
+
+Configure print length of strings:
+
+```
+(dlv) config max-string-len 1000
+```
+
+
+## Debugging CGO code
+
+To debug cgo code, you must use gdb (delve does not work).
+
+Instructions:
+
+1) Build the cgo code with "go build --buildmode=exe"; do not use "--buildmode=pie", as the position independent code confuses gdb.
+
+   - There may be a gdb option/command to get around this, but it's easier to just build with "--buildmode=exe" during debug.
+
+2) In the golang file that calls cgo, use the "-g" switch, to tell gccgo to generate debug symbols.
+
+```
+#cgo CFLAGS: -Wall -g
+```
+
+3) If needed, instrument the binary to allow you time to attach the
+   debugger to it.
+
+   - For example, to attach to the sysbox-runc nsenter child process
+     which is normally ephemeral, add an debug "sleep()" to an
+     appropriate location within the nsenter (to give you time to find
+     the nsenter pid and attach the debugger to it), then execute
+     sysbox-runc, find the pid with pstree, and attach gdb to it (next step).
+
+3) Attach gdb to the target process:
+
+```
+root@eoan:/mnt/dev-ws/cesar/nestybox/sysbox# gdb --pid 17089
+
+GNU gdb (Ubuntu 8.3-0ubuntu1) 8.3
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+Attaching to process 17089
+No executable file now.
+
+warning: Could not load vsyscall page because no executable was specified
+0x00007f0d78abf2e2 in ?? ()
+```
+
+4) Point gdb to the sysbox-runc binary so it can load the symbols:
+
+```
+(gdb) file /usr/local/sbin/sysbox-runc
+A program is being debugged already.
+Are you sure you want to change the file? (y or n) y
+Reading symbols from /usr/local/sbin/sysbox-runc...
+Loading Go Runtime support.
+
+(gdb) bt
+#0  0x00007f0d78abf2e2 in ?? ()
+#1  0x0000000000bb4b23 in read (__nbytes=16, __buf=0x7fff3fcba260, __fd=4) at /usr/include/x86_64-linux-gnu/bits/unistd.h:44
+#2  nl_parse (config=0x7fff3fcba270, fd=4) at nsexec.c:422
+#3  nsexec () at nsexec.c:634
+#4  0x0000000000bc3fbd in __libc_csu_init ()
+#5  0x00007f0d788db16e in ?? ()
+#6  0x0000000000000000 in ?? ()
+```
+
+5) Then use gdb as usual:
+
+```
+(gdb) break nsexec.c:650
+Breakpoint 1 at 0xbb4f68: file nsexec.c, line 650.
+(gdb) c
+Continuing.
+
+Breakpoint 1, update_oom_score_adj (len=4, data=0xe2f62e "-999") at nsexec.c:650
+650        update_oom_score_adj("-999", 4);
+
+(gdb) n
+nsexec () at nsexec.c:662
+662             if (config.namespaces) {
+    (gdb) p config
+    $1 = {data = 0x1b552a0 "\b", cloneflags = 2114060288, oom_score_adj = 0x1b552dc "0", oom_score_adj_len = 2, uidmap = 0x1b552ac "0 165536 65536\n", uidmap_len = 16, gidmap = 0x1b552c0 "0 165536 65536\n", gidmap_len = 16, namespaces = 0x0, namespaces_len = 0, is_setgroup = 1 '\001', is_rootless_euid = 0 '\000',
+uidmappath = 0x0, uidmappath_len = 0, gidmappath = 0x0, gidmappath_len = 0, prep_rootfs = 1 '\001', use_shiftfs = 1 '\001', make_parent_priv = 0 '\000', rootfs_prop = 540672, rootfs = 0x1b5530c "/var/lib/docker/overlay2/d764bae04e3e81674c0f0c8ccfc8dec1ef2483393027723bac6519133fa7a4a2/merged", rootfs_len = 97,
+parent_mount = 0x0, parent_mount_len = 0, shiftfs_mounts = 0x1b55374 "/lib/modules/5.3.0-46-generic,/usr/src/linux-headers-5.3.0-46,/usr/src/linux-headers-5.3.0-46-generic,/var/lib/docker/containers/cbf6dfe2bef0563532770ed664829032d00eb278367176de32cd03b7290ea1ac", shiftfs_mounts_len = 194}
+
+(gdb) set print pretty
+(gdb) p config
+$2 = {
+data = 0x1b552a0 "\b",
+cloneflags = 2114060288,
+oom_score_adj = 0x1b552dc "0",
+oom_score_adj_len = 2,
+uidmap = 0x1b552ac "0 165536 65536\n",
+uidmap_len = 16,
+gidmap = 0x1b552c0 "0 165536 65536\n",
+gidmap_len = 16,
+namespaces = 0x0,
+namespaces_len = 0,
+is_setgroup = 1 '\001',
+is_rootless_euid = 0 '\000',
+uidmappath = 0x0,
+uidmappath_len = 0,
+gidmappath = 0x0,
+gidmappath_len = 0,
+prep_rootfs = 1 '\001',
+--Type <RET> for more, q to quit, c to continue without paging--q
+Quit
+```
+
+Tip: if you are running sysbox-runc inside the test container, run gdb at host level,
+use pstree to figure out the pid of sysbox-runc nsenter child process inside the test container,
+and point gdb to the sysbox-runc binary inside the test container (e.g.,
+`file /var/lib/docker/overlay2/860f62b3bd74c36be6754c8ed8e3f77a63744a2c6b16bef058b22ba0185e2877/merged/usr/local/sbin/sysbox-runc`).
