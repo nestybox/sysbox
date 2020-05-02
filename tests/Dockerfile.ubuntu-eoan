@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     libtool \
     procps \
+    psmisc \
     nano \
     less \
     curl \
@@ -129,7 +130,8 @@ RUN apt-get update && apt-get install -y \
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
 
-# nestybox docker hub login credentials (unsecure)
+# nestybox docker hub login credentials
+# TODO: fix this, it's unsecure.
 COPY .docker/config.json /root/.docker/config.json
 
 # test scripts
