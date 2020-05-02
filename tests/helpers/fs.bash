@@ -30,7 +30,11 @@ SYSFS_PROC="/proc/uptime \
 # compared.
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
 		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_close_wait \
-		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established"
+		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established \
+                /proc/sys/net/ipv4/vs/expire_nodest_conn \
+                /proc/sys/net/ipv4/vs/expire_quiescent_template \
+                /proc/sys/net/ipv4/vs/conn_reuse_mode \
+                /proc/sys/net/ipv4/vs/conntrack"
 
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
