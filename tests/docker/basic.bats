@@ -64,4 +64,6 @@ function teardown() {
   docker exec "$syscont" cat /proc/1/oom_score_adj
   [ "$status" -eq 0 ]
   [[ "$output" == "$custom_val" ]]
+
+  docker_stop "$syscont"
 }
