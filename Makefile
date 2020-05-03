@@ -410,7 +410,7 @@ endif
 		DEBIAN_FRONTEND=noninteractive dpkg -i $(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME)"
         # For the test container, start sysbox-fs with '--ignore-handler-errors' (sysbox issue #538)
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c \
-	"sed -i 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs --ignore-handler-errors/g' /usr/lib/systemd/system/sysbox-fs.service && \
+	"sed -i 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
 	systemctl daemon-reload && systemctl restart sysbox.service"
         # Some tests require that the Docker default runtime be set to sysbox-runc
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
