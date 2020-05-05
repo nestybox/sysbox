@@ -36,7 +36,7 @@ go get -u github.com/google/pprof
 
 ## Profiling session initialization
 
-Both sysbox-fs and sysbox-mgr offer hidden-cli parameters to
+sysbox-runc, sysbox-fs and sysbox-mgr offer hidden-cli parameters to
 initialize profiling data collection. We must simply launch these
 daemons with the desired profiling option (see below), and stop
 them (i.e. sigterm signal) once we conclude our experiments.
@@ -52,10 +52,11 @@ sysbox-fs --cpu-profiling --log /var/log/sysbox-fs.log 2>&1 &
 
 Notice that the profiling data will not be dumped to the file-system
 till the profiling routines are properly shutdown'd, which happens
-only once the daemon in question is terminated.
+only once the program in question is terminated.
 
-Upon successful termination of the daemon being monitored, we should
-see one of these files in sysbox's top-level directory:
+Upon successful termination of the program being monitored, we should
+see one of these files in the current working dir of the process that
+invoked the sysbox programs.
 
    * `cpu.pprof`
    * `mem.pprof`
@@ -103,8 +104,8 @@ Type: inuse_space
 ...
 ```
 
-Make sure you understand the subtleties between 'inuse_space' and
-'alloc_space' as their semantics are different:
+Make sure you understand the subtleties between `inuse_space` and
+`alloc_space` as their semantics are different:
 
 ```
 "go tool pprof has the option to show you either allocation counts
