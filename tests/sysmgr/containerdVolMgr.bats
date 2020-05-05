@@ -35,9 +35,8 @@ function teardown() {
   #
 
   # there should be a dir with the container's name under /var/lib/sysbox/containerd
-  run ls /var/lib/sysbox/containerd/
+  run sh -c "ls /var/lib/sysbox/containerd | grep $SYSCONT_NAME"
   [ "$status" -eq 0 ]
-  [[ ${lines[0]} =~ "$SYSCONT_NAME" ]]
 
   # and that dir should have ownership matching the sysbox user
   run sh -c "cat /etc/subuid | grep sysbox | cut -d\":\" -f2"
