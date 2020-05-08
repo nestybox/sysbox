@@ -25,31 +25,35 @@ function create_oci_bundle() {
 
     create_test_dir
 
+    run mkdir -p "$test_dir"/"$test_container"/rootfs
+    [ "$status" -eq 0 ]
+    
     run cd "$test_dir"/"$test_container"
     [ "$status" -eq 0 ]    
     
-    run mkdir -p rootfs
-    [ "$status" -eq 0 ]
+    #run mkdir -p rootfs
+    #[ "$status" -eq 0 ]
 
-    run docker export $(docker create $test_image) | \
-        tar -C rootfs -xvf -
-    [ "$status" -eq 0 ]
-
-    run sysbox-runc spec
+    #run docker export $(docker create \"$test_image\":latest) | tar -C rootfs -xvf -
+    docker export \"$(docker create busybox:latest)\" | tar -C rootfs -xvf -
     [ "$status" -eq 0 ]
 }
 
-@test container creation() {
+@test "container creation" {
 
-    run ls /var/lib/sysboxfs | egrep -q "$test_container"
+    create_oci_bundle
+
+    ls /var/lib/sysboxfs | egrep -q "$test_container"
     [ "$status" -eq 1 ]
 
     run cd "$test_dir"/"$test_container"
     [ "$status" -eq 0 ]
 
-    run sysbox-runc run "$test_container"
+    #
+    sv_runc run -d --console-socket $CONSOLE_SOCKET "$test_container"
     [ "$status" -eq 0 ]
 
+    #
     run ls /var/lib/sysboxfs | egrep -q "$test_container"
     [ "$status" -eq 0 ]
 }
