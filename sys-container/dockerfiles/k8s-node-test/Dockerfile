@@ -1,11 +1,20 @@
 #
-# K8s system container image based on ubuntu-bionic
+# Kubernetes node system container **test** image.
+#
+# NOTE: MEANT FOR INTERNAL USE BY NESTYBOX; DO NOT MAKE PUBLIC.
 #
 # This image includes systemd, docker, kubeadm, and all k8s control
-# plane container images.
+# plane pod images.
+#
+# NOTE: THIS IMAGE SHOULD BE BUILT INSIDE THE SYSBOX TEST CONTAINER,
+# TO AVOID THE PROBLEMS IN SYSBOX ISSUE 676.
+#
+# $ docker build -t nestybox/k8s-node-test:latest .
 #
 
 FROM nestybox/ubuntu-bionic-systemd-docker:latest
+
+ARG k8s_version=v1.18.2
 
 # Install kubeadm
 #
@@ -17,7 +26,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y kubeadm
 
 # Pull k8s control plane container images into sys container image
 COPY kube-pull.sh /usr/bin/
-RUN chmod +x /usr/bin/kube-pull.sh && kube-pull.sh && rm /usr/bin/kube-pull.sh
+RUN chmod +x /usr/bin/kube-pull.sh && kube-pull.sh $k8s_version && rm /usr/bin/kube-pull.sh
 
 # Docker daemon config
 COPY daemon.json /etc/docker/
