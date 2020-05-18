@@ -810,7 +810,7 @@ EOF
 
   local kubeadm_join=$(kubeadm_get_token k8s-master)
 
-  docker_run --rm --name="$node" --hostname="$node" nestybox/ubuntu-bionic-k8s:latest
+  docker_run --rm --name="$node" --hostname="$node" nestybox/k8s-node-test:latest
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd $node
