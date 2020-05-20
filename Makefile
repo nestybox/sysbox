@@ -5,6 +5,7 @@
 # - Add installation package target
 # - Eliminate image-build targets (e.g. ubuntu-bionic) from here. This is a hack to
 #   workaround an unsolved issue, but it hurts on my eyes.
+# - Add target for sysbox lib unit tests (packages under lib/...)
 
 .PHONY: sysbox sysbox-static \
 	sysbox-runc sysbox-runc-static sysbox-runc-debug \
