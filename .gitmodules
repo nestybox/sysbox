@@ -16,3 +16,6 @@
 [submodule "lib/seccomp-golang"]
 	path = lib/seccomp-golang
 	url = git@github.com:nestybox/libseccomp-golang.git
+[submodule "sysbox-kind"]
+	path = sysbox-kind
+	url = git@github.com:nestybox/kind.git
