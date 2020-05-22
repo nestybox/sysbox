@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Tests for docker networking inside a system container
+# Tests for docker-in-docker networking
 #
 
 load ../helpers/run
@@ -13,7 +13,7 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "dind bridge net" {
+@test "dind default net" {
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
