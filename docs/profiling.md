@@ -48,6 +48,7 @@ Example:
 
 ```
 sysbox-fs --cpu-profiling --log /var/log/sysbox-fs.log 2>&1 &
+sysbox-runc --cpu-profiling --log ./error.txt run mycont
 ```
 
 Notice that the profiling data will not be dumped to the file-system
