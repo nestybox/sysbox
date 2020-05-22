@@ -10,9 +10,6 @@
 [submodule "sysbox-mgr"]
 	path = sysbox-mgr
 	url = git@github.com:nestybox/sysbox-mgr.git
-[submodule "shiftfs"]
-	path = shiftfs
-	url = git@github.com:nestybox/shiftfs.git
 [submodule "lib/seccomp"]
 	path = lib/seccomp
 	url = git@github.com:nestybox/libseccomp.git
