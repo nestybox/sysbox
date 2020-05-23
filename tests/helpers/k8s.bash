@@ -442,7 +442,6 @@ function istio_install() {
   # which has its pros (test latest releases) & cons (test instability).
   docker exec "$k8s_master" sh -c "curl -L https://istio.io/downloadIstio | sh - && \
     cp istio*/bin/istioctl /usr/local/bin/ && \
-    istioctl verify-install && \
     istioctl manifest apply --set profile=demo && \
     kubectl label namespace default istio-injection=enabled"
   [ "$status" -eq 0 ]
