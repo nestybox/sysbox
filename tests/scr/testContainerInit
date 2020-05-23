@@ -44,8 +44,6 @@ if [[ "$lastBuildHost" != "$thisHost" ]]; then
   make clean
 fi
 
-make sysbox --no-print-directory && make install
-
 # Configure dockerd
 mkdir -p /etc/docker
 
@@ -83,6 +81,9 @@ fi
 # Start docker
 dockerd > /var/log/dockerd.log 2>&1 &
 retry 10 0.5 docker ps > /dev/null 2>&1
+
+# Build sysbox suite.
+make sysbox --no-print-directory && make install
 
 # Inside the test container we start sysbox with a dedicated script
 # that sets some test-specific configs
