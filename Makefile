@@ -12,6 +12,7 @@
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysbox-ipc \
+	sysbox-kind sysbox-kind-debug \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -54,6 +55,7 @@ SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
+SYSKIND_DIR     := sysbox-kind
 LIB_SECCOMP_DIR := lib/seccomp-golang
 SHIFTFS_DIR     := shiftfs
 
@@ -125,11 +127,11 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 #
 
 sysbox: ## Build all sysbox modules
-sysbox: sysbox-runc sysbox-fs sysbox-mgr
+sysbox: sysbox-runc sysbox-fs sysbox-mgr sysbox-kind
 	@echo $(HOSTNAME) > .buildinfo
 
 sysbox-debug: ## Build all sysbox modules (compiler optimizations off)
-sysbox-debug: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
+sysbox-debug: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug sysbox-kind-debug
 
 sysbox-static: ## Build all sysbox modules (static linking)
 sysbox-static: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
@@ -173,6 +175,12 @@ sysbox-mgr-static: sysbox-ipc
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
+sysbox-kind: ## Build sysbox-kind module
+	@cd $(SYSKIND_DIR) && make sysbox-kind
+
+sysbox-kind-debug: ## Build sysbox-kind module (compiler optimizations off)
+	@cd $(SYSKIND_DIR) && make sysbox-kind-debug
+
 
 #
 # install targets (require root privileges)
@@ -184,13 +192,16 @@ install: ## Install all sysbox binaries
 	install -D -m0755 sysbox-fs/sysbox-fs $(INSTALL_DIR)/sysbox-fs
 	install -D -m0755 sysbox-mgr/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
 	install -D -m0755 sysbox-runc/sysbox-runc $(INSTALL_DIR)/sysbox-runc
+	install -D -m0755 sysbox-kind/bin/sysbox-kind $(INSTALL_DIR)/sysbox-kind
 	install -D -m0755 bin/sysbox $(INSTALL_DIR)/sysbox
+
 
 uninstall: ## Uninstall all sysbox binaries
 	rm -f $(INSTALL_DIR)/sysbox
 	rm -f $(INSTALL_DIR)/sysbox-fs
 	rm -f $(INSTALL_DIR)/sysbox-mgr
 	rm -f $(INSTALL_DIR)/sysbox-runc
+	rm -f $(INSTALL_DIR)/sysbox-kind
 
 #
 # Test targets
@@ -478,6 +489,7 @@ clean:
 	cd $(SYSFS_DIR) && make clean
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSIPC_DIR) && make clean
+	cd $(SYSKIND_DIR) && make clean
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
