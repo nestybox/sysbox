@@ -58,8 +58,14 @@ RUN apt-get update && apt-get install -y \
     iproute2 \
     iputils-ping \
     ca-certificates \
+    # sysbox deps
+    fuse \
+    rsync \
+    bash-completion \
     --no-install-recommends \
-    && apt-get clean
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc
 
 # Install Golang 1.13 release and explicitly activate modules functionality.
 RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
@@ -102,29 +108,36 @@ RUN mkdir -p ~/bin/protoc \
 #
 # NOTE: docker does not yet support ubuntu-eoan, so we install the docker for ubuntu-disco.
 #
-RUN apt-get install -y \
-       apt-transport-https \
-       ca-certificates \
-       curl \
-       gnupg2 \
-       software-properties-common
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-RUN apt-key fingerprint 0EBFCD88
-RUN add-apt-repository \
-        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-        disco \
-        stable"
-RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+RUN apt-get update \
+    && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    software-properties-common \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
+    && apt-key fingerprint 0EBFCD88 \
+    && add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    eoan \
+    stable" \
+    && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
-# bash completion
-RUN apt-get update && apt-get install bash-completion
-RUN echo ". /etc/bash_completion" >> /etc/bash.bashrc
-
-# sysbox deps
-RUN apt-get update && apt-get install -y \
-    fuse \
-    rsync
+# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in K8s (L2) nodes.
+#
+# TODO: Define a mechanism in our testing-framework to allow K8s version to be
+# configured in a centralized location, so that the installed K8s components
+# (both inside privileged test-container and within L2 K8s image) are all
+# matching the same K8s release.
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
+    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
+    && apt-get update \
+    && apt-get install kubectl=1.18.2-00 \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # sysbox env
 RUN useradd sysbox \
