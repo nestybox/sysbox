@@ -306,11 +306,7 @@ EOF
   cp /etc/hosts /etc/hosts.orig
 
   # deploy the ingress controller (traefik) and associated services and ingress rules
-  docker cp $manifest_dir/traefik.yaml k8s-master:/root/traefik.yaml
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl apply -f /root/traefik.yaml"
-  [ "$status" -eq 0 ]
+  k8s_apply k8s-master $manifest_dir/traefik.yaml
 
   retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
@@ -357,11 +353,7 @@ spec:
 EOF
 
   # apply the ingress rule
-  docker cp $test_dir/nginx-ing.yaml k8s-master:/root/nginx-ing.yaml
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl apply -f /root/nginx-ing.yaml"
-  [ "$status" -eq 0 ]
+  k8s_apply k8s-master $test_dir/nginx-ing.yaml
 
   retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
@@ -383,11 +375,8 @@ EOF
   [ "$status" -eq 0 ]
   docker exec k8s-master sh -c "kubectl delete deployment nginx"
   [ "$status" -eq 0 ]
-  docker exec k8s-master sh -c "kubectl delete -f /root/traefik.yaml"
-  [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "rm /root/nginx-ing.yaml && rm /root/traefik.yaml"
-  [ "$status" -eq 0 ]
+  k8s_delete k8s-master $manifest_dir/traefik.yaml
 
   rm $test_dir/nginx-ing.yaml
   cp /etc/hosts.orig /etc/hosts

@@ -71,14 +71,44 @@ function k8s_apply() {
   local k8s_master=$1
   local yaml=$2
 
-  docker cp $yaml "$k8s_master:/root/tmp.yaml"
+  # NOTE: We use `docker cp` to transfer the file into the container. But this
+  # requires that the copy destination be a temporary file, to work-around the
+  # shiftfs bug in Sysbox issue #685.
+
+  tfile=$(mktemp /root/XXXXXXXXX.yaml)
+
+  docker cp $yaml "$k8s_master:$tfile"
   [ "$status" -eq 0 ]
 
-  docker exec "$k8s_master" sh -c "kubectl apply -f /root/tmp.yaml"
+  docker exec "$k8s_master" sh -c "kubectl apply -f $tfile"
   [ "$status" -eq 0 ]
 
-  docker exec "$k8s_master" sh -c "rm -rf /root/tmp.yaml"
+  docker exec "$k8s_master" sh -c "rm -rf $tfile"
   [ "$status" -eq 0 ]
+
+  rm "$tfile"
+}
+
+function k8s_delete() {
+  local k8s_master=$1
+  local yaml=$2
+
+  # NOTE: We use `docker cp` to transfer the file into the container. But this
+  # requires that the copy destination be a temporary file, to work-around the
+  # shiftfs bug in Sysbox issue #685.
+
+  tfile=$(mktemp /root/XXXXXXXXX.yaml)
+
+  docker cp $yaml "$k8s_master:$tfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$k8s_master" sh -c "kubectl delete -f $tfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$k8s_master" sh -c "rm -rf $tfile"
+  [ "$status" -eq 0 ]
+
+  rm "$tfile"
 }
 
 function k8s_create_pod() {
@@ -505,12 +535,7 @@ spec:
           servicePort: 80
 EOF
 
-  # apply the ingress rule
-  docker cp $test_dir/nginx-ing.yaml $k8s_master:/root/nginx-ing.yaml
-  [ "$status" -eq 0 ]
-
-  docker exec $k8s_master sh -c "kubectl apply -f /root/nginx-ing.yaml"
-  [ "$status" -eq 0 ]
+  k8s_apply $k8s_master $test_dir/nginx-ing.yaml
 
   # setup the ingress hostname in /etc/hosts
   cp /etc/hosts /etc/hosts.orig
