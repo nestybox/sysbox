@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-# Basic tests for deploying a K8s cluster inside system container nodes.
+# Tests for deploying a K8s cluster inside system container nodes.
 #
 # NOTE: the "kind cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "kind cluster down"
