@@ -111,3 +111,34 @@ runc --no-sysbox-mgr --no-sysbox-fs run test
 ```
 watch -n 0.2 'pstree -SlpgT | grep -A 10 sysbox-fs'
 ```
+
+## Debugging Networking Issues in Sys Containers
+
+* Identify the network topology inside the sys container.
+
+  - Use `ip` to show the interfaces and understand how the relate to each other.
+
+* Use `tcpdump` to track flow of packets across the sys container the network
+  components:
+
+```
+tcpdump -i <interface> -n
+```
+
+  - The `-n` flag ensures tcpdump does not try to map IP address -> DNS, which
+    reduces the noise in the dump.
+
+* Use `iptables -L -t <table> ` to list the iptables inside the sys container.
+
+  - The `-v` flag can be added to track the number of packets traversing each
+    of the chains. It's helpful to see if packets are traversing the chains
+    that one expects them to traverse.
+
+* When the iptables do DNAT or SNAT, the tcpdump can be a bit hard to read.  You
+  must be aware of where the NATing occurs in order to understand the dump.
+
+* Here are some good resources of iptables:
+
+  https://www.frozentux.net/iptables-tutorial/chunkyhtml/c962.html
+  https://www.digitalocean.com/community/tutorials/a-deep-dive-into-iptables-and-netfilter-architecture
+  https://fedoraproject.org/wiki/How_to_edit_iptables_rules
