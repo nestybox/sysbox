@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-# Test k8s clusters on top of docker overlay networks
+# Test k8s clusters on top of a Docker custom bridge network
 #
-# NOTE: the "kind overlay cluster up" test must execute before all others,
+# NOTE: the "kind custom net cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "kind cluster down"
 # test must execute after all other tests.
 
@@ -31,7 +31,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kind overlay cluster up" {
+@test "kind custom net cluster up" {
 
   k8s_check_sufficient_storage
 
@@ -382,7 +382,7 @@ EOF
   cp /etc/hosts.orig /etc/hosts
 }
 
-@test "kind overlay cluster2 up" {
+@test "kind custom net cluster2 up" {
 
   run __docker network rm k8s-net2
 
@@ -495,7 +495,7 @@ EOF
   retry_run 40 2 "k8s_cluster_is_clean k8s-master"
 }
 
-@test "kind overlay cluster down" {
+@test "kind custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
   k8s_cluster_teardown k8s $num_workers
