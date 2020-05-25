@@ -343,16 +343,7 @@ function k8s_cluster_setup() {
   [ "$status" -eq 0 ]
 
   kubectl_config $k8s_master
-
-  # When the k8s cluster is on top of a docker user-defined network,
-  # we need to modify the k8s coredns upstream forwarding to avoid DNS
-  # loops (see sysbox issue #512).
-  if [ "$net" != "bridge" ]; then
-    docker exec $k8s_master kubectl -n kube-system patch configmap/coredns -p '{"data":{"Corefile": ".:53 {\n    errors\n    health {\n       lameduck 5s\n    }\n    ready\n    kubernetes cluster.local in-addr.arpa ip6.arpa {\n       pods insecure\n       fallthrough in-addr.arpa ip6.arpa\n       ttl 30\n    }\n    prometheus :9153\n    forward . 8.8.8.8\n    cache 30\n    loop\n    reload\n    loadbalance\n}\n"}}'
-  fi
-
   flannel_config $k8s_master
-
   retry_run 40 2 "k8s_node_ready $k8s_master $k8s_master"
 
   #
