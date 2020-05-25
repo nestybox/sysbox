@@ -9,7 +9,7 @@
 # NOTE: THIS IMAGE SHOULD BE BUILT INSIDE THE SYSBOX TEST CONTAINER,
 # TO AVOID THE PROBLEMS IN SYSBOX ISSUE 676.
 #
-# $ docker build -t nestybox/k8s-node-test:latest .
+# $ docker build -t nestybox/k8s-node-test:v1.18.2 .
 #
 
 FROM nestybox/ubuntu-bionic-systemd-docker:latest
@@ -22,7 +22,10 @@ ARG k8s_version=v1.18.2
 
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 RUN apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-RUN apt-get update && apt-get install --no-install-recommends -y kubeadm
+RUN apt-get update && apt-get install --no-install-recommends -y \
+	kubelet="${k8s_version#v}"-00 \
+	kubectl="${k8s_version#v}"-00 \
+	kubeadm="${k8s_version#v}"-00
 
 # Pull k8s control plane container images into sys container image
 COPY kube-pull.sh /usr/bin/

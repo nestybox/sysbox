@@ -10,7 +10,7 @@ load ../helpers/fs
 #
 
 # NOTE: The K8s version must match that used in the K8s-node container image.
-K8S_VERSION=v1.18.2
+export K8S_VERSION=v1.18.2
 
 function kubeadm_get_token() {
   local k8s_master=$1
@@ -331,7 +331,7 @@ function k8s_cluster_setup() {
   # Deploy the master node
   #
 
-  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/k8s-node-test:latest)
+  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/k8s-node-test:$K8S_VERSION)
 
   wait_for_inner_dockerd $k8s_master
 
@@ -358,7 +358,7 @@ function k8s_cluster_setup() {
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
 
-    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/k8s-node-test:latest)
+    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/k8s-node-test:$K8S_VERSION)
     wait_for_inner_dockerd ${k8s_worker[$i]}
 
     docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"
