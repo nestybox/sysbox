@@ -367,7 +367,7 @@ function k8s_cluster_setup() {
 
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
-    retry_run 40 2 "k8s_node_ready $k8s_master $worker_name"
+    retry_run 40 4 "k8s_node_ready $k8s_master $worker_name"
   done
 }
 
