@@ -802,7 +802,7 @@ EOF
   docker_run --rm --name="$node" --hostname="$node" nestybox/k8s-node-test:$K8S_VERSION
   [ "$status" -eq 0 ]
 
-  wait_for_inner_dockerd $node
+  wait_for_inner_systemd $node
 
   docker exec "$node" sh -c "$kubeadm_join"
   [ "$status" -eq 0 ]
