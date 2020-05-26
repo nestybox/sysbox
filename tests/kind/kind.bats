@@ -176,7 +176,7 @@ spec:
 EOF
 
   k8s_create_pod k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s-master alpine-sleep"
+  retry_run 10 3 "k8s_pod_ready k8s-master alpine-sleep"
 
   docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"apk add curl\""
   [ "$status" -eq 0 ]
