@@ -65,7 +65,7 @@ function retry() {
 # retry wrapper for bats 'run' commands
 #
 # Note: the command being retried must not be a bats 'run' command (such
-# as those in tests/helpers/run.sh)
+# as those in tests/helpers/run.sh).
 function retry_run() {
   local attempts=$1
   shift

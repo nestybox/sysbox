@@ -373,7 +373,7 @@ EOF
   done
 
   # Iterate through all the sys containers and wait for workers to finish.
-  # Abort should more than 5 attempts (seconds) are required for any given container.
+  # Abort should more than 5 attempts (seconds) be required for any given container.
   # This constrains the execution interval of this logic to a max of 25 ($num_sc x 5)
   # seconds.
   for i in $(seq 1 $num_sc); do
