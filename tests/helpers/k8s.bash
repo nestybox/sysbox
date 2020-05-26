@@ -2,6 +2,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/systemd
 load ../helpers/fs
 
 #
@@ -57,9 +58,51 @@ function k8s_node_ready() {
   local i
 
   docker exec "$k8s_master" sh -c "kubectl get node $node"
-  [ "$status" -eq 0 ]
+  if [ "$status" -eq 0 ]; then
+    res=$(echo ${lines[1]} | awk '{print $2}' | grep -qw Ready)
+    echo $res
+  else
+    echo 1
+  fi
+}
 
-  echo ${lines[1]} | awk '{print $2}' | grep -qw "Ready"
+function k8s_all_nodes_ready() {
+  local cluster_name=$1
+  local num_workers=$2
+  local delay=$3
+
+  local timestamp=$(date +%s)
+  local timeout=$(( $timestamp + $delay ))
+  local all_ok
+
+  while [ $timestamp -lt $timeout ]; do
+    all_ok="true"
+
+    for (( i=0; i<$num_workers; i++ )); do
+      master=${cluster_name}-master
+      worker=${cluster_name}-worker-${i}
+
+      worker_ready=$(k8s_node_ready $master $worker)
+
+      if [ $worker_ready -ne 0 ]; then
+        all_ok="false"
+        break
+      fi
+    done
+
+    if [[ "$all_ok" == "true" ]]; then
+       break
+    fi
+
+    sleep 2
+    timestamp=$(date +%s)
+  done
+
+  if [[ "$all_ok" != "true" ]]; then
+    echo 1
+  else
+    echo 0
+  fi
 }
 
 function k8s_node_ip() {
@@ -230,12 +273,12 @@ function k8s_check_proxy_mode() {
   local k8s_master=$1
   local proxy_mode=$2
 
-  docker exec "$k8s_master" sh -c "docker ps | grep kube-proxy | grep -v pause | awk '{print \$1}'"
+  docker exec "$k8s_master" sh -c "kubectl -n kube-system get pods | grep -m 1 kube-proxy | awk '{print \$1}'"
   [ "$status" -eq 0 ]
 
   local kube_proxy=$output
 
-  docker exec "$k8s_master" sh -c "docker logs $kube_proxy 2>&1 | grep \"Using $proxy_mode Proxier\""
+  docker exec "$k8s_master" sh -c " kubectl -n kube-system logs $kube_proxy 2>&1 | grep \"Using $proxy_mode Proxier\""
   [ "$status" -eq 0 ]
 }
 
@@ -331,9 +374,8 @@ function k8s_cluster_setup() {
   # Deploy the master node
   #
 
-  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/k8s-node-test:$K8S_VERSION)
-
-  wait_for_inner_dockerd $k8s_master
+  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/k8s-node-test:latest)
+  wait_for_inner_systemd $k8s_master
 
   docker exec $k8s_master sh -c "kubeadm init --kubernetes-version=$K8S_VERSION --pod-network-cidr=$pod_net_cidr"
   [ "$status" -eq 0 ]
@@ -352,23 +394,22 @@ function k8s_cluster_setup() {
 
   declare -a k8s_worker
   local worker_name
+  local worker_ready
   local kubeadm_join=$(kubeadm_get_token $k8s_master)
 
   local i
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
 
-    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/k8s-node-test:$K8S_VERSION)
-    wait_for_inner_dockerd ${k8s_worker[$i]}
+    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/k8s-node-test:latest)
+    wait_for_inner_systemd ${k8s_worker[$i]}
 
     docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"
     [ "$status" -eq 0 ]
   done
 
-  for (( i=0; i<$num_workers; i++ )); do
-    worker_name=${cluster_name}-worker-${i}
-    retry_run 40 4 "k8s_node_ready $k8s_master $worker_name"
-  done
+  local join_timeout=$(( $num_workers * 30 ))
+  k8s_all_nodes_ready $cluster_name $num_workers $join_timeout
 }
 
 # Tears-down a k8s cluster created with k8s_cluster_setup().

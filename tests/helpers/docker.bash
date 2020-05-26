@@ -1,12 +1,12 @@
 #!/bin/bash
 
-load ../helpers/run
-
 #
 # Docker Test Helper Functions
 #
 # Note: for tests using bats.
 #
+
+load ../helpers/run
 
 function wait_for_inner_dockerd {
   local syscont=$1
