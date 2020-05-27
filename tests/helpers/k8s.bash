@@ -10,9 +10,6 @@ load ../helpers/fs
 # (for tests using bats)
 #
 
-# NOTE: The K8s version must match that used in the K8s-node container image.
-export K8S_VERSION=v1.18.2
-
 function kubeadm_get_token() {
   local k8s_master=$1
   local join=$(__docker exec $k8s_master sh -c "kubeadm token create --print-join-command 2> /dev/null")
@@ -355,7 +352,7 @@ function k8s_cluster_is_clean() {
 # This function returns the "kubeadm join" string (in case the caller
 # wants to add more nodes need to be added to the cluster).
 #
-# usage: k8s_cluster_setup cluster_name num_workers network
+# usage: k8s_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
 #
 # cluster_name: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
 #               "<cluster-name>-worker-0", "<cluster-name>-worker-1", etc.
@@ -366,6 +363,8 @@ function k8s_cluster_setup() {
   local cluster_name=$1
   local num_workers=$2
   local net=$3
+  local node_image=$4
+  local k8s_version=$5
 
   local k8s_master=${cluster_name}-master
   local pod_net_cidr=10.244.0.0/16
@@ -374,10 +373,10 @@ function k8s_cluster_setup() {
   # Deploy the master node
   #
 
-  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master nestybox/k8s-node-test:latest)
+  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master $node_image:$k8s_version)
   wait_for_inner_systemd $k8s_master
 
-  docker exec $k8s_master sh -c "kubeadm init --kubernetes-version=$K8S_VERSION --pod-network-cidr=$pod_net_cidr"
+  docker exec $k8s_master sh -c "kubeadm init --kubernetes-version=$k8s_version --pod-network-cidr=$pod_net_cidr"
   [ "$status" -eq 0 ]
   local kubeadm_output=$output
 
@@ -401,7 +400,7 @@ function k8s_cluster_setup() {
   for (( i=0; i<$num_workers; i++ )); do
     worker_name=${cluster_name}-worker-${i}
 
-    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name nestybox/k8s-node-test:latest)
+    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name $node_image:$k8s_version)
     wait_for_inner_systemd ${k8s_worker[$i]}
 
     docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"

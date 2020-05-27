@@ -2,8 +2,10 @@
 
 # Tests for deploying a K8s cluster inside system container nodes.
 #
-# NOTE: the "kind cluster up" test must execute before all others,
-# as it brings up the K8s cluster. Similarly, the "kind cluster down"
+# The system container nodes have K8s + containerd inside.
+#
+# NOTE: the "cluster up" test must execute before all others,
+# as it brings up the K8s cluster. Similarly, the "cluster down"
 # test must execute after all other tests.
 
 load ../helpers/run
@@ -12,6 +14,7 @@ load ../helpers/k8s
 load ../helpers/fs
 load ../helpers/sysbox-health
 
+export k8s_version=v1.18.2
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
@@ -38,8 +41,12 @@ function remove_test_dir() {
 
   create_test_dir
 
+  local cluster_name=k8s
   local num_workers=2
-  k8s_cluster_setup k8s $num_workers bridge
+  local net=bridge
+  local node_image=nestybox/k8s-node-test
+
+  k8s_cluster_setup $cluster_name $num_workers $net $node_image $k8s_version
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/.k8s_num_workers"
@@ -798,8 +805,9 @@ EOF
   # (note: container name = container hostname = kubectl node name)
 
   local kubeadm_join=$(kubeadm_get_token k8s-master)
+  local node_image=nestybox/k8s-node-test
 
-  docker_run --rm --name="$node" --hostname="$node" nestybox/k8s-node-test:$K8S_VERSION
+  docker_run --rm --name="$node" --hostname="$node" $node_image:$k8s_version
   [ "$status" -eq 0 ]
 
   wait_for_inner_systemd $node

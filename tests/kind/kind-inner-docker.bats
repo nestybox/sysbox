@@ -1,6 +1,9 @@
 #!/usr/bin/env bats
 
-# Test k8s clusters on top of a Docker custom bridge network
+# Tests for deploying a K8s cluster inside system container nodes.
+#
+# The system container nodes have K8s + Docker inside (i.e., K8s uses Docker to
+# deploy pods).
 #
 # NOTE: the "cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "cluster down"
@@ -9,6 +12,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
+load ../helpers/fs
 load ../helpers/sysbox-health
 
 export k8s_version=v1.18.2
@@ -32,7 +36,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kind custom net cluster up" {
+@test "kind (inner docker) cluster up" {
 
   k8s_check_sufficient_storage
 
@@ -46,7 +50,7 @@ function remove_test_dir() {
   local cluster_name=k8s
   local num_workers=2
   local net=k8s-net
-  local node_image=nestybox/k8s-node-test
+  local node_image=nestybox/k8s-node-with-docker-test
 
   k8s_cluster_setup $cluster_name $num_workers $net $node_image $k8s_version
 
@@ -89,7 +93,7 @@ function remove_test_dir() {
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=4 deployment nginx"
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
@@ -213,93 +217,6 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kind DNS clusterIP" {
-
-  # launch a deployment with an associated service
-
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
-  [ "$status" -eq 0 ]
-
-  # launch a pod in the same k8s namespace
-  cat > /tmp/alpine-sleep.yaml <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: alpine-sleep
-spec:
-  containers:
-  - name: alpine
-    image: alpine
-    args:
-    - sleep
-    - "1000000"
-EOF
-
-  k8s_create_pod k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s-master alpine-sleep"
-
-  # find the cluster's DNS IP address
-  docker exec k8s-master sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
-  [ "$status" -eq 0 ]
-  local dns_ip=$output
-
-  # verify the pod has the cluster DNS server in its /etc/resolv.conf
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"cat /etc/resolv.conf\" | grep nameserver | awk '{print \$2}'"
-  [ "$status" -eq 0 ]
-  [ "$output" == "$dns_ip" ]
-
-  # verify the pod can query the DNS server
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"nslookup nginx.default.svc.cluster.local\""
-  [ "$status" -eq 0 ]
-
-  local nslookup=$output
-  dns_server=$(echo "$nslookup" | grep "Server" | awk '{print $2}')
-  svc_name=$(echo "$nslookup" | grep "Name" | awk '{print $2}')
-  svc_ip=$(echo "$nslookup" | grep -A 1 "Name" | grep "Address" | awk '{print $2}')
-
-  [ "$dns_server" == "$dns_ip" ]
-
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"nslookup google.com\""
-  [ "$status" -eq 0 ]
-
-  # verify DNS resolution works
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"apk add curl\""
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"curl -s nginx.default.svc.cluster.local\" | grep -q \"Welcome to nginx\""
-  [ "$status" -eq 0 ]
-
-  # query the DNS server from the K8s node itself (note that since the
-  # node has its own DNS services, we have to point to the cluster's
-  # DNS explicitly).
-
-  docker exec k8s-master sh -c "nslookup nginx.default.svc.cluster.local $dns_ip"
-  [ "$status" -eq 0 ]
-
-  # if we repeat the above but without pointing to the cluster's DNS
-  # server, it should fail because the node's DNS server's can't see
-  # the nginx server (i.e., the nginx service lives inside the
-  # cluster)
-
-  docker exec k8s-master sh -c "nslookup nginx.default.svc.cluster.local"
-  [ "$status" -eq 1 ]
-
-  # cleanup
-
-  k8s_del_pod k8s-master alpine-sleep
-
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
-  [ "$status" -eq 0 ]
-
-  rm /tmp/alpine-sleep.yaml
-}
-
 @test "kind ingress" {
 
   # Based on:
@@ -329,7 +246,7 @@ EOF
   docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=3 deployment nginx"
+  docker exec k8s-master sh -c "kubectl scale --replicas=8 deployment nginx"
   [ "$status" -eq 0 ]
 
   docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
@@ -362,7 +279,7 @@ EOF
   retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip k8s-worker-0)
+  local node_ip=$(k8s_node_ip k8s-worker-1)
   echo "$node_ip nginx.nestykube" >> /etc/hosts
 
   # verify ingress to nginx works
@@ -383,140 +300,152 @@ EOF
   k8s_delete k8s-master $manifest_dir/traefik.yaml
 
   rm $test_dir/nginx-ing.yaml
+
+  # "cp + rm" because "mv" fails with "resource busy" as /etc/hosts is
+  # a bind-mount inside the container
   cp /etc/hosts.orig /etc/hosts
+  rm /etc/hosts.orig
 }
 
-@test "kind custom net cluster2 up" {
+@test "vol: hostPath" {
 
-  run __docker network rm k8s-net2
-
-  docker network create k8s-net2
+  # create a directory and a file on the k8s-node; each will be
+  # mounted as a hostPath vol into a pod
+  docker exec k8s-worker-0 sh -c "mkdir -p /root/hpdir && echo hi > /root/hpdir/test"
+  [ "$status" -eq 0 ]
+  docker exec k8s-worker-0 sh -c "echo hello > /root/hpfile"
   [ "$status" -eq 0 ]
 
-  local cluster_name=cluster2
-  local num_workers=1
-  local net=k8s-net2
-  local node_image=nestybox/k8s-node-test
+  # create a test pod with the hostPath vol; must be scheduled on
+  # k8s-worker-0 since that's where the host volume is at.
+cat > "$test_dir/pod.yaml" <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hp-test
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-worker-0
+  containers:
+  - image: alpine
+    name: alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /hostdir
+      name: hp-dir-vol
+    - mountPath: /hostfile
+      name: hp-file-vol
+  volumes:
+  - name: hp-dir-vol
+    hostPath:
+      path: /root/hpdir
+      type: Directory
+  - name: hp-file-vol
+    hostPath:
+      path: /root/hpfile
+      type: File
+EOF
 
-  k8s_cluster_setup $cluster_name $num_workers $net $node_image $k8s_version
+  k8s_create_pod k8s-master "$test_dir/pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s-master hp-test"
 
-  # store k8s cluster info so subsequent tests can use it
-  echo $num_workers > "$test_dir/.cluster2_num_workers"
+  # verify the pod sees the host volumes
+  docker exec k8s-master sh -c "kubectl exec hp-test -- cat /hostdir/test"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hi" ]
 
-  # launch a k8s deployment
-  docker exec cluster2-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
+  docker exec k8s-master sh -c "kubectl exec hp-test -- cat /hostfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "hello" ]
+
+  # write to the volume from the pod, verify the host sees the changes
+
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"echo pod > /hostdir/pod-file\""
+  [ "$status" -eq 0 ]
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"echo pod > /hostfile\""
   [ "$status" -eq 0 ]
 
-  docker exec cluster2-master sh -c "kubectl scale --replicas=4 deployment nginx"
+  docker exec k8s-worker-0 sh -c "cat /root/hpdir/pod-file"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  docker exec k8s-worker-0 sh -c "cat /root/hpfile"
+  [ "$status" -eq 0 ]
+  [ "$output" == "pod" ]
+
+  # verify volume permissions inside pod look good
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"ls -l / | grep hostdir\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "drwxr-xr-x" "root" "root" "$output"
+
+  docker exec k8s-master sh -c "kubectl exec hp-test -- sh -c \"ls -l / | grep hostfile\""
+  [ "$status" -eq 0 ]
+  verify_perm_owner "-rw-r--r--" "root" "root" "$output"
+
+  #cleanup
+  k8s_del_pod k8s-master hp-test
+
+  docker exec k8s-worker-0 sh -c "rm -rf /root/hpdir && rm /root/hpfile"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready cluster2-master default nginx"
-
-  # create a service and confirm it's there
-  docker exec cluster2-master sh -c "kubectl expose deployment/nginx --port 80"
-  [ "$status" -eq 0 ]
-
-  local svc_ip=$(k8s_svc_ip cluster2-master default nginx)
-
-  docker exec cluster2-master sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
-  [ "$status" -eq 0 ]
-
-  # verify the two k8s clusters are isolated
-
-  ## nodes
-  docker exec k8s-master sh -c "kubectl get nodes cluster2-master"
-  [ "$status" -eq 1 ]
-
-  docker exec k8s-master sh -c "kubectl get nodes cluster2-worker-0"
-  [ "$status" -eq 1 ]
-
-  docker exec cluster2-master sh -c "kubectl get nodes k8s-master"
-  [ "$status" -eq 1 ]
-
-  docker exec cluster2-master sh -c "kubectl get nodes k8s-worker-0"
-  [ "$status" -eq 1 ]
-
-  ## deployments
-  docker exec k8s-master sh -c "kubectl get deployment nginx"
-  [ "$status" -eq 1 ]
-
-  ## services
-  docker exec k8s-master sh -c "kubectl get svc nginx"
-  [ "$status" -eq 1 ]
-
-  # cleanup
-  docker exec cluster2-master sh -c "kubectl delete svc nginx"
-  [ "$status" -eq 0 ]
-
-  docker exec cluster2-master sh -c "kubectl delete deployments.apps nginx"
-  [ "$status" -eq 0 ]
+  rm "$test_dir/pod.yaml"
 }
 
-# Install Istio and verify the proper operation of its main components through
-# the instantiation of a basic service-mesh. More details here:
-# https://istio.io/docs/setup/getting-started/
-@test "kind istio basic" {
+# Verifies Helm v3 proper operation.
+@test "helm v3 basic" {
 
-  # Install Istio in original cluster.
-  istio_install k8s-master
+  # Install Helm V3.
+  helm_v3_install k8s-master
 
-  # Deploy Istio sample app.
-  docker exec k8s-master sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
+  # Install new Helm chart for the nginx ingress controller; must set
+  # its type to NodePort since we are not using a cloud load balancer
+  # (or equivalent).
+  docker exec k8s-master sh -c "helm install nginx-ingress stable/nginx-ingress --set rbac.create=true --set controller.service.type=NodePort"
   [ "$status" -eq 0 ]
 
-  # Obtain list / names of pods launched as part of this app.
+  sleep 1
+
+  # Install an nginx ingress controller using a Helm chart
+  docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
+  [ "$status" -eq 0 ]
+
   docker exec k8s-master sh -c "kubectl get pods -o wide"
   [ "$status" -eq 0 ]
 
-  pod_names[0]=$(echo ${lines[1]} | awk '{print $1}')
-  pod_names[1]=$(echo ${lines[2]} | awk '{print $1}')
-  pod_names[2]=$(echo ${lines[3]} | awk '{print $1}')
-  pod_names[3]=$(echo ${lines[4]} | awk '{print $1}')
-  pod_names[4]=$(echo ${lines[5]} | awk '{print $1}')
-  pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
+  local pod1_name=$(echo ${lines[1]} | awk '{print $1}')
+  local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
 
-  # Wait for all the app pods to be ready (istio sidecars will be intantiated too).
-  retry_run 60 5 "k8s_pod_array_ready k8s-master ${pod_names[@]}"
+  # Wait till the new pods are fully up and running.
+  retry_run 40 3 "k8s_pod_ready k8s-master $pod1_name"
+  retry_run 40 3 "k8s_pod_ready k8s-master $pod2_name"
 
-  # Obtain app pods again (after waiting instruction) to dump their state if an
-  # error is eventually encountered.
-  docker exec k8s-master sh -c "kubectl get pods -o wide"
-  echo "status = ${status}"
-  echo "output = ${output}"
+  # Verify that the ingress controller works
+  verify_nginx_ingress k8s-master nginx-ingress-controller
+
+  # Cleanup
+  docker exec k8s-master sh -c "helm delete nginx-ingress"
   [ "$status" -eq 0 ]
-
-  # Check if app is running and serving HTML pages.
-  docker exec k8s-master sh -c "kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'"
-  echo "status = ${status}"
-  echo "output = ${output}"
-  [ "$status" -eq 0 ]
-
-  docker exec -d k8s-master sh -c "kubectl exec $output -c ratings -- curl -s productpage:9080/productpage | grep -q \"<title>.*</title>\""
-  echo "status = ${status}"
-  echo "output = ${output}"
-  [ "$status" -eq 0 ]
-
-  # Uninstall Istio in original cluster.
-  istio_uninstall k8s-master
 
   retry_run 40 2 "k8s_cluster_is_clean k8s-master"
+
+  # Verify the Helm chart is properly eliminated.
+  docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
+  [ "$status" -eq 1 ]
+
+  # Uninstall Helm v3
+  helm_v3_uninstall k8s-master
 }
 
-@test "kind custom net cluster down" {
+@test "kind (inner docker) cluster down" {
 
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
   k8s_cluster_teardown k8s $num_workers
-
-  num_workers=$(cat "$test_dir/.cluster2_num_workers")
-  k8s_cluster_teardown cluster2 $num_workers
 
   # wait for cluster teardown to complete
   sleep 10
 
   docker network rm k8s-net
-  [ "$status" -eq 0 ]
-
-  docker network rm k8s-net2
   [ "$status" -eq 0 ]
 
   remove_test_dir
