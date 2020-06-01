@@ -21,6 +21,8 @@
 
 FROM ubuntu:eoan
 
+ARG k8s_version=v1.18.2
+
 RUN apt-get update && apt-get install -y \
     build-essential \
     automake \
@@ -135,7 +137,7 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
     && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
     && apt-get update \
-    && apt-get install kubectl=1.18.2-00 \
+    && apt-get install kubectl="${k8s_version#v}"-00 \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
