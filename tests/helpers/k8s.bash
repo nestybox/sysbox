@@ -10,25 +10,61 @@ load ../helpers/fs
 # (for tests using bats)
 #
 
+# Default cluster-name.
+DEFAULT_CLUSTER="k8s"
+
+
 function kubeadm_get_token() {
   local k8s_master=$1
   local join=$(__docker exec $k8s_master sh -c "kubeadm token create --print-join-command 2> /dev/null")
   echo $join
 }
 
+# Obtains the path where k8s configuration is held for each cluster.
+function k8s_config_path() {
+  local cluster_name=$1
+  local config_path
+
+  if [ $cluster_name == $DEFAULT_CLUSTER ]; then
+    config_path="/root/.kube"
+  else
+    config_path="/root/$cluster_name/.kube"
+  fi
+
+  echo $config_path
+}
+
 function kubectl_config() {
-  local node=$1
+  local cluster_name=$1
+  local node=$2
+
   docker exec "$node" sh -c "mkdir -p /root/.kube"
   [ "$status" -eq 0 ]
   docker exec "$node" sh -c "cp -i /etc/kubernetes/admin.conf /root/.kube/config"
   [ "$status" -eq 0 ]
   docker exec "$node" sh -c "chown $(id -u):$(id -g) /root/.kube/config"
   [ "$status" -eq 0 ]
+
+  # Obtain the config path for this cluster.
+  config_path=$(k8s_config_path $cluster_name)
+  if [ ! -d $config_path ]; then
+    mkdir -p $config_path
+  fi
+
+  # Copy generated config to the test (privileged) container.
+  docker cp $node:/root/.kube/. $config_path
+  [ "$status" -eq 0 ]
 }
 
 function flannel_config() {
-  local k8s_master=$1
-  docker exec "$k8s_master" sh -c "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+  local cluster_name=$1
+  local k8s_master=$2
+
+  # Obtain the config path for this cluster.
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml \
+    --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 }
 
@@ -50,11 +86,15 @@ function k8s_check_sufficient_storage() {
 }
 
 function k8s_node_ready() {
-  local k8s_master=$1
-  local node=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local node=$3
   local i
 
-  docker exec "$k8s_master" sh -c "kubectl get node $node"
+  config_path=$(k8s_config_path $cluster_name)
+
+  kubectl get node $node --kubeconfig=$config_path/config
+  #docker exec "$k8s_master" sh -c "kubectl get node $node"
   if [ "$status" -eq 0 ]; then
     res=$(echo ${lines[1]} | awk '{print $2}' | grep -qw Ready)
     echo $res
@@ -108,77 +148,68 @@ function k8s_node_ip() {
 }
 
 function k8s_apply() {
-  local k8s_master=$1
-  local yaml=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local yaml=$3
 
-  # NOTE: We use `docker cp` to transfer the file into the container. But this
-  # requires that the copy destination be a temporary file, to work-around the
-  # shiftfs bug in Sysbox issue #685.
+  config_path=$(k8s_config_path $cluster_name)
 
-  tfile=$(mktemp /root/XXXXXXXXX.yaml)
-
-  docker cp $yaml "$k8s_master:$tfile"
+  run kubectl apply -f $yaml --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
-
-  docker exec "$k8s_master" sh -c "kubectl apply -f $tfile"
-  [ "$status" -eq 0 ]
-
-  docker exec "$k8s_master" sh -c "rm -rf $tfile"
-  [ "$status" -eq 0 ]
-
-  rm "$tfile"
 }
 
 function k8s_delete() {
-  local k8s_master=$1
-  local yaml=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local yaml=$3
 
-  # NOTE: We use `docker cp` to transfer the file into the container. But this
-  # requires that the copy destination be a temporary file, to work-around the
-  # shiftfs bug in Sysbox issue #685.
-
-  tfile=$(mktemp /root/XXXXXXXXX.yaml)
-
-  docker cp $yaml "$k8s_master:$tfile"
+  run kubectl delete -f $yaml --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
-
-  docker exec "$k8s_master" sh -c "kubectl delete -f $tfile"
-  [ "$status" -eq 0 ]
-
-  docker exec "$k8s_master" sh -c "rm -rf $tfile"
-  [ "$status" -eq 0 ]
-
-  rm "$tfile"
 }
 
 function k8s_create_pod() {
-  local k8s_master=$1
-  local pod_yaml=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod_yaml=$3
 
-  k8s_apply $k8s_master $pod_yaml
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl apply -f $pod_yaml --kubeconfig=$config_path/config
+  [ "$status" -eq 0 ]
 }
 
 function k8s_del_pod() {
-  local k8s_master=$1
-  local pod=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod=$3
 
-  docker exec "$k8s_master" sh -c "kubectl delete pod $pod --grace-period=0"
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl delete pod $pod --grace-period=0 --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 }
 
 # Determines pod readiness (Running) state.
-#  $1 - k8s node to extract info from
-#  $2 - k8s pod to query
-#  $3 - k8s namespace where pod is expected (optional)
+#  $1 - K8s cluster pod belongs to
+#  $2 - k8s node to extract info from
+#  $3 - k8s pod to query
+#  $4 - k8s namespace where pod is expected (optional)
 function k8s_pod_ready() {
-  local k8s_master=$1
-  local pod=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod=$3
 
-  if [ $# -eq 3 ]; then
-     local ns="-n $3"
+  config_path=$(k8s_config_path $cluster_name)
+
+  if [ $# -eq 4 ]; then
+     local ns="-n $4"
   fi
 
+  # TODO: Find out why function doesn't behave as expected when using 'kubectl'
+  # instead of 'docker exec' instruction; ideally, we want to avoid using
+  # 'docker exec' here.
   docker exec "$k8s_master" sh -c "kubectl get pod $pod $ns"
+  # kubectl get pod $pod $ns --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local pod_status="${lines[1]}"
@@ -193,20 +224,23 @@ function k8s_pod_ready() {
 }
 
 # Determines readiness (Running) state of all pods within array.
-#  $1 - k8s node to extract info from
-#  $2 - array of k8s pod to query
-#  $3 - k8s namespace where pods are expected (optional)
+#  $1 - K8s cluster pods belong to
+#  $2 - k8s node to extract info from
+#  $3 - array of k8s pod to query
+#  $4 - k8s namespace where pods are expected (optional)
 function k8s_pod_array_ready() {
-  local k8s_master=$1
-  local pod_array=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod_array=$3
+  local ns=""
   local pod
 
-  if [ $# -eq 3 ]; then
-     local ns="$3"
+  if [ $# -eq 4 ]; then
+      ns="$4"
   fi
 
   for pod in "${pod_array[@]}"; do
-    k8s_pod_ready ${k8s_master} ${pod} ${ns}
+    k8s_pod_ready $cluster_name $k8s_master $pod $ns
     if [ "$?" -ne 0 ]; then
       return 1
     fi
@@ -217,10 +251,13 @@ function k8s_pod_array_ready() {
 
 # Returns the IP address associated with a given pod
 function k8s_pod_ip() {
-  local k8s_master=$1
-  local pod=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod=$3
 
-  docker exec "$k8s_master" sh -c "kubectl get pod $pod -o wide"
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl get pod $pod -o wide --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local pod_status="${lines[1]}"
@@ -229,10 +266,13 @@ function k8s_pod_ip() {
 
 # Returns the node associated with a given pod
 function k8s_pod_node() {
-  local k8s_master=$1
-  local pod=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod=$3
 
-  docker exec "$k8s_master" sh -c "kubectl get pod $pod -o wide"
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl get pod $pod -o wide --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local pod_status="${lines[1]}"
@@ -241,25 +281,35 @@ function k8s_pod_node() {
 
 # Checks if a pod is scheduled on a given node
 function k8s_pod_in_node() {
-  local k8s_master=$1
-  local pod=$2
-  local node=$3
+  local cluster_name=$1
+  local k8s_master=$2
+  local pod=$3
+  local node=$4
 
+  config_path=$(k8s_config_path $cluster_name)
+
+  # TODO: Find out why function doesn't behave as expected when using 'kubectl'
+  # instead of 'docker exec' instruction; ideally, we want to avoid using
+  # 'docker exec' here.
   docker exec "$k8s_master" sh -c "kubectl get pod $pod -o wide"
+  # kubectl get pod "$pod" -o wide --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local cur_node=$(echo "${lines[1]}" | awk '{print $7}')
 
-  [[ $cur_node == $node ]]
+  [[ "$cur_node" == "$node" ]]
 }
 
 # Returns the IP address associated with a given service
 function k8s_svc_ip() {
-  local k8s_master=$1
-  local ns=$2
-  local svc=$3
+  local cluster_name=$1
+  local k8s_master=$2
+  local ns=$3
+  local svc=$4
 
- docker exec "$k8s_master" sh -c "kubectl --namespace $ns get svc $svc"
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl --namespace $ns get svc $svc --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local svc_status="${lines[1]}"
@@ -280,11 +330,14 @@ function k8s_check_proxy_mode() {
 }
 
 function k8s_deployment_ready() {
-  local k8s_master=$1
-  local ns=$2
-  local deployment=$3
+  local cluster_name=$1
+  local k8s_master=$2
+  local ns=$3
+  local deployment=$4
 
-  docker exec "$k8s_master" sh -c "kubectl --namespace $ns get deployment $deployment"
+  config_path=$(k8s_config_path $cluster_name)
+
+  kubectl --namespace $ns get deployment $deployment --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local dpl_status="${lines[1]}"
@@ -295,26 +348,33 @@ function k8s_deployment_ready() {
   # name    x/x     1            1
 
   local total=$(sh -c "echo $dpl_status | awk '{print \$2}' | cut -d \"/\" -f 2")
-  echo $dpl_status | awk -v OFS=' ' '{print $1, $2, $3, $4}' | grep "$deployment $total/$total $total $total"
+  echo $dpl_status | awk -v OFS=' ' '{print $1, $2, $3, $4}' | grep -q "$deployment $total/$total $total $total"
 }
 
 function k8s_deployment_rollout_ready() {
-  local k8s_master=$1
-  local ns=$2
-  local deployment=$3
+  local cluster_name=$1
+  local k8s_master=$2
+  local ns=$3
+  local deployment=$4
   local i
 
-  docker exec "$k8s_master" sh -c "kubectl --namespace $ns rollout status deployment.v1.apps/$deployment"
+  config_path=$(k8s_config_path $cluster_name)
+
+  kubectl --namespace $ns rollout status deployment.v1.apps/$deployment \
+    --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
   [[ "$output" == "deployment \"$deployment\" successfully rolled out" ]]
 }
 
 function k8s_daemonset_ready() {
-  local k8s_master=$1
-  local ns=$2
-  local ds=$3
+  local cluster_name=$1
+  local k8s_master=$2
+  local ns=$3
+  local ds=$4
 
-  docker exec "$k8s_master" sh -c "kubectl --namespace $ns get ds $ds"
+  config_path=$(k8s_config_path $cluster_name)
+
+  kubectl --namespace $ns get ds $ds --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   local dpl_status="${lines[1]}"
@@ -329,9 +389,12 @@ function k8s_daemonset_ready() {
 }
 
 function k8s_cluster_is_clean() {
-  local k8s_master=$1
+  local cluster_name=$1
+  local k8s_master=$2
 
-  docker exec "$k8s_master" sh -c "kubectl get all"
+  config_path=$(k8s_config_path $cluster_name)
+
+  run kubectl get all --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   # Looking for:
@@ -383,9 +446,9 @@ function k8s_cluster_setup() {
   run sh -c "echo \"$kubeadm_output\" | grep -q \"Your Kubernetes control\-plane has initialized successfully\""
   [ "$status" -eq 0 ]
 
-  kubectl_config $k8s_master
-  flannel_config $k8s_master
-  retry_run 40 2 "k8s_node_ready $k8s_master $k8s_master"
+  kubectl_config $cluster_name $k8s_master
+  flannel_config $cluster_name $k8s_master
+  retry_run 40 2 "k8s_node_ready $cluster_name $k8s_master $k8s_master"
 
   #
   # Deploy the K8s worker nodes (k8s-worker-<num>)
@@ -428,11 +491,18 @@ function k8s_cluster_teardown() {
   done
 
   docker_stop $k8s_master
+
+  # Delete cluster configs.
+  config_path=$(k8s_config_path $cluster_name)
+  rm -rf $config_path
 }
 
 # Install Helm v2.
 function helm_v2_install() {
-  local k8s_master=$1
+  local cluster_name=$1
+  local k8s_master=$2
+
+  config_path=$(k8s_config_path $cluster_name)
 
   docker exec "$k8s_master" sh -c "curl -Os https://get.helm.sh/helm-v2.16.3-linux-amd64.tar.gz && \
     tar -zxvf helm-v2.16.3-linux-amd64.tar.gz && \
@@ -448,7 +518,7 @@ function helm_v2_install() {
   sleep 5
 
   # Identify tiller's pod name.
-  docker exec "$k8s_master" sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  run sh -c "kubectl get pods -o wide --all-namespaces --kubeconfig=$config_path/config | egrep \"tiller\""
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
@@ -456,24 +526,29 @@ function helm_v2_install() {
   local tiller_pod=$(echo ${output} | awk '{print $2}')
 
   # Wait till tiller's pod is up and running.
-  retry_run 60 5 "k8s_pod_ready $k8s_master $tiller_pod kube-system"
+  retry_run 60 5 "k8s_pod_ready $cluster_name $k8s_master $tiller_pod kube-system"
 }
 
 # Uninstall Helm v2.
 function helm_v2_uninstall() {
-  local k8s_master=$1
+  local cluster_name=$1
+  local k8s_master=$2
+
+  config_path=$(k8s_config_path $cluster_name)
 
   # Obtain tiller's pod-name.
-  docker exec "$k8s_master" sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
+  run sh -c "kubectl get pods -o wide --all-namespaces \
+    --kubeconfig=$config_path/config | egrep \"tiller\""
   [ "$status" -eq 0 ]
   local tiller_pod=$(echo ${lines[0]} | awk '{print $2}')
 
   # Delete all tiller's deployments.
-  docker exec "$k8s_master" sh -c "kubectl delete deployment tiller-deploy --namespace kube-system"
+  run kubectl delete deployment tiller-deploy --namespace kube-system \
+    --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   # Wait till tiller pod is fully destroyed.
-  retry_run 40 2 "[ ! $(k8s_pod_ready $k8s_master $tiller_pod kube-system) ]"
+  retry_run 40 2 "[ ! $(k8s_pod_ready $cluster_name $k8s_master $tiller_pod kube-system) ]"
 }
 
 # Uninstall Helm v3. Right, much simpler than v2 version above, as there's no need to
@@ -497,7 +572,8 @@ function helm_v3_uninstall() {
 
 # Installs Istio.
 function istio_install() {
-  local k8s_master=$1
+  local cluster_name=$1
+  local k8s_master=$2
 
   # Bear in mind that the Istio version to download has not been explicitly defined,
   # which has its pros (test latest releases) & cons (test instability).
@@ -510,17 +586,20 @@ function istio_install() {
 
 # Uninstalls Istio.
 function istio_uninstall() {
-  local k8s_master=$1
+  local cluster_name=$1
+  local k8s_master=$2
+
+  config_path=$(k8s_config_path $cluster_name)
 
   # Run uninstallation script.
   docker exec "$k8s_master" sh -c "istio-*/samples/bookinfo/platform/kube/cleanup.sh"
   [ "$status" -eq 0 ]
 
   # Remove istio namespace.
-  docker exec "$k8s_master" sh -c "kubectl delete ns istio-system"
+  run kubectl delete ns istio-system --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
-  docker exec "$k8s_master" sh -c "kubectl label namespace default istio-injection-"
+  run kubectl label namespace default istio-injection- --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   # Remove installation script
@@ -531,20 +610,23 @@ function istio_uninstall() {
 # Verifies an nginx ingress controller works; this function assumes
 # the nginx ingress-controller has been deployed to the cluster.
 function verify_nginx_ingress() {
-  local k8s_master=$1
-  local ing_controller=$2
+  local cluster_name=$1
+  local k8s_master=$2
+  local ing_controller=$3
+
+  config_path=$(k8s_config_path $cluster_name)
 
   # We need pods to serve our fake website / service; we use an nginx
   # server pod and create a service in front of it (note that we could
   # have chosen any other pod for this purpose); the nginx ingress
   # controller will redirect traffic to these pods.
-  docker exec $k8s_master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
+  run kubectl create deployment nginx --image=nginx:1.16-alpine --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
-  docker exec $k8s_master sh -c "kubectl expose deployment/nginx --port 80"
+  run kubectl expose deployment/nginx --port 80 --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $k8s_master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster_name $k8s_master default nginx"
 
   # create an ingress rule that maps nginx.nestykube -> nginx service;
   # this ingress rule is enforced by the nginx ingress controller.
@@ -566,7 +648,8 @@ spec:
           servicePort: 80
 EOF
 
-  k8s_apply $k8s_master $test_dir/nginx-ing.yaml
+  run kubectl apply -f $test_dir/nginx-ing.yaml --kubeconfig=$config_path/config
+  [ "$status" -eq 0 ]
 
   # setup the ingress hostname in /etc/hosts
   cp /etc/hosts /etc/hosts.orig
@@ -576,7 +659,8 @@ EOF
   # verify ingress to nginx works
   sleep 1
 
-  docker exec $k8s_master sh -c "kubectl get service/$ing_controller -o json | jq '.spec.ports[0].nodePort'"
+  run sh -c "kubectl get service/$ing_controller -o json \
+    --kubeconfig=$config_path/config | jq '.spec.ports[0].nodePort'"
   [ "$status" -eq 0 ]
   local nodePort=$output
 
@@ -586,11 +670,11 @@ EOF
   rm $test_dir/index.html
 
   # Cleanup
-  docker exec $k8s_master sh -c "kubectl delete ing nginx"
+  run kubectl delete ing nginx --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
-  docker exec $k8s_master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
-  docker exec $k8s_master sh -c "kubectl delete deployment nginx"
+  run kubectl delete deployment nginx --kubeconfig=$config_path/config
   [ "$status" -eq 0 ]
 
   # "cp + rm" because "mv" fails with "resource busy" as /etc/hosts is

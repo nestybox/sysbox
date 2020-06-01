@@ -65,16 +65,16 @@ spec:
     image: nginx
 EOF
 
-  k8s_create_pod k8s-master "$test_dir/basic-pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master nginx"
+  k8s_create_pod k8s k8s-master "$test_dir/basic-pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master nginx"
 
-  local pod_ip=$(k8s_pod_ip k8s-master nginx)
+  local pod_ip=$(k8s_pod_ip k8s k8s-master nginx)
 
   docker exec k8s-master sh -c "curl -s $pod_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod k8s-master nginx
+  k8s_del_pod k8s k8s-master nginx
   rm "$test_dir/basic-pod.yaml"
 }
 
@@ -97,72 +97,71 @@ spec:
     args: ["-f", "/dev/null"]
 EOF
 
-  k8s_create_pod k8s-master "$test_dir/multi-cont-pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master multi-cont"
+  k8s_create_pod k8s k8s-master "$test_dir/multi-cont-pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master multi-cont"
 
   # verify all containers in the pod are sharing the net ns
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 readlink /proc/1/ns/net"
+  run kubectl exec multi-cont -c alpine1 readlink /proc/1/ns/net
   [ "$status" -eq 0 ]
   alpine1_ns=$output
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 readlink /proc/1/ns/net"
+  run kubectl exec multi-cont -c alpine2 readlink /proc/1/ns/net
   [ "$status" -eq 0 ]
   alpine2_ns=$output
 
   [ "$alpine1_ns" == "$alpine2_ns" ]
 
-  #cleanup
-
-  k8s_del_pod k8s-master multi-cont
+  # cleanup
+  k8s_del_pod k8s k8s-master multi-cont
   rm "$test_dir/multi-cont-pod.yaml"
 }
 
 @test "kind deployment" {
 
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
+  run kubectl create deployment nginx --image=nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # scale up
-  docker exec k8s-master sh -c "kubectl scale --replicas=4 deployment nginx"
+  run kubectl scale --replicas=4 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # rollout new nginx image
-  docker exec k8s-master sh -c "kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record"
+  run kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_rollout_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_rollout_ready k8s k8s-master default nginx"
 
   # scale down
-  docker exec k8s-master sh -c "kubectl scale --replicas=1 deployment nginx"
+  run kubectl scale --replicas=1 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # cleanup
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
+  run kubectl delete deployments.apps nginx
   [ "$status" -eq 0 ]
 }
 
 @test "kind service clusterIP" {
 
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
+  run kubectl create deployment nginx --image=nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=4 deployment nginx"
+  run kubectl scale --replicas=4 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # create a service and confirm it's there
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
+  run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  local svc_ip=$(k8s_svc_ip k8s-master default nginx)
+  local svc_ip=$(k8s_svc_ip k8s k8s-master default nginx)
 
   docker exec k8s-master sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
@@ -182,13 +181,14 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 3 "k8s_pod_ready k8s-master alpine-sleep"
+  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
+  retry_run 10 3 "k8s_pod_ready k8s k8s-master alpine-sleep"
 
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"apk add curl\""
+  run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c 'kubectl exec alpine-sleep -- sh -c "curl -s \$NGINX_SERVICE_HOST" | grep -q "Welcome to nginx"'
+  # docker exec k8s-master sh -c 'kubectl exec alpine-sleep -- sh -c "curl -s \$NGINX_SERVICE_HOST" | grep -q "Welcome to nginx"'
+  run sh -c 'kubectl exec alpine-sleep -- sh -c "curl -s \$NGINX_SERVICE_HOST" | grep -q "Welcome to nginx"'
   [ "$status" -eq 0 ]
 
   # verify the kube-proxy is using iptables (does so by default)
@@ -202,12 +202,12 @@ EOF
   iptables -L | grep -qv KUBE
 
   # cleanup
-  k8s_del_pod k8s-master alpine-sleep
+  k8s_del_pod k8s k8s-master alpine-sleep
 
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
+  run kubectl delete deployments.apps nginx
   [ "$status" -eq 0 ]
 
   rm /tmp/alpine-sleep.yaml
@@ -217,17 +217,17 @@ EOF
 
   local num_workers=$(cat "$test_dir/.k8s_num_workers")
 
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
+  run kubectl create deployment nginx --image=nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # create a nodePort service
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80 --type NodePort"
+  run kubectl expose deployment/nginx --port 80 --type NodePort
   [ "$status" -eq 0 ]
 
   # get the node port for the service
-  docker exec k8s-master sh -c "kubectl get svc nginx -o json | jq .spec.ports[0].nodePort"
+  run sh -c "kubectl get svc nginx -o json | jq .spec.ports[0].nodePort"
   [ "$status" -eq 0 ]
   svc_port=$output
 
@@ -256,22 +256,22 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s-master alpine-sleep"
+  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
+  retry_run 10 2 "k8s_pod_ready k8s k8s-master alpine-sleep"
 
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"apk add curl\""
+  run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c 'kubectl exec alpine-sleep -- sh -c "curl -s \$NGINX_SERVICE_HOST" | grep -q "Welcome to nginx"'
+  run sh -c 'kubectl exec alpine-sleep -- sh -c "curl -s \$NGINX_SERVICE_HOST" | grep -q "Welcome to nginx"'
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod k8s-master alpine-sleep
+  k8s_del_pod k8s k8s-master alpine-sleep
 
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
+  run kubectl delete deployments.apps nginx
   [ "$status" -eq 0 ]
 
   rm /tmp/alpine-sleep.yaml
@@ -281,10 +281,10 @@ EOF
 
   # launch a deployment with an associated service
 
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
+  run kubectl create deployment nginx --image=nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
+  run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
   # launch a pod in the same k8s namespace
@@ -302,21 +302,21 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s-master alpine-sleep"
+  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
+  retry_run 10 2 "k8s_pod_ready k8s k8s-master alpine-sleep"
 
   # find the cluster's DNS IP address
-  docker exec k8s-master sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
+  run sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
   [ "$status" -eq 0 ]
   local dns_ip=$output
 
   # verify the pod has the cluster DNS server in its /etc/resolv.conf
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"cat /etc/resolv.conf\" | grep nameserver | awk '{print \$2}'"
+  run sh -c "kubectl exec alpine-sleep -- sh -c \"cat /etc/resolv.conf\" | grep nameserver | awk '{print \$2}'"
   [ "$status" -eq 0 ]
   [ "$output" == "$dns_ip" ]
 
   # verify the pod can query the DNS server
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"nslookup nginx.default.svc.cluster.local\""
+  run kubectl exec alpine-sleep -- sh -c "nslookup nginx.default.svc.cluster.local"
   [ "$status" -eq 0 ]
 
   local nslookup=$output
@@ -326,14 +326,14 @@ EOF
 
   [ "$dns_server" == "$dns_ip" ]
 
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"nslookup google.com\""
+  run kubectl exec alpine-sleep -- sh -c "nslookup google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS resolution works
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"apk add curl\""
+  run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl exec alpine-sleep -- sh -c \"curl -s nginx.default.svc.cluster.local\" | grep -q \"Welcome to nginx\""
+  run sh -c "kubectl exec alpine-sleep -- sh -c \"curl -s nginx.default.svc.cluster.local\" | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
   # query the DNS server from the K8s node itself (note that since the
@@ -353,12 +353,12 @@ EOF
 
   # cleanup
 
-  k8s_del_pod k8s-master alpine-sleep
+  k8s_del_pod k8s k8s-master alpine-sleep
 
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
+  run kubectl delete deployments.apps nginx
   [ "$status" -eq 0 ]
 
   rm /tmp/alpine-sleep.yaml
@@ -374,9 +374,9 @@ EOF
   cp /etc/hosts /etc/hosts.orig
 
   # deploy the ingress controller (traefik) and associated services and ingress rules
-  k8s_apply k8s-master $manifest_dir/traefik.yaml
+  k8s_apply k8s k8s-master $manifest_dir/traefik.yaml
 
-  retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready k8s k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
   local node_ip=$(k8s_node_ip k8s-worker-0)
@@ -390,16 +390,16 @@ EOF
   rm $test_dir/index.html
 
   # deploy nginx and create a service for it
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.16-alpine"
+  run kubectl create deployment nginx --image=nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl scale --replicas=8 deployment nginx"
+  run kubectl scale --replicas=8 deployment nginx
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
+  run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
   # create an ingress rule for the nginx service
 cat > "$test_dir/nginx-ing.yaml" <<EOF
@@ -421,9 +421,9 @@ spec:
 EOF
 
   # apply the ingress rule
-  k8s_apply k8s-master $test_dir/nginx-ing.yaml
+  k8s_apply k8s k8s-master $test_dir/nginx-ing.yaml
 
-  retry_run 40 2 "k8s_daemonset_ready k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready k8s k8s-master kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
   local node_ip=$(k8s_node_ip k8s-worker-1)
@@ -437,14 +437,12 @@ EOF
   rm $test_dir/index.html
 
   # cleanup
-  docker exec k8s-master sh -c "kubectl delete ing nginx"
+  run kubectl delete ing nginx
   [ "$status" -eq 0 ]
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx
   [ "$status" -eq 0 ]
-  docker exec k8s-master sh -c "kubectl delete deployment nginx"
+  run kubectl delete deployment nginx
   [ "$status" -eq 0 ]
-
-  k8s_delete k8s-master $manifest_dir/traefik.yaml
 
   rm $test_dir/nginx-ing.yaml
 
@@ -491,37 +489,37 @@ spec:
       medium: Memory
 EOF
 
-  k8s_create_pod k8s-master "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master multi-cont"
+  k8s_create_pod k8s k8s-master "$test_dir/pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master multi-cont"
 
   # verify the emptyDir vol is shared correctly by containers (write
   # from one container, read from the other)
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- sh -c \"echo hi > /cache/test\""
+  run kubectl exec multi-cont -c alpine1 -- sh -c "echo hi > /cache/test"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- cat /cache/test"
+  run kubectl exec multi-cont -c alpine2 -- cat /cache/test
   [ "$status" -eq 0 ]
   [ "$output" == "hi" ]
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- sh -c \"echo hello > /cache-mem/test\""
+  run kubectl exec multi-cont -c alpine2 -- sh -c "echo hello > /cache-mem/test"
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- cat /cache-mem/test"
+  run kubectl exec multi-cont -c alpine1 -- cat /cache-mem/test
   [ "$status" -eq 0 ]
   [ "$output" == "hello" ]
 
   # verify volume permissions inside pod look good
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine1 -- sh -c \"ls -l / | grep -w cache | grep -v mem\""
+  run kubectl exec multi-cont -c alpine1 -- sh -c "ls -l / | grep -w cache | grep -v mem"
   [ "$status" -eq 0 ]
   verify_perm_owner "drwxrwxrwx" "root" "root" "$output"
 
-  docker exec k8s-master sh -c "kubectl exec multi-cont -c alpine2 -- sh -c \"ls -l / | grep -w cache-mem\""
+  run kubectl exec multi-cont -c alpine2 -- sh -c "ls -l / | grep -w cache-mem"
   [ "$status" -eq 0 ]
   verify_perm_owner "drwxrwxrwt" "root" "root" "$output"
 
   #cleanup
-  k8s_del_pod k8s-master multi-cont
+  k8s_del_pod k8s k8s-master multi-cont
   rm "$test_dir/pod.yaml"
 }
 
@@ -565,8 +563,8 @@ spec:
       type: File
 EOF
 
-  k8s_create_pod k8s-master "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master hp-test"
+  k8s_create_pod k8s k8s-master "$test_dir/pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master hp-test"
 
   # verify the pod sees the host volumes
   docker exec k8s-master sh -c "kubectl exec hp-test -- cat /hostdir/test"
@@ -602,7 +600,7 @@ EOF
   verify_perm_owner "-rw-r--r--" "root" "root" "$output"
 
   #cleanup
-  k8s_del_pod k8s-master hp-test
+  k8s_del_pod k8s k8s-master hp-test
 
   docker exec k8s-worker-0 sh -c "rm -rf /root/hpdir && rm /root/hpfile"
   [ "$status" -eq 0 ]
@@ -663,8 +661,8 @@ spec:
       storage: 5Mi
 EOF
 
-  k8s_apply k8s-master "$test_dir/pvol.yaml"
-  k8s_apply k8s-master "$test_dir/pvol-claim.yaml"
+  k8s_apply k8s k8s-master "$test_dir/pvol.yaml"
+  k8s_apply k8s k8s-master "$test_dir/pvol-claim.yaml"
 
   # create a test pod that mounts the persistent vol; k8s will automatically
   # schedule the pod on the node where the volume is created.
@@ -687,8 +685,8 @@ spec:
       claimName: pvol-claim
 EOF
 
-  k8s_create_pod k8s-master "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master pvol-test"
+  k8s_create_pod k8s k8s-master "$test_dir/pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master pvol-test"
 
   # verify pod can read/write volume
   docker exec k8s-master sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
@@ -708,11 +706,11 @@ EOF
   [ "$output" == "pod" ]
 
   # delete the pod
-  k8s_del_pod k8s-master pvol-test
+  k8s_del_pod k8s k8s-master pvol-test
 
   # create another instance of the pod
-  k8s_create_pod k8s-master "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready k8s-master pvol-test"
+  k8s_create_pod k8s k8s-master "$test_dir/pod.yaml"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master pvol-test"
 
   # verify pod sees prior changes (volume is persistent)
   docker exec k8s-master sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
@@ -720,7 +718,7 @@ EOF
   [ "$output" == "pod" ]
 
   # cleanup
-  k8s_del_pod k8s-master pvol-test
+  k8s_del_pod k8s k8s-master pvol-test
 
   docker exec k8s-master sh -c "kubectl delete persistentvolumeclaims pvol-claim"
   [ "$status" -eq 0 ]
@@ -739,21 +737,30 @@ EOF
 # Verifies that pods get re-scheduled when a K8s node goes down
 @test "node down" {
 
-  docker exec k8s-master sh -c "kubectl create deployment nginx --image=nginx:1.17-alpine"
-  [ "$status" -eq 0 ]
-
-  docker exec k8s-master sh -c "kubectl expose deployment/nginx --port 80"
-  [ "$status" -eq 0 ]
-
-  # modify the tolerations on the deployment such that when a node
-  # goes down, the pods get re-scheduled within seconds (this way we
-  # don't have to wait for the pod-eviction-timeout which defaults to
-  # 5 mins).
-
-  cat > /tmp/depl-patch.yaml <<EOF
+  # Customize a generic nginx deployment with a low 'tolerationSeconds' value,
+  # such that when a node goes down, the pods get re-scheduled as quick as
+  # possible -- by default this value matches 'pod-eviction-timeout' parameter,
+  # which is set to 5 mins.
+  cat > /tmp/nginx-deployment.yaml <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
 spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
   template:
+    metadata:
+      labels:
+        app: nginx
     spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17-alpine
+        ports:
+        - containerPort: 80
       tolerations:
       - key: "node.kubernetes.io/unreachable"
         operator: "Exists"
@@ -765,43 +772,61 @@ spec:
         tolerationSeconds: 2
 EOF
 
-  docker cp /tmp/depl-patch.yaml k8s-master:/tmp/depl-patch.yaml
+  # Apply changes and wait for deployment components to be created.
+  run kubectl apply -f /tmp/nginx-deployment.yaml
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl patch deployment nginx --patch \"$(cat /tmp/depl-patch.yaml)\""
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+
+  # Export http port.
+  run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  # Obtain service's external ip.
+  local svc_ip=$(k8s_svc_ip k8s k8s-master default nginx)
 
-  # verify the deployment is up
-  local svc_ip=$(k8s_svc_ip k8s-master default nginx)
-
+  # Ensure app is reachable.
   retry_run 40 2 "docker exec k8s-master sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
   [ "$status" -eq 0 ]
 
-  # check which worker node the pod is scheduled in
-  docker exec k8s-master sh -c "kubectl get pods --selector=app=nginx"
+  # Check which worker node the pod is scheduled in
+  run kubectl get pods --selector=app=nginx
   [ "$status" -eq 0 ]
 
   local pod=$(echo "${lines[1]}" | awk '{print $1}')
-  local node=$(k8s_pod_node k8s-master $pod)
+  local node=$(k8s_pod_node k8s k8s-master $pod)
 
-  # delete that node from k8s
-  docker exec k8s-master sh -c "kubectl delete node $node"
+  # Delete that node from cluster.
+  run kubectl delete node $node
   [ "$status" -eq 0 ]
 
-  # bring down that node
+  # Bring node down.
   docker_stop "$node"
   [ "$status" -eq 0 ]
 
-  # verify deployment is re-scheduled to other worker node(s)
-  retry_run 40 2 "[ ! $(k8s_pod_in_node k8s-master $pod $node) ]"
-  retry_run 40 2 "k8s_deployment_ready k8s-master default nginx"
+  # K8s' controller will not react to node's elimination till
+  # 'node-monitor-grace-period' interval (40 secs by default) has elapsed without
+  # a response from the affected node. During this time k8s' control-plane will
+  # continue displaying the pod as 'running'. Thus, we need to ensure that we wait
+  # long enough for k8s to eliminate this pod (~60 secs + tolerationSeconds). More
+  # details here: https://github.com/kubernetes-sigs/kubespray/blob/master/docs/kubernetes-reliability.md
+  retry_run 40 2 "[ ! $(k8s_pod_in_node k8s k8s-master $pod $node) ]"
+  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
 
-  # verify the service is back up
+  # By now a new pod should have been scheduled, and its name should partially
+  # match the name of the original pod (i.e. only the last 5 characters should
+  # differ (e.g. original pod: "nginx-64b55599df-nzpdc", new one:
+  # "nginx-64b55599df-nk56g").
+  new_pod=${pod%?????}
+  run sh -c "kubectl get pods --selector=app=nginx | awk '/$new_pod/ {print $1}'"
+  [ "$status" -eq 0 ]
+  [ ${#lines[@]} -eq 1 ]
+  [ "$output" != "" ] && [ "$output" != "$pod" ]
+
+  # Verify the service is back up too.
   retry_run 40 2 "docker exec k8s-master sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
 
-  # bring the worker node back up
+  # Bring the worker node back up.
   # (note: container name = container hostname = kubectl node name)
 
   local kubeadm_join=$(kubeadm_get_token k8s-master)
@@ -815,24 +840,23 @@ EOF
   docker exec "$node" sh -c "$kubeadm_join"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_node_ready k8s-master $node"
+  retry_run 40 2 "k8s_node_ready k8s k8s-master $node"
 
   # cleanup
-
-  docker exec k8s-master sh -c "kubectl delete svc nginx"
+  run kubectl delete svc nginx
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl delete deployments.apps nginx"
+  run kubectl delete deployment nginx
   [ "$status" -eq 0 ]
 
-  rm /tmp/depl-patch.yaml
+  rm -rf /tmp/nginx-deployment.yaml
 }
 
 # Verifies Helm v2 proper operation.
 @test "helm v2 basic" {
 
   # Install Helm V2.
-  helm_v2_install k8s-master
+  helm_v2_install k8s k8s-master
 
   # Install an nginx ingress controller using a Helm chart
   docker exec k8s-master sh -c "helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --set controller.service.type=NodePort"
@@ -844,30 +868,30 @@ EOF
   docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl get pods -o wide | egrep -q \"nginx-ingress\""
+  run sh -c 'kubectl get pods -o wide | egrep -q "nginx-ingress"'
   [ "$status" -eq 0 ]
 
   local pod1_name=$(echo ${lines[1]} | awk '{print $1}')
   local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
 
   # Wait till the new pods are fully up and running.
-  retry_run 40 2 "k8s_pod_ready k8s-master $pod1_name"
-  retry_run 40 2 "k8s_pod_ready k8s-master $pod2_name"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master $pod1_name"
+  retry_run 40 2 "k8s_pod_ready k8s k8s-master $pod2_name"
 
   # Verify that the ingress controller works
-  verify_nginx_ingress k8s-master nginx-ingress-controller
+  verify_nginx_ingress k8s k8s-master nginx-ingress-controller
 
   # Cleanup
   docker exec k8s-master sh -c "helm ls --all --short | xargs -L1 helm delete --purge"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_cluster_is_clean k8s-master"
+  retry_run 40 2 "k8s_cluster_is_clean k8s k8s-master"
 
   docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
   [ "$status" -eq 1 ]
 
   # Uninstall Helm v2
-  helm_v2_uninstall k8s-master
+  helm_v2_uninstall k8s k8s-master
 }
 
 # Verifies Helm v3 proper operation.
@@ -888,24 +912,24 @@ EOF
   docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""
   [ "$status" -eq 0 ]
 
-  docker exec k8s-master sh -c "kubectl get pods -o wide"
+  run kubectl get pods -o wide
   [ "$status" -eq 0 ]
 
   local pod1_name=$(echo ${lines[1]} | awk '{print $1}')
   local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
 
   # Wait till the new pods are fully up and running.
-  retry_run 40 3 "k8s_pod_ready k8s-master $pod1_name"
-  retry_run 40 3 "k8s_pod_ready k8s-master $pod2_name"
+  retry_run 40 3 "k8s_pod_ready k8s k8s-master $pod1_name"
+  retry_run 40 3 "k8s_pod_ready k8s k8s-master $pod2_name"
 
   # Verify that the ingress controller works
-  verify_nginx_ingress k8s-master nginx-ingress-controller
+  verify_nginx_ingress k8s k8s-master nginx-ingress-controller
 
   # Cleanup
   docker exec k8s-master sh -c "helm delete nginx-ingress"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_cluster_is_clean k8s-master"
+  retry_run 40 2 "k8s_cluster_is_clean k8s k8s-master"
 
   # Verify the Helm chart is properly eliminated.
   docker exec k8s-master sh -c "helm ls | grep -q \"nginx-ingress\""

@@ -127,7 +127,8 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 #
 
 sysbox: ## Build all sysbox modules
-sysbox: sysbox-runc sysbox-fs sysbox-mgr sysbox-kind
+sysbox: sysbox-runc sysbox-fs sysbox-mgr
+#sysbox: sysbox-runc sysbox-fs sysbox-mgr sysbox-kind
 	@echo $(HOSTNAME) > .buildinfo
 
 sysbox-debug: ## Build all sysbox modules (compiler optimizations off)
@@ -192,7 +193,7 @@ install: ## Install all sysbox binaries
 	install -D -m0755 sysbox-fs/sysbox-fs $(INSTALL_DIR)/sysbox-fs
 	install -D -m0755 sysbox-mgr/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
 	install -D -m0755 sysbox-runc/sysbox-runc $(INSTALL_DIR)/sysbox-runc
-	install -D -m0755 sysbox-kind/bin/sysbox-kind $(INSTALL_DIR)/sysbox-kind
+#	install -D -m0755 sysbox-kind/bin/sysbox-kind $(INSTALL_DIR)/sysbox-kind
 	install -D -m0755 bin/sysbox $(INSTALL_DIR)/sysbox
 
 
