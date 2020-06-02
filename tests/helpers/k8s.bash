@@ -11,7 +11,7 @@ load ../helpers/fs
 #
 
 # Default cluster-name.
-DEFAULT_CLUSTER="k8s"
+export DEFAULT_CLUSTER="k8s"
 
 
 function kubeadm_get_token() {
@@ -60,7 +60,6 @@ function flannel_config() {
   local cluster_name=$1
   local k8s_master=$2
 
-  # Obtain the config path for this cluster.
   config_path=$(k8s_config_path $cluster_name)
 
   run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml \
@@ -93,8 +92,7 @@ function k8s_node_ready() {
 
   config_path=$(k8s_config_path $cluster_name)
 
-  kubectl get node $node --kubeconfig=$config_path/config
-  #docker exec "$k8s_master" sh -c "kubectl get node $node"
+  run kubectl get node $node --kubeconfig=$config_path/config
   if [ "$status" -eq 0 ]; then
     res=$(echo ${lines[1]} | awk '{print $2}' | grep -qw Ready)
     echo $res
@@ -175,6 +173,8 @@ function k8s_create_pod() {
   config_path=$(k8s_config_path $cluster_name)
 
   run kubectl apply -f $pod_yaml --kubeconfig=$config_path/config
+  echo "status = ${status}"
+  echo "output = ${output}"
   [ "$status" -eq 0 ]
 }
 
