@@ -19,3 +19,6 @@
 [submodule "sysbox-kind"]
 	path = sysbox-kind
 	url = git@github.com:nestybox/kind.git
+[submodule "sysbox-staging"]
+	path = sysbox-staging
+	url = git@github.com:nestybox/sysbox-staging.git
