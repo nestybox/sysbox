@@ -128,11 +128,10 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 
 sysbox: ## Build all sysbox modules
 sysbox: sysbox-runc sysbox-fs sysbox-mgr
-#sysbox: sysbox-runc sysbox-fs sysbox-mgr sysbox-kind
 	@echo $(HOSTNAME) > .buildinfo
 
 sysbox-debug: ## Build all sysbox modules (compiler optimizations off)
-sysbox-debug: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug sysbox-kind-debug
+sysbox-debug: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
 
 sysbox-static: ## Build all sysbox modules (static linking)
 sysbox-static: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
