@@ -11,9 +11,21 @@ load ../helpers/docker
 load ../helpers/k8s
 load ../helpers/sysbox-health
 
-export k8s_version=v1.18.2
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
+
+export cluster1=cluster1
+export controller1="${cluster1}"-control-plane
+export net1="${cluster1}"-net
+export num_workers1=2
+
+export cluster2=cluster2
+export controller2="${cluster2}"-control-plane
+export net2="${cluster2}"-net
+export num_workers2=1
+
+export node_image="nestybox/kindestnode-dbg:v1.18.2"
+
 
 function teardown() {
   sysbox_log_check
@@ -38,20 +50,17 @@ function remove_test_dir() {
 
   create_test_dir
 
-  run __docker network rm k8s-net
+  #run __docker network rm k8s-net
+  run __docker network rm $net1
 
-  docker network create k8s-net --subnet=172.16.100.0/24
+  run docker network create $net1 --subnet=172.16.100.0/24
   [ "$status" -eq 0 ]
 
-  local cluster_name=k8s
-  local num_workers=2
-  local net=k8s-net
-  local node_image=nestybox/k8s-node-test
-
-  k8s_cluster_setup $cluster_name $num_workers $net $node_image $k8s_version
+  # Create new cluster.
+  k8skind_cluster_setup $cluster1 $controller1 $num_workers1 $net1 $node_image
 
   # store k8s cluster info so subsequent tests can use it
-  echo $num_workers > "$test_dir/.k8s_num_workers"
+  echo $num_workers > "$test_dir/."${cluster1}"_num_workers"
 }
 
 @test "kind deployment" {
@@ -59,25 +68,25 @@ function remove_test_dir() {
   run kubectl create deployment nginx --image=nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # scale up
   run kubectl scale --replicas=4 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # rollout new nginx image
   run kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_rollout_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_rollout_ready $cluster1 $controller1 default nginx"
 
   # scale down
   run kubectl scale --replicas=1 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # cleanup
   run kubectl delete deployments.apps nginx
@@ -92,15 +101,15 @@ function remove_test_dir() {
   run kubectl scale --replicas=3 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # create a service and confirm it's there
   run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  local svc_ip=$(k8s_svc_ip k8s k8s-master default nginx)
+  local svc_ip=$(k8s_svc_ip $cluster1 $controller1 default nginx)
 
-  docker exec k8s-master sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
+  docker exec $controller1 sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
   # launch an pod in the same k8s namespace and verify it can access the service
@@ -118,8 +127,8 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s k8s-master alpine-sleep"
+  k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
+  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -128,17 +137,17 @@ EOF
   [ "$status" -eq 0 ]
 
   # verify the kube-proxy is using iptables (does so by default)
-  k8s_check_proxy_mode k8s-master iptables
+  k8s_check_proxy_mode $cluster1 $controller1 iptables
 
   # verify k8s has programmed iptables inside the sys container net ns
-  docker exec k8s-master sh -c "iptables -L | grep -q KUBE"
+  docker exec $controller1 sh -c "iptables -L | grep -q KUBE"
   [ "$status" -eq 0 ]
 
   # verify no k8s iptable chains are seen outside the sys container net ns
   iptables -L | grep -qv KUBE
 
   # cleanup
-  k8s_del_pod k8s k8s-master alpine-sleep
+  k8s_del_pod $cluster1 $controller1 alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -151,12 +160,12 @@ EOF
 
 @test "kind service nodePort" {
 
-  local num_workers=$(cat "$test_dir/.k8s_num_workers")
+  local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
 
   run kubectl create deployment nginx --image=nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # create a nodePort service
   run kubectl expose deployment/nginx --port 80 --type NodePort
@@ -167,12 +176,13 @@ EOF
   [ "$status" -eq 0 ]
   svc_port=$output
 
-  # verify the service is exposed on all nodes of the cluster
-  node_ip=$(k8s_node_ip k8s-master)
-  curl -s $node_ip:$svc_port | grep "Welcome to nginx"
-
-  for i in `seq 0 $(( $num_workers - 1 ))`; do
-    local worker=k8s-worker-$i
+  for i in `seq 1 $num_workers`; do
+    local worker
+    if [ $i -eq 1 ]; then
+      worker="${cluster1}"-worker
+    else
+      worker="${cluster1}"-worker$i
+    fi
     node_ip=$(k8s_node_ip $worker)
     curl -s $node_ip:$svc_port | grep -q "Welcome to nginx"
   done
@@ -192,8 +202,8 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s k8s-master alpine-sleep"
+  k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
+  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -202,7 +212,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod k8s k8s-master alpine-sleep
+  k8s_del_pod $cluster1 $controller1 alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -238,8 +248,8 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod k8s k8s-master /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready k8s k8s-master alpine-sleep"
+  k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
+  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
 
   # find the cluster's DNS IP address
   run sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
@@ -276,7 +286,7 @@ EOF
   # node has its own DNS services, we have to point to the cluster's
   # DNS explicitly).
 
-  docker exec k8s-master sh -c "nslookup nginx.default.svc.cluster.local $dns_ip"
+  docker exec $controller1 sh -c "nslookup nginx.default.svc.cluster.local $dns_ip"
   [ "$status" -eq 0 ]
 
   # if we repeat the above but without pointing to the cluster's DNS
@@ -284,12 +294,12 @@ EOF
   # the nginx server (i.e., the nginx service lives inside the
   # cluster)
 
-  docker exec k8s-master sh -c "nslookup nginx.default.svc.cluster.local"
+  docker exec $controller1 sh -c "nslookup nginx.default.svc.cluster.local"
   [ "$status" -eq 1 ]
 
   # cleanup
 
-  k8s_del_pod k8s k8s-master alpine-sleep
+  k8s_del_pod $cluster1 $controller1 alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -310,12 +320,12 @@ EOF
   cp /etc/hosts /etc/hosts.orig
 
   # deploy the ingress controller (traefik) and associated services and ingress rules
-  k8s_apply k8s k8s-master $manifest_dir/traefik.yaml
+  k8s_apply $cluster1 $controller1 $manifest_dir/traefik.yaml
 
-  retry_run 40 2 "k8s_daemonset_ready k8s k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip k8s-worker-0)
+  local node_ip=$(k8s_node_ip "${cluster1}"-worker)
   echo "$node_ip traefik-ui.nestykube" >> /etc/hosts
 
   # verify ingress to traefik-ui works
@@ -335,7 +345,7 @@ EOF
   run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready k8s k8s-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # create an ingress rule for the nginx service
 cat > "$test_dir/nginx-ing.yaml" <<EOF
@@ -357,12 +367,12 @@ spec:
 EOF
 
   # apply the ingress rule
-  k8s_apply k8s k8s-master $test_dir/nginx-ing.yaml
+  k8s_apply $cluster1 $controller1 $test_dir/nginx-ing.yaml
 
-  retry_run 40 2 "k8s_daemonset_ready k8s k8s-master kube-system traefik-ingress-controller"
+  retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip k8s-worker-0)
+  local node_ip=$(k8s_node_ip "${cluster1}"-worker)
   echo "$node_ip nginx.nestykube" >> /etc/hosts
 
   # verify ingress to nginx works
@@ -380,7 +390,7 @@ EOF
   run kubectl delete deployment nginx
   [ "$status" -eq 0 ]
 
-  k8s_delete k8s k8s-master $manifest_dir/traefik.yaml
+  k8s_delete $cluster1 $controller1 $manifest_dir/traefik.yaml
 
   rm $test_dir/nginx-ing.yaml
   cp /etc/hosts.orig /etc/hosts
@@ -388,68 +398,86 @@ EOF
 
 @test "kind custom net cluster2 up" {
 
-  run __docker network rm k8s-net2
+  run __docker network rm $net2
 
-  docker network create k8s-net2 --subnet=172.16.101.0/24
+  run docker network create $net2 --subnet=172.16.101.0/24
   [ "$status" -eq 0 ]
 
-  local cluster_name=cluster2
-  local num_workers=1
-  local net=k8s-net2
-  local node_image=nestybox/k8s-node-test
+  k8skind_cluster_setup $cluster2 $controller2 $num_workers2 $net2 $node_image
 
-  k8s_cluster_setup $cluster_name $num_workers $net $node_image $k8s_version
+  run kubectl config use-context kind-"${cluster2}"
+  [ "$status" -eq 0 ]
 
   # store k8s cluster info so subsequent tests can use it
-  echo $num_workers > "$test_dir/.cluster2_num_workers"
+  echo $num_workers > "$test_dir/."${cluster2}"_num_workers"
 
   # launch a k8s deployment
-  run kubectl create deployment nginx --image=nginx:1.17-alpine \
-    --kubeconfig=/root/cluster2/.kube/config
+  run kubectl create deployment nginx --image=nginx:1.17-alpine  
   [ "$status" -eq 0 ]
 
-  run kubectl scale --replicas=4 deployment nginx --kubeconfig=/root/cluster2/.kube/config
+  run kubectl scale --replicas=4 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready cluster2 cluster2-master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster2 $controller2 default nginx"
 
   # create a service and confirm it's there
-  run kubectl expose deployment/nginx --port 80 --kubeconfig=/root/cluster2/.kube/config
+  run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  local svc_ip=$(k8s_svc_ip cluster2 cluster2-master default nginx)
+  local svc_ip=$(k8s_svc_ip $cluster2 $controller2 default nginx)
 
-  docker exec cluster2-master sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
+  docker exec $controller2 sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
-  # verify the two k8s clusters are isolated
+  # Verify the two k8s clusters are isolated.
 
-  ## nodes
-  run kubectl get nodes cluster2-master
+  ## Check nodes.
+  run kubectl config use-context kind-"${cluster1}"
+  [ "$status" -eq 0 ]
+
+  run kubectl get nodes $controller2
   [ "$status" -eq 1 ]
 
-  run kubectl get nodes cluster2-worker-0
+  run kubectl get nodes ${cluster2}-worker
   [ "$status" -eq 1 ]
 
-  run kubectl get nodes k8s-master --kubeconfig=/root/cluster2/.kube/config
+  ## Switch to cluster2 context.
+  run kubectl config use-context kind-"${cluster2}"
+  [ "$status" -eq 0 ]
+
+  run kubectl get nodes $controller1
   [ "$status" -eq 1 ]
 
-  run kubectl get nodes k8s-worker-0 --kubeconfig=/root/cluster2/.kube/config
+  run kubectl get nodes ${cluster1}-worker
   [ "$status" -eq 1 ]
 
-  ## deployments
+  ## Check deployments.
+
+  ## Switch to cluster1 context.
+  run kubectl config use-context kind-"${cluster1}"
+  [ "$status" -eq 0 ]
+
   run kubectl get deployment nginx
   [ "$status" -eq 1 ]
 
-  ## services
+  ## Check services.
   run kubectl get svc nginx
   [ "$status" -eq 1 ]
 
-  # cleanup
-  run kubectl delete svc nginx --kubeconfig=/root/cluster2/.kube/config
+  # Cleanup.
+
+  ## Switch to cluster2 context.
+  run kubectl config use-context kind-"${cluster2}"
   [ "$status" -eq 0 ]
 
-  run kubectl delete deployments.apps nginx --kubeconfig=/root/cluster2/.kube/config
+  run kubectl delete svc nginx
+  [ "$status" -eq 0 ]
+
+  run kubectl delete deployments.apps nginx
+  [ "$status" -eq 0 ]
+
+  # Switch to cluster1 context before exiting.
+  run kubectl config use-context kind-"${cluster1}"
   [ "$status" -eq 0 ]
 }
 
@@ -459,10 +487,10 @@ EOF
 @test "kind istio basic" {
 
   # Install Istio in original cluster.
-  istio_install k8s k8s-master
+  istio_install $cluster1 $controller1
 
   # Deploy Istio sample app.
-  docker exec k8s-master sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
+  docker exec $controller1 sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
   [ "$status" -eq 0 ]
 
   # Obtain list / names of pods launched as part of this app.
@@ -477,7 +505,7 @@ EOF
   pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
 
   # Wait for all the app pods to be ready (istio sidecars will be intantiated too).
-  retry_run 60 5 "k8s_pod_array_ready k8s k8s-master ${pod_names[@]}"
+  retry_run 60 5 "k8s_pod_array_ready $cluster1 $controller1 ${pod_names[@]}"
 
   # Obtain app pods again (after waiting instruction) to dump their state if an
   # error is eventually encountered.
@@ -498,26 +526,30 @@ EOF
   [ "$status" -eq 0 ]
 
   # Uninstall Istio in original cluster.
-  istio_uninstall k8s k8s-master
+  istio_uninstall $cluster1 $controller1
 
-  retry_run 40 2 "k8s_cluster_is_clean k8s k8s-master"
+  retry_run 40 2 "k8s_cluster_is_clean $cluster1 $controller1"
 }
 
 @test "kind custom net cluster down" {
 
-  local num_workers=$(cat "$test_dir/.k8s_num_workers")
-  k8s_cluster_teardown k8s $num_workers
+  local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
+  k8skind_cluster_teardown $cluster1 $num_workers
 
-  num_workers=$(cat "$test_dir/.cluster2_num_workers")
-  k8s_cluster_teardown cluster2 $num_workers
+  # Switch to cluster2 context.
+  run kubectl config use-context kind-"${cluster2}"
+  [ "$status" -eq 0 ]
+
+  num_workers=$(cat "$test_dir/."${cluster2}"_num_workers")
+  k8skind_cluster_teardown $cluster2 $num_workers
 
   # wait for cluster teardown to complete
   sleep 10
 
-  docker network rm k8s-net
+  docker network rm $net1
   [ "$status" -eq 0 ]
 
-  docker network rm k8s-net2
+  docker network rm $net2
   [ "$status" -eq 0 ]
 
   remove_test_dir
