@@ -10,31 +10,14 @@ load ../helpers/fs
 # (for tests using bats)
 #
 
-# Default cluster-name.
-export DEFAULT_CLUSTER="cluster1"
-
-
 function kubeadm_get_token() {
   local k8s_master=$1
   local join=$(__docker exec $k8s_master sh -c "kubeadm token create --print-join-command 2> /dev/null")
   echo $join
 }
 
-# Obtains the path where k8s configuration is held for each cluster.
-function k8s_config_path() {
-  local cluster_name=$1
-  local config_path
-
-  if [ $cluster_name == $DEFAULT_CLUSTER ]; then
-    config_path="/root/.kube"
-  else
-    config_path="/root/$cluster_name/.kube"
-  fi
-
-  echo $config_path
-}
-
-function kubectl_config() {
+# Sets up a proper k8s config in the node being passed.
+function k8s_config() {
   local cluster_name=$1
   local node=$2
 
@@ -59,16 +42,6 @@ function kubectl_config() {
   # Copy generated config to the test (privileged) container.
   # docker cp $node:/root/.kube/. $config_path
   # [ "$status" -eq 0 ]
-}
-
-function flannel_config() {
-  local cluster_name=$1
-  local k8s_master=$2
-
-  config_path=$(k8s_config_path $cluster_name)
-
-  run kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-  [ "$status" -eq 0 ]
 }
 
 # Checks that the host has sufficient storage to run K8s clusters
@@ -100,45 +73,6 @@ function k8s_node_ready() {
     echo $res
   else
     echo 1
-  fi
-}
-
-function k8s_all_nodes_ready() {
-  local cluster_name=$1
-  local num_workers=$2
-  local delay=$3
-
-  local timestamp=$(date +%s)
-  local timeout=$(( $timestamp + $delay ))
-  local all_ok
-
-  while [ $timestamp -lt $timeout ]; do
-    all_ok="true"
-
-    for (( i=0; i<$num_workers; i++ )); do
-      master=${cluster_name}-master
-      worker=${cluster_name}-worker-${i}
-
-      worker_ready=$(k8s_node_ready $master $worker)
-
-      if [ $worker_ready -ne 0 ]; then
-        all_ok="false"
-        break
-      fi
-    done
-
-    if [[ "$all_ok" == "true" ]]; then
-       break
-    fi
-
-    sleep 2
-    timestamp=$(date +%s)
-  done
-
-  if [[ "$all_ok" != "true" ]]; then
-    echo 1
-  else
-    echo 0
   fi
 }
 
@@ -200,9 +134,6 @@ function k8s_pod_ready() {
      ns="-n $4"
   fi
 
-  # TODO: Find out why function doesn't behave as expected when using 'kubectl'
-  # instead of 'docker exec' instruction; ideally, we want to avoid using
-  # 'docker exec' here.
   run kubectl get pod $pod $ns
   echo "status = ${status}"
   echo "output = ${output}"  
@@ -255,9 +186,6 @@ function k8s_pod_absent() {
      ns="-n $4"
   fi
 
-  # TODO: Find out why function doesn't behave as expected when using 'kubectl'
-  # instead of 'docker exec' instruction; ideally, we want to avoid using
-  # 'docker exec' here.
   run kubectl get pod $pod $ns
   echo "status = ${status}"
   echo "output = ${output}"  
@@ -408,137 +336,6 @@ function k8s_cluster_is_clean() {
   echo ${lines[1]} | grep -q "service/kubernetes"
 }
 
-# Deploys a k8s cluster using sys containers; the cluster has one
-# master node and the given number of worker nodes. The cluster uses
-# the K8s flannel cni. The master node sys container is called
-# k8s-master and the worker nodes are called k8s-worker-0,
-# k8s-worker-1, etc.
-#
-# This function returns the "kubeadm join" string (in case the caller
-# wants to add more nodes need to be added to the cluster).
-#
-# usage: k8s_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
-#
-# cluster_name: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
-#               "<cluster-name>-worker-0", "<cluster-name>-worker-1", etc.
-# num_workers: number of k8s worker nodes
-# network: docker network to which the k8s nodes are connected (e.g., bridge, user-defined, etc.)
-
-function k8s_cluster_setup() {
-  local cluster_name=$1
-  local num_workers=$2
-  local net=$3
-  local node_image=$4
-
-  local k8s_master=${cluster_name}-master
-  local pod_net_cidr=10.244.0.0/16
-
-  #
-  # Deploy the master node
-  #
-
-  local k8s_master_id=$(docker_run --rm --network=$net --name=$k8s_master --hostname=$k8s_master $node_image:$k8s_version)
-  wait_for_inner_systemd $k8s_master
-
-  docker exec $k8s_master sh -c "kubeadm init --kubernetes-version=$k8s_version --pod-network-cidr=$pod_net_cidr"
-  [ "$status" -eq 0 ]
-  local kubeadm_output=$output
-
-  run sh -c "echo \"$kubeadm_output\" | grep -q \"Your Kubernetes control\-plane has initialized successfully\""
-  [ "$status" -eq 0 ]
-
-  kubectl_config $cluster_name $k8s_master
-  flannel_config $cluster_name $k8s_master
-  retry_run 40 2 "k8s_node_ready $cluster_name $k8s_master $k8s_master"
-
-  #
-  # Deploy the K8s worker nodes (k8s-worker-<num>)
-  #
-
-  declare -a k8s_worker
-  local worker_name
-  local worker_ready
-  local kubeadm_join=$(kubeadm_get_token $k8s_master)
-
-  local i
-  for (( i=0; i<$num_workers; i++ )); do
-    worker_name=${cluster_name}-worker-${i}
-
-    k8s_worker[$i]=$(docker_run --network=$net --rm --name=$worker_name --hostname=$worker_name $node_image:$k8s_version)
-    wait_for_inner_systemd ${k8s_worker[$i]}
-
-    docker exec -d "${k8s_worker[$i]}" sh -c "$kubeadm_join"
-    [ "$status" -eq 0 ]
-  done
-
-  local join_timeout=$(( $num_workers * 30 ))
-  k8s_all_nodes_ready $cluster_name $num_workers $join_timeout
-}
-
-function k8skind_cluster_setup() {
-  local cluster=$1
-  local controller=$2
-  local num_workers=$3
-  local net=$4
-  local node_image=$5
-
-  local pod_net_cidr=10.244.0.0/16
-
-  #
-  # Deploy the master node
-  #
-  run sysbox-kind/bin/sysbox-kind create cluster --name $cluster --config tests/kind/k8skind_config.yaml --image "$node_image" --wait 120s
-  echo "status = ${status}"
-  echo "output = ${output}"
-  [ "$status" -eq 0 ]
-
-  kubectl_config $cluster $controller
-}
-
-# Tears-down a k8s cluster created with k8s_cluster_setup().
-#
-# usage: k8s_cluster_teardown cluster_name num_workers
-function k8s_cluster_teardown() {
-  local cluster_name=$1
-  local num_workers=$2
-
-  local k8s_master=${cluster_name}-master
-  local worker_name
-
-  local i
-  for i in `seq 0 $(( $num_workers - 1 ))`; do
-    worker_name=${cluster_name}-worker-${i}
-    docker_stop $worker_name
-  done
-
-  docker_stop $k8s_master
-
-  # Delete cluster configs.
-  rm -rf /root/.kube
-}
-
-function k8skind_cluster_teardown() {
-  local cluster_name=$1
-  local num_workers=$2
-  
-  sysbox-kind delete cluster --name $cluster
-
-  for i in `seq 1 $num_workers`; do
-    local worker
-    if [ $i -eq 1 ]; then
-      worker="${cluster}"-worker
-    else
-      worker="${cluster}"-worker$i
-    fi
-    docker rm $worker
-  done
-
-  # Delete cluster configs.
-  # TODO: We should only remove the portion of the config file associated to the
-  # cluster being deleted, not the entire file or dir.
-  # rm -rf /root/.kube
-}
-
 # Install Helm v2.
 function helm_v2_install() {
   local cluster_name=$1
@@ -644,9 +441,10 @@ function istio_uninstall() {
 # Verifies an nginx ingress controller works; this function assumes
 # the nginx ingress-controller has been deployed to the cluster.
 function verify_nginx_ingress() {
-  local cluster_name=$1
-  local k8s_master=$2
+  local cluster=$1
+  local controller=$2
   local ing_controller=$3
+  local ing_worker_node=$4
 
   # We need pods to serve our fake website / service; we use an nginx
   # server pod and create a service in front of it (note that we could
@@ -658,7 +456,7 @@ function verify_nginx_ingress() {
   run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster_name $k8s_master default nginx"
+  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
 
   # create an ingress rule that maps nginx.nestykube -> nginx service;
   # this ingress rule is enforced by the nginx ingress controller.
@@ -685,7 +483,7 @@ EOF
 
   # setup the ingress hostname in /etc/hosts
   cp /etc/hosts /etc/hosts.orig
-  local node_ip=$(k8s_node_ip ${cluster_name}-worker)
+  local node_ip=$(k8s_node_ip ${ing_worker_node})
   echo "$node_ip nginx.nestykube" >> /etc/hosts
 
   # verify ingress to nginx works
@@ -712,4 +510,199 @@ EOF
   # a bind-mount inside the container
   cp /etc/hosts.orig /etc/hosts
   rm /etc/hosts.orig
+}
+
+
+################################################################################
+# KinD specific functions
+################################################################################
+
+
+function kind_all_nodes_ready() {
+  local cluster=$1
+  local controller=$2
+  local num_workers=$3
+  local delay=$4
+
+  local timestamp=$(date +%s)
+  local timeout=$(( $timestamp + $delay ))
+  local all_ok
+
+  while [ $timestamp -lt $timeout ]; do
+    all_ok="true"
+
+    for i in `seq 1 $num_workers`; do
+      local worker
+      if [ $i -eq 1 ]; then
+        worker="${cluster}"-worker
+      else
+        worker="${cluster}"-worker$i
+      fi
+
+      worker_ready=$(k8s_node_ready $master $worker)
+
+      if [ $worker_ready -ne 0 ]; then
+        all_ok="false"
+        break
+      fi
+    done
+
+    if [[ "$all_ok" == "true" ]]; then
+       break
+    fi
+
+    sleep 2
+    timestamp=$(date +%s)
+  done
+
+  if [[ "$all_ok" != "true" ]]; then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+# Deploys a k8s cluster through KinD tool. The cluster has one master node
+# and the given number of worker nodes. The cluster uses the K8s Kind cni.
+# The name of the master/controller node is defined by caller, however, this
+# one must follow the naming convention utilized by KinD tool internally. That
+# is: master node must be called ${cluster}-control-plane. Likewise, worker
+# names must meet KinD's expectations: ${cluster}-worker, ${cluster}-worker2,
+# ${cluster}-worker3, etc.
+#
+# usage: kind_cluster_setup <cluster_name> <num_workers> <network> <node_image>
+#
+# cluster: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
+#          "<cluster-name>-worker", "<cluster-name>-worker-2", etc.
+# num_workers: number of k8s worker nodes
+function kind_cluster_setup() {
+  local cluster=$1
+  local controller=$2
+  local num_workers=$3
+  local node_image=$4
+
+  # Launch KinD for cluster creation.
+  run sysbox-kind/bin/sysbox-kind create cluster --name $cluster --config tests/kind/k8skind_config.yaml --image "$node_image"
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  # KinD takes care of setting a proper k8s config in the context from where
+  # this logic is launched (priv container in our case). In this step we
+  # ensure that the controller himself has the proper k8s config.
+  k8s_config $cluster $controller
+
+  # Wait till all workers are ready.
+  local join_timeout=$(( $num_workers * 30 ))
+  kind_all_nodes_ready $cluster $controller $num_workers $join_timeout
+}
+
+# Tears-down a k8s cluster created with kind_cluster_setup().
+#
+# usage: kind_cluster_teardown cluster_name num_workers
+function kind_cluster_teardown() {
+  local cluster=$1
+  local num_workers=$2
+
+  run sysbox-kind/bin/sysbox-kind delete cluster --name $cluster
+  [ "$status" -eq 0 ]
+
+  # Explicitly remove node containers as KinD won't do it.
+  for i in `seq 1 $num_workers`; do
+    local worker
+    if [ $i -eq 1 ]; then
+      worker="${cluster}"-worker
+    else
+      worker="${cluster}"-worker$i
+    fi
+
+    docker rm $worker
+  done
+}
+
+
+################################################################################
+# KindBox specific functions
+################################################################################
+
+
+function kindbox_all_nodes_ready() {
+  local cluster_name=$1
+  local num_workers=$2
+  local delay=$3
+
+  local timestamp=$(date +%s)
+  local timeout=$(( $timestamp + $delay ))
+  local all_ok
+
+  while [ $timestamp -lt $timeout ]; do
+    all_ok="true"
+
+    for (( i=0; i<$num_workers; i++ )); do
+      master=${cluster_name}-master
+      worker=${cluster_name}-worker-${i}
+
+      worker_ready=$(k8s_node_ready $master $worker)
+
+      if [ $worker_ready -ne 0 ]; then
+        all_ok="false"
+        break
+      fi
+    done
+
+    if [[ "$all_ok" == "true" ]]; then
+       break
+    fi
+
+    sleep 2
+    timestamp=$(date +%s)
+  done
+
+  if [[ "$all_ok" != "true" ]]; then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+# Deploys a k8s cluster through KindBox tool. The cluster has one master node
+# and the given number of worker nodes. The cluster uses the K8s flannel cni.
+# The master node sys container is called k8s-master and the worker nodes are
+# called k8s-worker-0, k8s-worker-1, etc.
+#
+# usage: k8s_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
+#
+# cluster: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
+#          "<cluster-name>-worker-0", "<cluster-name>-worker-1", etc.
+# num_workers: number of k8s worker nodes
+# network: docker network to which the k8s nodes are connected (e.g., bridge,
+#          user-defined, etc.)
+function kindbox_cluster_setup() {
+  local cluster=$1
+  local controller=$2
+  local num_workers=$3
+  local net=$4
+  local node_image=$5
+
+  local pod_net_cidr=10.244.0.0/16
+
+  run sysbox-staging/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
+  [ "$status" -eq 0 ]
+
+  local join_timeout=$(( $num_workers * 30 ))
+
+  kindbox_all_nodes_ready $cluster $num_workers $join_timeout
+}
+
+# Tears-down a k8s cluster created with kindbox_cluster_setup().
+#
+# usage: kindbox_cluster_teardown cluster_name num_workers
+function kindbox_cluster_teardown() {
+  local cluster=$1
+
+  run sysbox-staging/scr/kindbox destroy $cluster
+  [ "$status" -eq 0 ]
+
+  # Delete cluster configs.
+  rm -rf /root/.kube
 }
