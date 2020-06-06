@@ -16,12 +16,10 @@ export manifest_dir="tests/kind/manifests/"
 
 export cluster1=cluster1
 export controller1="${cluster1}"-control-plane
-export net1="${cluster1}"-net
 export num_workers1=2
 
 export cluster2=cluster2
 export controller2="${cluster2}"-control-plane
-export net2="${cluster2}"-net
 export num_workers2=1
 
 export node_image="nestybox/kindestnode-dbg:v1.18.2"
@@ -50,14 +48,8 @@ function remove_test_dir() {
 
   create_test_dir
 
-  #run __docker network rm k8s-net
-  run __docker network rm $net1
-
-  run docker network create $net1 --subnet=172.16.100.0/24
-  [ "$status" -eq 0 ]
-
   # Create new cluster.
-  k8skind_cluster_setup $cluster1 $controller1 $num_workers1 $net1 $node_image
+  kind_cluster_setup $cluster1 $controller1 $num_workers1 $node_image
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/."${cluster1}"_num_workers"
@@ -398,12 +390,7 @@ EOF
 
 @test "kind custom net cluster2 up" {
 
-  run __docker network rm $net2
-
-  run docker network create $net2 --subnet=172.16.101.0/24
-  [ "$status" -eq 0 ]
-
-  k8skind_cluster_setup $cluster2 $controller2 $num_workers2 $net2 $node_image
+  kind_cluster_setup $cluster2 $controller2 $num_workers2 $node_image
 
   run kubectl config use-context kind-"${cluster2}"
   [ "$status" -eq 0 ]
@@ -534,23 +521,17 @@ EOF
 @test "kind custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
-  k8skind_cluster_teardown $cluster1 $num_workers
+  kind_cluster_teardown $cluster1 $num_workers
 
   # Switch to cluster2 context.
   run kubectl config use-context kind-"${cluster2}"
   [ "$status" -eq 0 ]
 
   num_workers=$(cat "$test_dir/."${cluster2}"_num_workers")
-  k8skind_cluster_teardown $cluster2 $num_workers
+  kind_cluster_teardown $cluster2 $num_workers
 
   # wait for cluster teardown to complete
   sleep 10
-
-  docker network rm $net1
-  [ "$status" -eq 0 ]
-
-  docker network rm $net2
-  [ "$status" -eq 0 ]
 
   remove_test_dir
 }

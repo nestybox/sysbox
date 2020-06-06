@@ -1,8 +1,10 @@
 #!/usr/bin/env bats
 
-# Tests for deploying a K8s cluster inside system container nodes.
+# Tests for deploying a K8s cluster inside system container nodes while
+# making use of KinD tool.
 #
-# The system container nodes have K8s + containerd inside.
+# The system container nodes have K8s + containerd inside (i.e., K8s uses
+# containerd to deploy pods).
 #
 # NOTE: the "cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "cluster down"
@@ -47,10 +49,10 @@ function remove_test_dir() {
   create_test_dir
 
   #k8s_cluster_setup $cluster $num_workers $net $node_image $k8s_version
-  k8skind_cluster_setup $cluster $controller $num_workers $net $node_image
+  kind_cluster_setup $cluster $controller $num_workers $net $node_image
 
   # store k8s cluster info so subsequent tests can use it
-  echo $num_workers > "$test_dir/.k8s_num_workers"
+  echo $num_workers > "$test_dir/."${cluster}"_num_workers"
 }
 
 @test "kind pod" {
@@ -215,7 +217,7 @@ EOF
 
 @test "kind service nodePort" {
 
-  local num_workers=$(cat "$test_dir/.k8s_num_workers")
+  local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
   run kubectl create deployment nginx --image=nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -459,7 +461,7 @@ EOF
   rm /etc/hosts.orig
 }
 
-@test "vol: emptyDir" {
+@test "kind vol emptyDir" {
 
   # pod with two alpine containers sharing a couple of emptydir
   # volumes, one on-disk and one in-mem.
@@ -530,7 +532,7 @@ EOF
   rm "$test_dir/pod.yaml"
 }
 
-@test "vol: hostPath" {
+@test "kind vol hostPath" {
 
   # create a directory and a file on the k8s-node; each will be
   # mounted as a hostPath vol into a pod
@@ -615,7 +617,7 @@ EOF
   rm "$test_dir/pod.yaml"
 }
 
-@test "vol: local persistent" {
+@test "kind vol local persistent" {
 
   # based on:
   # https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
@@ -741,128 +743,8 @@ EOF
   rm "$test_dir/pvol.yaml"
 }
 
-# Verifies that pods get re-scheduled when a K8s node goes down
-@test "node down" {
-skip
-  # Customize a generic nginx deployment with a low 'tolerationSeconds' value,
-  # such that when a node goes down, the pods get re-scheduled as quick as
-  # possible -- by default this value matches 'pod-eviction-timeout' parameter,
-  # which is set to 5 mins.
-  cat > /tmp/nginx-deployment.yaml <<EOF
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-spec:
-  selector:
-    matchLabels:
-      app: nginx
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.17-alpine
-        ports:
-        - containerPort: 80
-      tolerations:
-      - key: "node.kubernetes.io/unreachable"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 2
-      - key: "node.kubernetes.io/not-ready"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 2
-EOF
-
-  # Apply changes and wait for deployment components to be created.
-  run kubectl apply -f /tmp/nginx-deployment.yaml
-  [ "$status" -eq 0 ]
-
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
-
-  # Export http port.
-  run kubectl expose deployment/nginx --port 80
-  [ "$status" -eq 0 ]
-
-  # Obtain service's external ip.
-  local svc_ip=$(k8s_svc_ip $cluster $controller default nginx)
-
-  # Ensure app is reachable.
-  retry_run 40 2 "docker exec $controller sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
-  [ "$status" -eq 0 ]
-
-  # Check which worker node the pod is scheduled in
-  run kubectl get pods --selector=app=nginx
-  [ "$status" -eq 0 ]
-
-  local pod=$(echo "${lines[1]}" | awk '{print $1}')
-  local node=$(k8s_pod_node $cluster $controller $pod)
-
-  # Delete that node from cluster.
-  run kubectl delete node $node
-  [ "$status" -eq 0 ]
-
-  # Bring node container down.
-  docker_stop "$node"
-  [ "$status" -eq 0 ]
-  
-  # Eliminate node container. Instruction may fail if container was initialized
-  # with docker "--rm" instruction.
-  docker rm "$node"
-
-  # K8s' controller will not react to node's elimination till
-  # 'node-monitor-grace-period' interval (40 secs by default) has elapsed without
-  # a response from the affected node. During this time k8s' control-plane will
-  # continue displaying the pod as 'running'. Thus, we need to ensure that we wait
-  # long enough for k8s to eliminate this pod (~60 secs + tolerationSeconds). More
-  # details here: https://github.com/kubernetes-sigs/kubespray/blob/master/docs/kubernetes-reliability.md
-  retry_run 40 2 "[ ! $(k8s_pod_in_node $cluster $controller $pod $node) ]"
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
-
-  # By now a new pod should have been scheduled, and its name should partially
-  # match the name of the original pod (i.e. only the last 5 characters should
-  # differ -- original pod: "nginx-64b55599df-nzpdc", new one: "nginx-64b55599df-nk56g").
-  new_pod=${pod%?????}
-  run sh -c "kubectl get pods --selector=app=nginx | awk '/$new_pod/ {print $1}'"
-  [ "$status" -eq 0 ]
-  [ ${#lines[@]} -eq 1 ]
-  [ "$output" != "" ] && [ "$output" != "$pod" ]
-
-  # Verify the service is back up too.
-  retry_run 40 2 "docker exec $controller sh -c \"curl -s $svc_ip | grep -q \"Welcome to nginx\"\""
-
-  # Bring the worker node back up.
-  # (note: container name = container hostname = kubectl node name)
-
-  local kubeadm_join=$(kubeadm_get_token $controller)
-
-  docker_run --rm --name="$node" --hostname="$node" "$node_image"
-  [ "$status" -eq 0 ]
-
-  wait_for_inner_systemd $node
-
-  docker exec "$node" sh -c "$kubeadm_join"
-  [ "$status" -eq 0 ]
-
-  retry_run 40 2 "k8s_node_ready $cluster $controller $node"
-
-  # cleanup
-  run kubectl delete svc nginx
-  [ "$status" -eq 0 ]
-
-  run kubectl delete deployment nginx
-  [ "$status" -eq 0 ]
-
-  rm -rf /tmp/nginx-deployment.yaml
-}
-
 # Verifies Helm v2 proper operation.
-@test "helm v2 basic" {
+@test "kind helm v2 basic" {
 
   # Install Helm V2.
   helm_v2_install $cluster $controller
@@ -888,7 +770,7 @@ EOF
   retry_run 40 2 "k8s_pod_ready $cluster $controller $pod2_name"
 
   # Verify that the ingress controller works
-  verify_nginx_ingress $cluster $controller nginx-ingress-controller
+  verify_nginx_ingress $cluster $controller nginx-ingress-controller ${cluster}-worker
 
   # Cleanup
   docker exec $controller sh -c "helm ls --all --short | xargs -L1 helm delete --purge"
@@ -904,7 +786,7 @@ EOF
 }
 
 # Verifies Helm v3 proper operation.
-@test "helm v3 basic" {
+@test "kind helm v3 basic" {
 
   # Install Helm V3.
   helm_v3_install $controller
@@ -932,7 +814,7 @@ EOF
   retry_run 40 3 "k8s_pod_ready $cluster $controller $pod2_name"
 
   # Verify that the ingress controller works
-  verify_nginx_ingress $cluster $controller nginx-ingress-controller
+  verify_nginx_ingress $cluster $controller nginx-ingress-controller ${cluster}-worker
 
   # Cleanup
   docker exec $controller sh -c "helm delete nginx-ingress"
@@ -950,7 +832,7 @@ EOF
 
 @test "kind cluster down" {
 
-  local num_workers=$(cat "$test_dir/.k8s_num_workers")
-  k8skind_cluster_teardown $cluster $num_workers
+  local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
+  kind_cluster_teardown $cluster $num_workers
   remove_test_dir
 }
