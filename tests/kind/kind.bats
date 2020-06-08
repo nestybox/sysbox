@@ -22,7 +22,6 @@ export manifest_dir="tests/kind/manifests/"
 export cluster=cluster1
 export controller="${cluster}"-control-plane
 export num_workers=2
-export net=bridge
 export node_image="nestybox/kindestnode-dbg:v1.18.2"
 
 function teardown() {
@@ -48,8 +47,7 @@ function remove_test_dir() {
 
   create_test_dir
 
-  #k8s_cluster_setup $cluster $num_workers $net $node_image $k8s_version
-  kind_cluster_setup $cluster $controller $num_workers $net $node_image
+  kind_cluster_setup $cluster $controller $num_workers $node_image
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/."${cluster}"_num_workers"

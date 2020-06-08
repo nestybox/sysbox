@@ -1,6 +1,10 @@
 #!/usr/bin/env bats
 
-# Test k8s clusters on top of a Docker custom bridge network
+# Tests for deploying a K8s cluster with custom bridge networks. The cluster
+# will be launched by making use of KindBox tool.
+#
+# The system container nodes have K8s + Docker inside (i.e., K8s uses
+# Docker to deploy pods).
 #
 # NOTE: the "cluster up" test must execute before all others,
 # as it brings up the K8s cluster. Similarly, the "cluster down"
@@ -14,17 +18,20 @@ load ../helpers/sysbox-health
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
+# Cluster1 definition.
 export cluster1=cluster1
 export controller1="${cluster1}"-control-plane
 export net1="${cluster1}"-net
 export num_workers1=2
 
+# Cluster2 definition.
 export cluster2=cluster2
 export controller2="${cluster2}"-control-plane
 export net2="${cluster2}"-net
 export num_workers2=1
 
-export node_image="nestybox/kindestnode-dbg:v1.18.2"
+# Cluster's node image.
+export node_image="nestybox/k8s-node-test:v1.18.2"
 
 
 function teardown() {
