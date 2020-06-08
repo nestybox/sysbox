@@ -179,6 +179,17 @@ the problems that we have encountered and their solutions.
 
     Solution: Simply add "locales" package to the Dockerfile creating the systemd container.
 
+17) The sysctl `/proc/sys/net/unix/max_dgram_qlen` must be exposed inside the sys container:
+
+    Othewise systemd (Ubuntu eoan and onwards) complains with:
+
+    ```console
+    Failed to read AF_UNIX datagram queue length, ignoring: No such file or directory
+    ```
+
+    Solution: create a sysbox-fs handler for that sysctl.
+
+
 Note: I'm deliveratily obviating the requirements to allow the
 integration of the container's systemd with the host's one, so that
 system-containers can be potentially managed from the host. I'm also

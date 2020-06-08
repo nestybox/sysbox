@@ -34,7 +34,8 @@ SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
                 /proc/sys/net/ipv4/vs/expire_nodest_conn \
                 /proc/sys/net/ipv4/vs/expire_quiescent_template \
                 /proc/sys/net/ipv4/vs/conn_reuse_mode \
-                /proc/sys/net/ipv4/vs/conntrack"
+                /proc/sys/net/ipv4/vs/conntrack \
+                /proc/sys/net/unix/max_dgram_qlen"
 
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
