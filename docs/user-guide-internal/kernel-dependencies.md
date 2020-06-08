@@ -1,4 +1,4 @@
-# Sysbox Linux Kernel Dependencies
+# Sysbox Internal User Guide: Kernel Dependencies
 
 Document's goal is to highlight the set of dependencies that Sysbox
 implementation has over Linux kernel, and the 'distros' where these
@@ -11,12 +11,12 @@ feature.
 
 Supported Kernels:
 
-* Ubuntu Kernel 5.x+
-* Debian Kernel [5.2.x](https://salsa.debian.org/kernel-team/linux/blob/master/debian/patches/debian/overlayfs-permit-mounts-in-userns.patch): Allows users to enable this feature through sysctl configuration.
+-   Ubuntu Kernel 5.x+
+-   Debian Kernel [5.2.x](https://salsa.debian.org/kernel-team/linux/blob/master/debian/patches/debian/overlayfs-permit-mounts-in-userns.patch): Allows users to enable this feature through sysctl configuration.
 
 To-do:
 
-* Evaluate Debian's 5.2.x.
+-   Evaluate Debian's 5.2.x.
 
 ## Shiftfs
 
@@ -25,22 +25,22 @@ seems to be an incipient interest in [fuse-overlayfs](https://github.com/contain
 
 Supported Kernels:
 
-* Ubuntu 5.x+
+-   Ubuntu 5.x+
 
 To-do:
 
-* Evaluate fuse-overlayfs.
+-   Evaluate fuse-overlayfs.
 
-## Implementation of SECCOMP_USER_NOTIF_FLAG_CONTINUE
+## Implementation of `SECCOMP_USER_NOTIF_FLAG_CONTINUE`
 
 Required for syscall-trapping functionality.
 
 Supported Kernels:
 
-* Ubuntu Kernel 5.0.0-22+
-* Upstream Kernel [5.5.x](https://github.com/torvalds/linux/commit/fb3c5386b382d4097476ce9647260fc89b34afdb)
+-   Ubuntu Kernel 5.0.0-22+
+-   Upstream Kernel [5.5.x](https://github.com/torvalds/linux/commit/fb3c5386b382d4097476ce9647260fc89b34afdb)
 
 To-do:
 
-* Not much; just keep an eye on upcoming distro-releases -- Debian Bullseye
-(Apr 2020) may include 5.5.x kernel.
+-   Not much; just keep an eye on upcoming distro-releases -- Debian Bullseye
+    (Apr 2020) may include 5.5.x kernel.

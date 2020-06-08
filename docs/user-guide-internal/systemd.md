@@ -1,28 +1,23 @@
-Sysbox's Systemd Support
-=========================
+# Sysbox Internal User Guide: Systemd-in-Docker
 
 This document outlines the set of requirements needed by systemd to
 operate in container environments, and how these ones are being
 satisfied by Sysbox's implementation. I'm also highlighting some of
 the problems that we have encountered and their solutions.
 
-
-# Requirements & Solutions
+## Requirements & Solutions
 
 1) "/sys" to be mounted as read-only prior to systemd initialization.
 
     Solution: Already taken care of by sysbox-runc implementation.
 
-
 2) "/proc" to be mounted prior to systemd initialization.
 
     Solution: Already takend care of by sysbox-runc implementation.
 
-
 3) "/sys/fs/selinux" to be mounted prior to systemd initialization.
 
     Solution: Ignored for now.
-
 
 4) "/proc/sys" and the entirety of "/sys" should ideally be mounted as
    read-only to avoid the possibility of containers altering the host
@@ -34,7 +29,6 @@ the problems that we have encountered and their solutions.
     read-write mode, whereas "/sys" is mounted as read-only. Deeper
     levels of "/sys" hierarchy are mounted as read-write, including
     "/sys/fs/cgroup".
-
 
 5) "/dev/kmsg" to be mounted on a container-basis as tmpfs resource, and bind mount some
    suitable TTY to /dev/console.
@@ -50,19 +44,16 @@ the problems that we have encountered and their solutions.
     In sysbox's case we have opted for a simpler solution: we are exposing "/dev/kmsg"
     as a tmpfs resource.
 
-
 6) Create device nodes for /dev/null, /dev/zero, /dev/full, /dev/random,
    /dev/urandom, /dev/tty, /dev/ptmx in /dev.
 
     Solution: No changes here, sysbox-runc is already creating most of these.
-
 
 7) Make sure to set up the "devices" cgroup controller so that no other devices but
    the above ones may be created in the container.
 
     Solution: When using Docker to run sys containers, this restriction is placed by
     Docker in the system container's config.json file.
-
 
 8) "/run" and "/run/lock" are expected.
 
@@ -72,7 +63,6 @@ the problems that we have encountered and their solutions.
 9) "/tmp" is expected.
 
     Solution: Same as above: mount tmpfs over /tmp.
-
 
 10) "/var/log/journal" is expected by journald to dump all received logs.
 
@@ -95,7 +85,6 @@ the problems that we have encountered and their solutions.
     Solution: Enforce the proper shutdown signal in the sys-container Dockerfile --
     "STOPSIGNAL SIGRTMIN+3". We should explore the possibility of hardcoding this
     option in sysbox-runc to ease end-user's life.
-
 
 12) Set "container" environment variable to allow systemd (and other
     code) to identify that it is executed within a container. With
@@ -190,18 +179,15 @@ the problems that we have encountered and their solutions.
 
     Solution: Simply add "locales" package to the Dockerfile creating the systemd container.
 
-
-
 Note: I'm deliveratily obviating the requirements to allow the
 integration of the container's systemd with the host's one, so that
 system-containers can be potentially managed from the host. I'm also
 ignoring the container-cgroup settings associated to systemd
 demands. TBD.
 
+## References
 
-# References
-
-https://www.freedesktop.org/wiki/Software/systemd/ContainerInterface/
-https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container/
-https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/
-https://developers.redhat.com/blog/2014/05/05/running-systemd-within-docker-container/
+<https://www.freedesktop.org/wiki/Software/systemd/ContainerInterface/>
+<https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container/>
+<https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/>
+<https://developers.redhat.com/blog/2014/05/05/running-systemd-within-docker-container/>
