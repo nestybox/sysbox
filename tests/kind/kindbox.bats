@@ -19,11 +19,14 @@ load ../helpers/sysbox-health
 export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
+# Cluster definition.
 export cluster=cluster1
 export controller="${cluster}"-master
 export num_workers=2
 export net=bridge
-export node_image="nestybox/k8s-node-with-docker-test:v1.18.2"
+
+# Cluster's node image.
+export node_image="nestybox/k8s-node-test:v1.18.2"
 
 function teardown() {
   sysbox_log_check
