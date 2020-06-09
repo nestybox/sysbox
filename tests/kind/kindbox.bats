@@ -25,6 +25,9 @@ export controller="${cluster}"-master
 export num_workers=2
 export net=bridge
 
+# Preset kubeconfig env-var to point to the cluster-config file.
+export KUBECONFIG=${HOME}/.kube/${cluster}-config
+
 # Cluster's node image.
 export node_image="nestybox/k8s-node-test:v1.18.2"
 
@@ -51,7 +54,7 @@ function remove_test_dir() {
 
   create_test_dir
 
-  kindbox_cluster_setup $cluster $controller $num_workers $net $node_image
+  kindbox_cluster_setup $cluster $num_workers $net $node_image
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/."${cluster}"_num_workers"
@@ -951,6 +954,7 @@ EOF
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
-  kindbox_cluster_teardown $cluster $num_workers
+  kindbox_cluster_teardown $cluster
+
   remove_test_dir
 }

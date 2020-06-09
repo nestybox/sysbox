@@ -20,15 +20,18 @@ export manifest_dir="tests/kind/manifests/"
 
 # Cluster1 definition.
 export cluster1=cluster1
-export controller1="${cluster1}"-control-plane
+export controller1="${cluster1}"-master
 export net1="${cluster1}"-net
 export num_workers1=2
 
 # Cluster2 definition.
 export cluster2=cluster2
-export controller2="${cluster2}"-control-plane
+export controller2="${cluster2}"-master
 export net2="${cluster2}"-net
 export num_workers2=1
+
+# Preset kubeconfig env-var to point to both cluster-configs.
+export KUBECONFIG=${HOME}/.kube/${cluster1}-config:${HOME}/.kube/${cluster2}-config
 
 # Cluster's node image.
 export node_image="nestybox/k8s-node-test:v1.18.2"
@@ -57,22 +60,23 @@ function remove_test_dir() {
 
   create_test_dir
 
-  run __docker network rm $net1
-  [ "$status" -eq 0 ]
-
-  run docker network create $net1 --subnet=172.16.100.0/24
-  [ "$status" -eq 0 ]
-
   # Create new cluster.
-  kind_cluster_setup $cluster1 $controller1 $num_workers1 $net1 $node_image
+  kindbox_cluster_setup $cluster1 $num_workers1 $net1 $node_image
+
+  # Switch to the cluster context just created.
+  kubectl config use-context kubernetes-admin@"${cluster1}"
+  [ "$status" -eq 0 ]
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/."${cluster1}"_num_workers"
 }
 
 @test "kindbox deployment" {
-skip
+
   run kubectl create deployment nginx --image=nginx:1.16-alpine
+  echo "status = ${status}"
+  echo "output = ${output}"
+  echo "kubeconfig = $(echo $KUBECONFIG)"
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
@@ -166,7 +170,7 @@ EOF
 }
 
 @test "kindbox service nodePort" {
-skip
+
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
 
   run kubectl create deployment nginx --image=nginx:1.17-alpine
@@ -183,13 +187,12 @@ skip
   [ "$status" -eq 0 ]
   svc_port=$output
 
-  for i in `seq 1 $num_workers`; do
-    local worker
-    if [ $i -eq 1 ]; then
-      worker="${cluster1}"-worker
-    else
-      worker="${cluster1}"-worker$i
-    fi
+  # verify the service is exposed on all nodes of the cluster
+  node_ip=$(k8s_node_ip $controller1)
+  curl -s $node_ip:$svc_port | grep "Welcome to nginx"
+
+  for i in `seq 0 $(( $num_workers - 1 ))`; do
+    local worker=${cluster}-worker-$i
     node_ip=$(k8s_node_ip $worker)
     curl -s $node_ip:$svc_port | grep -q "Welcome to nginx"
   done
@@ -231,7 +234,7 @@ EOF
 }
 
 @test "kindbox DNS clusterIP" {
-skip
+
   # launch a deployment with an associated service
 
   run kubectl create deployment nginx --image=nginx:1.17-alpine
@@ -318,7 +321,7 @@ EOF
 }
 
 @test "kindbox ingress" {
-skip
+
   # Based on:
   # https://docs.traefik.io/v1.7/user-guide/kubernetes/
 
@@ -332,7 +335,7 @@ skip
   retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip "${cluster1}"-worker)
+  local node_ip=$(k8s_node_ip "${cluster1}"-worker-0)
   echo "$node_ip traefik-ui.nestykube" >> /etc/hosts
 
   # verify ingress to traefik-ui works
@@ -379,7 +382,7 @@ EOF
   retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
 
   # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip "${cluster1}"-worker)
+  local node_ip=$(k8s_node_ip "${cluster1}"-worker-1)
   echo "$node_ip nginx.nestykube" >> /etc/hosts
 
   # verify ingress to nginx works
@@ -404,15 +407,10 @@ EOF
 }
 
 @test "kindbox custom net cluster2 up" {
-skip
-  run __docker network rm $net2
 
-  run docker network create $net2 --subnet=172.16.101.0/24
-  [ "$status" -eq 0 ]
+  kindbox_cluster_setup $cluster2 $num_workers2 $net2 $node_image
 
-  kind_cluster_setup $cluster2 $controller2 $num_workers2 $net2 $node_image
-
-  run kubectl config use-context kind-"${cluster2}"
+  run kubectl config use-context kubernetes-admin@"${cluster2}"
   [ "$status" -eq 0 ]
 
   # store k8s cluster info so subsequent tests can use it
@@ -439,29 +437,29 @@ skip
   # Verify the two k8s clusters are isolated.
 
   ## Check nodes.
-  run kubectl config use-context kind-"${cluster1}"
+  run kubectl config use-context kubernetes-admin@"${cluster1}"
   [ "$status" -eq 0 ]
 
   run kubectl get nodes $controller2
   [ "$status" -eq 1 ]
 
-  run kubectl get nodes ${cluster2}-worker
+  run kubectl get nodes ${cluster2}-worker-0
   [ "$status" -eq 1 ]
 
   ## Switch to cluster2 context.
-  run kubectl config use-context kind-"${cluster2}"
+  run kubectl config use-context kubernetes-admin@"${cluster2}"
   [ "$status" -eq 0 ]
 
   run kubectl get nodes $controller1
   [ "$status" -eq 1 ]
 
-  run kubectl get nodes ${cluster1}-worker
+  run kubectl get nodes ${cluster1}-worker-0
   [ "$status" -eq 1 ]
 
   ## Check deployments.
 
   ## Switch to cluster1 context.
-  run kubectl config use-context kind-"${cluster1}"
+  run kubectl config use-context kubernetes-admin@"${cluster1}"
   [ "$status" -eq 0 ]
 
   run kubectl get deployment nginx
@@ -474,7 +472,7 @@ skip
   # Cleanup.
 
   ## Switch to cluster2 context.
-  run kubectl config use-context kind-"${cluster2}"
+  run kubectl config use-context kubernetes-admin@"${cluster2}"
   [ "$status" -eq 0 ]
 
   run kubectl delete svc nginx
@@ -484,7 +482,7 @@ skip
   [ "$status" -eq 0 ]
 
   # Switch to cluster1 context before exiting.
-  run kubectl config use-context kind-"${cluster1}"
+  run kubectl config use-context kubernetes-admin@"${cluster1}"
   [ "$status" -eq 0 ]
 }
 
@@ -539,25 +537,16 @@ skip
 }
 
 @test "kindbox custom net cluster down" {
-skip
+
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
-  kind_cluster_teardown $cluster1 $num_workers
+  kindbox_cluster_teardown $cluster1
 
   # Switch to cluster2 context.
-  run kubectl config use-context kind-"${cluster2}"
+  run kubectl config use-context kubernetes-admin@"${cluster2}"
   [ "$status" -eq 0 ]
 
   num_workers=$(cat "$test_dir/."${cluster2}"_num_workers")
-  kind_cluster_teardown $cluster2 $num_workers
-
-  # wait for cluster teardown to complete
-  sleep 10
-
-  docker network rm $net1
-  [ "$status" -eq 0 ]
-
-  docker network rm $net2
-  [ "$status" -eq 0 ]
+  kindbox_cluster_teardown $cluster2
 
   remove_test_dir
 }
