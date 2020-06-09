@@ -25,23 +25,6 @@ function k8s_config() {
     cp -i /etc/kubernetes/admin.conf /root/.kube/config && \
     chown $(id -u):$(id -g) /root/.kube/config"
   [ "$status" -eq 0 ]
-
-  # docker exec "$node" sh -c "mkdir -p /root/.kube"
-  # [ "$status" -eq 0 ]
-  # docker exec "$node" sh -c "cp -i /etc/kubernetes/admin.conf /root/.kube/config"
-  # [ "$status" -eq 0 ]
-  # docker exec "$node" sh -c "chown $(id -u):$(id -g) /root/.kube/config"
-  # [ "$status" -eq 0 ]
-
-  # Obtain the config path for this cluster.
-  # config_path=$(k8s_config_path $cluster_name)
-  # if [ ! -d $config_path ]; then
-  #   mkdir -p $config_path
-  # fi
-
-  # Copy generated config to the test (privileged) container.
-  # docker cp $node:/root/.kube/. $config_path
-  # [ "$status" -eq 0 ]
 }
 
 # Checks that the host has sufficient storage to run K8s clusters
@@ -563,7 +546,7 @@ function kind_all_nodes_ready() {
 }
 
 # Deploys a k8s cluster through KinD tool. The cluster has one master node
-# and the given number of worker nodes. The cluster uses the K8s Kind cni.
+# and the given number of worker nodes. The cluster uses the K8s KinD cni.
 # The name of the master/controller node is defined by caller, however, this
 # one must follow the naming convention utilized by KinD tool internally. That
 # is: master node must be called ${cluster}-control-plane. Likewise, worker
@@ -582,14 +565,15 @@ function kind_cluster_setup() {
   local node_image=$4
 
   # Launch KinD for cluster creation.
-  run sysbox-kind/bin/sysbox-kind create cluster --name $cluster --config tests/kind/k8skind_config.yaml --image "$node_image"
+  run sysbox-kind/bin/sysbox-kind create cluster --name $cluster --config tests/kind/kind_config.yaml --image "$node_image"
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
 
   # KinD takes care of setting a proper k8s config in the context from where
   # this logic is launched (priv container in our case). In this step we
-  # ensure that the controller himself has the proper k8s config.
+  # ensure that the controller himself has the proper k8s config so that we
+  # can also interact with the cluster through the controller itself.
   k8s_config $cluster $controller
 
   # Wait till all workers are ready.
@@ -679,10 +663,9 @@ function kindbox_all_nodes_ready() {
 #          user-defined, etc.)
 function kindbox_cluster_setup() {
   local cluster=$1
-  local controller=$2
-  local num_workers=$3
-  local net=$4
-  local node_image=$5
+  local num_workers=$2
+  local net=$3
+  local node_image=$4
 
   local pod_net_cidr=10.244.0.0/16
 
@@ -703,6 +686,6 @@ function kindbox_cluster_teardown() {
   run sysbox-staging/scr/kindbox destroy $cluster
   [ "$status" -eq 0 ]
 
-  # Delete cluster configs.
-  rm -rf /root/.kube
+  # Delete cluster config.
+  rm -rf /root/.kube/${cluster}-config
 }
