@@ -565,7 +565,7 @@ function kind_cluster_setup() {
   local node_image=$4
 
   # Launch KinD for cluster creation.
-  run sysbox-kind/bin/sysbox-kind create cluster --name $cluster --config tests/kind/kind_config.yaml --image "$node_image"
+  run sysbox-kind/bin/kind-sysbox create cluster --name $cluster --config tests/kind/kind_config.yaml --image "$node_image"
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
@@ -588,7 +588,7 @@ function kind_cluster_teardown() {
   local cluster=$1
   local num_workers=$2
 
-  run sysbox-kind/bin/sysbox-kind delete cluster --name $cluster
+  run sysbox-kind/bin/kind-sysbox delete cluster --name $cluster
   [ "$status" -eq 0 ]
 
   # Explicitly remove node containers as KinD won't do it.
