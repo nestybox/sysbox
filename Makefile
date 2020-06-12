@@ -12,7 +12,7 @@
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysbox-ipc \
-	sysbox-kind sysbox-kind-debug \
+	kind-sysbox kind-sysbox-debug \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -175,11 +175,11 @@ sysbox-mgr-static: sysbox-ipc
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
-sysbox-kind: ## Build sysbox-kind module
-	@cd $(SYSKIND_DIR) && make sysbox-kind
+kind-sysbox: ## Build kind-sysbox module
+	@cd $(SYSKIND_DIR) && make kind-sysbox
 
-sysbox-kind-debug: ## Build sysbox-kind module (compiler optimizations off)
-	@cd $(SYSKIND_DIR) && make sysbox-kind-debug
+kind-sysbox-debug: ## Build kind-sysbox module (compiler optimizations off)
+	@cd $(SYSKIND_DIR) && make kind-sysbox-debug
 
 
 #
@@ -192,7 +192,6 @@ install: ## Install all sysbox binaries
 	install -D -m0755 sysbox-fs/sysbox-fs $(INSTALL_DIR)/sysbox-fs
 	install -D -m0755 sysbox-mgr/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
 	install -D -m0755 sysbox-runc/sysbox-runc $(INSTALL_DIR)/sysbox-runc
-#	install -D -m0755 sysbox-kind/bin/sysbox-kind $(INSTALL_DIR)/sysbox-kind
 	install -D -m0755 bin/sysbox $(INSTALL_DIR)/sysbox
 
 
