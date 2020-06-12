@@ -119,7 +119,7 @@ function k8s_pod_ready() {
 
   run kubectl get pod $pod $ns
   echo "status = ${status}"
-  echo "output = ${output}"  
+  echo "output = ${output}"
   [ "$status" -eq 0 ]
 
   local pod_status="${lines[1]}"
@@ -171,7 +171,7 @@ function k8s_pod_absent() {
 
   run kubectl get pod $pod $ns
   echo "status = ${status}"
-  echo "output = ${output}"  
+  echo "output = ${output}"
   [ "$status" -eq 1 ]
 }
 
@@ -240,7 +240,7 @@ function k8s_check_proxy_mode() {
 
   run sh -c "kubectl -n kube-system get pods | grep -m 1 kube-proxy | awk '{print \$1}'"
   echo "status1 = ${status}"
-  echo "output1 = ${output}"  
+  echo "output1 = ${output}"
   [ "$status" -eq 0 ]
 
   local kube_proxy=$output
@@ -683,7 +683,7 @@ function kindbox_cluster_setup() {
 function kindbox_cluster_teardown() {
   local cluster=$1
 
-  run sysbox-staging/scr/kindbox destroy $cluster
+  run sysbox-staging/scr/kindbox destroy --net $cluster
   [ "$status" -eq 0 ]
 
   # Delete cluster config.
