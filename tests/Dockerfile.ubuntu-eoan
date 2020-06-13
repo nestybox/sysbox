@@ -107,9 +107,6 @@ RUN mkdir -p ~/bin/protoc \
     && go install github.com/golang/protobuf/protoc-gen-go
 
 # install Docker (used by most sysbox tests to launch sys containers)
-#
-# NOTE: docker does not yet support ubuntu-eoan, so we install the docker for ubuntu-disco.
-#
 RUN apt-get update \
     && apt-get install -y \
     apt-transport-https \
@@ -145,8 +142,7 @@ RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
 
-# nestybox docker hub login credentials
-# TODO: fix this, it's unsecure.
+# nestybox docker hub login credentials (unsecure)
 COPY .docker/config.json /root/.docker/config.json
 
 # test scripts
