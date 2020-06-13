@@ -1,4 +1,6 @@
 #
+# DO NOT USE: Ubuntu's EOL'd image. 
+#
 # Sysbox Test Container Dockerfile (Ubuntu-Disco image)
 #
 # This Dockerfile creates the sysbox test container image. The image
@@ -100,17 +102,17 @@ RUN mkdir -p ~/bin/protoc \
 
 # install Docker (used by most sysbox tests to launch sys containers)
 RUN apt-get install -y \
-       apt-transport-https \
-       ca-certificates \
-       curl \
-       gnupg2 \
-       software-properties-common
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    software-properties-common
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 RUN apt-key fingerprint 0EBFCD88
 RUN add-apt-repository \
-        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-        $(lsb_release -cs) \
-        stable"
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+    stable"
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
