@@ -539,14 +539,14 @@ EOF
 @test "kindbox custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
-  kindbox_cluster_teardown $cluster1
+  kindbox_cluster_teardown $cluster1 $net1
 
   # Switch to cluster2 context.
   run kubectl config use-context kubernetes-admin@"${cluster2}"
   [ "$status" -eq 0 ]
 
   num_workers=$(cat "$test_dir/."${cluster2}"_num_workers")
-  kindbox_cluster_teardown $cluster2
+  kindbox_cluster_teardown $cluster2 $net2
 
   remove_test_dir
 }

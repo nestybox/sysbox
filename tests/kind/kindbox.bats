@@ -954,7 +954,7 @@ EOF
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
-  kindbox_cluster_teardown $cluster
+  kindbox_cluster_teardown $cluster $net
 
   remove_test_dir
 }

@@ -682,9 +682,15 @@ function kindbox_cluster_setup() {
 # usage: kindbox_cluster_teardown cluster_name num_workers
 function kindbox_cluster_teardown() {
   local cluster=$1
+  local net=$2
 
-  run sysbox-staging/scr/kindbox destroy --net $cluster
-  [ "$status" -eq 0 ]
+  if [[ $net == "bridge" ]]; then
+    run sysbox-staging/scr/kindbox destroy $cluster
+    [ "$status" -eq 0 ]
+  else
+    run sysbox-staging/scr/kindbox destroy --net $cluster
+    [ "$status" -eq 0 ]
+  fi
 
   # Delete cluster config.
   rm -rf /root/.kube/${cluster}-config
