@@ -85,19 +85,20 @@ The dvm creates the following host directories for it's operations.
 -   For each sys container, the base volume contains a copy of the sys
     container's inner "/var/lib/docker" directory. If the sys container
     has inner docker images preloaded in it, the copy _excludes_ the
-    preloaded inner docker images. Th
+    preloaded inner docker images.
 
 -   The base volume is bind-mounted into the sys container's
     "/var/lib/docker" dir.
 
 -   The structure of the dir is as follows:
 
-
+```
     /var/lib/sysbox/docker
       baseVol/
         syscont0
           var-lib-docker/
             <container's var/lib/docker, without overlay2 images>
+```
 
 #### Copy-On-Write (COW) Volume
 
@@ -110,7 +111,6 @@ The dvm creates the following host directories for it's operations.
     /var/lib/sysbox/docker
       cowVol/
         syscont0/
-          overlay2-cow/
             inner-image0/
               lower -> /soft/link/to/imgVol/syscont-image0/inner-image0/diff
               merged
@@ -123,7 +123,7 @@ The dvm creates the following host directories for it's operations.
               work
             ...
         syscont1/
-          overlay2-cow/
+            inner-image0/
             ...
 ```
 
