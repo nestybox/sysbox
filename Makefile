@@ -253,7 +253,7 @@ test-sysbox-shiftuid: test-img
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-runc: ## Run sysbox-runc unit & integration tests
-test-runc: sysbox-ipc
+test-runc: $(LIBSECCOMP) sysbox-ipc
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
