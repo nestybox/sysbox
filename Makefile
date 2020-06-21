@@ -55,7 +55,7 @@ SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
-SYSKIND_DIR     := sysbox-kind
+KIND_SYSBOX_DIR     := kind-sysbox
 LIB_SECCOMP_DIR := lib/seccomp-golang
 SHIFTFS_DIR     := shiftfs
 
@@ -176,10 +176,10 @@ sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
 kind-sysbox: ## Build kind-sysbox module
-	@cd $(SYSKIND_DIR) && make kind-sysbox
+	@cd $(KIND_SYSBOX_DIR) && make kind-sysbox
 
 kind-sysbox-debug: ## Build kind-sysbox module (compiler optimizations off)
-	@cd $(SYSKIND_DIR) && make kind-sysbox-debug
+	@cd $(KIND_SYSBOX_DIR) && make kind-sysbox-debug
 
 
 #
@@ -200,7 +200,7 @@ uninstall: ## Uninstall all sysbox binaries
 	rm -f $(INSTALL_DIR)/sysbox-fs
 	rm -f $(INSTALL_DIR)/sysbox-mgr
 	rm -f $(INSTALL_DIR)/sysbox-runc
-	rm -f $(INSTALL_DIR)/sysbox-kind
+	rm -f $(INSTALL_DIR)/kind-sysbox
 
 #
 # Test targets
@@ -488,7 +488,7 @@ clean:
 	cd $(SYSFS_DIR) && make clean
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSIPC_DIR) && make clean
-	cd $(SYSKIND_DIR) && make clean
+	cd $(KIND_SYSBOX_DIR) && make clean
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
