@@ -55,7 +55,7 @@ SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
-KIND_SYSBOX_DIR     := kind-sysbox
+KIND_SYSBOX_DIR := kind-sysbox
 LIB_SECCOMP_DIR := lib/seccomp-golang
 SHIFTFS_DIR     := shiftfs
 
