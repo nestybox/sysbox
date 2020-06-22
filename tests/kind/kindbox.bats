@@ -851,7 +851,7 @@ EOF
   docker exec "$node" sh -c "$kubeadm_join"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_node_ready $cluster $controller $node"
+  retry_run 40 2 "k8s_node_ready $node"
 
   # cleanup
   run kubectl delete svc nginx
@@ -951,10 +951,6 @@ EOF
 }
 
 @test "kindbox cluster down" {
-
-  local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
-
   kindbox_cluster_teardown $cluster $net
-
   remove_test_dir
 }
