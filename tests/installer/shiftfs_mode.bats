@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
-# Basic tests for ...
+#
+# Sysbox installer integration-tests for scenarios where 'shiftfs' kernel
+# module is available.
 #
 
 load ../helpers/run
@@ -9,6 +11,10 @@ load ../helpers/fs
 load ../helpers/sysbox-health
 load ../helpers/installer
 
+
+function teardown() {
+  sysbox_log_check
+}
 
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
@@ -23,8 +29,6 @@ load ../helpers/installer
   install_sysbox
 
   install_verify
-
-  # Check that no debconf question was asked.
 
   # Check installation output. No dockerd related msg expected in shiftfs mode.
   run sh -c "echo \"${installation_output}\" | egrep -q \"Docker service was not restarted\""
@@ -44,6 +48,8 @@ load ../helpers/installer
 
   verify_docker_sysbox_runtime_presence
 
+  verify_shiftfs_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -58,6 +64,8 @@ load ../helpers/installer
   verify_docker_config_sysbox_runtime_absence
 
   verify_docker_sysbox_runtime_absence
+
+  verify_shiftfs_mode
 
   uninstall_verify
 }
