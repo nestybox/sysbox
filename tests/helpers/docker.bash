@@ -8,6 +8,10 @@
 
 load ../helpers/run
 
+function wait_for_dockerd {
+  retry_run 10 1 "docker ps"
+}
+
 function wait_for_inner_dockerd {
   local syscont=$1
   retry_run 10 1 "__docker exec $syscont docker ps"
