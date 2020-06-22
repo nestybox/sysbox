@@ -45,15 +45,13 @@ function k8s_check_sufficient_storage() {
 }
 
 function k8s_node_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local node=$3
+  local node=$1
   local i
 
   run kubectl get node $node
   if [ "$status" -eq 0 ]; then
     res=$(echo ${lines[1]} | awk '{print $2}' | grep -qw Ready)
-    echo $res
+    echo $?
   else
     echo 1
   fi
@@ -522,7 +520,7 @@ function kind_all_nodes_ready() {
         worker="${cluster}"-worker$i
       fi
 
-      worker_ready=$(k8s_node_ready $master $worker)
+      worker_ready=$(k8s_node_ready $worker)
 
       if [ $worker_ready -ne 0 ]; then
         all_ok="false"
@@ -629,7 +627,7 @@ function kindbox_all_nodes_ready() {
       master=${cluster_name}-master
       worker=${cluster_name}-worker-${i}
 
-      worker_ready=$(k8s_node_ready $master $worker)
+      worker_ready=$(k8s_node_ready $worker)
 
       if [ $worker_ready -ne 0 ]; then
         all_ok="false"
