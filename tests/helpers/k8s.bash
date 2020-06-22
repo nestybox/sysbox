@@ -564,7 +564,10 @@ function kind_cluster_setup() {
   local num_workers=$3
   local node_image=$4
 
-  # Launch KinD for cluster creation.
+  # Delete stale cluster (e.g., left over from prior tests that fail, etc)
+  run kind-sysbox/bin/kind-sysbox delete cluster --name $cluster
+
+  # Create the new cluster
   run kind-sysbox/bin/kind-sysbox create cluster --name $cluster --config tests/kind/kind_config.yaml --image "$node_image"
   echo "status = ${status}"
   echo "output = ${output}"
