@@ -70,32 +70,32 @@ function teardown() {
   #
 
   # Chains
-  docker exec "$syscont" sh -c "iptables -t nat -L PREROUTING | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
+  docker exec "$syscont" sh -c "iptables -t nat -n -L PREROUTING | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
   [ "$status" -eq 0 ]
   [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -L OUTPUT | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
+  docker exec "$syscont" sh -c "iptables -t nat -n -L OUTPUT | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
   [ "$status" -eq 0 ]
   [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -L POSTROUTING | grep DOCKER_POSTROUTING | awk '{ print \$5 }'"
+  docker exec "$syscont" sh -c "iptables -t nat -n -L POSTROUTING | grep DOCKER_POSTROUTING | awk '{ print \$5 }'"
   [ "$status" -eq 0 ]
   [[ "$output" == "$gateway" ]]
 
   # DNAT
-  docker exec "$syscont" sh -c "iptables -t nat -L DOCKER_OUTPUT | egrep \"DNAT.+tcp.+to:127.0.0.11\" | awk '{ print \$5 }'"
+  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+tcp.+to:127.0.0.11\" | awk '{ print \$5 }'"
   [ "$status" -eq 0 ]
   [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -L DOCKER_OUTPUT | egrep \"DNAT.+udp.+to:127.0.0.11\" | awk '{ print \$5 }'"
+  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+udp.+to:127.0.0.11\" | awk '{ print \$5 }'"
   [ "$status" -eq 0 ]
   [[ "$output" == "$gateway" ]]
 
   # SNAT
-  docker exec "$syscont" sh -c "iptables -t nat -L DOCKER_POSTROUTING | egrep \"SNAT.+tcp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
+  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+tcp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "iptables -t nat -L DOCKER_POSTROUTING | egrep \"SNAT.+udp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
+  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+udp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
   [ "$status" -eq 0 ]
 
   # verify DNS resolution
@@ -104,7 +104,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
-  docker network rm mynet
+  docker network rm usernet
 }
 
 @test "inner container dns (def bridge)" {
