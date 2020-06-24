@@ -950,6 +950,65 @@ EOF
   helm_v3_uninstall $controller
 }
 
+# Install Istio and verify the proper operation of its main components through
+# the instantiation of a basic service-mesh. More details here:
+# https://istio.io/docs/setup/getting-started/
+@test "kindbox istio basic" {
+
+  # This test consumes a bit of time & resources (downloads inner images up to
+  # 2.5GB combined). To make it go a bit faster, we spread the
+  # workload by increasing the cluster size. Still, takes about 5m to run.
+
+  sysbox-staging/scr/kindbox resize --wait-all --num-workers=5 $cluster
+
+  # Install Istio
+  istio_install $controller
+
+  # Deploy Istio sample app.
+  docker exec $controller sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
+  [ "$status" -eq 0 ]
+
+  # Obtain list / names of pods launched
+  sleep 10
+
+  run kubectl get pods -o wide
+  echo "output = $output"
+  [ "$status" -eq 0 ]
+
+  pod_names[0]=$(echo ${lines[1]} | awk '{print $1}')
+  pod_names[1]=$(echo ${lines[2]} | awk '{print $1}')
+  pod_names[2]=$(echo ${lines[3]} | awk '{print $1}')
+  pod_names[3]=$(echo ${lines[4]} | awk '{print $1}')
+  pod_names[4]=$(echo ${lines[5]} | awk '{print $1}')
+  pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
+
+  # Wait for all the app pods to be ready (istio sidecars will be intantiated too)
+  retry_run 120 3 "k8s_pod_array_ready ${pod_names[@]}"
+
+  # Obtain app pods again (after waiting instruction) to dump their state if an
+  # error is eventually encountered.
+  run kubectl get pods -o wide
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  # Check if app is running and serving HTML pages.
+  run kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  run sh -c "kubectl exec ${output} -c ratings -- curl -s productpage:9080/productpage | grep -q \"<title>.*</title>\""
+  echo "status = ${status}"
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
+
+  # Uninstall Istio in original cluster.
+  istio_uninstall $controller
+
+  retry_run 40 2 "k8s_cluster_is_clean $cluster $controller"
+}
+
 @test "kindbox cluster down" {
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
