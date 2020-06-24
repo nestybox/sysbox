@@ -74,7 +74,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/basic-pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller nginx"
+  retry_run 40 2 "k8s_pod_ready nginx"
 
   local pod_ip=$(k8s_pod_ip $cluster $controller nginx)
 
@@ -106,7 +106,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/multi-cont-pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller multi-cont"
+  retry_run 40 2 "k8s_pod_ready multi-cont"
 
   # verify all containers in the pod are sharing the net ns
 
@@ -190,7 +190,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
-  retry_run 10 3 "k8s_pod_ready $cluster $controller alpine-sleep"
+  retry_run 10 3 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -264,7 +264,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready $cluster $controller alpine-sleep"
+  retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -312,7 +312,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready $cluster $controller alpine-sleep"
+  retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   # find the cluster's DNS IP address
   run sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
@@ -499,7 +499,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller multi-cont"
+  retry_run 40 2 "k8s_pod_ready multi-cont"
 
   # verify the emptyDir vol is shared correctly by containers (write
   # from one container, read from the other)
@@ -573,7 +573,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller hp-test"
+  retry_run 40 2 "k8s_pod_ready hp-test"
 
   # verify the pod sees the host volumes
   run sh -c "kubectl exec hp-test -- cat /hostdir/test"
@@ -695,7 +695,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller pvol-test"
+  retry_run 40 2 "k8s_pod_ready pvol-test"
 
   # verify pod can read/write volume
   run sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
@@ -719,7 +719,7 @@ EOF
 
   # create another instance of the pod
   k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller pvol-test"
+  retry_run 40 2 "k8s_pod_ready pvol-test"
 
   # verify pod sees prior changes (volume is persistent)
   run sh -c "kubectl exec pvol-test -- cat /pvol/pfile"
@@ -886,8 +886,8 @@ EOF
   local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
 
   # Wait till the new pods are fully up and running.
-  retry_run 40 2 "k8s_pod_ready $cluster $controller $pod1_name"
-  retry_run 40 2 "k8s_pod_ready $cluster $controller $pod2_name"
+  retry_run 40 2 "k8s_pod_ready $pod1_name"
+  retry_run 40 2 "k8s_pod_ready $pod2_name"
 
   # Verify that the ingress controller works
   verify_nginx_ingress $cluster $controller nginx-ingress-controller ${cluster}-worker-0
@@ -930,8 +930,8 @@ EOF
   local pod2_name=$(echo ${lines[2]} | awk '{print $1}')
 
   # Wait till the new pods are fully up and running.
-  retry_run 40 3 "k8s_pod_ready $cluster $controller $pod1_name"
-  retry_run 40 3 "k8s_pod_ready $cluster $controller $pod2_name"
+  retry_run 40 3 "k8s_pod_ready $pod1_name"
+  retry_run 40 3 "k8s_pod_ready $pod2_name"
 
   # Verify that the ingress controller works
   verify_nginx_ingress $cluster $controller nginx-ingress-controller ${cluster}-worker-0

@@ -139,7 +139,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
+  retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -213,7 +213,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
+  retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
   [ "$status" -eq 0 ]
@@ -259,7 +259,7 @@ spec:
 EOF
 
   k8s_create_pod $cluster1 $controller1 /tmp/alpine-sleep.yaml
-  retry_run 10 2 "k8s_pod_ready $cluster1 $controller1 alpine-sleep"
+  retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   # find the cluster's DNS IP address
   run sh -c "kubectl get services --all-namespaces -o wide | grep kube-dns | awk '{print \$4}'"
@@ -491,15 +491,24 @@ EOF
 # https://istio.io/docs/setup/getting-started/
 @test "kindbox istio basic" {
 
-  # Install Istio in original cluster.
-  istio_install $cluster1 $controller1
+  # This test consumes a bit of time & resources (downloads inner images up to
+  # 2.5GB combined!). To make it go a bit faster, we spread the workload by
+  # increasing the cluster size.
+
+  sysbox-staging/scr/kindbox resize --wait-all --num-workers=5 $cluster1
+
+  # Install Istio
+  istio_install $controller1
 
   # Deploy Istio sample app.
   docker exec $controller1 sh -c "kubectl apply -f istio*/samples/bookinfo/platform/kube/bookinfo.yaml"
   [ "$status" -eq 0 ]
 
-  # Obtain list / names of pods launched as part of this app.
+  # Obtain list / names of pods launched
+  sleep 10
+
   run kubectl get pods -o wide
+  echo "output = $output"
   [ "$status" -eq 0 ]
 
   pod_names[0]=$(echo ${lines[1]} | awk '{print $1}')
@@ -509,8 +518,8 @@ EOF
   pod_names[4]=$(echo ${lines[5]} | awk '{print $1}')
   pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
 
-  # Wait for all the app pods to be ready (istio sidecars will be intantiated too).
-  retry_run 60 5 "k8s_pod_array_ready $cluster1 $controller1 ${pod_names[@]}"
+  # Wait for all the app pods to be ready (istio sidecars will be intantiated too)
+  retry_run 120 3 "k8s_pod_array_ready ${pod_names[@]}"
 
   # Obtain app pods again (after waiting instruction) to dump their state if an
   # error is eventually encountered.
@@ -525,13 +534,13 @@ EOF
   echo "output = ${output}"
   [ "$status" -eq 0 ]
 
-  run sh -c "kubectl exec $output -c ratings -- curl -s productpage:9080/productpage | grep -q \"<title>.*</title>\""
+  run sh -c "kubectl exec ${output} -c ratings -- curl -s productpage:9080/productpage | grep -q \"<title>.*</title>\""
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
 
   # Uninstall Istio in original cluster.
-  istio_uninstall $cluster1 $controller1
+  istio_uninstall $controller1
 
   retry_run 40 2 "k8s_cluster_is_clean $cluster1 $controller1"
 }
