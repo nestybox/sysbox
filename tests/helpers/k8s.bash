@@ -106,13 +106,11 @@ function k8s_del_pod() {
 #  $3 - k8s pod to query
 #  $4 - k8s namespace where pod is expected (optional)
 function k8s_pod_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
+  local pod=$1
   local ns
 
-    if [ $# -eq 4 ]; then
-     ns="-n $4"
+    if [ $# -eq 2 ]; then
+     ns="-n $2"
   fi
 
   run kubectl get pod $pod $ns
@@ -137,19 +135,12 @@ function k8s_pod_ready() {
 #  $3 - array of k8s pod to query
 #  $4 - k8s namespace where pods are expected (optional)
 function k8s_pod_array_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod_array=$3
-  local ns=""
+  local pod_array=("$@")
   local pod
 
-  if [ $# -eq 4 ]; then
-      ns="$4"
-  fi
-
   for pod in "${pod_array[@]}"; do
-    k8s_pod_ready $cluster_name $k8s_master $pod $ns
-    if [ "$?" -ne 0 ]; then
+    k8s_pod_ready $pod $ns
+    if [ $? -ne 0 ]; then
       return 1
     fi
   done
@@ -344,7 +335,7 @@ function helm_v2_install() {
   local tiller_pod=$(echo ${output} | awk '{print $2}')
 
   # Wait till tiller's pod is up and running.
-  retry_run 60 5 "k8s_pod_ready $cluster_name $k8s_master $tiller_pod kube-system"
+  retry_run 60 5 "k8s_pod_ready $tiller_pod kube-system"
 }
 
 # Uninstall Helm v2.
@@ -386,8 +377,7 @@ function helm_v3_uninstall() {
 
 # Installs Istio.
 function istio_install() {
-  local cluster_name=$1
-  local k8s_master=$2
+  local k8s_master=$1
 
   # Bear in mind that the Istio version to download has not been explicitly defined,
   # which has its pros (test latest releases) & cons (test instability).
@@ -400,8 +390,7 @@ function istio_install() {
 
 # Uninstalls Istio.
 function istio_uninstall() {
-  local cluster_name=$1
-  local k8s_master=$2
+  local k8s_master=$1
 
   # Run uninstallation script.
   docker exec "$k8s_master" sh -c "istio-*/samples/bookinfo/platform/kube/cleanup.sh"
