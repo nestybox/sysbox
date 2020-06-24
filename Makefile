@@ -24,7 +24,7 @@
 	image \
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
-	build-deb ubuntu-bionic ubuntu-cosmic ubuntu-disco \
+	build-deb ubuntu-bionic ubuntu-cosmic ubuntu-disco ubuntu-eoan ubuntu-focal \
 	test-installer \
 	test-sysbox-installer test-sysbox-shiftuid-installer \
 	test-shell-installer test-shell-shiftuid-installer \
