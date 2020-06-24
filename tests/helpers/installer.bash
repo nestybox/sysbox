@@ -220,10 +220,15 @@ function config_automatic_restart() {
 
 function enable_shiftfs() {
 
-  modprobe shiftfs
+  run modprobe shiftfs
+  [ "$status" -eq 0 ]
 }
 
 function disable_shiftfs() {
+
+  if ! lsmod | egrep -q "shiftfs"; then
+    return
+  fi
 
   run modprobe -r shiftfs
   [ "$status" -eq 0 ]

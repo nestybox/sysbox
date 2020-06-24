@@ -1,0 +1,31 @@
+#!/bin/bash -e
+
+#
+# Script to run sysbox-installer integration tests
+#
+
+progName=$(basename "$0")
+
+usage()
+{
+  echo "
+Usage: $progName <testName>
+
+"
+  exit 1
+}
+
+# argument testName is optional
+if [ $# -eq 1 ]; then
+  printf "\nExecuting $1 ... \n"
+  bats --tap $1
+else
+  printf "\nExecuting installer tests ... \n"
+  if lsmod | egrep -q "shiftfs"; then
+      bats --tap tests/installer/
+  else
+      bats --tap tests/installer/userns_mode.bash
+  fi
+fi
+
+exit 0
