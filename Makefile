@@ -330,6 +330,8 @@ test-mgr-local: sysbox-ipc
 	sleep 2
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
+test-pkg-installer-local:
+	$(TEST_DIR)/scr/testSysboxInstaller $(TESTPATH)
 
 #
 # Test Sysbox Installer targets
@@ -361,7 +363,7 @@ DOCKER_STOP_INSTALLER := docker stop sysbox-installer-test
 ##@ Installer Testing targets
 
 test-installer: ## Run all sysbox's integration tests suites on the installer container
-test-installer: test-sysbox-installer test-sysbox-shiftuid-installer
+test-installer: test-sysbox-installer test-sysbox-shiftuid-installer test-pkg-installer
 
 test-sysbox-installer: ## Run sysbox's integration tests on the installer container
 test-sysbox-installer:
@@ -386,6 +388,15 @@ test-sysbox-shiftuid-installer:
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP_INSTALLER)
+
+test-pkg-installer: ## Run sysbox's installer integration tests
+	make test-cntr-installer
+	@printf "\n** Running sysbox's pkg installer integration tests **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true && \
+		make test-pkg-installer-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP_INSTALLER)
+
 
 test-shell-installer: ## Get a shell in the installer container (useful for debug)
 test-shell-installer: test-img-installer test-cntr-installer
