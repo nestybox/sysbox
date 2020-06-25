@@ -983,7 +983,7 @@ EOF
   pod_names[5]=$(echo ${lines[6]} | awk '{print $1}')
 
   # Wait for all the app pods to be ready (istio sidecars will be intantiated too)
-  retry_run 120 3 "k8s_pod_array_ready ${pod_names[@]}"
+  retry_run 120 4 "k8s_pod_array_ready ${pod_names[@]}"
 
   # Obtain app pods again (after waiting instruction) to dump their state if an
   # error is eventually encountered.
@@ -991,6 +991,8 @@ EOF
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
+
+  sleep 5
 
   # Check if app is running and serving HTML pages.
   run kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'
