@@ -576,22 +576,7 @@ function kind_cluster_setup() {
 # usage: kind_cluster_teardown cluster_name num_workers
 function kind_cluster_teardown() {
   local cluster=$1
-  local num_workers=$2
-
-  run kind-sysbox/bin/kind-sysbox delete cluster --name $cluster
-  [ "$status" -eq 0 ]
-
-  # Explicitly remove node containers as KinD won't do it.
-  for i in `seq 1 $num_workers`; do
-    local worker
-    if [ $i -eq 1 ]; then
-      worker="${cluster}"-worker
-    else
-      worker="${cluster}"-worker$i
-    fi
-
-    docker rm $worker
-  done
+  kind-sysbox/bin/kind-sysbox delete cluster --name $cluster
 }
 
 

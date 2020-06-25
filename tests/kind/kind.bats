@@ -829,9 +829,7 @@ EOF
 }
 
 @test "kind cluster down" {
-
-  local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
-  kind_cluster_teardown $cluster $num_workers
+  kind_cluster_teardown $cluster
   remove_test_dir
   docker image rm $node_image
 }
