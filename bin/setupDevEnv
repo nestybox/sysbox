@@ -4,12 +4,7 @@
 # Preps host for Sysbox dev environment
 #
 
-# Must be running as root
-user=$(whoami)
-if [[ "$user" != "root" ]]; then
-  echo "Error: must be root. Please run: sudo $0"
-  exit 1
-fi
+GO=/usr/local/go/bin/go
 
 echo "Preparing host for Sysbox dev environment ..."
 
@@ -40,9 +35,9 @@ echo "  Checking for make and autoconf utilities ..."
 output=$(sh -c "which make && which autoconf && dpkg -l libtool" 2>&1)
 if [ $? -ne 0 ]; then
   echo "  Installing make and autoconf utilities ..."
-  apt-get install make \
-    && apt-get install autoconf \
-    && apt-get install libtool
+  sudo apt-get install --no-install-recommends -y \
+    make \
+    libtool
     if [ $? -ne 0 ]; then
       echo "  Error: failed to install utilities."
       exit 1
@@ -51,6 +46,9 @@ fi
 
 # install protoc compiler for gRPC
 echo "  Checking for gRPC protoc compiler ..."
+
+sudo apt-get install --no-install-recommends -y unzip
+
 output=$(sh -c "which protoc" 2>&1)
 if [ $? -ne 0 ]; then
   echo "  Installing gRPC protoc compiler ..."
@@ -63,9 +61,9 @@ if [ $? -ne 0 ]; then
     && cd \
     && rm -rf ~/bin/protoc/ \
     && GIT_TAG="v1.3.1" \
-    && go get -d -u github.com/golang/protobuf/protoc-gen-go \
+    && ${GO} get -d -u github.com/golang/protobuf/protoc-gen-go \
     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null \
-    && go install github.com/golang/protobuf/protoc-gen-go
+    && ${GO} install github.com/golang/protobuf/protoc-gen-go
   if [ $? -ne 0 ]; then
     echo "  Error: failed to install protoc."
     exit 1
