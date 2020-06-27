@@ -58,19 +58,22 @@ deviate.
 
 -   Installation:
 
-
-    $ go get -u github.com/derekparker/delve/cmd/dlv
+```console
+$ go get -u github.com/derekparker/delve/cmd/dlv
+```
 
 -   Change working directory to the location that contains the source
     files of the the binary to debug:
 
-
-    rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
+```console
+rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
+```
 
 -   Attaching to a running process:
 
-
-    rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+```console
+rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+```
 
 Notice that to allow Golang runtime to operate as we expect, we must
 export the existing Golang related env-vars to the newly-spawn delve
