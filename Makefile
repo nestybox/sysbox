@@ -95,6 +95,11 @@ TEST_VOL1 := /var/tmp/sysbox-test-var-lib-docker
 TEST_VOL2 := /var/tmp/sysbox-test-var-lib-sysbox
 TEST_VOL3 := /var/tmp/sysbox-test-scratch
 
+# In scenarios where the egress-interface's mtu is lower than expected (1500 bytes),
+# we must explicitly configure dockerd with such a value.
+EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
+EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
+
 #
 # build targets
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
@@ -440,6 +445,12 @@ endif
 		jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
 		mv /tmp/daemon.json /etc/docker/daemon.json && \
 		systemctl restart docker.service"
+ifeq ($(shell expr $(EGRESS_IFACE_MTU) \< 1500), 1)
+	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "cat /etc/docker/daemon.json | \
+		jq '. + {\"mtu\": $(EGRESS_IFACE_MTU)}' > /tmp/daemon.json && \
+		mv /tmp/daemon.json /etc/docker/daemon.json && \
+		systemctl restart docker.service"
+endif
 
 test-img-installer: ## Build installer container image
 test-img-installer: test-img
