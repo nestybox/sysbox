@@ -34,7 +34,7 @@ function wait_for_inner_fluentd() {
   wait_for_inner_dockerd
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge fluentd-net"
+  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" fluentd-net"
   [ "$status" -eq 0 ]
 
   # create a dir on the sys container where the fluentd container will dump its logs
