@@ -98,7 +98,7 @@ function teardown() {
   local sc_ip=$(parse_ip "$output" "eth0")
   local sc_sub=$(parse_subnet "$output" "eth0")
 
-  docker exec "$syscont" sh -c "docker network create --driver bridge alpine-net"
+  docker exec "$syscont" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" alpine-net"
   [ "$status" -eq 0 ]
 
   # Create four inner containers; two of them are connected to apline-net;

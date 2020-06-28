@@ -47,7 +47,7 @@ function teardown() {
 
 @test "syscont dns (user bridge)" {
 
-  docker network create usernet
+  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
 
   local syscont=$(docker_run --rm --net=usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -139,7 +139,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
-  docker exec "$syscont" sh -c "docker network create inner-net"
+  docker exec "$syscont" sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"1460\" inner-net"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
@@ -164,7 +164,7 @@ function teardown() {
 @test "inner container dns (user bridge)" {
 
   # sys container on **user-defined** docker bridge
-  docker network create usernet
+  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
 
   local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -195,7 +195,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
-  docker exec "$syscont" sh -c "docker network create inner-net"
+  docker exec "$syscont" sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"1460\" inner-net"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
@@ -282,7 +282,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
-  docker exec "$syscont" sh -c "docker network create inner-net"
+  docker exec "$syscont" sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"1460\" inner-net"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
@@ -338,7 +338,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (launched with --dns on a user-defined bridge)
-  docker exec "$syscont" sh -c "docker network create inner-net"
+  docker exec "$syscont" sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"1460\" inner-net"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns alpine tail -f /dev/null"
@@ -363,7 +363,7 @@ function teardown() {
 @test "inner container custom dns (syscont user bridge)" {
 
   # sys container on **user-defined** docker bridge
-  docker network create usernet
+  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
   [ "$status" -eq 0 ]
 
   local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -397,7 +397,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (launched with --dns on a user-defined bridge)
-  docker exec "$syscont" sh -c "docker network create inner-net"
+  docker exec "$syscont" sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"1460\" inner-net"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns alpine tail -f /dev/null"

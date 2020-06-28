@@ -51,6 +51,7 @@ if [ -z "$SHIFT_UIDS" ]; then
     cat <<EOF > /etc/docker/daemon.json
 {
     "debug": false,
+    "mtu": 1460,
     "userns-remap": "sysbox",
     "runtimes": {
         "sysbox-runc": {
@@ -64,6 +65,7 @@ else
     cat <<EOF > /etc/docker/daemon.json
 {
     "debug": false,
+    "mtu": 1460,
     "userns-remap": "",
     "runtimes": {
         "sysbox-runc": {
