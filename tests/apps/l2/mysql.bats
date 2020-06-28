@@ -87,7 +87,7 @@ EOF
   wait_for_inner_dockerd $syscont
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$syscont" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" mysql-net"
+  docker exec "$syscont" sh -c "docker network create --driver bridge mysql-net"
   [ "$status" -eq 0 ]
 
   # launch an inner mysql server container; connect it to the network;
