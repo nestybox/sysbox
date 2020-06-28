@@ -81,7 +81,7 @@ EOF
   wait_for_inner_dockerd
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" nginx-net"
+  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge nginx-net"
   [ "$status" -eq 0 ]
 
   # launch an inner nginx server container; connect it to the network;
