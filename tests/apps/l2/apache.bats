@@ -81,7 +81,7 @@ EOF
   wait_for_inner_dockerd
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" apache-net"
+  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge apache-net"
   [ "$status" -eq 0 ]
 
   # launch an inner apache server container; connect it to the network;

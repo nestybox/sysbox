@@ -65,7 +65,7 @@ function wait_for_inner_postgres() {
   wait_for_inner_dockerd
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" postgres-net"
+  docker exec "$SYSCONT_NAME" sh -c "docker network create --driver bridge postgres-net"
   [ "$status" -eq 0 ]
 
   # launch an inner postgres server container; connect it to the network.
