@@ -8,6 +8,9 @@ load ../helpers/run
 load ../helpers/net
 load ../helpers/docker
 load ../helpers/sysbox-health
+load ../helpers/installer
+
+export iface_mtu=$(egress_iface_mtu)
 
 function teardown() {
   sysbox_log_check
@@ -47,7 +50,7 @@ function teardown() {
 
 @test "syscont dns (user bridge)" {
 
-  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
+  docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
 
   local syscont=$(docker_run --rm --net=usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -164,7 +167,7 @@ function teardown() {
 @test "inner container dns (user bridge)" {
 
   # sys container on **user-defined** docker bridge
-  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
+  docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
 
   local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -363,7 +366,7 @@ function teardown() {
 @test "inner container custom dns (syscont user bridge)" {
 
   # sys container on **user-defined** docker bridge
-  docker network create -o "com.docker.network.driver.mtu"="1460" usernet
+  docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
   [ "$status" -eq 0 ]
 
   local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
