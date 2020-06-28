@@ -30,7 +30,7 @@ function wait_for_inner_dockerd() {
   wait_for_inner_dockerd $syscont
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$syscont" sh -c "docker network create --driver bridge wp-net"
+  docker exec "$syscont" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" wp-net"
   [ "$status" -eq 0 ]
 
   # launch an inner database (mysql) container; required by wordpress; we use

@@ -41,7 +41,7 @@ function wait_for_inner_elasticSearch() {
   wait_for_inner_dockerd $syscont
 
   # create a docker user-defined bridge network inside the sys container
-  docker exec "$syscont" sh -c "docker network create --driver bridge elasticSearch-net"
+  docker exec "$syscont" sh -c "docker network create --driver bridge -o \"com.docker.network.driver.mtu\"=\"1460\" elasticSearch-net"
   [ "$status" -eq 0 ]
 
   # launch the inner elasticSearch container

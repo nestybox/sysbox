@@ -66,7 +66,7 @@ EOF
   # Deploys nginx server and client sys containers and verifies nginx
   # client can access the server.
 
-  docker network create --driver bridge nginx-net
+  docker network create --driver bridge -o "com.docker.network.driver.mtu"="1460" nginx-net
   [ "$status" -eq 0 ]
 
   SERVER=$(docker_run -d --name nginx-server --network nginx-net nginx:latest)
