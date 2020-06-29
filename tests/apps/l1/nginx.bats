@@ -6,6 +6,9 @@
 
 load ../../helpers/run
 load ../../helpers/sysbox-health
+load ../../helpers/installer
+
+export iface_mtu=$(egress_iface_mtu)
 
 function teardown() {
   sysbox_log_check
@@ -66,7 +69,7 @@ EOF
   # Deploys nginx server and client sys containers and verifies nginx
   # client can access the server.
 
-  docker network create --driver bridge -o "com.docker.network.driver.mtu"="1460" nginx-net
+  docker network create --driver bridge -o "com.docker.network.driver.mtu"="${iface_mtu}" nginx-net
   [ "$status" -eq 0 ]
 
   SERVER=$(docker_run -d --name nginx-server --network nginx-net nginx:latest)
