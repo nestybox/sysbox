@@ -1,10 +1,5 @@
 #!/bin/bash
 
-load ../helpers/run
-load ../helpers/docker
-load ../helpers/systemd
-load ../helpers/fs
-
 #
 # Sysbox Installer Test Helper Functions
 # (for tests using bats)
@@ -35,9 +30,6 @@ export manual_dockerd_restart="${test_dir}/manual_dockerd_restart.debconf"
 # Default MTU value associated to egress-interface.
 export default_mtu=1500
 
-#
-# Auxiliary routines.
-#
 
 function install_init() {
 
