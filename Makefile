@@ -316,8 +316,12 @@ test-sysbox-local:
 	$(TEST_DIR)/scr/testSysbox $(TESTPATH)
 
 test-shiftfs-local: pjdfstest
+ifeq ($(shell modprobe shiftfs && lsmod | grep -q shiftfs),)
+	@printf "\n** No shiftfs module found. Skipping target. **\n\n"
+else
 	@printf "\n** shiftfs only mount **\n\n"
 	$(SHIFTFS_DIR)/tests/testShiftfs /var/lib/sysbox $(TESTPATH)
+endif
 
 test-shiftfs-ovfs-local: pjdfstest
 	@printf "\n** shiftfs + overlayfs mount **\n\n"
