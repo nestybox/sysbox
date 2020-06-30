@@ -246,13 +246,13 @@ test: ## Run all sysbox tests suites
 test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid
 
 test-sysbox: ## Run sysbox integration tests
-test-sysbox: test-img
+test-sysbox: test-img kind-sysbox
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting
-test-sysbox-shiftuid: test-img
+test-sysbox-shiftuid: test-img kind-sysbox
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
@@ -371,7 +371,7 @@ test-installer: ## Run all sysbox's integration tests suites on the installer co
 test-installer: test-sysbox-installer test-sysbox-shiftuid-installer test-pkg-installer
 
 test-sysbox-installer: ## Run sysbox's integration tests on the installer container
-test-sysbox-installer:
+test-sysbox-installer: kind-sysbox
 	make test-cntr-installer
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -385,7 +385,7 @@ test-sysbox-installer:
 	$(DOCKER_STOP_INSTALLER)
 
 test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on the installer container
-test-sysbox-shiftuid-installer:
+test-sysbox-shiftuid-installer: kind-sysbox
 	make test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
