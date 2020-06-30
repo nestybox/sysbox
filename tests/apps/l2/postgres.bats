@@ -40,7 +40,7 @@ function wait_for_inner_postgres() {
   [ "$status" -eq 0 ]
 
   wait_for_inner_postgres
-  sleep 2
+  sleep 5
 
   docker exec "$SYSCONT_NAME" sh -c "docker exec postgres1 sh -c 'psql -U postgres -c \\\\l'"
   [ "$status" -eq 0 ]
