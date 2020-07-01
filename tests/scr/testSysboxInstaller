@@ -24,7 +24,7 @@ else
   if lsmod | egrep -q "shiftfs"; then
       bats --tap tests/installer/
   else
-      bats --tap tests/installer/userns_mode.bash
+      bats --tap tests/installer/userns_mode.bats
   fi
 fi
 
