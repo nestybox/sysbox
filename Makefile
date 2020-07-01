@@ -100,6 +100,9 @@ TEST_VOL3 := /var/tmp/sysbox-test-scratch
 EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
 EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
 
+# Find out if 'shiftfs' module is present.
+SHIFTUID_ON := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
+
 #
 # build targets
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
@@ -253,9 +256,13 @@ test-sysbox: test-img
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting
 test-sysbox-shiftuid: test-img
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: $(LIBSECCOMP) sysbox-ipc
@@ -274,10 +281,14 @@ test-mgr: test-img
 
 test-shiftfs: ## Run shiftfs tests
 test-shiftfs: test-img
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	@printf "\n** Running shiftfs tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-ovfs-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_RUN) /bin/bash -c "make test-shiftfs-tmpfs-local TESTPATH=$(TESTPATH)"
+endif
 
 test-shiftfs-cleanup: ## Cleanup shiftfs test suite
 test-shiftfs-cleanup: pjdfstest-clean
@@ -316,12 +327,8 @@ test-sysbox-local:
 	$(TEST_DIR)/scr/testSysbox $(TESTPATH)
 
 test-shiftfs-local: pjdfstest
-ifeq ($(shell modprobe shiftfs && lsmod | grep -q shiftfs),)
-	@printf "\n** No shiftfs module found. Skipping target. **\n\n"
-else
 	@printf "\n** shiftfs only mount **\n\n"
 	$(SHIFTFS_DIR)/tests/testShiftfs /var/lib/sysbox $(TESTPATH)
-endif
 
 test-shiftfs-ovfs-local: pjdfstest
 	@printf "\n** shiftfs + overlayfs mount **\n\n"
@@ -390,6 +397,9 @@ test-sysbox-installer:
 
 test-sysbox-shiftuid-installer: ## Run sysbox's uid-shifting integration tests on the installer container
 test-sysbox-shiftuid-installer:
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	make test-cntr-installer
 	@printf "\n** Running sysbox-installer integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -397,6 +407,7 @@ test-sysbox-shiftuid-installer:
 	$(DOCKER_EXEC_INSTALLER) /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP_INSTALLER)
+endif
 
 test-pkg-installer: ## Run sysbox's installer integration tests
 	make test-cntr-installer
