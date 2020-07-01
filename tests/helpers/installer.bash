@@ -46,10 +46,12 @@ function install_init() {
   [ "$status" -eq 0 ]
   run sh -c "docker stop \$(docker ps -a -q) || true"
   [ "$status" -eq 0 ]
-  run sh -c "docker container prune -f"
+  run docker container prune -f
   [ "$status" -eq 0 ]
-  run sh -c "systemctl restart docker"
+  run systemctl restart docker
   [ "$status" -eq 0 ]
+
+  sleep 3
 
   # Create debconf file to set "dockerd-autorestart" mode.
   cat > "${auto_dockerd_restart}" <<EOF
