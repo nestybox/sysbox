@@ -95,30 +95,24 @@ entry present as a placeholder for the upcoming release, make sure that the
 
 10) Test generated images in the corresponding VM:
 
-    * We must scp the images to the matching VM -- see examples below:
+    * We must scp all generated images to the matching VM -- see examples below:
 
     Ubuntu-Bionic-VM:
 
     ```
-    vagrant@ubuntu-bionic-vm:~/wsp/v0.1.3/sysbox$ scp rmolina@192.168.121.86:~/wsp/v0.1.3/sysbox/image/deb/debbuild/ubuntu-bionic/sysbox_0.1.3-0.ubuntu-bionic_amd64.deb .
-    ```
-
-    Ubuntu-Cosmic-VM:
-
-    ```
-    vagrant@ubuntu-cosmic-vm:~/wsp/v0.1.3/sysbox$ scp rmolina@192.168.121.86:~/wsp/v0.1.3/sysbox/image/deb/debbuild/ubuntu-cosmic/sysbox_0.1.3-0.ubuntu-cosmic_amd64.deb .
-    ```
-
-    Ubuntu-Disco-VM:
-
-    ```
-    vagrant@ubuntu-disco-vm:~/wsp/v0.1.3/sysbox$ scp rmolina@192.168.121.86:~/wsp/v0.1.3/sysbox/image/deb/debbuild/ubuntu-disco/sysbox_0.1.3-0.ubuntu-disco_amd64.deb .
+    rmolina@dev-vm1:~/wsp/release_v0.2.0_new/sysbox$ scp -P 40122 image/deb/debbuild/ubuntu-bionic/sysbox_0.2.0-0.ubuntu-bionic_amd64.deb vagrant@192.168.1.2:~/wsp/v0.2.0/sysbox/image/deb/debbuild/ubuntu-bionic/
     ```
 
     Ubuntu-Eoan-VM:
 
     ```
-    vagrant@ubuntu-eoan-vm:~/wsp/v0.1.3/sysbox$ scp rmolina@192.168.121.86:~/wsp/v0.1.3/sysbox/image/deb/debbuild/ubuntu-eoan/sysbox_0.1.3-0.ubuntu-eoan_amd64.deb .
+    rmolina@dev-vm1:~/wsp/release_v0.2.0_new/sysbox$ scp -P 40422 image/deb/debbuild/ubuntu-eoan/sysbox_0.2.0-0.ubuntu-eoan_amd64.deb vagrant@192.168.1.2:~/wsp/v0.2.0/sysbox/image/deb/debbuild/ubuntu-eoan/
+    ```
+
+    Ubuntu-Focal-VM:
+
+    ```
+    rmolina@dev-vm1:~/wsp/release_v0.2.0_new/sysbox$ scp -P 40522 image/deb/debbuild/ubuntu-focal/sysbox_0.2.0-0.ubuntu-focal_amd64.deb vagrant@192.168.1.2:~/wsp/v0.2.0/sysbox/image/deb/debbuild/ubuntu-focal/
     ```
 
     * From each VM, do a git-clone of sysbox's entire repo, and then copy the
