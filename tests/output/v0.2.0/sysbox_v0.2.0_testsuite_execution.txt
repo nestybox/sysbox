@@ -1,0 +1,3298 @@
+# Release v0.2.0 testsuite execution
+
+Executed Target: make test-installer
+Environment: Ubuntu Bionic, Ubuntu Eoan and Ubuntu Focal VMs; 'shiftfs' module present
+
+
+<-- Ubuntu Bionic
+
+
+
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-bionic/sysbox_0.2.0-0.ubuntu-bionic_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 47143 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-bionic_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-bionic) ...
+Setting up sysbox (0.2.0-0.ubuntu-bionic) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 # skip (uid shifting disabled) uid alloc basic
+ok 15 # skip (uid shifting disabled) uid exhaust
+ok 16 # skip (uid shifting disabled) uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 # skip (needs UID shifting) shiftfsMgr basic
+ok 26 # skip (needs UID shifting) shiftfsMgr multiple syscont
+ok 27 # skip (needs UID shifting) shiftfsMgr skip shiftfs on bind-mount
+ok 28 # skip (needs UID shifting) shiftfsMgr shiftfs file mount
+ok 29 # skip (needs UID shifting) shiftfsMgr shiftfs no-exec on host
+ok 30 # skip (needs UID shifting) shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 # skip (needs uid shifting) shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+
+Total reclaimed space: 7.486GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:bionic
+ ---> 8e4ce0a6ce69
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> fd5e037ad672
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 30ffc9805898
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python-minimal     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 7e7b65da0a16
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 94bccc3c4426
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> 985123ca5425
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> 38cd11e9dba9
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> 6990627b63d3
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> 3b12c9d22988
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> b6ddd90aa4a2
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 60032d0ee7b4
+Step 12/22 : RUN  apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     $(lsb_release -cs)     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> 238a0b268b5d
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> 9dd6a355ebb1
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 6153c7cbae2c
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> df9487a2bfa7
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 604a659f0c73
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> e4fbdfa69c0c
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> a500140bbce4
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> 2dec11fb908b
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> 8a17b84b5132
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> ea6d256d3150
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 4ba0590b830e
+Successfully built 4ba0590b830e
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 4ba0590b830e
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> f549a0772b82
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> 32fe2cecebe7
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 95f0bc618b30
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 14593bbee44c
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> b98287073848
+Successfully built b98287073848
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.3.0-28-generic:/usr/src/linux-headers-5.3.0-28-generic:ro -v /usr/src/linux-headers-5.3.0-28:/usr/src/linux-headers-5.3.0-28:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+7581e4b439ff62602a251bd5afa3c92bca24d33cf69e9f7f5958bc1651602161
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-bionic/sysbox_0.2.0-0.ubuntu-bionic_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 47143 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-bionic_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-bionic) ...
+Setting up sysbox (0.2.0-0.ubuntu-bionic) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox-installer integration tests (with uid shifting) **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 uid alloc basic
+ok 15 uid exhaust
+ok 16 uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 shiftfsMgr basic
+ok 26 shiftfsMgr multiple syscont
+ok 27 shiftfsMgr skip shiftfs on bind-mount
+ok 28 shiftfsMgr shiftfs file mount
+ok 29 shiftfsMgr shiftfs no-exec on host
+ok 30 shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Containers:
+c4d56a0932f25bf47eee727d7a76acb424784b49e8da9717dda33eb2a7755038
+
+Deleted Images:
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+untagged: alpine:latest
+untagged: alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+deleted: sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e
+deleted: sha256:50644c29ef5a27c9a40c393a73ece2479de78325cae7d762ef3cdc19bf42dd0a
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+
+Total reclaimed space: 5.85GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:bionic
+ ---> 8e4ce0a6ce69
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> fd5e037ad672
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 30ffc9805898
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python-minimal     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 7e7b65da0a16
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 94bccc3c4426
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> 985123ca5425
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> 38cd11e9dba9
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> 6990627b63d3
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> 3b12c9d22988
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> b6ddd90aa4a2
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 60032d0ee7b4
+Step 12/22 : RUN  apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     $(lsb_release -cs)     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> 238a0b268b5d
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> 9dd6a355ebb1
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 6153c7cbae2c
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> df9487a2bfa7
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 604a659f0c73
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> e4fbdfa69c0c
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> a500140bbce4
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> 2dec11fb908b
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> 8a17b84b5132
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> ea6d256d3150
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 4ba0590b830e
+Successfully built 4ba0590b830e
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 4ba0590b830e
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> f549a0772b82
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> 32fe2cecebe7
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 95f0bc618b30
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 14593bbee44c
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> b98287073848
+Successfully built b98287073848
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.3.0-28-generic:/usr/src/linux-headers-5.3.0-28-generic:ro -v /usr/src/linux-headers-5.3.0-28:/usr/src/linux-headers-5.3.0-28:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+4b10b4c7d01be52f0024c098a475791f6adf1a72b278aa47df60aac3c53323ce
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-bionic/sysbox_0.2.0-0.ubuntu-bionic_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 47143 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-bionic_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-bionic) ...
+Setting up sysbox (0.2.0-0.ubuntu-bionic) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox's pkg installer integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-pkg-installer-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysboxInstaller
+
+Executing installer tests ...
+1..30
+ok 1 no pre-existing dockerd config
+ok 2 pre-existing & unprocessed dockerd config (sysbox runtime)
+ok 3 pre-existing & processed dockerd config (sysbox runtime)
+ok 4 pre-existing & unprocessed dockerd config (non-sysbox runtime)
+ok 5 pre-existing & processed dockerd config (non-sysbox runtime)
+ok 6 pre-existing & unprocessed dockerd config (sysbox userns)
+ok 7 pre-existing & processed dockerd config (sysbox userns)
+ok 8 pre-existing & unprocessed dockerd config (sysbox userns) -- existing container
+ok 9 pre-existing & processed dockerd config (sysbox userns) -- existing container
+ok 10 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 11 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 12 no pre-existing dockerd config -- automatic restart
+ok 13 pre-existing & unprocessed dockerd config (sysbox runtime) -- automatic restart
+ok 14 pre-existing & processed dockerd config (sysbox runtime) -- automatic restart
+ok 15 pre-existing & unprocessed dockerd config (non-sysbox runtime) -- automatic restart
+ok 16 pre-existing & processed dockerd config (non-sysbox runtime) -- automatic restart
+ok 17 pre-existing & unprocessed dockerd config (sysbox userns) -- automatic restart
+ok 18 pre-existing & processed dockerd config (sysbox userns) -- automatic restart
+ok 19 pre-existing & unprocessed dockerd config (non-sysbox userns) -- automatic restart
+ok 20 pre-existing & processed dockerd config (non-sysbox userns) -- automatic restart
+ok 21 no pre-existing dockerd config & existing cntrs -- automatic restart
+ok 22 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 23 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 24 no pre-existing dockerd config -- manual docker restart
+ok 25 pre-existing & unprocessed dockerd config (sysbox runtime) -- manual restart
+ok 26 pre-existing & processed dockerd config (sysbox runtime) -- manual restart
+ok 27 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 28 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 29 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- manual restart
+ok 30 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual restart
+docker stop sysbox-installer-test
+sysbox-installer-test
+vagrant@ubuntu-bionic-vm:~/wsp/v0.2.0/sysbox$
+
+
+
+
+
+<-- Ubuntu Eoan
+
+
+
+
+
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-eoan/sysbox_0.2.0-0.ubuntu-eoan_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 55609 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-eoan_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-eoan) ...
+Setting up sysbox (0.2.0-0.ubuntu-eoan) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 # skip (uid shifting disabled) uid alloc basic
+ok 15 # skip (uid shifting disabled) uid exhaust
+ok 16 # skip (uid shifting disabled) uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 # skip (needs UID shifting) shiftfsMgr basic
+ok 26 # skip (needs UID shifting) shiftfsMgr multiple syscont
+ok 27 # skip (needs UID shifting) shiftfsMgr skip shiftfs on bind-mount
+ok 28 # skip (needs UID shifting) shiftfsMgr shiftfs file mount
+ok 29 # skip (needs UID shifting) shiftfsMgr shiftfs no-exec on host
+ok 30 # skip (needs UID shifting) shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 # skip (needs uid shifting) shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Images:
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+untagged: alpine:latest
+untagged: alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+deleted: sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e
+deleted: sha256:50644c29ef5a27c9a40c393a73ece2479de78325cae7d762ef3cdc19bf42dd0a
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+
+Total reclaimed space: 5.85GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:eoan
+ ---> 2f6c85efea61
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> db5053720871
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 64d312a6eedb
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python-minimal     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 6ceb9ed576fd
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 1931433ee8b8
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> 34f834f94e0a
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> 26a21e3e74af
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> e332ea609d2f
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> 948f7e4adc71
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> d6b4563f8679
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 849bad6433d0
+Step 12/22 : RUN apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg2     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     eoan     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> 1ec69d53f386
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> d5f0ae672f11
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 3f1e8160fc05
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> 39688d5210d4
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 7234dfd9c06c
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> b0550d1aacd9
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> e76cf48e3f33
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> f83063ac1336
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> 3187960ae4ae
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> e2584b23533d
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 5d225522127c
+Successfully built 5d225522127c
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 5d225522127c
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> d9f877fbabfe
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> e993a41d26ca
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 9255f4770596
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 8f178ab4f983
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> cfc4a28f0932
+Successfully built cfc4a28f0932
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.3.0-55-generic:/usr/src/linux-headers-5.3.0-55-generic:ro -v /usr/src/linux-headers-5.3.0-55:/usr/src/linux-headers-5.3.0-55:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+622a8ae5af0157b8c435c9aadb2ded27c246c4fc2ccf8a2aef5917daf8dc10d6
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-eoan/sysbox_0.2.0-0.ubuntu-eoan_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 55609 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-eoan_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-eoan) ...
+Setting up sysbox (0.2.0-0.ubuntu-eoan) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox-installer integration tests (with uid shifting) **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 uid alloc basic
+ok 15 uid exhaust
+ok 16 uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 shiftfsMgr basic
+ok 26 shiftfsMgr multiple syscont
+ok 27 shiftfsMgr skip shiftfs on bind-mount
+ok 28 shiftfsMgr shiftfs file mount
+ok 29 shiftfsMgr shiftfs no-exec on host
+ok 30 shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Containers:
+02c9cd7dd5b22a59537cd495c4dda6c0374c1295cea745e6f10050f97e9484fc
+
+Deleted Images:
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+untagged: alpine:latest
+untagged: alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+deleted: sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e
+deleted: sha256:50644c29ef5a27c9a40c393a73ece2479de78325cae7d762ef3cdc19bf42dd0a
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+
+Total reclaimed space: 5.85GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:eoan
+ ---> 2f6c85efea61
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> db5053720871
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 64d312a6eedb
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python-minimal     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 6ceb9ed576fd
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 1931433ee8b8
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> 34f834f94e0a
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> 26a21e3e74af
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> e332ea609d2f
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> 948f7e4adc71
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> d6b4563f8679
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 849bad6433d0
+Step 12/22 : RUN apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg2     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     eoan     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> 1ec69d53f386
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> d5f0ae672f11
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 3f1e8160fc05
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> 39688d5210d4
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 7234dfd9c06c
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> b0550d1aacd9
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> e76cf48e3f33
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> f83063ac1336
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> 3187960ae4ae
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> e2584b23533d
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 5d225522127c
+Successfully built 5d225522127c
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 5d225522127c
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> d9f877fbabfe
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> e993a41d26ca
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 9255f4770596
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 8f178ab4f983
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> cfc4a28f0932
+Successfully built cfc4a28f0932
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.3.0-55-generic:/usr/src/linux-headers-5.3.0-55-generic:ro -v /usr/src/linux-headers-5.3.0-55:/usr/src/linux-headers-5.3.0-55:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+84536f29467303326c5d27787169a38d9c1692e7571b616f67f4d99362d5ffb9
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-eoan/sysbox_0.2.0-0.ubuntu-eoan_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 55609 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-eoan_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-eoan) ...
+Setting up sysbox (0.2.0-0.ubuntu-eoan) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox's pkg installer integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-pkg-installer-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysboxInstaller
+
+Executing installer tests ...
+1..30
+ok 1 no pre-existing dockerd config
+ok 2 pre-existing & unprocessed dockerd config (sysbox runtime)
+ok 3 pre-existing & processed dockerd config (sysbox runtime)
+ok 4 pre-existing & unprocessed dockerd config (non-sysbox runtime)
+ok 5 pre-existing & processed dockerd config (non-sysbox runtime)
+ok 6 pre-existing & unprocessed dockerd config (sysbox userns)
+ok 7 pre-existing & processed dockerd config (sysbox userns)
+ok 8 pre-existing & unprocessed dockerd config (sysbox userns) -- existing container
+ok 9 pre-existing & processed dockerd config (sysbox userns) -- existing container
+ok 10 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 11 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 12 no pre-existing dockerd config -- automatic restart
+ok 13 pre-existing & unprocessed dockerd config (sysbox runtime) -- automatic restart
+ok 14 pre-existing & processed dockerd config (sysbox runtime) -- automatic restart
+ok 15 pre-existing & unprocessed dockerd config (non-sysbox runtime) -- automatic restart
+ok 16 pre-existing & processed dockerd config (non-sysbox runtime) -- automatic restart
+ok 17 pre-existing & unprocessed dockerd config (sysbox userns) -- automatic restart
+ok 18 pre-existing & processed dockerd config (sysbox userns) -- automatic restart
+ok 19 pre-existing & unprocessed dockerd config (non-sysbox userns) -- automatic restart
+ok 20 pre-existing & processed dockerd config (non-sysbox userns) -- automatic restart
+ok 21 no pre-existing dockerd config & existing cntrs -- automatic restart
+ok 22 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 23 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 24 no pre-existing dockerd config -- manual docker restart
+ok 25 pre-existing & unprocessed dockerd config (sysbox runtime) -- manual restart
+ok 26 pre-existing & processed dockerd config (sysbox runtime) -- manual restart
+ok 27 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 28 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 29 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- manual restart
+ok 30 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual restart
+docker stop sysbox-installer-test
+sysbox-installer-test
+vagrant@ubuntu-eoan-vm:~/wsp/v0.2.0/sysbox$
+
+
+
+
+<-- Ubuntu Focal
+
+
+
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-focal/sysbox_0.2.0-0.ubuntu-focal_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 58634 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-focal_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-focal) ...
+Setting up sysbox (0.2.0-0.ubuntu-focal) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"userns-remap\": \"sysbox\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 # skip (uid shifting disabled) uid alloc basic
+ok 15 # skip (uid shifting disabled) uid exhaust
+ok 16 # skip (uid shifting disabled) uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 # skip (needs UID shifting) shiftfsMgr basic
+ok 26 # skip (needs UID shifting) shiftfsMgr multiple syscont
+ok 27 # skip (needs UID shifting) shiftfsMgr skip shiftfs on bind-mount
+ok 28 # skip (needs UID shifting) shiftfsMgr shiftfs file mount
+ok 29 # skip (needs UID shifting) shiftfsMgr shiftfs no-exec on host
+ok 30 # skip (needs UID shifting) shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 # skip (needs uid shifting) shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Images:
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: alpine:latest
+untagged: alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+deleted: sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e
+deleted: sha256:50644c29ef5a27c9a40c393a73ece2479de78325cae7d762ef3cdc19bf42dd0a
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+
+Total reclaimed space: 5.85GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:focal
+ ---> 74435f89ab78
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> 06b2e319ce50
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 7f97b365dec6
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python2     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 33614c656acc
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 2b426dd6f926
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> c6acbe63eadc
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> d3abb0f3faa7
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> 0a9855f5cf6f
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> b3ed40208179
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> 008bc51db968
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 7664006b4400
+Step 12/22 : RUN  apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     $(lsb_release -cs)     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> f38076cb8c95
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> 671aa26ff2b1
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 07528b5297af
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> 2488eda8297c
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 0da1c1422043
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> d3b6dea43524
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> f169d0c5c59b
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> 96315ae986e4
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> b0799e886256
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> 75b32cc486d8
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 40ae4e03a8fe
+Successfully built 40ae4e03a8fe
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 40ae4e03a8fe
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> 129b3e02f071
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> bbef6e6ed552
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 5db4ed972d1f
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 91a18ad3d6aa
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> 8910f1c6f60d
+Successfully built 8910f1c6f60d
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /home/vagrant/go/pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.4.0-33-generic:/usr/src/linux-headers-5.4.0-33-generic:ro -v /usr/src/linux-headers-5.4.0-33:/usr/src/linux-headers-5.4.0-33:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+a63dc7c9d04e81177eb2fedb3dd556380611b37b4aa8cade70c006d0e1175cc7
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-focal/sysbox_0.2.0-0.ubuntu-focal_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 58634 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-focal_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-focal) ...
+Setting up sysbox (0.2.0-0.ubuntu-focal) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox-installer integration tests (with uid shifting) **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test make sysbox-runc-recvtty
+make[1]: Entering directory '/root/nestybox/sysbox/sysbox-runc'
+make[1]: Nothing to be done for 'recvtty'.
+make[1]: Leaving directory '/root/nestybox/sysbox/sysbox-runc'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true SHIFT_UIDS=true && \
+        make test-sysbox-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysbox
+
+Executing sysbox-mgr tests ...
+1..30
+ok 1 containerdVolMgr basic
+ok 2 containerdVolMgr persistence
+ok 3 containerdVolMgr non-persistence
+ok 4 containerdVolMgr consecutive restart
+ok 5 containerdVolMgr sync-out
+ok 6 dockerVolMgr no inner img
+ok 7 dockerVolMgr inner img
+ok 8 dockerVolMgr persistence
+ok 9 dockerVolMgr consecutive restart
+ok 10 dockerVolMgr sync-out
+ok 11 dockerVolMgr inner image sharing
+ok 12 dockerVolMgr inner image removal
+ok 13 /etc/subuid check
+ok 14 uid alloc basic
+ok 15 uid exhaust
+ok 16 uid reuse
+ok 17 kill SIGTERM
+ok 18 kubeletVolMgr basic
+ok 19 kubeletVolMgr persistence
+ok 20 kubeletVolMgr non-persistence
+ok 21 kubeletVolMgr consecutive restart
+ok 22 kubeletVolMgr sync-out
+ok 23 kernel lib-module mount
+ok 24 kernel headers mounts
+ok 25 shiftfsMgr basic
+ok 26 shiftfsMgr multiple syscont
+ok 27 shiftfsMgr skip shiftfs on bind-mount
+ok 28 shiftfsMgr shiftfs file mount
+ok 29 shiftfsMgr shiftfs no-exec on host
+ok 30 shiftfsMgr bind-mount no-exec
+
+Executing sysbox-fs tests ...
+1..56
+ok 1 kernel_panic_on_oops lookup() operation
+ok 2 kernel_panic_on_oops read() operation
+ok 3 kernel_panic_on_oops write() operation (valid value)
+ok 4 kernel_panic_on_oops write() operation (invalid value)
+ok 5 max_dgram_qlen lookup() operation
+ok 6 max_dgram_qlen read() operation
+ok 7 max_dgram_qlen write() operation (lower value)
+ok 8 max_dgram_qlen write() operation (higher value)
+ok 9 nf_conntrack_max lookup() operation
+ok 10 nf_conntrack_max read() operation
+ok 11 nf_conntrack_max write() operation (lower value)
+ok 12 nf_conntrack_max write() operation (higher value)
+ok 13 # skip (SYSBOX ISSUE #562) nfs mount
+ok 14 pid-ns hierarchy
+ok 15 proc lookup
+ok 16 proc read-only
+ok 17 # skip (not a sysbox-fs mount yet) procCgroups lookup() operation
+ok 18 # skip (not a sysbox-fs mount yet) procCpuinfo lookup() operation
+ok 19 # skip (not a sysbox-fs mount yet) procDevices lookup() operation
+ok 20 # skip (not a sysbox-fs mount yet) procDiskstats lookup() operation
+ok 21 # skip (not a sysbox-fs mount yet) procLoadavg lookup() operation
+ok 22 # skip (not a sysbox-fs mount yet) procMeminfo lookup() operation
+ok 23 # skip (not a sysbox-fs mount yet) procPagetypeinfo lookup() operation
+ok 24 # skip (not a sysbox-fs mount yet) procPartitions lookup() operation
+ok 25 # skip (not a sysbox-fs mount yet) procStat lookup() operation
+ok 26 procSwaps lookup() operation
+ok 27 procSwaps read() operation
+ok 28 procSwaps write() operation
+ok 29 disable_ipv6 lookup
+ok 30 disable_ipv6 namespacing
+ok 31 /proc/sys hierarchy
+ok 32 /proc/sys ownership
+ok 33 /proc/sys namespaced resources
+ok 34 /proc/sys non-namespaced resources
+ok 35 /proc/sys concurrent intra-container access
+ok 36 /proc/sys concurrent inter-container access
+ok 37 /proc/sys concurrent l2 inter-container access (privileged)
+ok 38 /proc/sys concurrent l2 inter-container access (unshare)
+ok 39 /proc/sys stat
+ok 40 /proc/sys chown
+ok 41 /proc/sys chmod
+ok 42 /proc/sys read-permission check
+ok 43 /proc/sys write-permission check
+ok 44 /proc/sys common-handler ns
+ok 45 /proc/sys capability checking
+ok 46 procUptime lookup() operation
+ok 47 procUptime read() operation
+ok 48 sysbox-fs releases notify fd
+ok 49 sysbox-fs releases notify fd exec
+ok 50 /sys namespaced resources
+ok 51 /sys non-namespaced resources
+ok 52 sysfs remount
+ok 53 vm_overcommit_memory lookup() operation
+ok 54 vm_overcommit_memory read() operation
+ok 55 vm_overcommit_memory write() operation (valid value)
+ok 56 vm_overcommit_memory write() operation (invalid value)
+
+Executing docker tests ...
+1..22
+ok 1 basic sys container
+ok 2 docker --init
+ok 3 docker --oom-score-adj
+ok 4 syscont dns (def bridge)
+ok 5 syscont dns (user bridge)
+ok 6 inner container dns (def bridge)
+ok 7 inner container dns (user bridge)
+ok 8 syscont with custom dns
+ok 9 inner container dns (syscont custom dns)
+ok 10 inner container custom dns
+ok 11 inner container custom dns (syscont user bridge)
+ok 12 docker vol mount
+ok 13 docker bind mount
+ok 14 docker tmpfs mount
+ok 15 vol mount on /var/lib/docker
+ok 16 bind mount on /var/lib/docker
+ok 17 redundant /var/lib/docker mount
+ok 18 concurrent /var/lib/docker mount
+ok 19 bind mount on /var/lib/kubelet
+ok 20 redundant /var/lib/kubelet mount
+ok 21 concurrent /var/lib/kubelet mount
+ok 22 shiftfs blacklist
+
+Executing dind tests ...
+1..16
+ok 1 dind basic
+ok 2 dind busybox
+ok 3 dind docker build
+ok 4 build with inner images
+ok 5 commit with inner images
+ok 6 commit with removed inner image
+ok 7 compose basic
+ok 8 dind default net
+ok 9 dind user net
+ok 10 dind host net
+ok 11 dind privileged basic
+ok 12 dind privileged security
+ok 13 dind privileged ubuntu-disco
+ok 14 dind privileged ubuntu-bionic
+ok 15 dind privileged debian-stretch
+ok 16 dind privileged docker
+
+Executing cind tests ...
+1..3
+ok 1 cind basic
+ok 2 commit with inner images
+ok 3 build with inner containerd images
+
+Executing app tests (l1) ...
+1..7
+ok 1 drone ci/cd pipeline execution
+ok 2 l1 nginx basic
+ok 3 l1 nginx client-server
+ok 4 systemd ubuntu bionic
+ok 5 systemd ubuntu disco
+ok 6 systemd mount overlaps
+ok 7 systemd /proc exposure
+
+Executing app tests (l2) ...
+1..15
+ok 1 l2 apache basic
+ok 2 l2 apache client-server
+ok 3 # skip (Consumes > 2GB of RAM) l2 elasticSearch basic
+ok 4 l2 fluentd basic
+ok 5 l2 mysql basic
+ok 6 l2 mysql client-server
+ok 7 l2 nginx basic
+ok 8 l2 nginx client-server
+ok 9 l2 postgres basic
+ok 10 l2 postgres client-server
+ok 11 l2 prometheus basic
+ok 12 l2 redis basic
+ok 13 l2 redis client-server
+ok 14 l2 telegraf basic
+ok 15 l2 wordpress basic
+Deleted Containers:
+d6a0a89c6fffd136c6334e9539fc7f531aecd019a6da60e962c4ea32def2a214
+
+Deleted Images:
+untagged: nestybox/ubuntu-disco-docker:latest
+untagged: nestybox/ubuntu-disco-docker@sha256:726f6ea64c01324724a72fd72b28401a37dd86d456c03e945cc7882b8f066586
+deleted: sha256:e5bfa267a44baebb6f43c34ddc2b328e811009730e308ab7c2a1107d2a29d968
+untagged: debian:latest
+untagged: debian@sha256:46d659005ca1151087efa997f1039ae45a7bf7a2cbbe2d17d3dcbda632a3ee9a
+deleted: sha256:1b686a95ddbf7c369cbf099f60a1b75f0ca911466d8621f055bb4fdb3c6735b5
+deleted: sha256:8803ef42039dcbe936755e9baae4bb7b19cb0fb6a438eb3992950cd0afef8e4f
+untagged: nestybox/ubuntu-bionic-docker:latest
+untagged: nestybox/ubuntu-bionic-docker@sha256:28c3482513bc221d4825b1c2cfecc172c8e586830ee435ae6aaed7bc2852ad64
+deleted: sha256:09baa6a226320598013c1ecb32e4ea6cc77fa8463ab30e7597c84e31ec77a1ff
+deleted: sha256:5459774c0c797951baad734f9c9a59856ceadc29f3f9c3207ba3a3c327793af4
+deleted: sha256:7e21a5e7a2ae8358054366d99fee80dce0bafd479cf8cf4f882be6ef3754f903
+deleted: sha256:c5ab0e2238e87f94b13b4d4a13397a62a6ef11f190d693cd022192b22e534ef7
+deleted: sha256:0ae9fefe72abf11a339fee27a4fd29ab35e02c59cd42bb17cf553264d3592195
+deleted: sha256:0d4627301c7a5faf5c1cf5394a2d47216af296eb5720651b95c8091759e6b300
+deleted: sha256:4fc26b0b0c6903db3b4fe96856034a1bd9411ed963a96c1bc8f03f18ee92ac2a
+deleted: sha256:b53837dafdd21f67e607ae642ce49d326b0c30b39734b6710c682a50a9f932bf
+deleted: sha256:565879c6effe6a013e0b2e492f182b40049f1c083fc582ef61e49a98dca23f7e
+deleted: sha256:cc967c529ced563b7746b663d98248bc571afdb3c012019d7f54d6c092793b8b
+untagged: nestybox/ubuntu-bionic-systemd:latest
+untagged: nestybox/ubuntu-bionic-systemd@sha256:fa3d37d9d95d3f74f6a19a322ceba57560492db72776f47843df252e74a06a3b
+deleted: sha256:8cd8a61df033e3b5e86a8cb341733e94a68a345ff8338aee8e7a89efba57de9e
+deleted: sha256:457c7c8ca52b5e4bd0a7b5ed610c842be714b01ba98adc658434b6905617b881
+deleted: sha256:82751c4dcc36265daceeee0abd938806b591eb66700863186377348c96e8aead
+deleted: sha256:24b16cac34768092d57cdb429a12de6c9ee870a3724d70098a189ae0ac344c42
+deleted: sha256:b1daff3b271fede2bec31812c398e28952f792935f608e467271cdfaccab7de2
+deleted: sha256:b7f7d2967507ba709dbd1dd0426a5b0cdbe1ff936c131f8958c8d0f910eea19e
+untagged: nestybox/test-syscont:latest
+untagged: nestybox/test-syscont@sha256:a123136a3d590604efd85ecf96fdfbe6bf56f1084aae2b35896c5c42f424fd5c
+deleted: sha256:38249eabe00ff7f45716a44adfd56f6753ec71e4cb3e267bb3246c647b7fe9e0
+deleted: sha256:93557539fb60d5b2c6a12cb6c2197e3971927147fe70d74ddf9858d9a8bcb377
+deleted: sha256:9ea3f7cbf182c031075c8fe2b5cc1e64c89c0a8288a356f4762e409075c37b04
+deleted: sha256:0af1aecb8464696dd9bc01f3f82a115c0db62afdf091be57b5a97c8f0ff9c002
+deleted: sha256:15f2c65dbd5c93419d85cd5fd92e9f8401888dc4fc7c56456f38c9a5882152fc
+deleted: sha256:2507f392f683acca93e0fe79dbc051c8aefb708ddae1641764bd43c260f54781
+deleted: sha256:281d595c752d16e1b86ff611d137d468e8d6292765db267ba46c98681371d7a3
+deleted: sha256:3c01ed888ec5b2d6965948f4c8765a6f721111e49703b07209f18b0577c5eb51
+deleted: sha256:313c890374f38fd920e2b269b597dd77ffdfc8c2634fa45b075a1e9af806def5
+deleted: sha256:6ca77fd69c532a8f247e3aaccc81dc9f8e5a68ff54e84bdb35f5f1304996927c
+deleted: sha256:adcf3f3311cef14089d97a525fa3a5d535eb0544f2e68ba8ff22ba7ae8b41bf3
+deleted: sha256:f4e99acbe403e362fdacf8a239c119ec4f9f326cc1a7b8e6975c2a7d12cf99ad
+deleted: sha256:ea43686ff711ecb0646b3b9caa8c1655fb4f1bd3a924c055c9baf481d5cb87c8
+deleted: sha256:34284af42451bf7c41817f537139b2bf2cce8a47d8f834d25cd5393a6c22d763
+deleted: sha256:03901b4a2ea88eeaad62dbe59b072b28b6efa00491962b8741081c5df50c65e0
+untagged: nestybox/alpine-docker-dbg:latest
+untagged: nestybox/alpine-docker-dbg@sha256:9167dac06a8aa3dec4685dbd220f48e2142617aedb9d1b5dbec9bf505c17bf7a
+deleted: sha256:601b0efb2e477350c9d6a49ac9f67242774c7e7d383a87641a640891c9f9989b
+deleted: sha256:4fee523e8b80352a466a5d49ba529b04606ebd054ef9a6347de0d1b3f2437502
+deleted: sha256:c3652de587ac6aa471728b33e75fbcfa5c5489d6665a33a66bc17374e4516d4d
+deleted: sha256:3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a
+untagged: nestybox/ubuntu-disco-compose:latest
+untagged: nestybox/ubuntu-disco-compose@sha256:14ed66b10a6a16f8cd15dc99b17a947ca9de0c78397c58ad0f96d9ddd0887791
+deleted: sha256:7637d9edffc9ff54677ad86132998e3b0790c9d3c0ad0fc1f203c1a5a2e3738c
+deleted: sha256:0d63aa6b122db0832bf8e165a93321ac654614f292165ce7fd9a652abb0e9404
+deleted: sha256:a34d39c55a2e4a6ece60114f5b0a1fed1d8c18e814c008542f24b2b8027596f1
+deleted: sha256:850d83d0d04d616ae2bf7831505f2a52b8ce6a6bc1887bc035138def27c6ffbb
+deleted: sha256:c14f3a2295c8b7b1ffb855667bf9a234b61f1eef07a6d72470f706b920e97633
+deleted: sha256:4356e1792df752779556d5b31124cfe672bf90f0a83daf1bd9d2d25dffc9f5c2
+deleted: sha256:393adb8f8e962c169164eae2888494c1de668d2bdd0b5e6df134e224bd6be63c
+deleted: sha256:fc8040874be583547a7e52f47827bc1da5b09d0f83c2eb21cf65e10a6695ca72
+deleted: sha256:9d47e204e0a6e898dad1e0c16768a839e4e88fa07b3bdb58b8a6be06c20ae207
+deleted: sha256:a7eef1b8d4a07b3db64053e2505af57a8b699ca6ae87de7eb07c5aa2e8d20ce9
+deleted: sha256:3f18f2c00b074160d07c28485bc6d9135f3bd94616158bffe84fa39eb3dcb35f
+deleted: sha256:fe83fe4b84b6793e27a241255d4d50aac8df7fafe629091e2128a0b6fd8a06ff
+deleted: sha256:139a91f3e8b5c609893fb25e34937b7e9d92c8036abda439482c7ed590f2e786
+untagged: nestybox/ubuntu-disco-systemd:latest
+untagged: nestybox/ubuntu-disco-systemd@sha256:ddd87482cec8e0047cac3f0571cb60f5ad620fe7582a83aa2257e108daf8816c
+deleted: sha256:2439c1eafe30ecc50e1079879ef98dc38fbf60bfa6632e66f2642b4127ac7420
+deleted: sha256:52fa56324e0eaf2637b9815100067cead2eebd014cda7d873f9d318ac3215e57
+deleted: sha256:0102908f132470d727751ce93d991f5e0da17d319f3a3975926a82ec12a15faf
+deleted: sha256:4fcb6dca833191793b3e64584b54e5060bac448e54752f709d9e02701a5a558d
+deleted: sha256:dde2b1540c0a7c83ed204c5ec4e04fcd0e3aada7348a14773b838573ec6b711f
+deleted: sha256:3809a3354f7f9f6e370ec404594112d04386f38c52f13185c36ad6824940b3a1
+untagged: nginx:latest
+untagged: nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+deleted: sha256:2622e6cca7ebbb6e310743abce3fc47335393e79171b9d76ba9d4f446ce7b163
+deleted: sha256:e86d1b8b130bec203609b4b1d7b851bd763fa16e513e5a3fa6102ebea23260e0
+deleted: sha256:8f9f007533543813bb1aef80b791a16e5e16c7cbbbc456a3a483d0fa7a9effcc
+deleted: sha256:e2c0065a77fee75795cdcf9f19a72f11769332423cd52ec9e19aacfb878aec8b
+deleted: sha256:059442698ef65fe8545e4fe9657988a10329b9c3663b368ae7ee0007a9c43949
+deleted: sha256:13cb14c2acd34e45446a50af25cb05095a17624678dbafbcc9e26086547c1d74
+untagged: alpine:latest
+untagged: alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321
+deleted: sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e
+deleted: sha256:50644c29ef5a27c9a40c393a73ece2479de78325cae7d762ef3cdc19bf42dd0a
+untagged: alpine:3.10
+untagged: alpine@sha256:f0e9534a598e501320957059cb2a23774b4d4072e37c7b2cf7e95b241f019e35
+deleted: sha256:be4e4bea2c2e15b403bb321562e78ea84b501fb41497472e91ecb41504e8a27c
+deleted: sha256:1b3ee35aacca9866b01dd96e870136266bde18006ac2f0d6eb706c798d1fa3c3
+untagged: busybox:latest
+untagged: busybox@sha256:9ddee63a712cea977267342e8750ecbc60d3aab25f04ceacfa795e6fce341793
+deleted: sha256:c7c37e472d31c1685b48f7004fd6a64361c95965587a951692c5f298c6685998
+deleted: sha256:50761fe126b6e4d90fa0b7a6e195f6030fe250c016c2fc860ac40f2e8d2f2615
+untagged: nestybox/debian-stretch-docker:latest
+untagged: nestybox/debian-stretch-docker@sha256:f13d5653520c62d810279511f0a1cfc51f725c5a1ff88c2eb97c03172dff10e4
+deleted: sha256:c1a819738d27e242549d82076611381280c3bfde8fb9ee391f9e08ce9f3f3e3c
+deleted: sha256:135d570c4d587dc49a7e003bbbe0f4880731aca1068f519aaa1169afb4a6e0f4
+deleted: sha256:dd7f40952567afcd2d08292954339fe04fce4d4daeda9ed2cbaec43eccb294b0
+deleted: sha256:323a23129bf8fa6a7d5c42dce28970fc7e0f75e00458f95a306fbc9ee8a94a3e
+deleted: sha256:2ddf5d92e7b209c66d9b8d9ed401f35d45a39c4f52faef4f89e433b8e5b8dc3b
+deleted: sha256:8d90eecca733d4944c5e3faea6487d96346919f53f62c4e46f0f82ee4ff4f907
+deleted: sha256:aaab5034d722f52925abe023d1addc4ba25da8971d32db6a84af978557a311f8
+deleted: sha256:b2330d1e4bb91c1177d2f25775deb3489a9536919c8ef392e205de8405a71333
+deleted: sha256:f73e7e79899a33b4b9b78da62efb71520844f8dd518f3c390e27bc3063bce307
+untagged: nestybox/ubuntu-disco-docker-dbg:latest
+untagged: nestybox/ubuntu-disco-docker-dbg@sha256:f04e1d353ccbafd53cfd150d094c27ebdfb91de666a36fc4ccb74cb323965a95
+deleted: sha256:be151dec65586149b40e40e6c1ebd8267d2ae8aa8574116f941d1c4c147a8326
+deleted: sha256:8610779e483a5cf64987a9ef88ed673cb7ea162a8c4288dab45b1888c731eba0
+deleted: sha256:2a3eb74c7249cc2ac3dad05cc4dca0eab45488893cbc3252e3f9cd1e7dc59cdd
+deleted: sha256:2fa940df88e5de220d93d6711f4250bf7c911c0042287eb2fd457b31ef0baceb
+deleted: sha256:3fbd9a1260c362c8636c540a54a819af548813cec34a2d2e840980c22be672c2
+deleted: sha256:d694440e53f06b85ea657077a3281b2b8ee05e1fdbc79e393c86cb3146cd2e5e
+deleted: sha256:d23847c7745120cbf3e7745c84b773156100e4767f415fe69c28b7cb9cb9934b
+deleted: sha256:0755fe795e24afde830393786c8fc8367c537da21a8f4272c05e2b93ad0e43ab
+deleted: sha256:b49fe04fb84f456d9f761280c6c902ee7573f080fa12a22290d20480f9277267
+deleted: sha256:884f62e16197d674d940930fb230e780e59f149d46c35d25d9b3509ce92c4e39
+deleted: sha256:d42506ab30a9b7bf84c65f22a7814c368b0d29428d508bac685a3f0853067f48
+deleted: sha256:cea8e0d9b47ca23aadaf067d6b8e3a5cd95ca7e70b82af6b9a14caaa2f8a4bb4
+deleted: sha256:0b07c260893deb7a01e191b346310ed2d4adff5703faf00a068e868e369f7e0c
+
+Total reclaimed space: 5.85GB
+
+Executing kind tests ...
+1..38
+ok 1 kind cluster up
+ok 2 kind pod
+ok 3 kind pod multi-container
+ok 4 kind deployment
+ok 5 kind service clusterIP
+ok 6 kind service nodePort
+ok 7 kind DNS clusterIP
+ok 8 kind ingress
+ok 9 kind vol emptyDir
+ok 10 kind vol hostPath
+ok 11 kind vol local persistent
+ok 12 kind helm v2 basic
+ok 13 kind helm v3 basic
+ok 14 kind cluster down
+ok 15 kindbox custom net cluster up
+ok 16 kindbox deployment
+ok 17 kindbox service clusterIP
+ok 18 kindbox service nodePort
+ok 19 kindbox DNS clusterIP
+ok 20 kindbox ingress
+ok 21 kindbox custom net cluster2 up
+ok 22 kindbox custom net cluster down
+ok 23 kindbox cluster up
+ok 24 kindbox pod
+ok 25 kindbox pod multi-container
+ok 26 kindbox deployment
+ok 27 kindbox service clusterIP
+ok 28 kindbox service nodePort
+ok 29 kindbox DNS clusterIP
+ok 30 kindbox ingress
+ok 31 kindbox vol emptyDir
+ok 32 kindbox vol hostPath
+ok 33 kindbox vol local persistent
+ok 34 kindbox node down
+ok 35 kindbox helm v2 basic
+ok 36 kindbox helm v3 basic
+ok 37 kindbox istio basic
+ok 38 kindbox cluster down
+
+Sysbox health checking ...
+1..2
+ok 1 sysboxfs_health
+ok 2 sysboxmgr_health
+Deleted Networks:
+kind
+
+Deleted Images:
+untagged: nestybox/k8s-node-test:v1.18.2
+untagged: nestybox/k8s-node-test@sha256:0acd1c3d5075fb5cf54b7ae43a65aad871b8423be79d5f84f3002cc021fc7854
+deleted: sha256:26992f0cb4df8ca2fe13e4c2f5ff15ba9dfa951c004b642c7d083963eb23ad2d
+deleted: sha256:044480a92836bdae38beee0425d32e0d79a7cc60aedca457f255a8de07faf8c6
+deleted: sha256:ed619a995cd89af0be2d6fd0c5bc01abb1eb4d42463c1320545f7ac12fe8809e
+deleted: sha256:8fdf403eaeb6d46f8f2fc8c14f1c8bd3fd98850e37ccae78f854501d7be4b0fb
+deleted: sha256:e7b3895df65cf53134159395bac9a765d2d1b5e403b284867efe942ca5828bb9
+deleted: sha256:8b982836e849c1f02b78d9d63fd52ce0d053f078fd007e487e1b0d8ffc2be227
+deleted: sha256:980f17d34d16462f37a8055f41d12509b1743b0f98020409c727835c6f64f94a
+deleted: sha256:686a47e856e911c34ea6792ae86b9540609fcaf37d8bf722b8e13c8c02d73ad8
+deleted: sha256:411efc357d5d934192ee357c63f8d179cba84c782cdc5fcf50bed96a033a78c4
+deleted: sha256:c808877c0adcf4ff8dcd2917c5c517dcfc76e9e8a035728fd8f0eae195d11908
+deleted: sha256:cdf75cc6b4d28e72a9931be2a88c6c421ad03cbf984b099916a74f107e6708ff
+deleted: sha256:b9997ded97a1c277d55be0d803cf76ee6e7b2e8235d610de0020a7c84c837b93
+deleted: sha256:a090697502b8d19fbc83afb24d8fb59b01e48bf87763a00ca55cfff42423ad36
+
+Total reclaimed space: 1.642GB
+docker stop sysbox-installer-test
+sysbox-installer-test
+make test-cntr-installer
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Building the test container **
+
+Sending build context to Docker daemon  951.3kB
+Step 1/22 : FROM ubuntu:focal
+ ---> 74435f89ab78
+Step 2/22 : ARG k8s_version=v1.18.2
+ ---> Using cache
+ ---> 06b2e319ce50
+Step 3/22 : ENV DEBIAN_FRONTEND=noninteractive
+ ---> Using cache
+ ---> 7f97b365dec6
+Step 4/22 : RUN apt-get update && apt-get install -y     build-essential     automake     autoconf     libtool     procps     psmisc     nano     less     curl     sudo     gawk     git     iptables     jq     pkg-config     libaio-dev     libcap-dev     libprotobuf-dev     libnl-3-dev     libnet-dev     libseccomp2     libseccomp-dev     protobuf-c-compiler     protobuf-compiler     python2     uidmap     kmod     unzip     time     net-tools     lsb-release     wget     lsof     iproute2     iputils-ping     ca-certificates     fuse     rsync     bash-completion     --no-install-recommends     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+ ---> Using cache
+ ---> 33614c656acc
+Step 5/22 : RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz &&     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+ ---> Using cache
+ ---> 2b426dd6f926
+Step 6/22 : ENV GOPATH /go
+ ---> Using cache
+ ---> c6acbe63eadc
+Step 7/22 : ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ ---> Using cache
+ ---> d3abb0f3faa7
+Step 8/22 : RUN go env -w GONOSUMDB=/root/nestybox &&     mkdir -p "$GOPATH/src" "$GOPATH/bin" &&     chmod -R 777 "$GOPATH"
+ ---> Using cache
+ ---> 0a9855f5cf6f
+Step 9/22 : RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+ ---> Using cache
+ ---> b3ed40208179
+Step 10/22 : RUN cd /tmp     && git clone https://github.com/sstephenson/bats.git     && cd bats     && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f     && ./install.sh /usr/local     && rm -rf /tmp/bats
+ ---> Using cache
+ ---> 008bc51db968
+Step 11/22 : RUN mkdir -p ~/bin/protoc     && cd ~/bin/protoc/     && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip     && unzip protoc-3.6.1-linux-x86_64.zip     && cp -r include/* /usr/local/include/     && cp bin/protoc /usr/local/bin/     && cd     && rm -rf ~/bin/protoc/     && GIT_TAG="v1.3.1"     && go get -d -u github.com/golang/protobuf/protoc-gen-go     && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null     && go install github.com/golang/protobuf/protoc-gen-go
+ ---> Using cache
+ ---> 7664006b4400
+Step 12/22 : RUN  apt-get update     && apt-get install -y     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -     && apt-key fingerprint 0EBFCD88     && add-apt-repository     "deb [arch=amd64] https://download.docker.com/linux/ubuntu     $(lsb_release -cs)     stable"     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ ---> Using cache
+ ---> f38076cb8c95
+Step 13/22 : ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+Downloading    115kB
+ ---> Using cache
+ ---> 671aa26ff2b1
+Step 14/22 : RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -      && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list     && apt-get update     && apt-get install kubectl="${k8s_version#v}"-00     && apt-get clean -y     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 07528b5297af
+Step 15/22 : RUN useradd sysbox     && mkdir -p /var/lib/sysboxfs
+ ---> Using cache
+ ---> 2488eda8297c
+Step 16/22 : COPY .docker/config.json /root/.docker/config.json
+ ---> Using cache
+ ---> 0da1c1422043
+Step 17/22 : COPY scr/testContainerInit /usr/bin
+ ---> Using cache
+ ---> d3b6dea43524
+Step 18/22 : COPY scr/testContainerCleanup /usr/bin
+ ---> Using cache
+ ---> f169d0c5c59b
+Step 19/22 : COPY bin/userns_child_exec /usr/bin
+ ---> Using cache
+ ---> 96315ae986e4
+Step 20/22 : RUN mkdir -p /root/nestybox
+ ---> Using cache
+ ---> b0799e886256
+Step 21/22 : WORKDIR /root/nestybox/sysbox
+ ---> Using cache
+ ---> 75b32cc486d8
+Step 22/22 : CMD /bin/bash
+ ---> Using cache
+ ---> 40ae4e03a8fe
+Successfully built 40ae4e03a8fe
+Successfully tagged sysbox-test:latest
+
+** Building the test-installer container image**
+
+Sending build context to Docker daemon  951.3kB
+Step 1/6 : FROM sysbox-test:latest
+ ---> 40ae4e03a8fe
+Step 2/6 : RUN apt-get update &&                                apt-get install -y --no-install-recommends               systemd                                          systemd-sysv                                     libsystemd0                                      ca-certificates                                  dbus                                             iptables                                         iproute2                                         kmod                                             locales                                          sudo                                             udev &&                                                                                   echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&                                                                                         systemctl mask getty@tty1.service getty-static.service &&                                                                                   apt-get clean -y &&                                                   rm -rf                                                                   /var/cache/debconf/*                                                  /var/lib/apt/lists/*                                                  /var/log/*                                                            /tmp/*                                                                /var/tmp/*                                                            /usr/share/doc/*                                                      /usr/share/man/*                                                      /usr/share/local/* &&                                                                                                                    useradd --create-home --shell /bin/bash admin && echo "admin:admin" |         chpasswd && adduser admin sudo
+ ---> Using cache
+ ---> 129b3e02f071
+Step 3/6 : RUN apt-get update && apt-get install -y --no-install-recommends             linux-headers-generic
+ ---> Using cache
+ ---> bbef6e6ed552
+Step 4/6 : STOPSIGNAL SIGRTMIN+3
+ ---> Using cache
+ ---> 5db4ed972d1f
+Step 5/6 : ENV container docker
+ ---> Using cache
+ ---> 91a18ad3d6aa
+Step 6/6 : ENTRYPOINT [ "/sbin/init" ]
+ ---> Using cache
+ ---> 8910f1c6f60d
+Successfully built 8910f1c6f60d
+Successfully tagged sysbox-installer-test:latest
+docker run -d --rm --privileged --hostname sysbox-installer-test --name sysbox-installer-test -v /home/vagrant/wsp/v0.2.0/sysbox:/root/nestybox/sysbox -v /lib/modules:/lib/modules:ro -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox -v /var/tmp/sysbox-test-scratch:/mnt/scratch -v /home/vagrant/go/pkg/mod:/go/pkg/mod -v /usr/src/linux-headers-5.4.0-33-generic:/usr/src/linux-headers-5.4.0-33-generic:ro -v /usr/src/linux-headers-5.4.0-33:/usr/src/linux-headers-5.4.0-33:ro --mount type=tmpfs,destination=/run --mount type=tmpfs,destination=/run/lock --mount type=tmpfs,destination=/tmp sysbox-installer-test
+80bb09899efc4dbb51091a79bccd37d11ab94effb82803caf61af7bd027ef55e
+
+** Installing sysbox deb package **
+
+docker exec -it sysbox-installer-test /bin/bash -c "rm -rf /usr/sbin/policy-rc.d && \
+        DEBIAN_FRONTEND=noninteractive dpkg -i image/deb/debbuild/ubuntu-focal/sysbox_0.2.0-0.ubuntu-focal_amd64.deb"
+Selecting previously unselected package sysbox.
+(Reading database ... 58634 files and directories currently installed.)
+Preparing to unpack .../sysbox_0.2.0-0.ubuntu-focal_amd64.deb ...
+Unpacking sysbox (0.2.0-0.ubuntu-focal) ...
+Setting up sysbox (0.2.0-0.ubuntu-focal) ...
+
+The linux kernel headers package was not found. This may be expected by user applications running within Sysbox containers. Please install it with this command:
+        "sudo apt-get install -y linux-headers-$(uname -r)"
+
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+docker exec -it sysbox-installer-test /bin/bash -c \
+"sed -i --follow-symlinks 's/ExecStart=\/usr\/local\/sbin\/sysbox-fs/ExecStart=\/usr\/local\/sbin\/sysbox-fs \
+        --ignore-handler-errors/g' /etc/systemd/system/sysbox.service.wants/sysbox-fs.service && \
+        systemctl daemon-reload && systemctl restart sysbox.service"
+docker exec -it sysbox-installer-test /bin/bash -c "cat /etc/docker/daemon.json | \
+        jq '. + {\"default-runtime\": \"sysbox-runc\"}' > /tmp/daemon.json && \
+        mv /tmp/daemon.json /etc/docker/daemon.json && \
+        systemctl restart docker.service"
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+
+** Running sysbox's pkg installer integration tests **
+
+/home/vagrant/wsp/v0.2.0/sysbox/tests/scr/testContainerPre /var/tmp/sysbox-test-var-lib-docker /var/tmp/sysbox-test-var-lib-sysbox /var/tmp/sysbox-test-scratch
+make[1]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox'
+make[2]: Entering directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+hack/go_container.sh go build -v -o /out/kind-sysbox -ldflags "-X sigs.k8s.io/kind/pkg/cmd/kind/version.GitCommit=12a4da47327fd5c7d5657c65ace576cd6f8d300a"
+make[2]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox/kind-sysbox'
+make[1]: Leaving directory '/home/vagrant/wsp/v0.2.0/sysbox'
+docker exec -it sysbox-installer-test /bin/bash -c "export SB_INSTALLER=true && \
+        make test-pkg-installer-local TESTPATH="
+/root/nestybox/sysbox/tests/scr/testSysboxInstaller
+
+Executing installer tests ...
+1..30
+ok 1 no pre-existing dockerd config
+ok 2 pre-existing & unprocessed dockerd config (sysbox runtime)
+ok 3 pre-existing & processed dockerd config (sysbox runtime)
+ok 4 pre-existing & unprocessed dockerd config (non-sysbox runtime)
+ok 5 pre-existing & processed dockerd config (non-sysbox runtime)
+ok 6 pre-existing & unprocessed dockerd config (sysbox userns)
+ok 7 pre-existing & processed dockerd config (sysbox userns)
+ok 8 pre-existing & unprocessed dockerd config (sysbox userns) -- existing container
+ok 9 pre-existing & processed dockerd config (sysbox userns) -- existing container
+ok 10 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 11 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 12 no pre-existing dockerd config -- automatic restart
+ok 13 pre-existing & unprocessed dockerd config (sysbox runtime) -- automatic restart
+ok 14 pre-existing & processed dockerd config (sysbox runtime) -- automatic restart
+ok 15 pre-existing & unprocessed dockerd config (non-sysbox runtime) -- automatic restart
+ok 16 pre-existing & processed dockerd config (non-sysbox runtime) -- automatic restart
+ok 17 pre-existing & unprocessed dockerd config (sysbox userns) -- automatic restart
+ok 18 pre-existing & processed dockerd config (sysbox userns) -- automatic restart
+ok 19 pre-existing & unprocessed dockerd config (non-sysbox userns) -- automatic restart
+ok 20 pre-existing & processed dockerd config (non-sysbox userns) -- automatic restart
+ok 21 no pre-existing dockerd config & existing cntrs -- automatic restart
+ok 22 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 23 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- automatic restart
+ok 24 no pre-existing dockerd config -- manual docker restart
+ok 25 pre-existing & unprocessed dockerd config (sysbox runtime) -- manual restart
+ok 26 pre-existing & processed dockerd config (sysbox runtime) -- manual restart
+ok 27 pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart
+ok 28 pre-existing & processed dockerd config (sysbox userns) -- manual restart
+ok 29 pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- manual restart
+ok 30 pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual restart
+docker stop sysbox-installer-test
+sysbox-installer-test
+vagrant@ubuntu-focal-vm:~/wsp/v0.2.0/sysbox$
