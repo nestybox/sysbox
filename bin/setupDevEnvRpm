@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# Sysbox's development-environment installer for RPM-based distributions.
+#
+# Supported Distros:
+#   - Centos
+#   - Redhat
+#   - Fedora
+#
 
 GO_VERSION="1.13.3"
 GO_HOME="${HOME}/go"
@@ -76,7 +84,7 @@ echo "  Checking for make and autoconf utilities ..."
 output=$(sh -c "which make && which autoconf && sudo dpkg -l libtool" 2>&1)
 if [ $? -ne 0 ]; then
   echo "  Installing make and autoconf utilities ..."
-  sudo apt-get install --no-install-recommends -y \
+  sudo yum install -y \
     autoconf \
     libtool \
     make \
@@ -89,8 +97,6 @@ fi
 
 # install protoc compiler for gRPC
 echo "  Checking for gRPC protoc compiler ..."
-
-sudo apt-get install --no-install-recommends -y unzip
 
 output=$(sh -c "which protoc" 2>&1)
 if [ $? -ne 0 ]; then
