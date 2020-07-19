@@ -1,5 +1,5 @@
 #
-# kindind: kubernetes-in-docker ... in docker
+# kindind: kubernetes-in-docker ... in docker :)
 #
 # Usage:
 #
