@@ -644,7 +644,7 @@ function kindbox_cluster_setup() {
 
   local pod_net_cidr=10.244.0.0/16
 
-  run sysbox-staging/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
+  run kindbox/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
   [ "$status" -eq 0 ]
 
   local join_timeout=$(( $num_workers * 30 ))
@@ -660,10 +660,10 @@ function kindbox_cluster_teardown() {
   local net=$2
 
   if [[ $net == "bridge" ]]; then
-    run sysbox-staging/scr/kindbox destroy $cluster
+    run kindbox/scr/kindbox destroy $cluster
     [ "$status" -eq 0 ]
   else
-    run sysbox-staging/scr/kindbox destroy --net $cluster
+    run kindbox/scr/kindbox destroy --net $cluster
     [ "$status" -eq 0 ]
   fi
 
