@@ -959,7 +959,7 @@ EOF
   # 2.5GB combined). To make it go a bit faster, we spread the
   # workload by increasing the cluster size. Still, takes about 5m to run.
 
-  sysbox-staging/scr/kindbox resize --wait-all --num-workers=5 $cluster
+  kindbox/scr/kindbox resize --wait-all --num-workers=5 $cluster
 
   # Install Istio
   istio_install $controller
