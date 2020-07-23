@@ -42,7 +42,7 @@ function teardown() {
     got_owner=$(echo "${listing}" | awk '{print $3}')
     got_group=$(echo "${listing}" | awk '{print $4}')
 
-    [[ "$want_perm" == "$got_perm" ]]
+    [[ "${want_perm:0:9}" == "${got_perm:0:9}" ]]
     [[ "$want_bytes" == "$got_bytes" ]]
     [[ "$want_owner" == "$got_owner" ]]
     [[ "$want_group" == "$got_group" ]]
