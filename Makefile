@@ -51,8 +51,14 @@ KERNEL_REL := $(shell uname -r)
 export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
-IMAGE_BASE_DISTRO := $(shell lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
-IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
+ifeq ($(IMAGE_BASE_DISTRO), ubuntu)
+	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+else
+	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d \. -f1)
+endif
+IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
+IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
 # Volumes to mount into the privileged test container. These are
 # required because certain mounts inside the test container can't
