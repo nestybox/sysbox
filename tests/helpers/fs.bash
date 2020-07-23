@@ -53,17 +53,19 @@ function verify_perm_owner() {
   local uid=$(echo "${listing}" | awk '{print $3}')
   local gid=$(echo "${listing}" | awk '{print $4}')
 
-  [[ "$perm" == "$want_perm" ]] && [[ "$uid" == "$want_uid" ]] && [[ "$gid" == "$want_gid" ]]
+  # Notice that we are only comparing 10 characters (skiping the last one) on permisions
+  # field to avoid conflicts in scenarios where selinux is enabled (i.e. "-rw-r--r--.").
+  [[ "${perm:0:9}" == "${want_perm:0:9}" ]] && [[ "$uid" == "$want_uid" ]] && [[ "$gid" == "$want_gid" ]]
 }
 
 # Given an 'ls -l' listing of a single file, verifies it's read-only root:root
 function verify_root_ro() {
-  verify_perm_owner "-r--r--r--" "root" "root" "$@"
+    verify_perm_owner "-r--r--r--" "root" "root" "$@"
 }
 
 # Given an 'ls -l' listing of a single file, verifies it's read-write root:root
 function verify_root_rw() {
-  verify_perm_owner "-rw-r--r--" "root" "root" "$@"
+    verify_perm_owner "-rw-r--r--" "root" "root" "$@"
 }
 
 # Returns the storage available on the given directory (must be a mountpoint)
@@ -72,4 +74,14 @@ function fs_avail() {
   diskAvail=$(df $dir | grep $dir | awk '{print $4}')
   # "df" returns storage in units of KB; convert to bytes.
   echo $(($diskAvail*1024))
+}
+
+# Currently not in used.
+function selinux_on() {
+
+  if ls -l /proc/uptime | cut -d" " -f1 | tail -c 2 | egrep -q "."; then
+    echo 1
+  else
+    echo 0
+  fi
 }
