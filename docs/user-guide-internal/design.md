@@ -398,4 +398,5 @@ sysbox-fs monitors for seccomp notificaitions from the kernel and
 performs the emulation of trapped syscalls.
 
 Much more info on seccomp BPF for syscall trapping can be found
-[here](https://github.com/nestybox/sysbox/blob/master/knowledge-base/syscall-trapping/syscall_seccomp_bpf.md).
+[here](https://github.com/nestybox/sysbox/blob/master/knowledge-base/syscall-trapping/syscall_seccomp_bpf.md)
+and [in this excellent post by Christian Brauner from LXD](https://people.kernel.org/brauner/the-seccomp-notifier-new-frontiers-in-unprivileged-container-development).
