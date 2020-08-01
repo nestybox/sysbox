@@ -10,9 +10,4 @@
 [submodule "sysbox-mgr"]
 	path = sysbox-mgr
 	url = git@github.com:nestybox/sysbox-mgr.git
-[submodule "lib/seccomp"]
-	path = lib/seccomp
-	url = git@github.com:nestybox/libseccomp.git
-[submodule "lib/seccomp-golang"]
-	path = lib/seccomp-golang
-	url = git@github.com:nestybox/libseccomp-golang.git
+
