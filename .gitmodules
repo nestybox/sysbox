@@ -10,4 +10,6 @@
 [submodule "sysbox-mgr"]
 	path = sysbox-mgr
 	url = git@github.com:nestybox/sysbox-mgr.git
-
+[submodule "sysbox-libs"]
+	path = sysbox-libs
+	url = git@github.com:nestybox/sysbox-libs.git
