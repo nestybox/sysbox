@@ -56,7 +56,7 @@ SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
 KIND_SYSBOX_DIR := kind-sysbox
-LIB_SECCOMP_DIR := lib/seccomp-golang
+LIB_SECCOMP_DIR := sysbox-libs/libseccomp-golang
 SHIFTFS_DIR     := shiftfs
 
 # Consider to have this one moved out within sysbox-runc folder.
@@ -121,8 +121,8 @@ help:
 # libseccomp (used by Sysbox components)
 #
 
-LIBSECCOMP := lib/seccomp/src/.libs/libseccomp.a
-LIBSECCOMP_DIR := lib/seccomp
+LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
+LIBSECCOMP_DIR := sysbox-libs/libseccomp
 LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
 LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
