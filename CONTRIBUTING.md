@@ -196,8 +196,8 @@ commit the test suite should be passing.
 Include documentation changes in the same commit so that a revert would remove
 all traces of the feature or fix.
 
-TODO: Commits that fix or close an issue should include a reference like `Closes
-#XXX` or `Fixes #XXX`, which will automatically close the issue when merged.
+Commits that fix or close an issue should include a reference like `Closes
+#XXX` or `Fixes #XXX`.
 
 ### Sign your work
 

@@ -8,8 +8,8 @@
 -   [Audience](#audience)
 -   [Supported Distros](#supported-distros)
 -   [Host Requirements](#host-requirements)
--   [Building Sysbox](#building-sysbox)
--   [Launching a System Container](#launching-a-system-container)
+-   [Installing Sysbox](#installing-sysbox)
+-   [Using Sysbox](#using-sysbox)
 -   [Sysbox Features](#sysbox-features)
 -   [Documentation](#documentation)
 -   [Integration with Container Managers & Orchestrators](#integration-with-container-managers--orchestrators)
@@ -26,14 +26,12 @@
 
 ## Introduction
 
-This is the Sysbox project's repo.
-
 **Sysbox** is an open-source, next-generation container runtime (aka runc)
 originally developed by [Nestybox](https://www.nestybox.com).
 
-Sysbox enables Docker (or more accurately OCI-based) containers to act as
-virtual servers with full root access and capable of running software such as
-Systemd, Docker, and Kubernetes in them, **seamlessly and securely**.
+Sysbox enables Docker containers to act as virtual servers with full root access
+and capable of running software such as Systemd, Docker, and Kubernetes in them,
+**seamlessly and securely**.
 
 Prior to Sysbox, running such software in a container required complex images,
 custom entrypoints, special volume mounts, and very unsecure privileged
@@ -45,20 +43,13 @@ images and with strong isolation. Sysbox voids the need for unsecure privileged
 containers in most cases.
 
 Sysbox was forked from the OCI runc in early 2019, and has undergone significant
-changes since then. It's currently composed of 3 components: sysbox-runc,
-sysbox-fs, and sysbox-mgr. It's mostly written in [Go](https://golang.org/).
-More on this can be found in Sysbox's design guide.
+changes since then. It's mostly written in Go, and its currently composed of 3
+components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's design can
+be found in the [Sysbox user guide](docs/user-guide/design.md).
 
-TODO: add link to design guide.
-
-Sysbox sits below container managers such as Docker / containerd, allowing you
-to use these well known tools to deploy the containers. No need to learn new tools.
-
-We have some sample videos showing Sysbox in action:
-
--   [Docker Sandboxing](https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo?speed=2)
-
--   [Kubernetes-in-Docker](https://asciinema.org/a/V1UFSxz6JHb3rdHpGrnjefFIt?speed=1.75)
+Sysbox sits below OCI-compatible container managers such as Docker / containerd,
+allowing you to use these well known tools to deploy the containers. No need to
+learn new tools.
 
 The complete list of features is [here](#sysbox-features).
 
@@ -81,11 +72,12 @@ The Sysbox project is intended for anyone looking to experiment, invent, learn,
 and build systems using system containers. Contributions are welcomed!
 
 The Sysbox project is **not meant** for people looking for a commercially
-supported solution. For a example of such a solution, refer to
-the [Nestybox website](https://www.nestybox.com).
+supported solution. For such a solution, refer to the Sysbox Enterprise
+Edition (sysbox-EE) in the [Nestybox website](https://www.nestybox.com).
+Sysbox-EE is **free for individual developers** but paid for enterprise use.
 
 See [here](#relationship-to-nestybox) for more on the relationship between
-the Sysbox project and Nestybox.
+the Sysbox open-source project and Nestybox.
 
 ## Supported Distros
 
@@ -96,29 +88,23 @@ of Ubuntu kernels are supported.
 
 We plan to add support for more distros in the near future.
 
-## Host Requirements
-
-The Linux host on which Sysbox runs must meet the following requirements:
-
-1) It must have one of the supported Linux distros.
-
-2) Docker must be [installed natively](docs/user-guide/install.md#docker-installation) (**not** with the Docker snap package).
-
 ## Installing Sysbox
 
 Before you can use Sysbox, you must first install it on your Linux machine.
 
 There are two ways:
 
-1) You can download a free packaged version from the [Nestybox website](https://www.nestybox.com). This is the
-   easiest approach if you are just looking to use Sysbox.
+1) You can download a packaged version from the [Nestybox website](https://www.nestybox.com).
+   This is the easiest and best approach if you just want to use Sysbox. The installation
+   instructions are provided in the website.
 
-2) You can build it from source and install it. This is the best approach if you are looking for a deeper
-   dive or if you want to [contribute](#contributing) to Sysbox.
+2) You can build it from source and install it manually. This is the best approach if you
+   are looking for a deeper dive or if you want to contribute to Sysbox. See the
+   [developer's guide](docs/developers-guide.md) for more on this.
 
 ## Using Sysbox
 
-Once Sysbox is installed, you launch a system container with Docker as follows:
+Once Sysbox is installed, you use it as follows:
 
 ```console
 $ docker run --runtime=sysbox-runc --rm -it --hostname my_cont debian:latest
@@ -127,7 +113,9 @@ root@my_cont:/#
 
 This launches a system container. Looks very much like a regular container,
 except that within it you can now run system software such as Systemd, Docker,
-Kubernetes, etc., seamlessly and securely (no privileged containers!).
+Kubernetes, etc., seamlessly and securely, just as you would on a physical host
+or virtual machine. No complex docker images or docker run commands, and no
+need for privileged containers.
 
 The [Sysbox Quickstart Guide](docs/quickstart/README.md) has many usage examples.
 You should start there to get familiarized with the use cases enabled by Sysbox.
@@ -160,9 +148,6 @@ regular Docker containers; they won't conflict and can co-exist side-by-side.
 -   Deploy Kubernetes (K8s) inside containers with proper isolation (no privileged containers)
     and using simple Docker images and Docker run commands (no need for custom Docker images
     with tricky entrypoints).
-
--   Very efficient: a 10-node K8s cluster deploys in under 2 minutes and
-    consumes only 1GB of storage overhead.
 
 -   Deploy with simple `docker run` commands for full flexibility, or using a
     higher level tool (e.g., such as [kindbox](https://github.com/nestybox/kindbox)).
@@ -254,7 +239,7 @@ but weaker isolation than VMs (by sharing the Linux kernel among containers).
 
 ## Contributing
 
-We welcome contributions to Sysbox, whether they be small documentation changes,
+We welcome contributions to Sysbox, whether they are small documentation changes,
 bug fixes, or feature additions. Please see the [contribution guidelines](CONTRIBUTING.md)
 and [developer's guide](docs/developers-guide.md) for more info.
 
@@ -271,10 +256,7 @@ to report issues.
 Refer to the [Troubleshooting document](docs/user-guide/troubleshoot.md)
 and to the [issues](https://github.com/nestybox/sysbox/issues) for help.
 
-Reach us at our [slack channel][slack] or at `contact@nestybox.com` for any questions.
-See our [contact info](#contact) below for more options.
-
-TODO: create a Sysbox OSS slack channel, add info here instead of Nestybox's.
+Reach us at our [slack channel][slack] for any questions.
 
 ## Roadmap
 
@@ -298,24 +280,28 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 ## Relationship to Nestybox
 
-Sysbox was initially developed by Nestybox, and Nestybox is the main sponsor of
-the Sysbox open-source project.
+Sysbox was initially developed by [Nestybox](https://www.nestybox.com), and Nestybox is
+the main sponsor of the Sysbox open-source project.
 
-Having said this, Sysbox is a self-governed open-source project, and we encourage
-participation from the community to help evolve and improve it. External
-maintainers and contributors are welcomed.
+Having said this, we encourage participation from the community to help evolve
+and improve it, with the goal of improving Sysbox and increasing the use cases
+that it enables. External maintainers and contributors are welcomed!
 
 Nestybox uses Sysbox as the core of it's Sysbox enterprise product, which
 consists of Sysbox plus proprietary features meant for enterprise use.
 
-To ensure synergy between the Sysbox project and companies such as Nestybox, we
-use the following criteria when considering adding functionality to Sysbox:
+To ensure synergy between the Sysbox project and commercial entities such as
+Nestybox, we use the following criteria when considering adding functionality to
+Sysbox:
 
 Any features that mainly benefit individual practitioners are made part of the Sysbox
 open-source project. Any features that mainly address enterprise-level needs are
 not part of the Sysbox open-source project.
 
-This way, the Sysbox open source project satisfies the needs of individual
+The Sysbox project maintainers will make this determination on a feature by
+feature basis, with total transparency.
+
+This way, the Sysbox open source project meets the needs of individual
 practitioners while giving companies such as Nestybox the chance to monetize on
 enterprise-level features (which in turn enables Nestybox to continue to sponsor
 the Sysbox open source project).
@@ -325,11 +311,13 @@ the Sysbox open source project).
 Prior to uninstalling Sysbox, make sure all system containers are removed.
 There is a simple shell script to do this [here](scr/rm_all_syscont).
 
-TODO: add uninstall instructions
+The method for uninstalling Sysbox depends on how you [installed it](#installing-sysbox).
+
+1) If you used the packaged version from the Nestybox website, follow the uninstallation instructions in the associated documentation.
+
+2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide.md#uninstalling) to uninstall it.
 
 ## Contact
-
-TODO: add slack channel contact info
 
 Slack: [Nestybox Slack Workspace][slack]
 
@@ -338,3 +326,5 @@ We are there from Monday-Friday, 9am-5pm Pacific Time.
 ## Thank You
 
 We thank you **very much** for trying Sysbox. We hope you find it useful!
+
+[slack]: [https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/]
