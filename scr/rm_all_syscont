@@ -1,0 +1,15 @@
+#!/bin/bash -e
+
+#
+# Sample script to stop and remove all system containers on the system (launched with Docker).
+#
+
+for container in `docker ps -aq`; do
+  runtime=$(docker inspect --format='{{.HostConfig.Runtime}}' "$container")
+  if [[ "$runtime" == "sysbox-runc" ]]; then
+    echo "stopping system container $container"
+    docker stop "$container"
+    echo "removing system container $container"
+    docker rm "$container"
+  fi
+done
