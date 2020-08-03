@@ -12,7 +12,6 @@
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysbox-ipc \
-	kind-sysbox kind-sysbox-debug \
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-shiftuid test-sysbox-local \
@@ -55,7 +54,6 @@ SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
-KIND_SYSBOX_DIR := kind-sysbox
 LIB_SECCOMP_DIR := sysbox-libs/libseccomp-golang
 SHIFTFS_DIR     := shiftfs
 
@@ -183,13 +181,6 @@ sysbox-mgr-static: sysbox-ipc
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
-kind-sysbox: ## Build kind-sysbox module
-	@cd $(KIND_SYSBOX_DIR) && make kind-sysbox
-
-kind-sysbox-debug: ## Build kind-sysbox module (compiler optimizations off)
-	@cd $(KIND_SYSBOX_DIR) && make kind-sysbox-debug
-
-
 #
 # install targets (require root privileges)
 #
@@ -203,12 +194,12 @@ install: ## Install all sysbox binaries
 	install -D -m0755 bin/sysbox $(INSTALL_DIR)/sysbox
 
 
+
 uninstall: ## Uninstall all sysbox binaries
 	rm -f $(INSTALL_DIR)/sysbox
 	rm -f $(INSTALL_DIR)/sysbox-fs
 	rm -f $(INSTALL_DIR)/sysbox-mgr
 	rm -f $(INSTALL_DIR)/sysbox-runc
-	rm -f $(INSTALL_DIR)/kind-sysbox
 
 #
 # Test targets
@@ -526,7 +517,6 @@ clean:
 	cd $(SYSFS_DIR) && make clean
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSIPC_DIR) && make clean
-	cd $(KIND_SYSBOX_DIR) && make clean
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
