@@ -191,7 +191,7 @@ install: ## Install all sysbox binaries
 	install -D -m0755 sysbox-fs/sysbox-fs $(INSTALL_DIR)/sysbox-fs
 	install -D -m0755 sysbox-mgr/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
 	install -D -m0755 sysbox-runc/sysbox-runc $(INSTALL_DIR)/sysbox-runc
-	install -D -m0755 bin/sysbox $(INSTALL_DIR)/sysbox
+	install -D -m0755 scr/sysbox $(INSTALL_DIR)/sysbox
 
 
 
