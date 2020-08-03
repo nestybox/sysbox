@@ -203,3 +203,10 @@ Refer to the Sysbox [troubleshooting notes](docs/troubleshoot.md).
 Refer to the Sysbox [debugging notes](docs/debug.md)
 for detailed information on the sequence of steps required to debug
 Sysbox modules.
+
+## Uninstalling
+
+```
+$ sudo make uninstall
+$ make clean
+```
