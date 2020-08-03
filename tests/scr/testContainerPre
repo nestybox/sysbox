@@ -19,5 +19,3 @@ mkdir -p $TEST_VOL1
 mkdir -p $TEST_VOL2
 mkdir -p $TEST_VOL3
 
-# Build kind-sysbox to be utilized within test container.
-make kind-sysbox
