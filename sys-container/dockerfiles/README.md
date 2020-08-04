@@ -1,48 +1,72 @@
-Dockerfiles for system container images
-=======================================
+Nestybox System Container Dockerfiles
+=====================================
 
-The Dockerfiles in the sub-directories correspond to system container
-images meant for internal use within Nestybox.
+This directory contains the Dockerfiles for system container images
+uploaded to the Nestybox public repos on DockerHub.
 
-**Note**: when pushing these to the Nestybox DockerHub repos, make sure they are pushed to private repos.
+The Dockerfiles and associated images are meant to be used as examples.
 
-The Dockerfiles for system container images meant for our customers
-are stored in the sysbox external repo. The resulting images are
-pushed into Nestybox's public repos on DockerHub.
+Feel free to copy them and modify them to your needs, or source them
+from within your Dockerfiles.
 
+# Pulling a Nestybox system container image from DockerHub
 
-## To build an image:
+For example, to run the system container image that contains Ubuntu Disco + Docker, simply type:
 
-Go to the directory where the Dockerfile is and run:
-
+```console
+$ docker run --runtime=sysbox-runc -it nestybox/ubuntu-disco-docker:latest
 ```
+
+# Customizing the system container to your needs
+
+Two approaches: either source the Nestybox image from within your own
+Dockerfile, or copy the Nestybox Dockerfile and modify it.
+
+The former approach makes sense if you wish to leverage the entire image.
+
+The latter approach makes sense if there is some instruction within the
+Nestybox Dockerfile that you wish to change.
+
+## Sourcing the Nestybox Image
+
+Simply add this at the beginning of your Dockerfile
+
+```console
+FROM nestybox/ubuntu-disco-docker:latest
+```
+
+Then add your instructions to the Dockerfile.
+
+Then build the image and tag it:
+
+```console
 $ docker build .
+$ docker tag <image-tag> my-custom-syscont:latest
 ```
 
-## Image tagging
+And run it with:
 
-Tag the sys container image with a short name that describes its
-contents. E.g.,:
-
-```
-$ docker tag <image-tag> nestybox/ubuntu-disco-docker-dbg:latest
+```console
+$ docker run --runtime=sysbox-runc -it my-custom-syscont:latest
 ```
 
-## Image push
+You can then push the image to your own container image repo for later re-use.
 
-To push the sys container image to the Nestybox repo on DockerHub:
+## Copy the Dockerfile, modify it, and build a new image
 
+First, copy the Nestybox Dockerfile to some directory, `cd` to that directory, and modify it per your needs.
+
+Then build the image and tag it:
+
+```console
+$ docker build .
+$ docker tag <image-tag> my-custom-syscont:latest
 ```
-$ docker login
-$ docker push nestybox/ubuntu-disco-docker-dbg:latest
+
+And run it with:
+
+```console
+$ docker run --runtime=sysbox-runc -it my-custom-syscont:latest
 ```
 
-**Note**: images intended for internal use must be stored in a private Nestybox repo.
-
-## Image pull
-
-To pull an image from the private repo:
-
-```
-$ docker pull nestybox/ubuntu-disco-docker-dbg:latest
-```
+You can then push the image to your own container image repo for later re-use.
