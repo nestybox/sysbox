@@ -24,14 +24,8 @@ export controller1="${cluster1}"-master
 export net1="${cluster1}"-net
 export num_workers1=2
 
-# Cluster2 definition.
-export cluster2=cluster2
-export controller2="${cluster2}"-master
-export net2="${cluster2}"-net
-export num_workers2=1
-
 # Preset kubeconfig env-var to point to both cluster-configs.
-export KUBECONFIG=${HOME}/.kube/${cluster1}-config:${HOME}/.kube/${cluster2}-config
+export KUBECONFIG=${HOME}/.kube/${cluster1}-config
 
 # Cluster's node image.
 export node_image="nestybox/k8s-node-test:v1.18.2"
@@ -320,183 +314,10 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox ingress" {
-
-  # Based on:
-  # https://docs.traefik.io/v1.7/user-guide/kubernetes/
-
-  # the test will be modifying /etc/hosts in the test container;
-  # create a backup so we can revert it after the test finishes.
-  cp /etc/hosts /etc/hosts.orig
-
-  # deploy the ingress controller (traefik) and associated services and ingress rules
-  k8s_apply $cluster1 $controller1 $manifest_dir/traefik.yaml
-
-  retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
-
-  # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip "${cluster1}"-worker-0)
-  echo "$node_ip traefik-ui.nestykube" >> /etc/hosts
-
-  # verify ingress to traefik-ui works
-  sleep 20
-
-  wget traefik-ui.nestykube -O $test_dir/index.html
-  grep Traefik $test_dir/index.html
-  rm $test_dir/index.html
-
-  # deploy nginx and create a service for it
-  run kubectl create deployment nginx --image=nginx:1.16-alpine
-  [ "$status" -eq 0 ]
-
-  run kubectl scale --replicas=3 deployment nginx
-  [ "$status" -eq 0 ]
-
-  run kubectl expose deployment/nginx --port 80
-  [ "$status" -eq 0 ]
-
-  retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
-
-  # create an ingress rule for the nginx service
-cat > "$test_dir/nginx-ing.yaml" <<EOF
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: nginx
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  rules:
-  - host: nginx.nestykube
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: nginx
-          servicePort: 80
-EOF
-
-  # apply the ingress rule
-  k8s_apply $cluster1 $controller1 $test_dir/nginx-ing.yaml
-
-  retry_run 40 2 "k8s_daemonset_ready $cluster1 $controller1 kube-system traefik-ingress-controller"
-
-  # setup the ingress hostname in /etc/hosts
-  local node_ip=$(k8s_node_ip "${cluster1}"-worker-1)
-  echo "$node_ip nginx.nestykube" >> /etc/hosts
-
-  # verify ingress to nginx works
-  sleep 3
-
-  wget nginx.nestykube -O $test_dir/index.html
-  grep "Welcome to nginx" $test_dir/index.html
-  rm $test_dir/index.html
-
-  # cleanup
-  run kubectl delete ing nginx
-  [ "$status" -eq 0 ]
-  run kubectl delete svc nginx
-  [ "$status" -eq 0 ]
-  run kubectl delete deployment nginx
-  [ "$status" -eq 0 ]
-
-  k8s_delete $cluster1 $controller1 $manifest_dir/traefik.yaml
-
-  rm $test_dir/nginx-ing.yaml
-  cp /etc/hosts.orig /etc/hosts
-}
-
-@test "kindbox custom net cluster2 up" {
-
-  kindbox_cluster_setup $cluster2 $num_workers2 $net2 $node_image
-
-  run kubectl config use-context kubernetes-admin@"${cluster2}"
-  [ "$status" -eq 0 ]
-
-  # store k8s cluster info so subsequent tests can use it
-  echo $num_workers > "$test_dir/."${cluster2}"_num_workers"
-
-  # launch a k8s deployment
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
-  [ "$status" -eq 0 ]
-
-  run kubectl scale --replicas=4 deployment nginx
-  [ "$status" -eq 0 ]
-
-  retry_run 40 2 "k8s_deployment_ready $cluster2 $controller2 default nginx"
-
-  # create a service and confirm it's there
-  run kubectl expose deployment/nginx --port 80
-  [ "$status" -eq 0 ]
-
-  local svc_ip=$(k8s_svc_ip $cluster2 $controller2 default nginx)
-
-  docker exec $controller2 sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
-  [ "$status" -eq 0 ]
-
-  # Verify the two k8s clusters are isolated.
-
-  ## Check nodes.
-  run kubectl config use-context kubernetes-admin@"${cluster1}"
-  [ "$status" -eq 0 ]
-
-  run kubectl get nodes $controller2
-  [ "$status" -eq 1 ]
-
-  run kubectl get nodes ${cluster2}-worker-0
-  [ "$status" -eq 1 ]
-
-  ## Switch to cluster2 context.
-  run kubectl config use-context kubernetes-admin@"${cluster2}"
-  [ "$status" -eq 0 ]
-
-  run kubectl get nodes $controller1
-  [ "$status" -eq 1 ]
-
-  run kubectl get nodes ${cluster1}-worker-0
-  [ "$status" -eq 1 ]
-
-  ## Check deployments.
-
-  ## Switch to cluster1 context.
-  run kubectl config use-context kubernetes-admin@"${cluster1}"
-  [ "$status" -eq 0 ]
-
-  run kubectl get deployment nginx
-  [ "$status" -eq 1 ]
-
-  ## Check services.
-  run kubectl get svc nginx
-  [ "$status" -eq 1 ]
-
-  # Cleanup.
-
-  ## Switch to cluster2 context.
-  run kubectl config use-context kubernetes-admin@"${cluster2}"
-  [ "$status" -eq 0 ]
-
-  run kubectl delete svc nginx
-  [ "$status" -eq 0 ]
-
-  run kubectl delete deployments.apps nginx
-  [ "$status" -eq 0 ]
-
-  # Switch to cluster1 context before exiting.
-  run kubectl config use-context kubernetes-admin@"${cluster1}"
-  [ "$status" -eq 0 ]
-}
-
 @test "kindbox custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
   kindbox_cluster_teardown $cluster1 $net1
-
-  # Switch to cluster2 context.
-  run kubectl config use-context kubernetes-admin@"${cluster2}"
-  [ "$status" -eq 0 ]
-
-  num_workers=$(cat "$test_dir/."${cluster2}"_num_workers")
-  kindbox_cluster_teardown $cluster2 $net2
 
   remove_test_dir
 }
