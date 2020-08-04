@@ -151,6 +151,8 @@ Please update the docs whenever:
 
 * You spot typos, missing docs, or unclear/incorrect docs.
 
+And remember: the documentation is as important as the software itself.
+
 ### Process for creating pull requests
 
 1) Fork the Sysbox repo

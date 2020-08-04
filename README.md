@@ -10,8 +10,8 @@
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
 -   [Using Sysbox](#using-sysbox)
--   [Sysbox Features](#sysbox-features)
 -   [Documentation](#documentation)
+-   [Sysbox Features](#sysbox-features)
 -   [Integration with Container Managers & Orchestrators](#integration-with-container-managers--orchestrators)
 -   [Sysbox is not Rootless Docker](#sysbox-is-not-rootless-docker)
 -   [Sysbox does not use hardware virtualization](#sysbox-does-not-use-hardware-virtualization)
@@ -29,21 +29,29 @@
 **Sysbox** is an open-source, next-generation container runtime (aka runc)
 originally developed by [Nestybox](https://www.nestybox.com).
 
-Sysbox enables Docker containers to act as virtual servers with full root access
-and capable of running software such as Systemd, Docker, and Kubernetes in them,
-**seamlessly and securely**.
+Sysbox enables Docker containers to act as virtual servers capable of running
+software such as Systemd, Docker, and Kubernetes in them, **seamlessly and
+securely**. This implies the ability for these containers to run inner
+containers (nested) while providing strong isolation from the underlying host.
 
-Prior to Sysbox, running such software in a container required complex images,
-custom entrypoints, special volume mounts, and very unsecure privileged
-containers.
+Prior to Sysbox, running such software in a container required you to create
+complex images, custom entrypoints, special volume mounts, and very unsecure
+privileged containers.
 
-Sysbox overcomes these problems by creating the container in such a way that the
-above mentioned software runs normally inside of it, using simple container
-images and with strong isolation. Sysbox voids the need for unsecure privileged
-containers in most cases.
+Sysbox helps you overcome these problems by creating the container in such a way
+that the above mentioned software runs normally inside of it, with simple
+container images and strong isolation. Sysbox voids the need for unsecure
+privileged containers in most cases.
+
+In order to do this, Sysbox uses many OS-virtualization features of the Linux
+kernel and complements these with OS-virtualization techniques implemented in
+user-space. These include using all Linux namespaces (in particular
+the user-namespace), partial virtualization of procfs and sysfs, selective
+syscall trapping, and more. Due to this, Sysbox requires a fairly recent Linux
+kernel (see the [supported distros](#supported-distros) below).
 
 Sysbox was forked from the OCI runc in early 2019, and has undergone significant
-changes since then. It's mostly written in Go, and its currently composed of 3
+changes since then. It's written in Go, and its currently composed of three
 components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's design can
 be found in the [Sysbox user guide](docs/user-guide/design.md).
 
@@ -69,12 +77,13 @@ Sysbox is an open-source project, licensed under the Apache License, Version
 ## Audience
 
 The Sysbox project is intended for anyone looking to experiment, invent, learn,
-and build systems using system containers. Contributions are welcomed!
+and build systems using system containers. It's cutting-edge OS virtualization,
+and contributions are welcomed.
 
-The Sysbox project is **not meant** for people looking for a commercially
-supported solution. For such a solution, refer to the Sysbox Enterprise
-Edition (sysbox-EE) in the [Nestybox website](https://www.nestybox.com).
-Sysbox-EE is **free for individual developers** but paid for enterprise use.
+The Sysbox project is not meant for people looking for a commercially supported
+solution. For such a solution, refer to the Sysbox Enterprise Edition
+(sysbox-EE) in the [Nestybox website](https://www.nestybox.com). Sysbox-EE uses
+Sysbox at its core, but complements it with enterprise-level features.
 
 See [here](#relationship-to-nestybox) for more on the relationship between
 the Sysbox open-source project and Nestybox.
@@ -111,11 +120,16 @@ $ docker run --runtime=sysbox-runc --rm -it --hostname my_cont debian:latest
 root@my_cont:/#
 ```
 
-This launches a system container. Looks very much like a regular container,
-except that within it you can now run system software such as Systemd, Docker,
+This launches a system container. It looks very much like a regular container,
+but it's different under the hood.
+
+In this container, you can now run system software such as Systemd, Docker,
 Kubernetes, etc., seamlessly and securely, just as you would on a physical host
-or virtual machine. No complex docker images or docker run commands, and no
-need for privileged containers.
+or virtual machine.
+
+You can launch inner containers (and even inner privileged containers), with
+strong isolation from the underlying host. No more complex docker images or
+docker run commands, and no need for unsecure privileged containers.
 
 The [Sysbox Quickstart Guide](docs/quickstart/README.md) has many usage examples.
 You should start there to get familiarized with the use cases enabled by Sysbox.
@@ -125,17 +139,43 @@ runtime to launch regular containers (rather than system containers). It's
 perfectly fine to run system containers launched with Docker + Sysbox alongside
 regular Docker containers; they won't conflict and can co-exist side-by-side.
 
+## Documentation
+
+We strive to provide good documentation; it's a key component of the Sysbox project.
+
+We have several documents to help you get started and get the best out of
+Sysbox.
+
+-   [Sysbox Quick Start Guide](docs/quickstart/README.md)
+
+    -   Provides many examples for using system containers. New users
+        should start here.
+
+-   [Sysbox User Guide](docs/user-guide/README.md)
+
+    -   Provides more detailed information on Sysbox features and design.
+
+-   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
+
+    -   Distro compatibility requirements.
+
 ## Sysbox Features
 
-### Integrates with Docker
+### OCI-based
 
--   Launch system containers via the Docker CLI, using simple Docker images.
+-   Integrates with OCI compatible container managers (e.g., Docker).
+
+-   Currently we only support Docker/containerd, but plan to add support for
+    more managers / orchestrators (e.g., K8s) soon.
+
+-   Sysbox is ~90% OCI-compatible. See [here](docs/user-guide/design.md#sysbox-oci-compatibility) for
+    more on this.
 
 ### Systemd-in-Docker
 
 -   Run Systemd inside a Docker container easily, without complex container configurations.
 
--   Enables you to containerize apps that rely on Systemd.
+-   Enables you to containerize apps that rely on Systemd (e.g., legacy apps).
 
 ### Docker-in-Docker
 
@@ -145,53 +185,34 @@ regular Docker containers; they won't conflict and can co-exist side-by-side.
 
 ### Kubernetes-in-Docker
 
--   Deploy Kubernetes (K8s) inside containers with proper isolation (no privileged containers)
-    and using simple Docker images and Docker run commands (no need for custom Docker images
-    with tricky entrypoints).
+-   Deploy Kubernetes (K8s) inside containers with proper isolation (no
+    privileged containers), using simple Docker images and Docker run commands
+    (no need for custom Docker images with tricky entrypoints).
 
--   Deploy with simple `docker run` commands for full flexibility, or using a
+-   Deploy directly with `docker run` commands for full flexibility, or using a
     higher level tool (e.g., such as [kindbox](https://github.com/nestybox/kindbox)).
 
 ### Strong container isolation
 
--   Avoid the need for unsecure privileged containers.
-
 -   Root user in the system container maps to a fully unprivileged user on the host.
 
--   Each system container gets exclusive range of host user IDs (for increased
-    cross-container isolation).
+-   The procfs and sysfs exposed in the container are fully namespaced.
 
 -   Programs running inside the system container (e.g., Docker, Kubernetes, etc)
     are limited to using the resources given to the system container itself.
 
+-   Avoid the need for unsecure privileged containers.
+
 ### Fast & Efficient
 
--   Sysbox uses host resources optimally to reduce container startup time and host
-    storage overhead.
+-   Sysbox uses host resources optimally and starts containers in a few seconds.
 
-### Easily preload inner container images into the system container image.
+### Inner Container Image Preloading
 
--   Using a simple Dockerfile or Docker commit.
+-   You can create a system container image that includes inner container
+    images, with a simple Dockerfile or Docker commit.
 
 Please see our [Roadmap](#roadmap) for a list of features we are working on.
-
-## Documentation
-
-We have several documents to help you get started and get the best out of
-system containers.
-
--   [Sysbox Quick Start Guide](docs/quickstart/README.md)
-
-    -   Provides many examples for using system containers. New users
-        should start here.
-
--   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
-
-    -   Distro compatibility requirements.
-
--   [Sysbox User Guide](docs/user-guide/README.md)
-
-    -   Provides more detailed information on Sysbox features.
 
 ## Integration with Container Managers & Orchestrators
 
@@ -227,11 +248,6 @@ inside), Sysbox does not use hardware virtualization. It's purely an
 OS-virtualization technology meant to create containers that can run
 applications as well as system-level software, easily and securely.
 
-Sysbox uses isolation features of the Linux kernel (e.g., namespaces, cgroups),
-and complements these with advanced OS virtualization techniques such as partial
-virtualization of procfs and sysfs, selective syscall interception, and more in
-order to create the container abstraction.
-
 This makes the containers created by Sysbox very fast, efficient, and
 portable. Isolation wise, it's fair to say that they provide stronger isolation
 than regular Docker containers (by virtue of using the Linux user-namespace),
@@ -258,6 +274,19 @@ and to the [issues](https://github.com/nestybox/sysbox/issues) for help.
 
 Reach us at our [slack channel][slack] for any questions.
 
+## Uninstallation
+
+Prior to uninstalling Sysbox, make sure all system containers are removed.
+There is a simple shell script to do this [here](scr/rm_all_syscont).
+
+The method for uninstalling Sysbox depends on how you [installed it](#installing-sysbox).
+
+1) If you used the packaged version from the Nestybox website, follow the
+   uninstallation instructions in the associated documentation.
+
+2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide.md#uninstalling)
+   to uninstall it.
+
 ## Roadmap
 
 The following is a list of features in the Sysbox roadmap.
@@ -270,13 +299,13 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 -   Support for more Linux distros.
 
--   Support for the Docker snap package.
-
 -   Support for deploying system containers with Kubernetes.
 
--   Exposing host devices inside system containers.
+-   More improvements to procfs and sysfs virtualization.
 
 -   Continued improvements to container isolation.
+
+-   Exposing host devices inside system containers with proper permissions.
 
 ## Relationship to Nestybox
 
@@ -284,11 +313,11 @@ Sysbox was initially developed by [Nestybox](https://www.nestybox.com), and Nest
 the main sponsor of the Sysbox open-source project.
 
 Having said this, we encourage participation from the community to help evolve
-and improve it, with the goal of improving Sysbox and increasing the use cases
-that it enables. External maintainers and contributors are welcomed!
+and improve it, with the goal of increasing the use cases and benefits it
+enables. External maintainers and contributors are welcomed.
 
-Nestybox uses Sysbox as the core of it's Sysbox enterprise product, which
-consists of Sysbox plus proprietary features meant for enterprise use.
+Nestybox uses Sysbox as the core of it's Sysbox enterprise product (Sysbox-EE),
+which consists of Sysbox plus proprietary features meant for enterprise use.
 
 To ensure synergy between the Sysbox project and commercial entities such as
 Nestybox, we use the following criteria when considering adding functionality to
@@ -299,23 +328,10 @@ open-source project. Any features that mainly address enterprise-level needs are
 not part of the Sysbox open-source project.
 
 The Sysbox project maintainers will make this determination on a feature by
-feature basis, with total transparency.
-
-This way, the Sysbox open source project meets the needs of individual
-practitioners while giving companies such as Nestybox the chance to monetize on
-enterprise-level features (which in turn enables Nestybox to continue to sponsor
-the Sysbox open source project).
-
-## Uninstallation
-
-Prior to uninstalling Sysbox, make sure all system containers are removed.
-There is a simple shell script to do this [here](scr/rm_all_syscont).
-
-The method for uninstalling Sysbox depends on how you [installed it](#installing-sysbox).
-
-1) If you used the packaged version from the Nestybox website, follow the uninstallation instructions in the associated documentation.
-
-2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide.md#uninstalling) to uninstall it.
+feature basis, with total transparency. The goal is to create a balanced
+approach that enables the Sysbox open-source community to benefit and thrive
+while creating opportunities for commercial entities to create a healthy viable
+business around the technology.
 
 ## Contact
 
@@ -325,6 +341,8 @@ We are there from Monday-Friday, 9am-5pm Pacific Time.
 
 ## Thank You
 
-We thank you **very much** for trying Sysbox. We hope you find it useful!
+We thank you **very much** for using and contributing to Sysbox. We hope you
+find it useful and that it helps you use containers in new and more powerful
+ways.
 
-[slack]: [https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/]
+[slack]: https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/

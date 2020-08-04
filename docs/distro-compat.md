@@ -35,8 +35,9 @@ $ sudo apt-get update && sudo apt install --install-recommends linux-generic-hwe
 Recent Ubuntu kernels carry a module called `shiftfs` that Sysbox uses as part
 of its container isolation strategy.
 
+With `shiftfs`, Sysbox can create containers that use the user-namespace for
+strong isolation without requiring the higher level container manager to do this
+explicitly (e.g., without enabling userns-remap mode in Docker).
+
 However, some Ubuntu cloud images do not carry the module. In this case, Sysbox
 requires that Docker be configured in [userns-remap mode](https://docs.docker.com/engine/security/userns-remap/).
-
-The Sysbox installer will detect this condition and can automatically put
-Docker in userns-remap mode if desired. See [here](user-guide/install.md#docker-userns-remap) for details.
