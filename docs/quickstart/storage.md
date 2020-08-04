@@ -42,28 +42,13 @@ $ docker run --runtime=sysbox-runc -it --rm --hostname syscont2 --mount source=s
 -rw-r--r--    1 root     root             0 Oct 24 22:08 /mnt/shared-storage/shared-file
 ```
 
-Notice that both system containers see the shared file with
-`root:root` permissions, even though each system container is using
-the Linux user namespace with exclusive user-ID and group-ID mappings
-for enhanced security.
+Notice that both system containers see the shared file with `root:root`
+permissions, even though each system container is using the Linux user namespace
+with user-ID and group-ID mappings.
 
-From the first system container:
-
-```console
-/ # cat /proc/self/uid_map
-    0  268600992      65536
-```
-
-From the second system container:
-
-```console
-/ # cat /proc/self/uid_map
-    0  268666528      65536
-```
-
-The reason both system containers see the correct `root:root`
-ownership on the shared storage is through the magic of the Ubuntu
-shiftfs filesystem, which Sysbox mounts over the shared storage.
+The reason both system containers see the correct `root:root` ownership on the
+shared storage is through the magic of the Ubuntu shiftfs filesystem, which
+Sysbox mounts over the shared storage.
 
 From the first system container:
 

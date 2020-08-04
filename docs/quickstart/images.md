@@ -53,7 +53,7 @@ RUN chmod +x /usr/bin/docker-pull.sh && docker-pull.sh && rm /usr/bin/docker-pul
 ```
 
 This Dockerfile inherits from the `nestybox/alpine-docker` base image which simply contains
-Alpine plus a Docker daemon (the Dockerfile is [here](../../dockerfiles/alpine-docker/Dockerfile)).
+Alpine plus a Docker daemon (the Dockerfile is [here](../../sys-container/dockerfiles/alpine-docker/Dockerfile)).
 
 The presence of the inner Docker in the base image is required since we will use
 it to pull the inner container images.

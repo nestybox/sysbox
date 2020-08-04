@@ -27,9 +27,8 @@ how to use system containers.
 ### Kubernetes-in-Docker
 
 -   [Why Sysbox for K8s-in-Docker?](kind.md#why-sysbox-for-k8s-in-docker)
--   [Using K8s.io KinD + Sysbox](kind.md#using-k8sio-kind--sysbox-kind-sysbox)
--   [Using Kindbox](kind.md#using-kindbox)
 -   [Using Docker to Deploy a K8s Cluster](kind.md#using-docker-to-deploy-a-k8s-cluster)
+-   [Using Kindbox](kind.md#using-kindbox)
 -   [Preloading Inner Pod Images into the K8s Node Image](kind.md#preloading-inner-pod-images-into-the-k8s-node-image)
 
 ### Preloading Inner Container Images into System Containers
