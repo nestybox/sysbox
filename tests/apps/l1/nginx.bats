@@ -6,7 +6,7 @@
 
 load ../../helpers/run
 load ../../helpers/sysbox-health
-load ../../helpers/installer
+load ../../helpers/environment
 
 export iface_mtu=$(egress_iface_mtu)
 
