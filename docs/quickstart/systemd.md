@@ -14,7 +14,7 @@ use it as a virtual host environment.
 
 We will use a system container image that has Ubuntu Bionic + Systemd
 inside. It's called `nestybox/ubuntu-bionic-systemd` and it's in the
-Nestybox DockerHub repo. The Dockerfile is [here](../../dockerfiles/ubuntu-bionic-systemd/Dockerfile).
+Nestybox DockerHub repo. The Dockerfile is [here](../../sys-container/dockerfiles/ubuntu-bionic-systemd/Dockerfile).
 
 1) Start the system container:
 

@@ -12,9 +12,8 @@ detail.
 ## Contents
 
 -   [Why Sysbox for K8s-in-Docker?](#why-sysbox-for-k8s-in-docker)
--   [Using K8s.io KinD + Sysbox (kind-sysbox)](#using-k8sio-kind--sysbox-kind-sysbox)
--   [Using Kindbox](#using-kindbox)
 -   [Using Docker to Deploy a K8s Cluster](#using-docker-to-deploy-a-k8s-cluster)
+-   [Using Kindbox](#using-kindbox)
 -   [Preloading Inner Pod Images into the K8s Node Image](#preloading-inner-pod-images-into-the-k8s-node-image)
 
 ## Why Sysbox for K8s-in-Docker?
@@ -23,464 +22,18 @@ Sysbox is the first container runtime capable of creating containers that can
 run K8s seamlessly, using simple Docker images, no special configurations, and
 strongly isolated containers (i.e,. using the Linux user-namespace).
 
-There are currently 3 ways you can deploy the cluster:
+There are currently two ways you can deploy the cluster:
 
--   Using the K8s.io "KinD" tool (with slight modifications)
+-   Using simple "docker run" commands.
 
--   Using the Nestybox "Kindbox" tool
-
--   Using simple Docker commands
-
-With Sysbox, you are able to deploy K8s-in-Docker with **unmatched ease,
-efficiency, and security**.
-
-Here is a comparison between these (for deploying a 10-node K8s cluster):
-
-| Criteria                       | K8s.io KinD (w/o Sysbox) | K8s.io KinD (with Sysbox) | Kindbox |
-| ------------------------------ | :----------------------: | :-----------------------: | :-----: |
-| Host storage overhead          |           10 GB          |            3 GB           |   1 GB  |
-| Cluster creation time          |           2 min          |           2 min           |  2 min  |
-| Simple Docker images           |            No            |             No            |   Yes   |
-| Full control of cluster config |            No            |             No            |   Yes   |
-| Dynamically resize cluster     |            No            |             No            |   Yes   |
-| Mixed cluster node images      |            No            |             No            |   Yes   |
-| Easily preload inner images    |            No            |            Yes            |   Yes   |
-| Strong isolation from host     |            No            |            Yes            |   Yes   |
+-   Using a higher layer tool such as Nestybox's [Kindbox](https://github.com/nestybox/kindbox) tool.
 
 The sections below show examples of this.
 
-## Using K8s.io KinD + Sysbox (kind-sysbox)
-
-<p align="center"><img alt="sysbox" src="../figures/kind-sysbox.png" width="800x" /></p>
-
-**Check out this [video](https://asciinema.org/a/veCPJJtf0D38Cet2iLOY4j8ry?speed=1.75).**
-
-The [K8s.io KinD](https://kind.sigs.k8s.io) project produces a CLI tool called
-`kind` that enables deployment of Kubernetes clusters inside Docker containers.
-
-It's an excellent tool that makes deployment of the K8s cluster fast & easy.
-
-`kind` can be used with Sysbox to deploy a containerized K8s cluster. That is,
-`kind` tool talks to Docker, Docker talks to Sysbox, and Sysbox creates the
-containers that make up the cluster.
-
-When used with Sysbox, the capabilities of `kind` are enhanced:
-
--   A containerized K8s cluster consumes **significantly** less host
-    storage (70% reduction for a 10-node cluster!).
-
--   The cluster is much more secure (does not use risky privileged
-    containers).
-
--   You can use Sysbox to **easily** embed inner pod images into the K8s nodes.
-
-Unfortunately, you currently need a slightly modified version of the tool, as `kind`
-does not yet formally support Sysbox. We will be working with the community to
-add this support.
-
-In the meantime, we forked the KinD tool [here](https://github.com/nestybox/kind-sysbox)
-and made [tiny changes](https://github.com/nestybox/kind-sysbox/commit/9708a130b7c0a539f2f3b5aa187137e71f747347)
-that enable it to work with Sysbox. To avoid any confusion, we will refer to this modified
-version as 'kind-sysbox'.
-
-Here are the steps to use KinD + Sysbox:
-
-1) Download and build the modified KinD binary:
-
-```console
-$ git clone https://github.com/nestybox/kind-sysbox.git
-$ cd kind-sysbox
-$ make kind-sysbox
-```
-
-The resulting binary is under `bin/kind-sysbox`. Put that in your PATH.
-
-2) Pull the `nestybox/kindestnode:v1.18.2` image.
-
-```console
-$ docker pull nestybox/kindestnode:v1.18.2
-```
-
-This image is based on the official `kindest/node` image, but contains a fix for
-a bug in the inner `runc` that prevents it from working in unprivileged
-containers.
-
-The Dockerfile is [here](../../dockerfiles/kindestnode).
-
-3) Now simply tell `kind-sysbox` to create the cluster.
-
-```console
-$ more config.yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-- role: worker
-```
-
-```console
-$ kind-sysbox create cluster --image=nestybox/kindestnode:v1.18.2 --config=config.yaml
-
-Creating cluster "kind" ...
-✓ Ensuring node image (nestybox/kindestnode:v1.18.2) 🖼
-✓ Preparing nodes 📦 📦 📦 📦 📦 📦 📦 📦 📦 📦
-✓ Writing configuration 📜
-✓ Starting control-plane 🕹️
-✓ Installing CNI 🔌
-✓ Installing StorageClass 💾
-✓ Joining worker nodes 🚜
-Set kubectl context to "kind-kind"
-You can now use your cluster with:
-
-kubectl cluster-info --context kind-kind
-
-Have a nice day! 👋
-```
-
-It takes KinD + Sysbox less than 2 minutes and 3GB of storage overhead to deploy
-that 10-node cluster. Without Sysbox, this same cluster eats up 10GB of storage.
-
-See the Sysbox User Guide section on [Performance & Efficiency](../user-guide/kind.md#performance--efficiency)
-for more on this.
-
-4) You can also verify that the containers that make up the K8s cluster are in fact
-   unprivileged containers:
-
-```console
-$ docker exec kind-control-plane cat /proc/self/uid_map
-         0     362144      65536
-```
-
-This means the container is using the Linux user namespace, and root in the
-container (user 0) maps to unprivileged user-ID "362144" on the host.
-
-Sysbox assigns an exclusive user-ID range to each node of the K8s cluster.
-
-This is important if you want to use KinD for anything other than local
-development, as it ensures strong isolation between the inner pods and
-the host.
-
-5) Next configure kubectl:
-
-(This assumes you've [installed kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on your host).
-
-```console
-$ kubectl cluster-info --context kind-kind
-Kubernetes master is running at https://127.0.0.1:43681
-KubeDNS is running at https://127.0.0.1:43681/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-
-To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
-```
-
-6) Verify K8s is running properly:
-
-```console
-$ kubectl get nodes
-NAME                 STATUS   ROLES    AGE     VERSION
-kind-control-plane   Ready    master   4m26s   v1.18.2
-kind-worker          Ready    <none>   3m38s   v1.18.2
-kind-worker2         Ready    <none>   3m34s   v1.18.2
-kind-worker3         Ready    <none>   3m38s   v1.18.2
-kind-worker4         Ready    <none>   3m34s   v1.18.2
-kind-worker5         Ready    <none>   3m40s   v1.18.2
-kind-worker6         Ready    <none>   3m35s   v1.18.2
-kind-worker7         Ready    <none>   3m37s   v1.18.2
-kind-worker8         Ready    <none>   3m39s   v1.18.2
-kind-worker9         Ready    <none>   3m37s   v1.18.2
-```
-
-From here on, you can manage the cluster as usual with kubectl (e.g., deploy
-pods, services, etc.)
-
-Refer to the section [Preliminary Support & Known Limitations](../user-guide/kind.md#preliminary-support--known-limitations)
-for a list of K8s functionality that works and doesn't when using Sysbox.
-
-To bring down the cluster, use:
-
-```console
-$ kind-sysbox delete cluster
-
-Deleting cluster "kind" ...
-```
-
-The [K8s.io KinD website](https://kind.sigs.k8s.io/) for more info on how to use KinD.
-
-## Using Kindbox
-
-<p align="center"><img alt="sysbox" src="../figures/kindbox.png" width="800x" /></p>
-
-[Kindbox](https://github.com/nestybox/kindbox) is a simple open-source tool created by Nestybox
-to easily create K8s clusters with Docker + Sysbox.
-
-**Check out this [video](https://asciinema.org/a/Vw8fwWwRJ26dNdMpaU8m5oaTQ?speed=1.75).**
-
-Kindbox does some of the same things that the K8s.io KinD tool does (e.g., cluster
-creation, destruction, etc.) but it's much simpler, more flexible, does not
-require complex container images, and it's even more efficient.
-
-Kindbox is not meant to compete with the K8s.io KinD tool. Rather, it's meant to
-provide a reference example of how easy it is to deploy a K8s cluster inside
-containers when using the Sysbox container runtime.
-
-Kindbox is a [simple bash script](../user-guide/kind.md#kindbox-simplicity)
-wrapper around Docker commands. Feel free to modify it to fit your needs.
-
-The subsections below describe how to use Kindbox.
-
-### K8s Node Image
-
-By default, Kindbox uses a Docker image called `nestybox/k8s-node` for the containers
-that make up the cluster.
-
-It's a simple image that includes systemd, Docker, the K8s `kubeadm` tool, and
-preloaded inner pod images for the K8s control plane.
-
-The Dockerfile is [here](../../dockerfiles/k8s-node).
-
-Feel free to copy it and customize it per your needs.
-
-### Cluster Creation
-
-1) Create a cluster called `mycluster` with 10 nodes (1 master + 9 workers):
-
-```console
-$ kindbox create --num-workers=9 mycluster
-
-Creating a K8s cluster with Docker + Sysbox ...
-
-Cluster name             : mycluster
-Worker nodes             : 9
-Docker network           : mycluster-net
-Node image               : nestybox/k8s-node:v1.18.2
-K8s version              : v1.18.2
-Publish apiserver port   : false
-
-Creating the K8s cluster nodes ...
-  - Creating node mycluster-master
-  - Creating node mycluster-worker-0
-  - Creating node mycluster-worker-1
-  - Creating node mycluster-worker-2
-  - Creating node mycluster-worker-3
-  - Creating node mycluster-worker-4
-  - Creating node mycluster-worker-5
-  - Creating node mycluster-worker-6
-  - Creating node mycluster-worker-7
-  - Creating node mycluster-worker-8
-
-Initializing the K8s master node ...
-  - Running kubeadm init on mycluster-master ... (may take up to a minute)
-  - Setting up kubectl on mycluster-master ...
-  - Initializing networking (flannel) on mycluster-master ...
-  - Waiting for mycluster-master to be ready ...
-
-Initializing the K8s worker nodes ...
-  - Joining the worker nodes to the cluster ...
-
-Cluster created successfully!
-
-Use kubectl to control the cluster.
-
-1) Install kubectl on your host
-2) export KUBECONFIG=${KUBECONFIG}:${HOME}/.kube/mycluster-config
-3) kubectl config use-context kubernetes-admin@mycluster
-4) kubectl get nodes
-
-Alternatively, use "docker exec" to control the cluster:
-
-$ docker exec mycluster-master kubectl get nodes
-```
-
-This takes Kindbox less than 2 minutes and consumes &lt; 1GB overhead on my laptop
-machine!
-
-In contrast, this same cluster requires 2.5GB when using K8s.io KinD +
-Sysbox, and 10GB when using K8s.io KinD without Sysbox.
-
-This means that with Sysbox, you can deploy large and/or more K8s clusters on
-your machine quickly and without eating up your disk space.
-
-2) Setup kubectl on the host so we can control the cluster:
-
-(This assumes you've [installed kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on your host).
-
-```console
-$ export KUBECONFIG=${KUBECONFIG}:${HOME}/.kube/mycluster-config
-
-$ kubectl config use-context kubernetes-admin@mycluster
-Switched to context "kubernetes-admin@mycluster".
-```
-
-3) Use kubectl to verify all is good:
-
-```console
-$ kubectl get nodes
-NAME                 STATUS   ROLES    AGE     VERSION
-mycluster-master     Ready    master   4m43s   v1.18.3
-mycluster-worker-0   Ready    <none>   3m51s   v1.18.3
-mycluster-worker-1   Ready    <none>   3m53s   v1.18.3
-mycluster-worker-2   Ready    <none>   3m52s   v1.18.3
-mycluster-worker-3   Ready    <none>   3m53s   v1.18.3
-mycluster-worker-4   Ready    <none>   3m51s   v1.18.3
-mycluster-worker-5   Ready    <none>   3m52s   v1.18.3
-mycluster-worker-6   Ready    <none>   3m50s   v1.18.3
-mycluster-worker-7   Ready    <none>   3m50s   v1.18.3
-mycluster-worker-8   Ready    <none>   3m50s   v1.18.3
-```
-
-From here on, we use kubectl as usual to deploy pods, services, etc.
-
-For example, to create an nginx deployment with 10 pods:
-
-```console
-$ kubectl create deployment nginx --image=nginx
-$ kubectl scale --replicas=10 deployment nginx
-$ kubectl get pods -o wide
-NAME                    READY   STATUS    RESTARTS   AGE   IP            NODE                 NOMINATED NODE   READINESS GATES
-nginx-f89759699-6ch9m   1/1     Running   0          21s   10.244.11.4   mycluster-worker-6   <none>           <none>
-nginx-f89759699-8jrc8   1/1     Running   0          21s   10.244.10.4   mycluster-worker-5   <none>           <none>
-nginx-f89759699-dgxq8   1/1     Running   0          28s   10.244.2.15   mycluster-worker-1   <none>           <none>
-nginx-f89759699-hx5tt   1/1     Running   0          21s   10.244.5.15   mycluster-worker-3   <none>           <none>
-nginx-f89759699-l9v5p   1/1     Running   0          21s   10.244.1.10   mycluster-worker-0   <none>           <none>
-nginx-f89759699-pdnhb   1/1     Running   0          21s   10.244.12.4   mycluster-worker-4   <none>           <none>
-nginx-f89759699-qf46b   1/1     Running   0          21s   10.244.2.16   mycluster-worker-1   <none>           <none>
-nginx-f89759699-vbnx5   1/1     Running   0          21s   10.244.3.14   mycluster-worker-2   <none>           <none>
-nginx-f89759699-whgt7   1/1     Running   0          21s   10.244.13.4   mycluster-worker-8   <none>           <none>
-nginx-f89759699-zblsb   1/1     Running   0          21s   10.244.14.4   mycluster-worker-7   <none>           <none>
-```
-
-### Cluster Network
-
-With Kindbox, you have full control over the container network used by the
-cluster.
-
-For example, you can deploy the cluster on a Docker network that you create:
-
-    $ docker network create mynet
-    $ kindbox create --num-workers=9 --net mynet mycluster
-
-Normally each cluster would be on a dedicated network for extra isolation, but
-it's up to you to decide. If you don't choose a network, Kindbox automatically
-creates one for the cluster (with the name `<cluster-name>-net`).
-
-### Cluster Resizing
-
-Kindbox also allows you to easily resize the cluster (i.e., add or remove worker
-nodes).
-
-Here we resize the cluster we previously created from 9 to 4 worker nodes.
-
-```console
-$ kindbox resize --num-workers=4 mycluster
-
-Resizing the K8s cluster (current = 9, desired = 4) ...
-  - Destroying node mycluster-worker-4
-  - Destroying node mycluster-worker-5
-  - Destroying node mycluster-worker-6
-  - Destroying node mycluster-worker-7
-  - Destroying node mycluster-worker-8
-Done (5 nodes removed)
-```
-
-Then verify K8s no longer sees the removed nodes:
-
-```console
-$ kubectl get nodes
-NAME                 STATUS   ROLES    AGE   VERSION
-mycluster-master     Ready    master   32m   v1.18.3
-mycluster-worker-0   Ready    <none>   31m   v1.18.3
-mycluster-worker-1   Ready    <none>   31m   v1.18.3
-mycluster-worker-2   Ready    <none>   31m   v1.18.3
-mycluster-worker-3   Ready    <none>   31m   v1.18.3
-```
-
-You can also verify K8s has re-scheduled the pods away to the remaining nodes:
-
-```console
-$ kubectl get pods -o wide
-NAME                    READY   STATUS    RESTARTS   AGE   IP            NODE                 NOMINATED NODE   READINESS GATES
-nginx-f89759699-dgxq8   1/1     Running   0          10m   10.244.2.15   mycluster-worker-1   <none>           <none>
-nginx-f89759699-hx5tt   1/1     Running   0          10m   10.244.5.15   mycluster-worker-3   <none>           <none>
-nginx-f89759699-l6l7b   1/1     Running   0          28s   10.244.5.16   mycluster-worker-3   <none>           <none>
-nginx-f89759699-l9v5p   1/1     Running   0          10m   10.244.1.10   mycluster-worker-0   <none>           <none>
-nginx-f89759699-nbd2l   1/1     Running   0          28s   10.244.2.17   mycluster-worker-1   <none>           <none>
-nginx-f89759699-qf46b   1/1     Running   0          10m   10.244.2.16   mycluster-worker-1   <none>           <none>
-nginx-f89759699-rfklb   1/1     Running   0          28s   10.244.1.11   mycluster-worker-0   <none>           <none>
-nginx-f89759699-tr9tr   1/1     Running   0          28s   10.244.1.12   mycluster-worker-0   <none>           <none>
-nginx-f89759699-vbnx5   1/1     Running   0          10m   10.244.3.14   mycluster-worker-2   <none>           <none>
-nginx-f89759699-xvx52   1/1     Running   0          28s   10.244.3.15   mycluster-worker-2   <none>           <none>
-```
-
-When resizing the cluster upwards, Kindbox allows you to choose the container
-image for newly added K8s nodes:
-
-```console
-$ kindbox resize --num-workers=5 --image=<my-special-node> mycluster
-```
-
-This means you can have a K8s cluster with a mix of different node images. This
-is useful if you need some specialized K8s nodes.
-
-### Multiple Clusters
-
-You can easily create multiple K8s clusters on the host by repeating the
-`kindbox create` command (step (1) above).
-
-And you can use `kubectl config use-context` to point to the cluster you wish to
-manage (see step (2) above).
-
-On my laptop (4 CPU & 8GB RAM), I am able to create three small clusters without
-problem:
-
-```console
-$ kindbox list -l
-NAME                   WORKERS         NET                  IMAGE                          K8S VERSION
-cluster3               5               cluster3-net         nestybox/k8s-node:v1.18.2      v1.18.2
-cluster2               5               cluster2-net         nestybox/k8s-node:v1.18.2      v1.18.2
-mycluster              4               mycluster-net        nestybox/k8s-node:v1.18.2      v1.18.2
-```
-
-With Sysbox, the clusters are well isolated from each other: the K8s nodes are in
-containers strongly secured via the Linux user namespace, and each cluster is in
-a dedicated Docker network (for traffic isolation).
-
-### Cluster Destruction
-
-To destroy a cluster, simply type:
-
-```console
-$ kindbox destroy mycluster
-Destroying K8s cluster "mycluster" ...
-  - Destroying node mycluster-worker-0
-  - Destroying node mycluster-worker-1
-  - Destroying node mycluster-worker-2
-  - Destroying node mycluster-worker-3
-  - Destroying node mycluster-master
-
-Cluster destroyed. Remove stale entry from $KUBECONFIG env-var by doing ...
-
-  export KUBECONFIG=`echo ${KUBECONFIG} | sed "s|:${HOME}/.kube/mycluster-config||"`
-```
-
-To see what else you can do with Kindbox, type `kindbox help`.
-
-And remember, it should be fairly easy to add functionality to Kindbox, as it's
-just a bash wrapper around Docker commands that manage the cluster.
-
-If you would like Nestybox to add more functionality, please file an
-in the [Kindbox Github repo](https://github.com/nestybox/kindbox), or [contact us](../../README.md#support).
-
 ## Using Docker to Deploy a K8s Cluster
 
-It's also possible to deploy a K8s cluster directly with Docker + Sysbox,
-without using the K8s.io `kind` or Nestybox's `kindbox` tools.
+Sysbox makes it easy to deploy a K8s cluster directly with simple "docker run"
+commands.
 
 **Check out this [video](https://asciinema.org/a/V1UFSxz6JHb3rdHpGrnjefFIt?speed=1.75).**
 
@@ -699,18 +252,10 @@ From here on you use `kubectl` to manage the K8s cluster as usual (deploy pods, 
 ```console
 $ docker exec k8s-master cat /proc/self/uid_map
 0     165536      65536
-
-$ docker exec k8s-worker cat /proc/self/uid_map
-0     231072      65536
 ```
 
-Yes, they are:
-
--   In the `k8s-master`, the root user in the container is mapped to unprivileged host user-ID 165536.
-
--   In the `k8s-worker`, the root user is mapped to host unprivileged user-ID 231072.
-
-Sysbox assigns each container an exclusive range of Linux user-namespace user-ID mappings.
+This means that the root user in the container is mapped to unprivileged host
+user-ID 165536.
 
 11) After you are done, bring down the cluster:
 
@@ -724,7 +269,7 @@ As you can see, the procedure is pretty simple and can easily be extended for
 larger clusters (simply add more master or worker nodes as needed).
 
 All you needed was a bunch of `docker run` commands plus invoking `kubeadm`
-inside the containers. In fact, the `kindbox` tool we described in the prior
+inside the containers. In fact, the `kindbox` tool we describe in the next
 section does basically this!
 
 The procedure is analogous to the procedure you would use when installing K8s on a
@@ -776,6 +321,258 @@ $ docker run --runtime=sysbox-runc -d --rm --name=k8s-worker-2 --hostname=k8s-wo
 Follow the steps shown in the prior section for initializing the K8s master node
 and joining the worker nodes to the cluster.
 
+## Using Kindbox
+
+<p align="center"><img alt="sysbox" src="../figures/kindbox.png" width="800x" /></p>
+
+[Kindbox](https://github.com/nestybox/kindbox) is a simple open-source tool created by Nestybox
+to easily create K8s clusters with Docker + Sysbox.
+
+**Check out this [video](https://asciinema.org/a/Vw8fwWwRJ26dNdMpaU8m5oaTQ?speed=1.75).**
+
+Kindbox does some of the same things that the [K8s.io KinD](https://kind.sigs.k8s.io/)
+tool does (e.g., cluster creation, destruction, etc.) but it's much simpler,
+more flexible, does not require complex container images, and it's even more
+efficient.
+
+Kindbox is not meant to compete with the K8s.io KinD tool. Rather, it's meant to
+provide a reference example of how easy it is to deploy a K8s cluster inside
+containers when using the Sysbox container runtime.
+
+Kindbox is a [simple bash script](../user-guide/kind.md#kindbox-simplicity--flexibility)
+wrapper around Docker commands. Feel free to modify it to fit your needs.
+
+The subsections below describe how to use Kindbox.
+
+### K8s Node Image
+
+By default, Kindbox uses a Docker image called `nestybox/k8s-node` for the containers
+that make up the cluster.
+
+It's a simple image that includes systemd, Docker, the K8s `kubeadm` tool, and
+preloaded inner pod images for the K8s control plane.
+
+The Dockerfile is [here](../../sys-container/dockerfiles/k8s-node).
+
+Feel free to copy it and customize it per your needs.
+
+### Cluster Creation
+
+1) Create a cluster called `mycluster` with 10 nodes (1 master + 9 workers):
+
+```console
+$ kindbox create --num-workers=9 mycluster
+
+Creating a K8s cluster with Docker + Sysbox ...
+
+Cluster name             : mycluster
+Worker nodes             : 9
+Docker network           : mycluster-net
+Node image               : nestybox/k8s-node:v1.18.2
+K8s version              : v1.18.2
+Publish apiserver port   : false
+
+Creating the K8s cluster nodes ...
+  - Creating node mycluster-master
+  - Creating node mycluster-worker-0
+  - Creating node mycluster-worker-1
+  - Creating node mycluster-worker-2
+  - Creating node mycluster-worker-3
+  - Creating node mycluster-worker-4
+  - Creating node mycluster-worker-5
+  - Creating node mycluster-worker-6
+  - Creating node mycluster-worker-7
+  - Creating node mycluster-worker-8
+
+Initializing the K8s master node ...
+  - Running kubeadm init on mycluster-master ... (may take up to a minute)
+  - Setting up kubectl on mycluster-master ...
+  - Initializing networking (flannel) on mycluster-master ...
+  - Waiting for mycluster-master to be ready ...
+
+Initializing the K8s worker nodes ...
+  - Joining the worker nodes to the cluster ...
+
+Cluster created successfully!
+
+Use kubectl to control the cluster.
+
+1) Install kubectl on your host
+2) export KUBECONFIG=${KUBECONFIG}:${HOME}/.kube/mycluster-config
+3) kubectl config use-context kubernetes-admin@mycluster
+4) kubectl get nodes
+
+Alternatively, use "docker exec" to control the cluster:
+
+$ docker exec mycluster-master kubectl get nodes
+```
+
+It takes Kindbox ~2 minutes to deploy this cluster.
+
+2) Setup kubectl on the host so we can control the cluster:
+
+(This assumes you've [installed kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on your host).
+
+```console
+$ export KUBECONFIG=${KUBECONFIG}:${HOME}/.kube/mycluster-config
+
+$ kubectl config use-context kubernetes-admin@mycluster
+Switched to context "kubernetes-admin@mycluster".
+```
+
+3) Use kubectl to verify all is good:
+
+```console
+$ kubectl get nodes
+NAME                 STATUS   ROLES    AGE     VERSION
+mycluster-master     Ready    master   4m43s   v1.18.3
+mycluster-worker-0   Ready    <none>   3m51s   v1.18.3
+mycluster-worker-1   Ready    <none>   3m53s   v1.18.3
+mycluster-worker-2   Ready    <none>   3m52s   v1.18.3
+mycluster-worker-3   Ready    <none>   3m53s   v1.18.3
+mycluster-worker-4   Ready    <none>   3m51s   v1.18.3
+mycluster-worker-5   Ready    <none>   3m52s   v1.18.3
+mycluster-worker-6   Ready    <none>   3m50s   v1.18.3
+mycluster-worker-7   Ready    <none>   3m50s   v1.18.3
+mycluster-worker-8   Ready    <none>   3m50s   v1.18.3
+```
+
+From here on, we use kubectl as usual to deploy pods, services, etc.
+
+For example, to create an nginx deployment with 10 pods:
+
+```console
+$ kubectl create deployment nginx --image=nginx
+$ kubectl scale --replicas=10 deployment nginx
+$ kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS   AGE   IP            NODE                 NOMINATED NODE   READINESS GATES
+nginx-f89759699-6ch9m   1/1     Running   0          21s   10.244.11.4   mycluster-worker-6   <none>           <none>
+nginx-f89759699-8jrc8   1/1     Running   0          21s   10.244.10.4   mycluster-worker-5   <none>           <none>
+nginx-f89759699-dgxq8   1/1     Running   0          28s   10.244.2.15   mycluster-worker-1   <none>           <none>
+nginx-f89759699-hx5tt   1/1     Running   0          21s   10.244.5.15   mycluster-worker-3   <none>           <none>
+nginx-f89759699-l9v5p   1/1     Running   0          21s   10.244.1.10   mycluster-worker-0   <none>           <none>
+nginx-f89759699-pdnhb   1/1     Running   0          21s   10.244.12.4   mycluster-worker-4   <none>           <none>
+nginx-f89759699-qf46b   1/1     Running   0          21s   10.244.2.16   mycluster-worker-1   <none>           <none>
+nginx-f89759699-vbnx5   1/1     Running   0          21s   10.244.3.14   mycluster-worker-2   <none>           <none>
+nginx-f89759699-whgt7   1/1     Running   0          21s   10.244.13.4   mycluster-worker-8   <none>           <none>
+nginx-f89759699-zblsb   1/1     Running   0          21s   10.244.14.4   mycluster-worker-7   <none>           <none>
+```
+
+### Cluster Network
+
+With Kindbox, you have full control over the container network used by the
+cluster.
+
+For example, you can deploy the cluster on a Docker network that you create:
+
+    $ docker network create mynet
+    $ kindbox create --num-workers=9 --net mynet mycluster
+
+Normally each cluster would be on a dedicated network for extra isolation, but
+it's up to you to decide. If you don't choose a network, Kindbox automatically
+creates one for the cluster (with the name `<cluster-name>-net`).
+
+### Cluster Resizing
+
+Kindbox also allows you to easily resize the cluster (i.e., add or remove worker
+nodes).
+
+Here we resize the cluster we previously created from 9 to 4 worker nodes.
+
+```console
+$ kindbox resize --num-workers=4 mycluster
+
+Resizing the K8s cluster (current = 9, desired = 4) ...
+  - Destroying node mycluster-worker-4
+  - Destroying node mycluster-worker-5
+  - Destroying node mycluster-worker-6
+  - Destroying node mycluster-worker-7
+  - Destroying node mycluster-worker-8
+Done (5 nodes removed)
+```
+
+Then verify K8s no longer sees the removed nodes:
+
+```console
+$ kubectl get nodes
+NAME                 STATUS   ROLES    AGE   VERSION
+mycluster-master     Ready    master   32m   v1.18.3
+mycluster-worker-0   Ready    <none>   31m   v1.18.3
+mycluster-worker-1   Ready    <none>   31m   v1.18.3
+mycluster-worker-2   Ready    <none>   31m   v1.18.3
+mycluster-worker-3   Ready    <none>   31m   v1.18.3
+```
+
+You can also verify K8s has re-scheduled the pods away to the remaining nodes:
+
+```console
+$ kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS   AGE   IP            NODE                 NOMINATED NODE   READINESS GATES
+nginx-f89759699-dgxq8   1/1     Running   0          10m   10.244.2.15   mycluster-worker-1   <none>           <none>
+nginx-f89759699-hx5tt   1/1     Running   0          10m   10.244.5.15   mycluster-worker-3   <none>           <none>
+nginx-f89759699-l6l7b   1/1     Running   0          28s   10.244.5.16   mycluster-worker-3   <none>           <none>
+nginx-f89759699-l9v5p   1/1     Running   0          10m   10.244.1.10   mycluster-worker-0   <none>           <none>
+nginx-f89759699-nbd2l   1/1     Running   0          28s   10.244.2.17   mycluster-worker-1   <none>           <none>
+nginx-f89759699-qf46b   1/1     Running   0          10m   10.244.2.16   mycluster-worker-1   <none>           <none>
+nginx-f89759699-rfklb   1/1     Running   0          28s   10.244.1.11   mycluster-worker-0   <none>           <none>
+nginx-f89759699-tr9tr   1/1     Running   0          28s   10.244.1.12   mycluster-worker-0   <none>           <none>
+nginx-f89759699-vbnx5   1/1     Running   0          10m   10.244.3.14   mycluster-worker-2   <none>           <none>
+nginx-f89759699-xvx52   1/1     Running   0          28s   10.244.3.15   mycluster-worker-2   <none>           <none>
+```
+
+When resizing the cluster upwards, Kindbox allows you to choose the container
+image for newly added K8s nodes:
+
+```console
+$ kindbox resize --num-workers=5 --image=<my-special-node> mycluster
+```
+
+This means you can have a K8s cluster with a mix of different node images. This
+is useful if you need some specialized K8s nodes.
+
+### Multiple Clusters
+
+You can easily create multiple K8s clusters on the host by repeating the
+`kindbox create` command (step (1) above).
+
+And you can use `kubectl config use-context` to point to the cluster you wish to
+manage (see step (2) above).
+
+On my laptop (4 CPU & 8GB RAM), I am able to create three small clusters without
+problem:
+
+```console
+$ kindbox list -l
+NAME                   WORKERS         NET                  IMAGE                          K8S VERSION
+cluster3               5               cluster3-net         nestybox/k8s-node:v1.18.2      v1.18.2
+cluster2               5               cluster2-net         nestybox/k8s-node:v1.18.2      v1.18.2
+mycluster              4               mycluster-net        nestybox/k8s-node:v1.18.2      v1.18.2
+```
+
+With Sysbox, the clusters are well isolated from each other: the K8s nodes are in
+containers strongly secured via the Linux user namespace, and each cluster is in
+a dedicated Docker network (for traffic isolation).
+
+### Cluster Destruction
+
+To destroy a cluster, simply type:
+
+```console
+$ kindbox destroy mycluster
+Destroying K8s cluster "mycluster" ...
+  - Destroying node mycluster-worker-0
+  - Destroying node mycluster-worker-1
+  - Destroying node mycluster-worker-2
+  - Destroying node mycluster-worker-3
+  - Destroying node mycluster-master
+
+Cluster destroyed. Remove stale entry from $KUBECONFIG env-var by doing ...
+
+  export KUBECONFIG=`echo ${KUBECONFIG} | sed "s|:${HOME}/.kube/mycluster-config||"`
+```
+
+To see what else you can do with Kindbox, type `kindbox help`.
+
 ## Preloading Inner Pod Images into the K8s Node Image
 
 A key feature of Sysbox is that it allows you to easily create system container
@@ -797,12 +594,14 @@ Both of these are described in the sections below.
 ### Preloading Inner Pod Images with Docker Build
 
 Below is an example of how to use `docker build` to preload an inner pod image
-into the `nestybox/kindestnode` image (i.e., the node image required for using
+into the `nestybox/k8s-node` image (i.e., the node image required for using
 K8s.io KinD + Sysbox).
 
-1) First, configure Docker's "default runtime" to `sysbox-runc`. This is only
-   required during the image build process (i.e, you can revert the config
-   once the build completes if you wish).
+1) First, configure Docker's "default runtime" to `sysbox-runc`. This is
+   required because Docker must use Sysbox during the build, and the `docker
+   build` command does not take a `--runtime` flag. Note that this configuration
+   is only required during the image build process (i.e, you can revert the
+   config once the build completes if you wish).
 
 ```console
 # more /etc/docker/daemon.json
@@ -826,14 +625,14 @@ $ sudo systemctl restart docker.service
 3) Create a Dockerfile such as this one:
 
 ```Dockerfile
-FROM nestybox/kindestnode:v1.18.2
+FROM nestybox/k8s-node:v1.18.2
 
 # Pull inner pod images using containerd
 COPY inner-image-pull.sh /usr/bin/
 RUN chmod +x /usr/bin/inner-image-pull.sh && inner-image-pull.sh && rm /usr/bin/inner-image-pull.sh
 ```
 
-This Dockerfile inherits from the `nestybox/kindestnode` image and copies a
+This Dockerfile inherits from the `nestybox/k8s-node` image and copies a
 script called `inner-image-pull.sh` into it. It then executes the script and
 removes it (we don't need it in the final resulting image).
 
@@ -842,15 +641,13 @@ Here is the script:
 ```bash
 #!/bin/sh
 
-# containerd start
-containerd > /var/log/containerd.log 2>&1 &
+dockerd > /var/log/dockerd.log 2>&1 &
 sleep 2
 
-# use containerd to pull inner images into the k8s.io namespace (used by KinD).
-ctr --namespace=k8s.io image pull docker.io/library/nginx:latest
+docker image pull nginx:latest
 ```
 
-The script simply starts `containerd` and directs it to pull the inner
+The script simply starts `docker` inside and directs it to pull the inner
 images.
 
 Note that the script must be placed in the same directory as the Dockerfile:
@@ -865,39 +662,47 @@ total 8.0K
 4) Now simply use `docker build` as usual:
 
 ```console
-$ docker build -t kindestnode-with-inner-nginx .
+$ docker build -t k8s-node-with-inner-nginx .
 
 Sending build context to Docker daemon  3.072kB
-Step 1/3 : FROM nestybox/kindestnode:v1.18.2
----> a1161162d7a5
+Step 1/3 : FROM nestybox/k8s-node:v1.18.2
+---> 4793f6b919ee
 Step 2/3 : COPY inner-image-pull.sh /usr/bin/
----> 1595afdbcc8f
+---> c23615578f5d
 Step 3/3 : RUN chmod +x /usr/bin/inner-image-pull.sh && inner-image-pull.sh && rm /usr/bin/inner-image-pull.sh
----> Running in d3a4910dfea8
-docker.io/library/nginx:latest: resolving      |--------------------------------------|
-elapsed: 0.1 s                  total:   0.0 B (0.0 B/s)
-docker.io/library/nginx:latest: resolving      |--------------------------------------|
-elapsed: 0.2 s                  total:   0.0 B (0.0 B/s)
+---> Running in dffa9e81609d
+latest: Pulling from library/nginx
+6ec8c9369e08: Pulling fs layer
+d3cb09a117e5: Pulling fs layer
+7ef2f1459687: Pulling fs layer
+e4d1bf8c9482: Pulling fs layer
+795301d236d7: Pulling fs layer
+e4d1bf8c9482: Waiting
+795301d236d7: Waiting
+7ef2f1459687: Verifying Checksum
+7ef2f1459687: Download complete
+e4d1bf8c9482: Verifying Checksum
+e4d1bf8c9482: Download complete
+d3cb09a117e5: Verifying Checksum
+d3cb09a117e5: Download complete
+795301d236d7: Download complete
+6ec8c9369e08: Verifying Checksum
+6ec8c9369e08: Download complete
+6ec8c9369e08: Pull complete
+d3cb09a117e5: Pull complete
+7ef2f1459687: Pull complete
+e4d1bf8c9482: Pull complete
+795301d236d7: Pull complete
+Digest: sha256:c6abe64bc5923b074543c363c27f32f2c817cc02eea5718c3f0046cc1e0cb9b0
+Status: Downloaded newer image for nginx:latest
+docker.io/library/nginx:latest
+Removing intermediate container dffa9e81609d
+---> 1027935bb296
+Successfully built 1027935bb296
+Successfully tagged k8s-node-with-inner-nginx:latest
+    ```
 
-...
-
-docker.io/library/nginx:latest:                                                   resolved       |++++++++++++++++++++++++++++++++++++++|
-index-sha256:30dfa439718a17baafefadf16c5e7c9d0a1cde97b4fd84f63b69e13513be7097:    done           |++++++++++++++++++++++++++++++++++++++|
-manifest-sha256:8269a7352a7dad1f8b3dc83284f195bac72027dd50279422d363d49311ab7d9b: done           |++++++++++++++++++++++++++++++++++++++|
-layer-sha256:11fa52a0fdc084d7fc3bbcb774389fd37b148ee98e7829cea4af189735acf848:    done           |++++++++++++++++++++++++++++++++++++++|
-config-sha256:9beeba249f3ee158d3e495a6ac25c5667ae2de8a43ac2a8bfd2bf687a58c06c9:   done           |++++++++++++++++++++++++++++++++++++++|
-layer-sha256:afb6ec6fdc1c3ba04f7a56db32c5ff5ff38962dc4cd0ffdef5beaa0ce2eb77e2:    done           |++++++++++++++++++++++++++++++++++++++|
-layer-sha256:b90c53a0b69244e37b3f8672579fc3dec13293eeb574fa0fdddf02da1e192fd6:    done           |++++++++++++++++++++++++++++++++++++++|
-elapsed: 4.7 s                                                                    total:  48.7 M (10.3 MiB/s)
-unpacking linux/amd64 sha256:30dfa439718a17baafefadf16c5e7c9d0a1cde97b4fd84f63b69e13513be7097...
-done
-Removing intermediate container d3a4910dfea8
- ---> 698c1c7179a9
- Successfully built 698c1c7179a9
- Successfully tagged kindestnode-with-inner-nginx:latest
-```
-
-The output shows that during the Docker build, containerd run inside the
+The output shows that during the Docker build, docker run inside the
 container and pulled the nginx image ... great!
 
 Before proceeding, it's a good idea to prune any dangling images
@@ -914,14 +719,14 @@ build process.
 5) Now deploy the K8s cluster using the newly created image:
 
 ```console
-$ kind-sysbox create cluster --image kindestnode-with-inner-nginx
+$ docker run --runtime=sysbox-runc -d --rm --name=k8s-master --hostname=k8s-master k8s-node-with-inner-nginx
 ```
 
 6) Verify the K8s cluster nodes have the inner nginx image in them:
 
 ```console
-$ docker exec kind-control-plane ctr --namespace=k8s.io image ls | awk '/nginx/ {print $1}'
-docker.io/library/nginx:latest
+$ docker exec -it k8s-master docker image ls | grep nginx
+nginx                                latest              8cf1bfb43ff5        13 days ago         132MB
 ```
 
 There it is!
@@ -935,50 +740,36 @@ When you deploy pods using the nginx image, the image won't be pulled from the n
 You can preload as many images as you want, but note that they will add to the
 size of your K8s node image.
 
-A couple of important things to keep in mind:
-
--   In the example above we used containerd to pull the images, since that's
-    the container manager inside the `nestybox/kindestnode` image.
-
--   The inner containerd must pull images into the "k8s.io" namespace since that's
-    the one used by K8s inside the container.
-
--   If you wanted to preload inner pods into the `nestybox/k8s-node` image, the
-    procedure is similar, except that the `inner-image-pull.sh` script would
-    need to invoke Docker instead of containerd (since Docker is the container
-    manager in that image).
-
-    -   In fact, the [Dockerfile](../../dockerfiles/k8s-node) for the
-        `nestybox/k8s-node` image does something even more clever: it invokes
-        `kubeadm` inside the K8s node container to preload the inner images for the
-        K8s control pods. Kubeadm in turn invokes the inner Docker, which pulls
-        the pod images. The result is that the `nestybox/k8s-node` image has the
-        K8s control-plane pods embedded in it, making deployment of the K8s
-        cluster **much faster**.
+In fact, the [Dockerfile](../../sys-container/dockerfiles/k8s-node) for the `nestybox/k8s-node`
+image does something even more clever: it invokes `kubeadm` inside the K8s node
+container to preload the inner images for the K8s control-plane pods. Kubeadm in turn
+invokes the inner Docker, which pulls the pod images. The result is that the
+`nestybox/k8s-node` image has the K8s control-plane pods embedded in it, making
+deployment of the K8s cluster **much faster**.
 
 ### Preloading Inner Pod Images with Docker Commit
 
 You can also use `docker commit` to create a K8s node image that comes preloaded
 with inner pod images.
 
-Below is an example of how to do this with the `nestybox/kindestnode` image:
+Below is an example of how to do this with the `nestybox/k8s-node` image:
 
 1) Deploy a system container using Docker + Sysbox:
 
 ```console
-$ docker run --runtime=sysbox-runc --rm -d --name k8s-node nestybox/kindestnode:v1.18.2
+$ docker run --runtime=sysbox-runc --rm -d --name k8s-node nestybox/k8s-node:v1.18.2
 ```
 
-2) Ask the containerd instance in the container to pull the desired inner images:
+2) Ask the docker instance in the container to pull the desired inner images:
 
 ```console
-$ docker exec k8s-node ctr --namespace=k8s.io image pull docker.io/library/nginx:latest
+$ docker exec k8s-node docker image pull nginx:latest
 ```
 
 3) Take a snapshot of the container with Docker commit:
 
 ```console
-$ docker commit k8s-node kindestnode-with-inner-nginx:latest
+$ docker commit k8s-node k8s-node-with-inner-nginx:latest
 ```
 
 4) Stop the container:
@@ -990,30 +781,17 @@ $ docker stop k8s-node
 5) Launch the K8s cluster with KinD + Sysbox, using the newly committed image:
 
 ```console
-$ kind-sysbox create cluster --image=kindestnode-with-inner-nginx:latest
+$ docker run --runtime=sysbox-runc --rm -d --name k8s-node k8s-node-with-inner-nginx:latest
 ```
 
 6) Verify the K8s cluster nodes have the inner nginx image in them:
 
 ```console
-$ docker exec kind-control-plane ctr --namespace=k8s.io image ls | awk '/nginx/ {print $1}'
-docker.io/library/nginx:latest
+$ docker exec k8s-node docker image ls | grep nginx
+nginx                                latest              8cf1bfb43ff5        13 days ago         132MB
 ```
 
 There it is!
 
 This is cool because you've just used a simple Docker commit to preload inner
 pod images into your K8s nodes.
-
-One caveat however:
-
-Doing a Docker commit of a running K8s node deployed via `kind-sysbox create cluster`
-won't work. The commit itself will complete, but the resulting image can't be
-used in a new KinD cluster. The reason is that the committed image contains the
-runtime configuration of the K8s node that is specific to the original cluster,
-and that configuration likely won't work with new clusters.
-
-The approach described above overcomes this by deploying the K8s node image
-directly with Docker (rather than the `kind` tool) in step 1, so as to avoid
-any K8s runtime configuration in the container at the time we do the Docker
-commit in step 3.
