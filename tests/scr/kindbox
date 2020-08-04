@@ -1,0 +1,1162 @@
+#!/bin/bash
+
+# Kindbox: A simple program for deploying 'Kubernetes-in-Docker' using Docker +
+# Nestybox's "Sysbox" container runtime.
+#
+# This program is meant as a reference example of how to deploy a K8s cluster
+# inside Docker containers, using Docker + Sysbox. Feel free to use it and
+# modify it to your needs.
+#
+# Kindbox has some of the same functionality as the K8s.io KinD tool, except
+# that by virtue of using the Docker + Sysbox, the Docker images and commands
+# used by this script are **much simpler**, enabling you to easily and fully
+# control the cluster configuration and deployment (i.e., the Sysbox runtime
+# absorbs the complexity).
+#
+# Moreover, the resulting K8s cluster boots up pretty quickly (< 2 minutes for a
+# 10-node cluster), uses minimal resources (only 1 GB overhead for a 10-node
+# cluster!), and does not require privileged containers (i.e., it's much more
+# secure).
+#
+# NOTE: you must install the Sysbox container runtime in your host before using
+# this script. Download instructions are in www.nestybox.com.
+#
+# Enjoy,
+# - The Nestybox Team
+
+set +e
+
+VERSION=v0.1
+
+CLUSTER_NAME=k8s-cluster
+NUM_WORKERS=1
+IMAGE=nestybox/k8s-node:v1.18.2
+K8S_VERSION=v1.18.2
+
+VERBOSE=1
+PUBLISH=0
+APISERVER_PORT=6443
+SUBCMD=""
+DESTROY_NET=0
+LONG_LIST=0
+CLUSTER_INFO=()
+RESIZE_IMAGE=0
+
+function retry() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    "$@"
+    if [[ $? -eq 0 ]]; then
+      return 0
+    fi
+    sleep $delay
+  done
+
+  echo "Command \"$@\" failed $attempts times. Output: $status"
+  false
+}
+
+function wait_for_inner_systemd {
+  local node=$1
+  retry 10 1 sh -c "docker exec ${node} sh -c 'systemctl is-system-running --wait 2>&1 | grep -q running'"
+}
+
+function k8s_node_ready() {
+  local k8s_master=$1
+  local node=$2
+  local i
+
+  docker exec "$k8s_master" sh -c "kubectl get node ${node} | grep ${node} | awk '{print \$2}' | grep -qw Ready" 2>&1
+}
+
+function wait_for_node_ready {
+  local node=$1
+  local k8s_master=${CLUSTER_NAME}-master
+
+  retry 40 2 k8s_node_ready ${k8s_master} ${node}
+}
+
+function wait_all_nodes_ready() {
+  local delay=$1
+
+  local timestamp=$(date +%s)
+  local timeout=$(( $timestamp + $delay ))
+  local all_ok
+
+  while [ $timestamp -lt $timeout ]; do
+    all_ok="true"
+
+    for i in $(seq 0 $(( $NUM_WORKERS - 1 ))); do
+      local master=${CLUSTER_NAME}-master
+      local worker=${CLUSTER_NAME}-worker-${i}
+
+      k8s_node_ready $master $worker
+
+      if [[ $? -ne 0 ]]; then
+        all_ok="false"
+        break
+      fi
+    done
+
+    if [[ "$all_ok" == "true" ]]; then
+       break
+    fi
+
+    sleep 2
+    timestamp=$(date +%s)
+  done
+
+  if [[ "$all_ok" != "true" ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+function kubectl_config() {
+  local node=$1
+  docker exec ${node} sh -c "mkdir -p /root/.kube && \
+    cp -i /etc/kubernetes/admin.conf /root/.kube/config && \
+    chown $(id -u):$(id -g) /root/.kube/config"
+
+  # Copy k8s config to the host to allow kubectl interaction.
+  if [ ! -d ${HOME}/.kube ]; then
+    docker cp ${node}:/root/.kube/. ${HOME}/.kube
+    mv ${HOME}/.kube/config ${HOME}/.kube/${CLUSTER_NAME}-config
+  else
+    docker cp ${node}:/root/.kube/config ${HOME}/.kube/${CLUSTER_NAME}-config
+  fi
+
+  # As of today, kubeadm does not support 'multicluster' scenarios, so it generates
+  # identical/overlapping k8s configurations for every new cluster. Here we are
+  # simply adjusting the generated kubeconfig file to uniquely identify each cluster,
+  # thereby allowing us to support multi-cluster setups.
+  sed -i -e "s/^  name: kubernetes$/  name: ${CLUSTER_NAME}/" \
+    -e "s/^    cluster: kubernetes$/    cluster: ${CLUSTER_NAME}/" \
+    -e "s/^    user: kubernetes-admin$/    user: kubernetes-admin-${CLUSTER_NAME}/" \
+    -e "s/^  name: kubernetes-admin@kubernetes/  name: kubernetes-admin@${CLUSTER_NAME}/" \
+    -e "s/^current-context: kubernetes-admin@kubernetes/current-context: kubernetes-admin@${CLUSTER_NAME}/" \
+    -e "s/^- name: kubernetes-admin/- name: kubernetes-admin-${CLUSTER_NAME}/" \
+    -e "/^- name: kubernetes-admin/a\  username: kubernetes-admin" ${HOME}/.kube/${CLUSTER_NAME}-config
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to edit kubeconfig file for cluster ${CLUSTER_NAME}"
+    return 1
+  fi
+}
+
+function flannel_config() {
+  local node=$1
+  local output
+
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+}
+
+function docker_pull_image() {
+
+  # If the image is present, no action
+  output=$(sh -c "docker image inspect --format '{{.Id}}' ${IMAGE}" 2>&1)
+  if [[ $? -eq 0 ]]; then
+    return 0
+  fi
+
+  printf "  - Pulling node image ${IMAGE} ... (may take a few seconds)\n"
+
+  output=$(sh -c "docker pull ${IMAGE}" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="docker pull ${IMAGE}: ${output}"
+    return 1
+  fi
+}
+
+function k8s_master_create() {
+ local k8s_master=${CLUSTER_NAME}-master
+  local output
+
+  [[ $VERBOSE ]] && printf "  - Creating node ${k8s_master}\n"
+
+  if [[ $PUBLISH -eq 1 ]]; then
+    output=$(sh -c "docker run --runtime=sysbox-runc -d --rm --network=$NET --name=${k8s_master} --hostname=${k8s_master} -p $HOST_PORT:$APISERVER_PORT $IMAGE" 2>&1)
+  else
+    output=$(sh -c "docker run --runtime=sysbox-runc -d --rm --network=$NET --name=${k8s_master} --hostname=${k8s_master} $IMAGE" 2>&1)
+  fi
+
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to deploy node $k8s_master: $output"
+    return 1
+  fi
+}
+
+function k8s_master_destroy() {
+  local k8s_master=${CLUSTER_NAME}-master
+  local output
+
+  [[ $VERBOSE ]] && printf "  - Destroying node ${k8s_master}\n"
+
+  output=$(sh -c "docker stop -t0 ${k8s_master}" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to stop ${k8s_master}"
+    return 1
+  fi
+}
+
+# Initializes the K8s master node
+function k8s_master_init() {
+  local node=${CLUSTER_NAME}-master
+  local output
+
+  output=$(wait_for_inner_systemd ${node})
+  if [[ $? -ne 0 ]]; then
+    ERR="systemd init failed for ${node}: ${output}"
+    return 1
+  fi
+
+  [[ $VERBOSE ]] && printf "  - Running kubeadm init on $node ... (may take up to a minute)\n"
+
+  output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=v1.18.2 --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="kubadm init failed on ${node}: ${output}"
+    return 1
+  fi
+
+  output=$(echo "$output" | grep -q "Your Kubernetes control-plane has initialized successfully")
+  if [[ $? -ne 0 ]]; then
+    ERR="kubadm init failed on ${node}: ${output}"
+    return 1
+  fi
+
+  [[ $VERBOSE ]] && printf "  - Setting up kubectl on $node ... \n"
+
+  output=$(kubectl_config ${node})
+  if [[ $? -ne 0 ]]; then
+    ERR="kubectl config failed on ${node}: ${output}"
+    return 1
+  fi
+
+  [[ $VERBOSE ]] && printf "  - Initializing networking (flannel) on $node ...\n"
+
+  output=$(flannel_config ${node})
+  if [[ $? -ne 0 ]]; then
+    ERR="flannel init failed on ${node}: ${output}"
+    return 1
+  fi
+
+  [[ $VERBOSE ]] && printf "  - Waiting for $node to be ready ...\n"
+
+  output=$(wait_for_node_ready ${node})
+  if [[ $? -ne 0 ]]; then
+    ERR="${node} did not reach ready state: ${output}"
+    return 1
+  fi
+}
+
+function k8s_master_get_network() {
+  local k8s_master=${CLUSTER_NAME}-master
+
+  output=$(sh -c "docker inspect --format='{{range \$k,\$v := .NetworkSettings.Networks}} {{\$k}} {{end}}' $k8s_master" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to get network for cluster ${CLUSTER_NAME}: ${output}"
+    return 1
+  fi
+
+  echo $output
+}
+
+function k8s_master_get_image() {
+  local k8s_master=${CLUSTER_NAME}-master
+
+  output=$(sh -c "docker inspect --format='{{json .Image}}' $k8s_master | tr -d '\"'" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to get image for ${k8s_master}: ${output}"
+    return 1
+  fi
+
+  local image_sha=$output
+
+  output=$(sh -c "docker image inspect --format='{{range \$k := .RepoTags}} {{\$k}} {{end}}' $image_sha" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to inspect image for ${k8s_master} (${image_sha}): ${output}"
+    return 1
+  fi
+
+  echo $output
+}
+
+function k8s_workers_create() {
+  local start=$1
+  local num=$2
+  local node
+
+  local end=$(( $start + $num ))
+
+  for i in $(seq $start $(( $end - 1 ))); do
+    node=${CLUSTER_NAME}-worker-${i}
+
+    [[ $VERBOSE ]] && printf "  - Creating node $node\n"
+
+    output=$(sh -c "docker run --runtime=sysbox-runc -d --rm --network=$NET --name=${node} --hostname=${node} $IMAGE" 2>&1)
+    if [[ $? -ne 0 ]]; then
+      k8s_nodes_destroy $start $(($i + 1))
+      ERR="failed to deploy node $node: $output"
+      return 1
+    fi
+  done
+}
+
+function k8s_workers_destroy() {
+  local start=$1
+  local num=$2
+  local node
+  local failed=0
+
+  local k8s_master=${CLUSTER_NAME}-master
+  local end=$(( $start + $num ))
+
+  for i in $(seq $start $(( $end - 1 ))); do
+    node=${CLUSTER_NAME}-worker-${i}
+
+    [[ $VERBOSE ]] && printf "  - Destroying node $node\n"
+
+    output=$(sh -c "docker stop -t0 ${node}" 2>&1)
+    if [[ $? -ne 0 ]]; then
+      ERR="failed to stop ${node}"
+      failed=1
+    fi
+  done
+
+  if [[ $failed == 1 ]]; then
+    return 1
+  fi
+}
+
+# Initializes the K8s worker nodes and joins them to the cluster
+function k8s_workers_init() {
+  local start=$1
+  local num=$2
+
+  local i
+  local node
+  local join_cmd
+  local output
+
+  local k8s_master=${CLUSTER_NAME}-master
+  local end=$(( $start + $num ))
+
+  # Ensure systemd is ready in all workers
+  for i in $(seq $start $(( $end - 1))); do
+    node=${CLUSTER_NAME}-worker-${i}
+    output=$(wait_for_inner_systemd ${node})
+    if [[ $? -ne 0 ]]; then
+      ERR="systemd init failed for ${node}: ${output}"
+      return 1
+    fi
+  done
+
+  # Get the cluster "join token" from the K8s master
+  output=$(sh -c "docker exec ${k8s_master} sh -c \"kubeadm token create --print-join-command 2> /dev/null\"" 2>&1)
+  if [[ $? -ne 0 || $output == "" ]]; then
+    ERR="failed to get cluster token from ${k8s_master}: ${output}"
+    return 1
+  fi
+
+  join_cmd=$output
+
+  [[ $VERBOSE ]] && printf "  - Joining the worker nodes to the cluster ...\n"
+
+  for i in $(seq $start $(( $end - 1))); do
+    node=${CLUSTER_NAME}-worker-${i}
+    output=$(sh -c "docker exec -d ${node} sh -c \"${join_cmd}\"" 2>&1)
+    if [[ $? -ne 0 ]]; then
+      ERR="node ${node} failed to join the cluster: ${output}"
+      return 1
+    fi
+  done
+
+  # Wait for workers to join the cluster
+
+  if [[ $WAIT_READY ]]; then
+    [[ $VERBOSE ]] && printf "  - Waiting for the worker nodes to be ready ... (may take up to a minute)\n"
+
+    local join_timeout=$(( $num * 60 ))
+    output=$(wait_all_nodes_ready $join_timeout)
+    if [[ $? -ne 0 ]]; then
+      ERR="cluster nodes did not reach ready state: ${output}"
+      return 1
+    fi
+  fi
+}
+
+function k8s_workers_delete() {
+  local start=$1
+  local num=$2
+  local node
+  local failed=0
+
+  local k8s_master=${CLUSTER_NAME}-master
+  local end=$(( $start + $num ))
+
+  for i in $(seq $start $(( $end - 1 ))); do
+    node=${CLUSTER_NAME}-worker-${i}
+    output=$(sh -c "docker exec $k8s_master kubectl delete node $node" 2>&1)
+    if [[ $? -ne 0 ]]; then
+      ERR="failed to delete ${node}"
+      failed=1
+    fi
+  done
+
+  if [[ $failed == 1 ]]; then
+    return 1
+  fi
+}
+
+# Creates the containers that act as the K8s cluster nodes
+function cluster_create_nodes() {
+
+  printf "\e[92mCreating the K8s cluster nodes ... \e[0m\n"
+
+  docker_pull_image
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  k8s_master_create
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  k8s_workers_create 0 $NUM_WORKERS
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  printf "\n"
+
+  return 0
+}
+
+# Destroys the containers that act as the K8s cluster nodes
+function cluster_destroy_nodes() {
+
+  k8s_workers_destroy 0 $NUM_WORKERS
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  k8s_master_destroy
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Initializes the containers that act as the K8s cluster nodes
+function cluster_init_nodes() {
+
+  printf "\e[92mInitializing the K8s master node ... \e[0m\n"
+  k8s_master_init
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  printf "\n"
+
+  if [[ $NUM_WORKERS > 0 ]]; then
+    printf "\e[92mInitializing the K8s worker nodes ... \e[0m\n"
+    k8s_workers_init 0 $NUM_WORKERS
+    if [[ $? -ne 0 ]]; then
+      return 1
+    fi
+  fi
+
+  printf "\n"
+
+  return 0
+}
+
+function cluster_get_nodes() {
+  local nodes=$(docker container ls --filter "name=${CLUSTER_NAME}-" --format='{{json .Names}}')
+  echo $nodes
+}
+
+function cluster_get_version() {
+  local k8s_master=${CLUSTER_NAME}-master
+
+  output=$(sh -c "docker exec $k8s_master kubectl version --short | grep Server | awk '{print \$3}'" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    ERR="failed to execute 'kubectl version' in $k8s_master: ${output}"
+    return 1
+  fi
+
+  echo $output
+}
+
+function cluster_get_info() {
+  CLUSTER_NAME=$1
+
+  output=$(k8s_master_get_network)
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+  local net=$output
+
+  output=$(k8s_master_get_image)
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+  local image=$output
+
+  local nodes=$(cluster_get_nodes)
+  local nodes_array=($nodes)
+  local num_nodes=${#nodes_array[@]}
+  local num_workers
+  if [[ $num_nodes > 1 ]]; then
+    num_workers=$(( $num_nodes - 1 ))
+  else
+    num_workers=0
+  fi
+
+  local k8s_version=$(cluster_get_version)
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+
+  CLUSTER_INFO=(${CLUSTER_NAME} $num_workers $net $image $k8s_version)
+}
+
+function show_kubectl_usage() {
+
+  local k8s_master=${CLUSTER_NAME}-master
+
+  printf "\n"
+  printf "Use kubectl to control the cluster.\n"
+  printf "\n"
+  printf "  1) Install kubectl on your host\n"
+  printf "  2) export KUBECONFIG=\${KUBECONFIG}:\${HOME}/.kube/${CLUSTER_NAME}-config\n"
+  printf "  3) kubectl config use-context kubernetes-admin@${CLUSTER_NAME}\n"
+  printf "  4) kubectl get nodes\n"
+  printf "\n"
+  printf "Alternatively, use \"docker exec\" to control the cluster:\n"
+  printf "\n"
+  printf "  $ docker exec ${k8s_master} kubectl get nodes\n"
+  printf "\n"
+}
+
+# Parses docker config file to obtain explictly configured 'mtu' value. If not
+# found, returns docker's default value (1500 bytes).
+function docker_iface_mtu() {
+
+  local dockerCfgDir="/etc/docker"
+  local dockerCfgFile="${dockerCfgDir}/daemon.json"
+  local default_mtu=1500
+
+  if jq --exit-status 'has("mtu")' ${dockerCfgFile} >/dev/null; then
+    local mtu=$(jq --exit-status '."mtu"' ${dockerCfgFile} 2>&1)
+
+    if [ ! -z "$mtu" ] && [ "$mtu" -lt 1500 ]; then
+      echo $mtu
+    else
+      echo $default_mtu
+    fi
+  else
+    echo $default_mtu
+  fi
+}
+
+function create_cluster() {
+  local result
+
+  printf "\e[1mCreating a K8s cluster with Docker + Sysbox ...\e[0m\n\n"
+
+  if [[ $VERBOSE ]]; then
+    local FORMAT="%-25s: %s\n"
+
+    printf "$FORMAT" "Cluster name" "${CLUSTER_NAME}"
+    printf "$FORMAT" "Worker nodes" "${NUM_WORKERS}"
+    printf "$FORMAT" "Docker network" "${NET}"
+    printf "$FORMAT" "Node image" "${IMAGE}"
+    printf "$FORMAT" "K8s version" "${K8S_VERSION}"
+
+    local publish
+    [[ $PUBLISH -eq 1 ]] && publish="true (port $HOST_PORT)" || publish="false"
+    printf "$FORMAT" "Publish apiserver port" "${publish}"
+    printf "\n"
+  fi
+
+  local iface_mtu=$(docker_iface_mtu)
+  output=$(sh -c "docker network create -o \"com.docker.network.driver.mtu\"=\"${iface_mtu}\" ${NET}" 2>&1)
+
+  cluster_create_nodes
+  if [[ $? -ne 0 ]]; then
+    printf "ERROR: failed to create nodes: $ERR\n"
+    exit 1
+  fi
+
+  cluster_init_nodes
+  if [[ $? -ne 0 ]]; then
+    cluster_destroy_nodes
+    printf "ERROR: failed to initialize nodes: $ERR\n"
+    exit 1
+  fi
+
+  printf "\e[1mCluster created successfully!\e[0m\n"
+
+  show_kubectl_usage
+}
+
+function resize_cluster() {
+  local start
+  local num
+
+  # Get current number of nodes in cluster
+  local nodes=$(docker container ls --filter "name=${CLUSTER_NAME}-" --format='{{json .Names}}')
+  local nodes_array=($nodes)
+  local num_nodes=${#nodes_array[@]}
+  local curr_workers
+
+  if [ $num_nodes -eq 0 ]; then
+    printf "ERROR: no such cluster found.\n"
+    exit 1
+  fi
+
+  if [ $num_nodes -gt 1 ]; then
+    curr_workers=$(( $num_nodes - 1 ))
+  else
+    curr_workers=0
+  fi
+
+  printf "\e[1mResizing the K8s cluster (current = ${curr_workers}, desired = ${NUM_WORKERS}) ... \e[0m\n"
+
+  if [ $curr_workers -eq $NUM_WORKERS ]; then
+    printf "Done (no action required).\n"
+    exit 0
+  fi
+
+  #
+  # Downsize
+  #
+  if [ $curr_workers -gt $NUM_WORKERS ]; then
+
+    num=$(( $curr_workers - $NUM_WORKERS ))
+    start=$(( $curr_workers - $num))
+
+    k8s_workers_delete $start $num
+    if [[ $? -ne 0 ]]; then
+      printf "ERROR: failed to resize cluster: $ERR\n"
+      exit 1
+    fi
+
+    k8s_workers_destroy $start $num
+    if [[ $? -ne 0 ]]; then
+      printf "ERROR: failed to resize cluster: $ERR\n"
+      exit 1
+    fi
+
+    printf "Done ($num nodes removed).\n"
+    exit 0
+  fi
+
+  #
+  # Upsize
+  #
+
+  output=$(k8s_master_get_network)
+  if [[ $? -ne 0 ]]; then
+    printf "ERROR: failed to resize cluster: $ERR\n"
+    exit 1
+  fi
+  NET=$output
+
+  if [[ $RESIZE_IMAGE == 0 ]]; then
+    output=$(k8s_master_get_image)
+    if [[ $? -ne 0 ]]; then
+      printf "ERROR: failed to resize cluster: $ERR\n"
+      exit 1
+    fi
+    IMAGE=$output
+  fi
+
+  docker_pull_image
+  if [[ $? -ne 0 ]]; then
+    printf "ERROR: failed to pull node image: $ERR\n"
+    exit 1
+  fi
+
+  start=$curr_workers
+  num=$(( $NUM_WORKERS - $curr_workers ))
+
+  k8s_workers_create $start $num
+  if [[ $? -ne 0 ]]; then
+    printf "ERROR: failed to resize cluster: $ERR\n"
+    exit 1
+  fi
+
+  k8s_workers_init $start $num
+  if [[ $? -ne 0 ]]; then
+    printf "ERROR: failed to resize cluster: $ERR\n"
+    k8s_workers_destroy $start $num
+    exit 1
+  fi
+
+  printf "Done ($num nodes added).\n"
+  exit 0
+}
+
+function destroy_cluster() {
+  local nodes=$(docker container ls --filter "name=${CLUSTER_NAME}-" --format='{{json .Names}}')
+  local nodes_array=($nodes)
+  local num_nodes=${#nodes_array[@]}
+
+  if [ $num_nodes -ge 1 ]; then
+    NUM_WORKERS=$(( $num_nodes - 1 ))
+  else
+    NUM_WORKERS=0
+  fi
+
+  if [[ $num_nodes == 0 ]]; then
+    printf "ERROR: no such cluster found.\n"
+    exit 1
+  fi
+
+  printf "\e[1mDestroying K8s cluster \"${CLUSTER_NAME}\" ...\e[0m\n"
+
+  cluster_destroy_nodes
+  if [ $? -ne 0 ]; then
+    printf "ERROR: failed to destroy cluster: $ERR\n"
+    exit 1
+  fi
+
+  if [[ $DESTROY_NET == 1 ]]; then
+
+    [[ $VERBOSE ]] && printf "  - Destroying network ${NET}\n"
+
+    output=$(sh -c "docker network rm ${NET}" 2>&1)
+    if [[ $? -ne 0 ]]; then
+      printf "ERROR: failed to remove network ${NET}: $output\n"
+      exit 1
+    fi
+  fi
+
+  if [ -f ${HOME}/.kube/${CLUSTER_NAME}-config ]; then
+    rm -rf ${HOME}/.kube/${CLUSTER_NAME}-config
+  fi
+
+  printf "\n\e[1mCluster destroyed. Remove stale entry from \$KUBECONFIG env-var by doing ...\e[0m\n\n"
+  printf "  export KUBECONFIG=\`echo \${KUBECONFIG} | sed \"s|:\${HOME}/.kube/${CLUSTER_NAME}-config||\"\`\n\n"
+
+  exit 0
+}
+
+function list_clusters() {
+  local masters=$(sh -c "docker container ls --filter \"name=-master\" --format='{{json .Names}}'" | tr -d '\"')
+  local clusters=()
+  local name
+
+  # Derive cluster name from master node name (e.g., "kind-master" -> "kind")
+  for m in $masters; do
+    [[ $m =~ ^([a-zA-Z].+)-.* ]]
+    name=${BASH_REMATCH[1]}
+    clusters+=($name)
+  done
+
+  if [[ $LONG_LIST == 1 ]]; then
+    local FORMAT="%-22s %-15s %-20s %-30s %-8s\n"
+    printf "$FORMAT" "NAME" "WORKERS" "NET" "IMAGE" "K8S VERSION"
+
+    for cl in ${clusters[@]}; do
+      cluster_get_info $cl
+      if [[ $? -ne 0 ]]; then
+        printf "ERROR: failed to get info for cluster $cl: $ERR\n"
+        exit 1
+      fi
+
+      printf "$FORMAT" "${CLUSTER_INFO[0]}" "${CLUSTER_INFO[1]}" "${CLUSTER_INFO[2]}" "${CLUSTER_INFO[3]}" "${CLUSTER_INFO[4]}"
+    done
+
+  else
+    for cl in ${clusters[@]}; do
+      printf "$cl\n"
+    done
+  fi
+}
+
+function show_version() {
+  echo "$0 ${VERSION}"
+}
+
+function show_cmds() {
+  local FORMAT="\e[92m%-30s\e[0m: %s\n"
+  printf "For reference, these are some Docker commands used by this program to manage the cluster:\n"
+  printf "\n"
+  printf "$FORMAT" "Create a cluster node" "docker run --runtime=sysbox-runc -d --rm --network=<net> --name=<node-name> --hostname=<node-name> node-image"
+  printf "$FORMAT" "Initialize master node" "docker exec <master-node> sh -c \"kubeadm init --kubernetes-version=<version> --pod-network-cidr=10.244.0.0/16\""
+  printf "$FORMAT" "Get join token from master" 'join_cmd=$(sh -c "docker exec <master-node> sh -c \"kubeadm token create --print-join-command 2> /dev/null\"" 2>&1)'
+  printf "$FORMAT" "Initialize & join worker node" 'docker exec -d <worker-node> sh -c "$join_cmd"'
+  printf "$FORMAT" "Get kubectl the config" 'docker cp <master-node>:/etc/kubernetes/admin.conf $HOME/.kube/config'
+  printf "$FORMAT" "Remove node from cluster" "docker stop -t0 <node-name>"
+  printf "\n"
+
+}
+
+function show_create() {
+  printf "\n"
+  printf "Usage: $0 create [OPTIONS] CLUSTER_NAME\n"
+  printf "\n"
+  printf "Creates a K8s cluster using Docker containers as K8s nodes; requires Docker + the Sysbox container runtime.\n"
+  printf "The cluster is composed of one master node and a configurable number of worker nodes.\n"
+  printf "\n"
+  printf "Options:\n"
+  printf "  -h, --help                  Display usage.\n"
+  printf "      --num-workers=<num>     Number of worker nodes (default = 1).\n"
+  printf "      --net=<name>            Docker bridge network to connect the cluster to; if it does not exist, it will be created (default = 'CLUSTER_NAME-net').\n"
+  printf "      --image=<name>          Docker image for the cluster nodes (default = ${IMAGE}).\n"
+  printf "      --k8s-version=<name>    Kubernetes version; must correspond to the version of K8s embeddeded in the image.\n"
+  printf "  -p, --publish=<port>        Publish the cluster's apiserver port via a host port; allows for remote control of the cluster.\n"
+  printf "  -w, --wait-all              Wait for all nodes in the cluster to be ready; if not set, this command completes once the master node is ready (worker nodes may not be ready).\n"
+  exit 1
+}
+
+function parse_create_args() {
+  local new_net="true"
+
+  options=$(getopt -o p:wh -l wait-all,help,num-workers::,net::,image::,k8s-version::,publish:: -- "$@")
+
+  [ $? -eq 0 ] || {
+    show_create
+    exit 1
+  }
+
+  eval set -- "$options"
+
+  while true; do
+    case "$1" in
+      -h | --help)
+        show_create
+        ;;
+      --num-workers)
+        shift;
+        NUM_WORKERS=$1
+        if [[ ${NUM_WORKERS} -lt 0 ]]; then
+          show_create
+        fi
+        ;;
+      --net)
+        shift;
+        NET=$1
+        new_net="false"
+        ;;
+      --image)
+        shift;
+        IMAGE=$1
+        ;;
+      --k8s-version)
+        shift;
+        K8S_VERSION=$1
+        ;;
+      -w | --wait-all)
+        WAIT_READY=1
+        ;;
+      -p | --publish)
+        PUBLISH=1
+        shift;
+        HOST_PORT=$1
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        show_create
+        ;;
+      *)
+        show_create
+        ;;
+    esac
+    shift
+  done
+
+  CLUSTER_NAME=$1
+  if [[ $CLUSTER_NAME == "" ]]; then
+    echo "ERROR: missing cluster name."
+    show_create
+  fi
+
+  if [[ $new_net == "true" ]]; then
+     NET="${CLUSTER_NAME}-net"
+  fi
+}
+
+function show_destroy() {
+  printf "\n"
+  printf "Usage: $0 destroy CLUSTER_NAME\n"
+  printf "\n"
+  printf "Destroys a K8s cluster.\n"
+  printf "\n"
+  printf "Options:\n"
+  printf "      --net            Destroy the docker network for the cluster (i.e., 'CLUSTER_NAME-net').\n"
+  printf "  -h, --help           Display usage.\n"
+  exit 1
+}
+
+function parse_destroy_args() {
+  options=$(getopt -o h -l help,net -- "$@")
+
+  [ $? -eq 0 ] || {
+    show_destroy
+    exit 1
+  }
+
+  eval set -- "$options"
+
+  while true; do
+    case "$1" in
+      --net)
+        DESTROY_NET=1
+        ;;
+      -h | --help)
+        show_destroy
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        show_destroy
+        ;;
+      *)
+        show_destroy
+        ;;
+    esac
+    shift
+  done
+
+  CLUSTER_NAME=$1
+  if [[ $CLUSTER_NAME == "" ]]; then
+    echo "ERROR: missing cluster name."
+    show_destroy
+  fi
+
+  if [[ $DESTROY_NET == 1 ]]; then
+     NET="${CLUSTER_NAME}-net"
+  fi
+}
+
+function show_resize() {
+  printf "\n"
+  printf "Usage: $0 resize [OPTIONS] CLUSTER_NAME\n"
+  printf "\n"
+  printf "Resizes a K8s cluster (i.e., adds or removes nodes).\n"
+  printf "\n"
+  printf "When increasing the size of the cluster, you can optionally provide a Docker image. This \n"
+  printf "allows you to add nodes to the cluster with a different Docker image than when the cluster\n"
+  printf "was created."
+  printf "\n"
+  printf "Options:\n"
+  printf "      --num-workers=<num>     Desired number of total worker nodes in the cluster.\n"
+  printf "      --image=<name>          When increasing the size of the cluster, the Docker image for the new worker nodes (default = the image used when cluster was created).\n"
+  printf "  -w, --wait-all              When increasing the size of the clsuter, wait for newly added nodes in the cluster to be ready; if not set, this command completes before the nodes may be ready).\n"
+  printf "  -h, --help                  Display usage.\n"
+  exit 1
+}
+
+function parse_resize_args() {
+  local take_action=0
+
+  options=$(getopt -o wh -l wait-all,help,num-workers:,image: -- "$@")
+
+  [ $? -eq 0 ] || {
+    show_resize
+    exit 1
+  }
+
+  eval set -- "$options"
+
+  while true; do
+    case "$1" in
+      -h | --help)
+        show_resize
+        ;;
+      --num-workers)
+        shift;
+        NUM_WORKERS=$1
+        if [[ ${NUM_WORKERS} -lt 0 ]]; then
+          show_resize
+        fi
+        take_action=1
+        ;;
+      --image)
+        shift;
+        IMAGE=$1
+        RESIZE_IMAGE=1
+        ;;
+      -w | --wait-all)
+        WAIT_READY=1
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        show_resize
+        ;;
+      *)
+        show_resize
+        ;;
+    esac
+    shift
+  done
+
+  CLUSTER_NAME=$1
+  if [[ $CLUSTER_NAME == "" ]]; then
+    echo "ERROR: missing cluster name."
+    show_resize
+  fi
+
+  if [[ $take_action == 0 ]]; then
+     echo "ERROR: missing --num-workers=<val>"
+     show_resize
+     exit 0
+  fi
+}
+
+function show_list() {
+  printf "\n"
+  printf "Usage: $0 list [OPTIONS]\n"
+  printf "\n"
+  printf "Lists the K8s clusters.\n"
+  printf "\n"
+  printf "Options:\n"
+  printf "  -l, --long           Use a long listing format.\n"
+  printf "  -h, --help           Display usage.\n"
+  exit 1
+}
+
+function parse_list_args() {
+  options=$(getopt -o lh -l long,help -- "$@")
+
+  [ $? -eq 0 ] || {
+    show_list
+    exit 1
+  }
+
+  eval set -- "$options"
+
+  while true; do
+    case "$1" in
+      -h | --help)
+        show_list
+        ;;
+      -l | --long)
+        LONG_LIST=1
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        show_list
+        ;;
+      *)
+        show_list
+        ;;
+    esac
+    shift
+  done
+}
+
+function show_usage() {
+  printf "\n"
+  printf "Usage: $0 COMMAND\n"
+  printf "\n"
+  printf "Simple program for deploying a K8s cluster inside Docker containers (aka Kubernetes-in-Docker),\n"
+  printf "using Docker + the Sysbox container runtime.\n"
+  printf "\n"
+  printf "NOTE: you must install the Sysbox container runtime in your host before using\n"
+  printf "this program. Download instructions are at www.nestybox.com.\n"
+  printf "\n"
+  printf "The cluster is composed of one master node and a configurable number of worker nodes.\n"
+  printf "Each node is a Docker container; the nodes are connected via a Docker bridge network.\n"
+  printf "\n"
+  printf "This program is meant as a reference example of how to deploy a K8s cluster\n"
+  printf "inside Docker containers, using simple Docker commands + the Sysbox container runtime.\n"
+  printf "Feel free to use it and adapt it to your needs.\n"
+  printf "\n"
+  printf "This program has some of the same functionality as the K8s.io KinD tool, except\n"
+  printf "that by virtue of using the Docker + Sysbox, the Docker images and commands\n"
+  printf "used by this program are **much simpler**, enabling you to easily and fully\n"
+  printf "control the cluster configuration and deployment (i.e., the Sysbox runtime\n"
+  printf "absorbs the complexity).\n"
+  printf "\n"
+  printf "Moreover, the resulting K8s cluster boots up pretty quickly (< 2 minutes for a\n"
+  printf "10-node cluster), uses minimal resources (only 1 GB overhead for a 10-node\n"
+  printf "cluster!), and does **not** use privileged containers (i.e., it's much more\n"
+  printf "secure).\n"
+  printf "\n"
+  printf "Commands:\n"
+  printf "  create      Creates a cluster.\n"
+  printf "  destroy     Destroys a cluster.\n"
+  printf "  resize      Resizes a cluster.\n"
+  printf "  list        Lists the clusters.\n"
+  printf "  showcmds    Displays useful Docker commands used by this program to manage the cluster.\n"
+  printf "  version     Show version info.\n"
+  printf "  help        Show usage info.\n"
+  printf "\n"
+  printf "Run '$0 COMMAND --help' for for more info on that command.\n"
+  exit 1
+}
+
+function args() {
+  SUBCMD=$2
+
+  case "$SUBCMD" in
+    "create")
+      shift 2
+      parse_create_args "$@"
+      create_cluster
+      ;;
+    "destroy")
+      shift 2
+      parse_destroy_args "$@"
+      destroy_cluster
+      ;;
+    "resize")
+      shift 2
+      parse_resize_args "$@"
+      resize_cluster
+      ;;
+    "list")
+      shift 2
+      parse_list_args "$@"
+      list_clusters
+      ;;
+    "showcmds")
+      shift 2
+      show_cmds
+      ;;
+    "version")
+      shift 2
+      show_version
+      ;;
+    "help")
+      shift 2
+      show_usage
+      ;;
+    *)
+      echo 'Invalid command. Type "kindbox help" for usage.'
+      ;;
+  esac
+}
+
+function main() {
+  args $0 "$@"
+}
+
+main "$@"
