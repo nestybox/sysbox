@@ -18,13 +18,16 @@ Thanks for contributing to Sysbox, we much appreciate it. Please read our
 
 ## Cloning the Sysbox Repo
 
+Clone the repo with:
+
 ```
 git clone https://github.com/nestybox/sysbox.git
 ```
 
-## Setting up your Development Environment
+Sysbox uses the Go modules feature, so you should clone this into a
+directory that is outside the $GOPATH.
 
-TODO: make this simpler by doing the build in a container and outputing the result.
+## Setting up your Development Environment
 
 In order to build Sysbox, your machine's OS must be one of those
 [supported by Sysbox](docs/distro-compat.md).
@@ -131,7 +134,7 @@ The Sysbox integration Makefile target (`test-sysbox`) spawns a
 Docker privileged container using the image in tests/Dockerfile.
 
 It then mounts the developer's Sysbox directory into the privileged
-container, builds and installs Sysbox *inside* of it, and runs the
+container, builds and starts Sysbox *inside* of it, and runs the
 tests in directory `tests/`.
 
 These tests use the ["bats"](https://github.com/nestybox/sysbox/blob/master/README.md)
