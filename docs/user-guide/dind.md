@@ -24,17 +24,13 @@ the Docker on the host.
 
 This is useful for Docker sandboxing, testing, and CI/CD use cases.
 
-Moreover, it's fast and very efficient: the inner Docker uses its fast overlay2
-storage driver, and Sysbox has a [feature](images.md#inner-docker-image-sharing)
-that significantly reduces the storage overhead of the inner containers.
-
 ## Installing Docker inside the Container
 
 The easiest way is to use a system container image that has Docker preinstalled
 in it.
 
 You can find a few such images in the [Nestybox DockerHub repo](https://hub.docker.com/r/nestybox). The
-Dockerfiles for the images are [here](../../dockerfiles).
+Dockerfiles for the images are [here](../../sys-container/dockerfiles).
 
 Alternatively, you can always deploy a baseline system container image (e.g.,
 ubuntu or alpine) and install Docker in it just as you would on a physical host

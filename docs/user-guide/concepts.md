@@ -27,11 +27,10 @@ the container runtime is typically a container manager
 
 ## Container Manager
 
-The container manager manages the container's lifecycle, from image
-transfer and storage to container execution (by interacting with the container
-runtime).
+The container manager manages the container's lifecycle, from image transfer and
+storage to container execution (by interacting with the container runtime).
 
-Examples are Docker, containerd, cri-o, etc.
+Examples are Docker, containerd, etc.
 
 The [OCI runtime spec](https://github.com/opencontainers/runtime-spec) describes
 the interface between the container manager and the container

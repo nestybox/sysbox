@@ -89,7 +89,7 @@ A couple of tips:
 
 ### Using Other Container Managers
 
-We officially only support the above methods to run Sysbox.
+We currently only support the above methods to run Sysbox.
 
 However, we plan to add support for other OCI-compatible [container managers](concepts.md#container-manager) soon
 (e.g., [cri-o](https://cri-o.io/)).

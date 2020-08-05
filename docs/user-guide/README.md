@@ -5,15 +5,13 @@ limitations.
 
 This document complements the [Sysbox Quick Start Guide](../quickstart/README.md).
 
-Refer to that document for a quick introduction to running containers with
+Refer to the quickstart guide for a fast introduction to running containers with
 Sysbox. Come back to this document for a more comprehensive description of
 functionality.
 
 ## Table of Contents
 
 [Concepts & Terminology](concepts.md)
-
-[Installing Sysbox](install.md)
 
 [Deploying System Containers](deploy.md)
 
