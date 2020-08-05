@@ -89,7 +89,7 @@ container.
 
 ### Creating User Namespaces inside a System Container
 
-Nestybox system container do not currently support creating a user-namespace
+System containers do not currently support creating a user-namespace
 inside the system container and mounting procfs in it.
 
 That is, executing the following instruction inside a system container

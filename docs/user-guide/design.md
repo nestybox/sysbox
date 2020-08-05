@@ -31,18 +31,17 @@ mounts inside the system container. It's purpose is to make the system container
 closely resemble a virtual host while ensuring proper isolation from the rest of
 the system.
 
-sysbox-mgr is a daemon that provides services to sysbox-runc and
-sysbox-fs. For example, it manages assignment of exclusive user
-namespace user-ID and group-ID mappings to system containers, manages
-some special mounts that Sysbox adds to system containers, etc.
+sysbox-mgr is a daemon that provides services to sysbox-runc and sysbox-fs. For
+example, it manages assignment user-ID and group-ID mappings to system
+containers, manages some special mounts that Sysbox adds to system containers,
+etc.
 
-Together, sysbox-fs and sysbox-mgr are the "back-ends" for
-sysbox. Communication between the sysbox components is done via
-gRPC.
+Together, sysbox-fs and sysbox-mgr are the "back-ends" for sysbox. Communication
+between the sysbox components is done via gRPC.
 
-Users don't normally interact with the Sysbox components directly.
-Instead, they use higher level apps (e.g., Docker) that interact with
-Sysbox to deploy system containers.
+Users don't normally interact with the Sysbox components directly.  Instead,
+they use higher level apps (e.g., Docker) that interact with Sysbox to deploy
+system containers.
 
 ## Ubuntu Shiftfs Module
 
@@ -106,11 +105,11 @@ For example, an attacker running inside the system container can
 create set-user-ID-root executables which can then be executed by
 non-root users on the host to gain root privileges.
 
-Note that this vulnerability is not specific to Nestybox system
-containers or shiftfs; the same attack is possible with regular Docker
-containers because in those the root user in the container is in fact
-the root user on the host, so files written by the root user in the
-container have `root:root` ownership on the host.
+Note that this vulnerability is not specific to system containers or shiftfs;
+the same attack is possible with regular Docker containers because in those the
+root user in the container is in fact the root user on the host, so files
+written by the root user in the container have `root:root` ownership on the
+host.
 
 To reduce the attack surface, the following security precautions are
 recommended:
@@ -188,9 +187,9 @@ Kubernetes and containerd work properly inside the system container.
 Sysbox is a fork of the [OCI runc](https://github.com/opencontainers/runc). It is mostly
 (but not 100%) compatible with the OCI runtime specification.
 
-The incompatibilities arise from Nestybox's desire to make deployment
-of system containers possible with Docker (to save users the trouble
-of having to learn yet another tool).
+The incompatibilities arise from our desire to make deployment of system
+containers possible with Docker (to save users the trouble of having to learn
+yet another tool).
 
 We believe these incompatibilities won't negatively affect users of
 Sysbox and should mostly be transparent to them.
