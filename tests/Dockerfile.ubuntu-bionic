@@ -149,6 +149,7 @@ COPY .docker/config.json /root/.docker/config.json
 # test scripts
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
 COPY bin/userns_child_exec /usr/bin
 
 RUN mkdir -p /root/nestybox
