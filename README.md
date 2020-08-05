@@ -103,13 +103,15 @@ Before you can use Sysbox, you must first install it on your Linux machine.
 
 There are two ways:
 
-1) You can download a packaged version from the [Nestybox website](https://www.nestybox.com).
-   This is the easiest and best approach if you just want to use Sysbox. The installation
-   instructions are provided in the website.
+1) You can download a packaged version from the Sysbox Enterprise repo. This is
+   the easiest and best approach if you just want to use Sysbox. Installation
+   instructions are provided in that repo.
+
+TODO: add link to the sysbox-ee repo.
 
 2) You can build it from source and install it manually. This is the best approach if you
    are looking for a deeper dive or if you want to contribute to Sysbox. See the
-   [developer's guide](docs/developers-guide.md) for more on this.
+   [developer's guide](docs/developers-guide/README.md) for more on this.
 
 ## Using Sysbox
 
@@ -257,7 +259,7 @@ but weaker isolation than VMs (by sharing the Linux kernel among containers).
 
 We welcome contributions to Sysbox, whether they are small documentation changes,
 bug fixes, or feature additions. Please see the [contribution guidelines](CONTRIBUTING.md)
-and [developer's guide](docs/developers-guide.md) for more info.
+and [developer's guide](docs/developers-guide/README.md) for more info.
 
 ## Filing Issues
 
@@ -284,7 +286,7 @@ The method for uninstalling Sysbox depends on how you [installed it](#installing
 1) If you used the packaged version from the Nestybox website, follow the
    uninstallation instructions in the associated documentation.
 
-2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide.md#uninstalling)
+2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide/build.md)
    to uninstall it.
 
 ## Roadmap
@@ -341,8 +343,8 @@ We are there from Monday-Friday, 9am-5pm Pacific Time.
 
 ## Thank You
 
-We thank you **very much** for using and contributing to Sysbox. We hope you
-find it useful and that it helps you use containers in new and more powerful
+We thank you **very much** for using and/or contributing to Sysbox. We hope you
+find it interesting and that it helps you use containers in new and more powerful
 ways.
 
 [slack]: https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/
