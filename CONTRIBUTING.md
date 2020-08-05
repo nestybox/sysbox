@@ -1,11 +1,26 @@
-## Contribute to Sysbox
+# Contribute to Sysbox
 
 Want to contribute to Sysbox? Thanks, the Sysbox community welcomes your
 contributions!
 
 This page contains information about the process to contribute.
 
-### Reporting security issues
+## Contents
+
+-   [Reporting security issues](#reporting-security-issues)
+-   [Reporting other issues](#reporting-other-issues)
+-   [Documentation Changes](#documentation-changes)
+-   [Developer's guide](#developers-guide)
+-   [We welcome pull requests](#we-welcome-pull-requests)
+-   [Criteria for accepting changes](#criteria-for-accepting-changes)
+-   [Open-source vs. proprietary functionality](#open-source-vs-proprietary-functionality)
+-   [Write clean code](#write-clean-code)
+-   [Testing is super important](#testing-is-super-important)
+-   [Please keep the documentation up to date](#please-keep-the-documentation-up-to-date)
+-   [Process for creating pull requests](#process-for-creating-pull-requests)
+-   [Sign your work](#sign-your-work)
+
+## Reporting security issues
 
 Strong container security is of upmost concern for Sysbox.
 
@@ -13,14 +28,14 @@ If you are reporting a security issue, please do not create an issue or file a
 pull request on GitHub. Instead, disclose the issue responsibly by sending an
 email to contact@nestybox.com.
 
-### Reporting other issues
+## Reporting other issues
 
 Please follow these guidelines when filing issues with Sysbox.
 
 In all cases, first search existing issues, as it's likely the bug has already
 been reported (and we want to avoid multiple bugs for the same issue).
 
-#### Bug Reports
+### Bug Reports
 
 * Create a GitHub issue with the label "Bug"
 
@@ -32,7 +47,7 @@ been reported (and we want to avoid multiple bugs for the same issue).
 
 * Include information about the host's Linux version (e.g., `lsb_release`, `uname -a`).
 
-#### Feature requests
+### Feature requests
 
 * Create a GitHub issue with the label "Enhancement"
 
@@ -42,19 +57,19 @@ been reported (and we want to avoid multiple bugs for the same issue).
 
 * Provide a high-level description of the enhancement and its benefits.
 
-#### Documentation Changes
+### Documentation Changes
 
 * Create a GitHub issue with the label "Documentation"
 
 * Describe the need for the proposed documentation change.
 
-### Developer's guide
+## Developer's guide
 
-If you with to contribute code changes to Sysbox, the [developer's guide](docs/developers-guide.md)
+If you wish to contribute code changes to Sysbox, the [developer's guide](docs/developers-guide/README.md)
 has all the info to help you setup your environment for building and testing
 Sysbox.
 
-### We welcome pull requests
+## We welcome pull requests
 
 We appreciate your pull requests, as they help us improve Sysbox.
 
@@ -73,7 +88,7 @@ If your pull request is not accepted on the first try, don't be discouraged. The
 community will do its best to give you constructive feedback so you can improve
 the pull request.
 
-### Criteria for accepting changes
+## Criteria for accepting changes
 
 The Sysbox maintainers are in charge of approving pull requests.
 
@@ -87,7 +102,7 @@ They will do so based on:
 
 * The testing done (when appropriate).
 
-### Open-source vs. proprietary functionality
+## Open-source vs. proprietary functionality
 
 To ensure synergy between the Sysbox project and companies that wish to build
 products based on it (such as Nestybox), we use the following criteria when
@@ -105,7 +120,7 @@ practitioners while giving companies such as Nestybox the chance to monetize on
 enterprise-level features (which in turn enables Nestybox to continue to sponsor
 the Sysbox open source project).
 
-### Write clean code
+## Write clean code
 
 Write clean code (keep it simple, make it easy to understand for your fellow
 contributors).
@@ -114,7 +129,7 @@ Sysbox is written in [Go](https://golang.org/). Always run `gofmt -s -w file.go`
 on each changed file before committing your changes. Most editors have plugins
 that do this automatically.
 
-### Testing is super important
+## Testing is super important
 
 All functional changes to Sysbox must pass the Sysbox's regression test suite
 before the pull request can be accepted.
@@ -133,10 +148,10 @@ thorough testing (main code paths, corner-cases, etc) and integration tests
 focusing on interaction of the target functionality with other aspects of Sysbox
 or the rest of the system.
 
-The [developer's guide](docs/developers-guide.md) has the info on how to run
+The [developer's guide](docs/developers-guide/README.md) has the info on how to run
 Sysbox tests.
 
-### Please keep the documentation up to date
+## Please keep the documentation up to date
 
 Sysbox is a complex piece of software. As such, clear and concise documentation
 describing its features and functionality is of upmost importance.
@@ -153,7 +168,7 @@ Please update the docs whenever:
 
 And remember: the documentation is as important as the software itself.
 
-### Process for creating pull requests
+## Process for creating pull requests
 
 1) Fork the Sysbox repo
 
@@ -201,7 +216,7 @@ all traces of the feature or fix.
 Commits that fix or close an issue should include a reference like `Closes
 #XXX` or `Fixes #XXX`.
 
-### Sign your work
+## Sign your work
 
 The sign-off is a simple line at the end of the explanation for the
 patch, which certifies that you wrote it or otherwise have the right to
