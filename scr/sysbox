@@ -30,6 +30,18 @@ function retry() {
   false
 }
 
+# kill any running sysbox processes
+sysmgr_pids=$(pidof sysbox-mgr)
+sysfs_pids=$(pidof sysbox-fs)
+
+for pid in $sysmgr_pids; do
+   kill $pid
+done
+
+for pid in $sysfs_pids; do
+   kill $pid
+done
+
 # Increase default inotify resources to meet sys container's demands.
 sysctl -w fs.inotify.max_queued_events=1048576
 sysctl -w fs.inotify.max_user_watches=1048576
