@@ -72,6 +72,12 @@ EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print
 # Find out if 'shiftfs' module is present.
 SHIFTUID_ON := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
 
+# libseccomp (used by Sysbox components)
+LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
+LIBSECCOMP_DIR := sysbox-libs/libseccomp
+LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
+LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
+
 #
 # build targets
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
@@ -148,11 +154,6 @@ sysbox-mgr-static: sysbox-ipc
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
-# libseccomp (used by Sysbox components)
-LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
-LIBSECCOMP_DIR := sysbox-libs/libseccomp
-LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
-LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@echo "Building libseccomp ..."
 	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure && make
