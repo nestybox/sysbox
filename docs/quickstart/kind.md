@@ -35,8 +35,6 @@ The sections below show examples of this.
 Sysbox makes it easy to deploy a K8s cluster directly with simple "docker run"
 commands.
 
-**Check out this [video](https://asciinema.org/a/V1UFSxz6JHb3rdHpGrnjefFIt?speed=1.75).**
-
 The upside is that you get full control of the cluster deployment. The drawback
 is that you need to manage the K8s cluster creation sequence. But it's pretty
 easy as you'll see.
@@ -328,8 +326,6 @@ and joining the worker nodes to the cluster.
 [Kindbox](https://github.com/nestybox/kindbox) is a simple open-source tool created by Nestybox
 to easily create K8s clusters with Docker + Sysbox.
 
-**Check out this [video](https://asciinema.org/a/Vw8fwWwRJ26dNdMpaU8m5oaTQ?speed=1.75).**
-
 Kindbox does some of the same things that the [K8s.io KinD](https://kind.sigs.k8s.io/)
 tool does (e.g., cluster creation, destruction, etc.) but it's much simpler,
 more flexible, does not require complex container images, and it's even more
@@ -339,8 +335,8 @@ Kindbox is not meant to compete with the K8s.io KinD tool. Rather, it's meant to
 provide a reference example of how easy it is to deploy a K8s cluster inside
 containers when using the Sysbox container runtime.
 
-Kindbox is a [simple bash script](../user-guide/kind.md#kindbox-simplicity--flexibility)
-wrapper around Docker commands. Feel free to modify it to fit your needs.
+Kindbox is a simple bash script wrapper around Docker commands. Feel free to
+modify it to fit your needs.
 
 The subsections below describe how to use Kindbox.
 
