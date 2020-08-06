@@ -319,7 +319,7 @@ clean:
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
-	cd $(LIBSECCOMP_DIR) && make clean
+	cd $(LIBSECCOMP_DIR) && sudo make clean
 
 # memoize all packages once
 
