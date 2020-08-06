@@ -18,8 +18,6 @@ The following sections show examples of each.
 
 ## Building A System Container That Includes Inner Container Images
 
-**Check out this [video](https://asciinema.org/a/tYLbk5rQNOQtVgr236kErv7Gn?speed=2).**
-
 Below are the steps:
 
 1) Reconfigure the host's Docker daemon to use `sysbox-runc` as it's default
@@ -161,8 +159,6 @@ You can preload as many inner container images as you want. Just keep in mind
 that they will add to the size of the system container image.
 
 ## Committing A System Container That Includes Inner Container Images
-
-**Check out this [video](https://asciinema.org/a/SeinIdpOJBxuDvSf2cGS4NvHZ?speed=2).**
 
 Below are the steps:
 

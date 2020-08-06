@@ -31,8 +31,9 @@ originally developed by [Nestybox](https://www.nestybox.com).
 
 Sysbox enables Docker containers to act as virtual servers capable of running
 software such as Systemd, Docker, and Kubernetes in them, **seamlessly and
-securely**. This implies the ability for these containers to run inner
-containers (nested) while providing strong isolation from the underlying host.
+securely**. This allows you to use containers in new ways, and provides a
+faster, more efficient, and more portable alternative to virtual machines in
+many scenarios.
 
 Prior to Sysbox, running such software in a container required you to create
 complex images, custom entrypoints, special volume mounts, and very unsecure
