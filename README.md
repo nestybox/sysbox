@@ -1,11 +1,51 @@
 <p align="center"><img alt="sysbox" src="./docs/figures/sysbox.png" width="800x" /></p>
 
+## Introduction
+
+**Sysbox** is an open-source container runtime (aka runc), originally
+developed by [Nestybox](https://www.nestybox.com), that enables Docker
+containers to act as virtual servers capable of running software such as
+Systemd, Docker, and Kubernetes in them, easily and with proper isolation. This
+allows you to use containers in new ways, and provides a faster, more efficient,
+and more portable alternative to virtual machines in many scenarios.
+
+Prior to Sysbox, running such software in a container required you to create
+complex images, custom entrypoints, special volume mounts, and use very unsecure
+privileged containers. With Sysbox, this is as simple as:
+
+```
+$ docker run --runtime=sysbox-runc -it some-image
+```
+
+In this container, you can now run Systemd, Docker, Kubernetes, etc., just like
+you would on a physical host or virtual machine. You can launch inner containers
+(and even inner privileged containers) with strong isolation from the
+underlying host (via the Linux user-namespace). No more complex docker images or
+docker run commands, and no need for unsecure privileged containers.
+
+In order to do this, Sysbox uses many OS-virtualization features of the Linux
+kernel and complements these with OS-virtualization techniques implemented in
+user-space. These include using all Linux namespaces (in particular
+the user-namespace), partial virtualization of procfs and sysfs, selective
+syscall trapping, and more. Due to this, Sysbox requires a fairly recent Linux
+kernel (see the [supported distros](#supported-distros) below).
+
+Sysbox was forked from the OCI runc in early 2019, and has undergone significant
+changes since then. It's written in Go, and it is currently composed of three
+components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's design can
+be found in the [Sysbox user guide](docs/user-guide/design.md).
+
+Sysbox sits below OCI-compatible container managers such as Docker / containerd,
+allowing you to use these well known tools to deploy the containers. No need to
+learn new tools.
+
+The complete list of features is [here](#sysbox-features).
+
 ## Contents
 
--   [Introduction](#introduction)
--   [System Containers](#system-containers)
 -   [License](#license)
 -   [Audience](#audience)
+-   [System Containers](#system-containers)
 -   [Supported Distros](#supported-distros)
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
@@ -23,52 +63,6 @@
 -   [Uninstallation](#uninstallation)
 -   [Contact](#contact)
 -   [Thank You](#thank-you)
-
-## Introduction
-
-**Sysbox** is an open-source, next-generation container runtime (aka runc)
-originally developed by [Nestybox](https://www.nestybox.com).
-
-Sysbox enables Docker containers to act as virtual servers capable of running
-software such as Systemd, Docker, and Kubernetes in them, **seamlessly and
-securely**. This allows you to use containers in new ways, and provides a
-faster, more efficient, and more portable alternative to virtual machines in
-many scenarios.
-
-Prior to Sysbox, running such software in a container required you to create
-complex images, custom entrypoints, special volume mounts, and very unsecure
-privileged containers.
-
-Sysbox helps you overcome these problems by creating the container in such a way
-that the above mentioned software runs normally inside of it, with simple
-container images and strong isolation. Sysbox voids the need for unsecure
-privileged containers in most cases.
-
-In order to do this, Sysbox uses many OS-virtualization features of the Linux
-kernel and complements these with OS-virtualization techniques implemented in
-user-space. These include using all Linux namespaces (in particular
-the user-namespace), partial virtualization of procfs and sysfs, selective
-syscall trapping, and more. Due to this, Sysbox requires a fairly recent Linux
-kernel (see the [supported distros](#supported-distros) below).
-
-Sysbox was forked from the OCI runc in early 2019, and has undergone significant
-changes since then. It's written in Go, and its currently composed of three
-components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's design can
-be found in the [Sysbox user guide](docs/user-guide/design.md).
-
-Sysbox sits below OCI-compatible container managers such as Docker / containerd,
-allowing you to use these well known tools to deploy the containers. No need to
-learn new tools.
-
-The complete list of features is [here](#sysbox-features).
-
-## System Containers
-
-We call the containers deployed by Sysbox **system containers**, to highlight the
-fact that they can run not just micro-services (as regular containers do), but
-also system software such as Docker, Kubernetes, Systemd, inner containers, etc.
-
-More on system containers [here](docs/user-guide/concepts.md#system-container).
 
 ## License
 
@@ -89,6 +83,14 @@ Sysbox at its core, but complements it with enterprise-level features.
 See [here](#relationship-to-nestybox) for more on the relationship between
 the Sysbox open-source project and Nestybox.
 
+## System Containers
+
+We call the containers deployed by Sysbox **system containers**, to highlight the
+fact that they can run not just micro-services (as regular containers do), but
+also system software such as Docker, Kubernetes, Systemd, inner containers, etc.
+
+More on system containers [here](docs/user-guide/concepts.md#system-container).
+
 ## Supported Distros
 
 Sysbox relies on functionality that is currently only present in Ubuntu Linux.
@@ -104,15 +106,14 @@ Before you can use Sysbox, you must first install it on your Linux machine.
 
 There are two ways:
 
-1) You can download a packaged version from the Sysbox Enterprise repo. This is
-   the easiest and best approach if you just want to use Sysbox. Installation
-   instructions are provided in that repo.
-
-TODO: add link to the sysbox-ee repo.
-
-2) You can build it from source and install it manually. This is the best approach if you
+1) You can build it from source and install it manually. This is the best approach if you
    are looking for a deeper dive or if you want to contribute to Sysbox. See the
    [developer's guide](docs/developers-guide/README.md) for more on this.
+
+or
+
+2) You can download a packaged version from the [Nestybox website](https://www.nestybox.com).
+   This is the easiest and best approach if you just want to use Sysbox.
 
 ## Using Sysbox
 
@@ -124,15 +125,9 @@ root@my_cont:/#
 ```
 
 This launches a system container. It looks very much like a regular container,
-but it's different under the hood.
-
-In this container, you can now run system software such as Systemd, Docker,
-Kubernetes, etc., seamlessly and securely, just as you would on a physical host
-or virtual machine.
-
-You can launch inner containers (and even inner privileged containers), with
-strong isolation from the underlying host. No more complex docker images or
-docker run commands, and no need for unsecure privileged containers.
+but it's different under the hood. Within it can run application or system-level
+software (systemd, dockerd, K8s) inside just as you would in a VM. The container
+is strongly isolated via the Linux user-namespace.
 
 The [Sysbox Quickstart Guide](docs/quickstart/README.md) has many usage examples.
 You should start there to get familiarized with the use cases enabled by Sysbox.
