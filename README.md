@@ -30,10 +30,10 @@ the user-namespace), partial virtualization of procfs and sysfs, selective
 syscall trapping, and more. Due to this, Sysbox requires a fairly recent Linux
 kernel (see the [supported distros](#supported-distros) below).
 
-Sysbox was forked from the OCI runc in early 2019, and has undergone significant
-changes since then. It's written in Go, and it is currently composed of three
-components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's design can
-be found in the [Sysbox user guide](docs/user-guide/design.md).
+Sysbox was forked from the excellent OCI runc in early 2019, and has undergone
+significant changes since then. It's written in Go, and it is currently composed
+of three components: sysbox-runc, sysbox-fs, and sysbox-mgr. More on Sysbox's
+design can be found in the [Sysbox user guide](docs/user-guide/design.md).
 
 Sysbox sits below OCI-compatible container managers such as Docker / containerd,
 allowing you to use these well known tools to deploy the containers. No need to
@@ -78,7 +78,7 @@ and contributions are welcomed.
 The Sysbox project is not meant for people looking for a commercially supported
 solution. For such a solution, refer to the Sysbox Enterprise Edition
 (sysbox-EE) in the [Nestybox website](https://www.nestybox.com). Sysbox-EE uses
-Sysbox at its core, but complements it with enterprise-level features.
+Sysbox at its core, but complements it with enterprise-level features and support.
 
 See [here](#relationship-to-nestybox) for more on the relationship between
 the Sysbox open-source project and Nestybox.
@@ -102,18 +102,14 @@ We plan to add support for more distros in the near future.
 
 ## Installing Sysbox
 
-Before you can use Sysbox, you must first install it on your Linux machine.
+Before you can use Sysbox, you must first build and install it. It's easy
+to do this as we have a make target that builds Sysbox inside a Docker container,
+and another make target that installs Sysbox on your host. See
+the [Sysbox developer's guide](docs/developers-guide/README.md) for more on this.
 
-There are two ways:
-
-1) You can build it from source and install it manually. This is the best approach if you
-   are looking for a deeper dive or if you want to contribute to Sysbox. See the
-   [developer's guide](docs/developers-guide/README.md) for more on this.
-
-or
-
-2) You can download a packaged version from the [Nestybox website](https://www.nestybox.com).
-   This is the easiest and best approach if you just want to use Sysbox.
+In the near future, we plan to offer a pre-packaged version of Sysbox for users that
+want to use Sysbox without having to build it from source. Sysbox Enterprise has
+such a packaged version already (available at the [Nestybox website](https://www.nestybox.com)).
 
 ## Using Sysbox
 
