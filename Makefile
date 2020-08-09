@@ -16,7 +16,6 @@
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
-	build-deb ubuntu-bionic ubuntu-cosmic ubuntu-disco ubuntu-eoan ubuntu-focal \
 	clean
 
 export SHELL=bash
