@@ -48,6 +48,7 @@ TEST_IMAGE := sysbox-test
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
+export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
 IMAGE_BASE_DISTRO := $(shell lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
@@ -62,6 +63,9 @@ IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
 TEST_VOL1 := /var/tmp/sysbox-test-var-lib-docker
 TEST_VOL2 := /var/tmp/sysbox-test-var-lib-sysbox
 TEST_VOL3 := /var/tmp/sysbox-test-scratch
+export TEST_VOL1
+export TEST_VOL2
+export TEST_VOL3
 
 # In scenarios where the egress-interface's mtu is lower than expected (1500 bytes),
 # we must explicitly configure dockerd with such a value.
@@ -184,9 +188,11 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 #
 
 HEADERS := linux-headers-$(KERNEL_REL)
+export HEADERS
 
 # hacky: works on ubuntu but may not work on other distros
 HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
+export HEADERS_BASE
 
 # Alternative: reads symlinks and finds longest common prefix with sed (works on shell but fails on makefile for some reason)
 # HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink -f {} \; | uniq | sed -e 's,$,/,;1{h;d;}' -e 'G;s,\(.*/\).*\n\1.*,\1,;h;$!d;s,/$,,' )
