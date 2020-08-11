@@ -1,0 +1,32 @@
+dist: bionic
+group: edge
+
+language: go
+
+git:
+  submodules: false
+
+before_install:
+  # Install recent docker package.
+  - sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - apt-key fingerprint 0EBFCD88
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+  # Install linux-kernel-headers package.
+  - sudo apt-get install linux-headers-$(uname -r)
+
+  # For parent repos (i.e. sysbox, sysbox-fs, sysbox-libs), let's avoid dealing with ssh-keys mess by simply replacing their
+  # ssh url with an http one.
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' sysbox-fs/.gitmodules
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' sysbox-libs/.gitmodules
+  - git -C sysbox-fs submodule update --init
+  - git -C sysbox-libs submodule update --init
+
+script:
+  - make sysbox
+  - make test-sysbox-ci
+  - make test-sysbox-shiftuid-ci
