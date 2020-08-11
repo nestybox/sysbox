@@ -9,7 +9,7 @@
 	sysbox-ipc \
 	install uninstall \
 	test \
-	test-sysbox test-sysbox-shiftuid test-sysbox-local \
+	test-sysbox test-sysbox-ci test-sysbox-shiftuid test-sysbox-shiftuid-ci test-sysbox-local \
 	test-runc test-fs test-mgr \
 	test-shell test-shell-shiftuid \
 	test-fs-local test-mgr-local \
@@ -223,6 +223,13 @@ test-sysbox: test-img
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
+test-sysbox-ci: ## Run sysbox integration tests (continuous integration)
+test-sysbox-ci: test-img test-fs test-mgr
+	@printf "\n** Running sysbox integration tests **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
+
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
 test-sysbox-shiftuid: test-img
 ifeq ($(SHIFTUID_ON), )
@@ -233,6 +240,18 @@ else
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_UIDS=true && testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
+endif
+
+test-sysbox-shiftuid-ci: ## Run sysbox integration tests with uid-shifting (shiftfs) (continuous integration)
+test-sysbox-shiftuid-ci: test-img test-fs test-mgr
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
+	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true && testContainerInit && \
+		make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
 endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
@@ -284,6 +303,9 @@ test-cleanup: test-img
 
 test-sysbox-local:
 	$(TEST_DIR)/scr/testSysbox $(TESTPATH)
+
+test-sysbox-local-ci:
+	$(TEST_DIR)/scr/testSysboxCI $(TESTPATH)
 
 test-fs-local: sysbox-ipc
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)

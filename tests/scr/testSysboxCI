@@ -1,0 +1,50 @@
+#!/bin/bash -e
+
+#
+# script to run sysbox integration tests for continous-integration purposes
+#
+
+progName=$(basename "$0")
+
+usage()
+{
+  echo "
+Usage: $progName <testName>
+
+"
+  exit 1
+}
+
+# argument testName is optional
+if [ $# -eq 1 ]; then
+  printf "\nExecuting $1 ... \n"
+  bats --tap $1
+else
+  printf "\nExecuting sysbox-mgr tests ... \n"
+  bats --tap tests/sysmgr
+  printf "\nExecuting sysbox-fs tests ... \n"
+  bats --tap tests/sysfs
+  printf "\nExecuting docker tests ... \n"
+  bats --tap tests/docker
+  printf "\nExecuting dind tests ... \n"
+  bats --tap tests/dind
+  printf "\nExecuting cind tests ... \n"
+  bats --tap tests/cind
+  printf "\nExecuting app tests (l1) ... \n"
+  bats --tap tests/apps/l1
+
+  # the kind tests need plenty storage (otherwise kubelet fails);
+  # remove all docker images from prior tests to make room
+  docker system prune -a -f
+
+  printf "\nExecuting kind tests ... \n"
+  bats --tap tests/kind/kindbox-custom-net.bats
+
+  # Note: this must be the last test
+  printf "\nSysbox health checking ...\n"
+  bats --tap tests/health/sysbox-health.bats
+
+  docker system prune -a -f
+fi
+
+exit 0
