@@ -1,4 +1,4 @@
-# Sysbox Developer's Guide: Building
+# Sysbox Developer's Guide: Building & Installing
 
 ## Contents
 
