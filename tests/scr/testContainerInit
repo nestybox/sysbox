@@ -58,7 +58,14 @@ if [ -z "$SHIFT_UIDS" ]; then
             "path": "/usr/local/sbin/sysbox-runc"
         }
     },
-    "default-runtime": "sysbox-runc"
+    "default-runtime": "sysbox-runc",
+    "bip": "172.24.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.31.0.0/16",
+            "size": 24
+        }
+    ]
 }
 EOF
 else
@@ -75,7 +82,14 @@ else
             ]
         }
     },
-    "default-runtime": "sysbox-runc"
+    "default-runtime": "sysbox-runc",
+    "bip": "172.24.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.31.0.0/16",
+            "size": 24
+        }
+    ]
 }
 EOF
 fi
