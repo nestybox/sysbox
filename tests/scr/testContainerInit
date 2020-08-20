@@ -4,6 +4,19 @@
 # Test container initialization script
 #
 
+
+# Dockerd default configuration dir/file.
+dockerCfgDir="/etc/docker"
+dockerCfgFile="${dockerCfgDir}/daemon.json"
+
+# Default mtu value associated to test-container's egress-interface.
+export default_mtu=1500
+
+# Temp file for jq write operations.
+tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
+trap 'rm -f "${tmpfile}"' EXIT
+
+
 function retry() {
   local attempts=$1
   shift
@@ -26,6 +39,26 @@ function retry() {
   false
 }
 
+function egress_iface_mtu() {
+
+    # Identify default egress iface.
+    local egress_iface=$(ip route show | awk '/default via/ {print $5}')
+    if [ ! -z "${egress_iface}" ]; then
+	echo ${default_mtu}
+	return
+    fi
+
+    # Obtain mtu value associated to egress interface, and return it
+    # if this one is lower than default value.
+    local egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+    if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -lt 1500 ]; then
+	echo ${egress_mtu}
+    else
+	echo ${default_mtu}
+    fi
+}
+
+
 #
 # Execution starts here ...
 #
@@ -45,13 +78,12 @@ if [[ "$lastBuildHost" != "$thisHost" ]]; then
 fi
 
 # Configure dockerd
-mkdir -p /etc/docker
+mkdir -p "${dockerCfgDir}"
 
 if [ -z "$SHIFT_UIDS" ]; then
-    cat <<EOF > /etc/docker/daemon.json
+    cat <<EOF > "${dockerCfgFile}"
 {
     "debug": false,
-    "mtu": 1460,
     "userns-remap": "sysbox",
     "runtimes": {
         "sysbox-runc": {
@@ -69,10 +101,9 @@ if [ -z "$SHIFT_UIDS" ]; then
 }
 EOF
 else
-    cat <<EOF > /etc/docker/daemon.json
+    cat <<EOF > "${dockerCfgFile}"
 {
     "debug": false,
-    "mtu": 1460,
     "userns-remap": "",
     "runtimes": {
         "sysbox-runc": {
@@ -92,6 +123,14 @@ else
     ]
 }
 EOF
+fi
+
+# Adjust docker's interface mtu configuration. This is required to avoid forwarding issues
+# in containers seating behind an egress-interface with lower-than-default mtu.
+egress_mtu=$(egress_iface_mtu)
+if [ ${egress_mtu} -ne ${default_mtu} ]; then
+    jq --arg mtu ${egress_mtu} --indent 4 '. + {"mtu": $mtu}' "${dockerCfgFile}" \
+       > ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
 fi
 
 # Start docker
