@@ -532,54 +532,6 @@ function kind_all_nodes_ready() {
   fi
 }
 
-# Deploys a k8s cluster through KinD tool. The cluster has one master node
-# and the given number of worker nodes. The cluster uses the K8s KinD cni.
-# The name of the master/controller node is defined by caller, however, this
-# one must follow the naming convention utilized by KinD tool internally. That
-# is: master node must be called ${cluster}-control-plane. Likewise, worker
-# names must meet KinD's expectations: ${cluster}-worker, ${cluster}-worker2,
-# ${cluster}-worker3, etc.
-#
-# usage: kind_cluster_setup <cluster_name> <num_workers> <network> <node_image>
-#
-# cluster: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
-#          "<cluster-name>-worker", "<cluster-name>-worker-2", etc.
-# num_workers: number of k8s worker nodes
-function kind_cluster_setup() {
-  local cluster=$1
-  local controller=$2
-  local num_workers=$3
-  local node_image=$4
-
-  # Delete stale cluster (e.g., left over from prior tests that fail, etc)
-  run kind-sysbox/bin/kind-sysbox delete cluster --name $cluster
-
-  # Create the new cluster
-  run kind-sysbox/bin/kind-sysbox create cluster --name $cluster --config tests/kind/kind_config.yaml --image "$node_image"
-  echo "status = ${status}"
-  echo "output = ${output}"
-  [ "$status" -eq 0 ]
-
-  # KinD takes care of setting a proper k8s config in the context from where
-  # this logic is launched (priv container in our case). In this step we
-  # ensure that the controller himself has the proper k8s config so that we
-  # can also interact with the cluster through the controller itself.
-  k8s_config $cluster $controller
-
-  # Wait till all workers are ready.
-  local join_timeout=$(( $num_workers * 30 ))
-  kind_all_nodes_ready $cluster $controller $num_workers $join_timeout
-}
-
-# Tears-down a k8s cluster created with kind_cluster_setup().
-#
-# usage: kind_cluster_teardown cluster_name num_workers
-function kind_cluster_teardown() {
-  local cluster=$1
-  kind-sysbox/bin/kind-sysbox delete cluster --name $cluster
-}
-
-
 ################################################################################
 # KindBox specific functions
 ################################################################################
