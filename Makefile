@@ -220,7 +220,8 @@ test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-img
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
 test-sysbox-shiftuid: test-img
@@ -229,7 +230,9 @@ ifeq ($(SHIFTUID_ON), )
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true && testContainerInit && \
+		make test-sysbox-local TESTPATH=$(TESTPATH)"
 endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
@@ -250,12 +253,14 @@ test-mgr: test-img
 test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "testContainerInit && /bin/bash"
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && /bin/bash"
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export SHIFT_UIDS=true && testContainerInit && /bin/bash"
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-img: ## Build test container image
 test-img:

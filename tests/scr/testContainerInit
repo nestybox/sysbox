@@ -10,7 +10,7 @@ dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
 
 # Default mtu value associated to test-container's egress-interface.
-export default_mtu=1500
+default_mtu=1500
 
 # Temp file for jq write operations.
 tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
@@ -39,22 +39,42 @@ function retry() {
   false
 }
 
-function egress_iface_mtu() {
+#
+# Obtain the MTU value to be configured for the docker interface within the test
+# container. This value shall be the lowest among these ...
+#
+#  * The 'physical' default-gateway interface at host level (L0).
+#  * The 'logical' default-gateway interface connecting the test-container (L1) with the host.
+#  * The 'default' mtu value (1500 bytes) supported by most NICs.
+#
+function docker_iface_mtu() {
+
+    local egress_iface
+    local l0_egress_mtu
+    local l1_egress_mtu
 
     # Identify default egress iface.
     local egress_iface=$(ip route show | awk '/default via/ {print $5}')
-    if [ ! -z "${egress_iface}" ]; then
-	echo ${default_mtu}
+    if [ -z "${egress_iface}" ]; then
 	return
     fi
 
-    # Obtain mtu value associated to egress interface, and return it
-    # if this one is lower than default value.
-    local egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
-    if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -lt 1500 ]; then
-	echo ${egress_mtu}
+    # Obtain mtu value associated to the test-container's egress interface.
+    egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+    if [ ! -z "${egress_mtu}" ] &&
+       [ "${egress_mtu}" -lt "${default_mtu}" ]; then
+	l1_egress_mtu=${egress_mtu}
     else
-	echo ${default_mtu}
+	l1_egress_mtu=${default_mtu}
+    fi
+
+    # Pull L0 egress-mtu value passed from Sysbox's makefile.
+    l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
+
+    if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
+	echo ${l0_egress_mtu}
+    else
+	echo ${l1_egress_mtu}
     fi
 }
 
@@ -127,9 +147,9 @@ fi
 
 # Adjust docker's interface mtu configuration. This is required to avoid forwarding issues
 # in containers seating behind an egress-interface with lower-than-default mtu.
-egress_mtu=$(egress_iface_mtu)
-if [ ${egress_mtu} -ne ${default_mtu} ]; then
-    jq --arg mtu ${egress_mtu} --indent 4 '. + {"mtu": $mtu}' "${dockerCfgFile}" \
+egress_mtu=$(docker_iface_mtu)
+if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -ne "${default_mtu}" ]; then
+    jq --arg mtu "${egress_mtu}" --indent 4 '. + {"mtu": $mtu|tonumber}' "${dockerCfgFile}" \
        > ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
 fi
 
@@ -145,3 +165,4 @@ make sysbox-local --no-print-directory && make install
 echo "Starting sysbox with test-specific options"
 install -D -m0755 tests/scr/sysbox /usr/local/sbin/sysbox
 sysbox
+
