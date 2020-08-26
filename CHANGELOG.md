@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2020-08-25
+### Added
+  * Created debian packages for first community-edition release.
+  * Fixed package installer bug preventing 'shiftfs' feature from being properly utilized.
+  * Enhanced package installer to prevent network overlaps between inner and outer containers.
+### Removed
+  * Deprecated support of Ubuntu's EOL release: Eoan (19.10).
+
 ## [0.2.0] - 2020-07-03
 ### Added
   * Added initial Kubernetes-in-Docker support to enable secure, flexible and portable K8s clusters.
