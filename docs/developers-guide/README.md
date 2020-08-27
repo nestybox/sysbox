@@ -7,8 +7,8 @@ source, install it, and test it. It's meant for developers that want to
 contribute or do a deeper dive on Sysbox.
 
 If you are just looking to use Sysbox and don't want to build it from source,
-this document is not for you. In that case, we recommend going to the [Nestybox](https://www.nestybox.com)
-website and downloading the packaged version of Sysbox.
+this document is not for you. In that case, we recommend installing Sysbox
+from its packaged [version](https://github.com/nestybox/sysbox/releases).
 
 ## Contributions
 
