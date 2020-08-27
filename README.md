@@ -102,14 +102,40 @@ We plan to add support for more distros in the near future.
 
 ## Installing Sysbox
 
-Before you can use Sysbox, you must first build and install it. It's easy
-to do this as we have a make target that builds Sysbox inside a Docker container,
-and another make target that installs Sysbox on your host. See
-the [Sysbox developer's guide](docs/developers-guide/README.md) for more on this.
+1) Download the latest Sysbox community-edition package from the
+[release](https://github.com/nestybox/sysbox/releases) page.
 
-In the near future, we plan to offer a pre-packaged version of Sysbox for users that
-want to use Sysbox without having to build it from source. Sysbox Enterprise has
-such a packaged version already (available at the [Nestybox website](https://www.nestybox.com)).
+2) Verify that the checksum of the downloaded file fully matches the expected/published one.
+   For example:
+
+```console
+$ sha256sum sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+126e4963755cdca440579d81409b3f4a6d6ef4c6c2d4cf435052a13468e2c250  sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+```
+
+3) Stop and eliminate all running Docker containers. Refer to the
+[detailed](docs/user-guide/install.md) installation process for information
+on how to avoid impacting existing containers.
+
+```
+$ docker rm $(docker ps -a -q) -f
+```
+
+... if an error is returned, it simply indicates that no existing containers were found.
+
+4) Install the Sysbox package and follow the installer instructions:
+
+```console
+$ sudo apt-get install ./sysbox_0.2.1-0.ubuntu-focal_amd64.deb -y
+```
+
+More information on the installation process can be found [here](docs/user-guide/install.md). If you
+run into problems during installation, see the [troubleshooting doc](docs/user-guide/troubleshoot.md).
+
+Alternatively, you can build Sysbox binaries yourself. It's a very simple process as
+we have a 'make' target that builds Sysbox inside a Docker container, and another
+'make' target that installs Sysbox on your host. See the
+[Sysbox developer's guide](docs/developers-guide/README.md) for more on this.
 
 ## Using Sysbox
 
