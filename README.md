@@ -78,7 +78,8 @@ and contributions are welcomed.
 The Sysbox project is not meant for people looking for a commercially supported
 solution. For such a solution, refer to the Sysbox Enterprise Edition
 (sysbox-EE) in the [Nestybox website](https://www.nestybox.com). Sysbox-EE uses
-Sysbox at its core, but complements it with enterprise-level features and support.
+Sysbox at its core, but complements it with enterprise-level features for
+improved security and efficiency, as well as Nestybox support.
 
 See [here](#relationship-to-nestybox) for more on the relationship between
 the Sysbox open-source project and Nestybox.
@@ -230,7 +231,7 @@ Sysbox.
 ### Inner Container Image Preloading
 
 -   You can create a system container image that includes inner container
-    images, with a simple Dockerfile or Docker commit.
+    images using a simple Dockerfile or via Docker commit. See [here](docs/quickstart/images.md) for more.
 
 Please see our [Roadmap](#roadmap) for a list of features we are working on.
 
@@ -337,7 +338,8 @@ and improve it, with the goal of increasing the use cases and benefits it
 enables. External maintainers and contributors are welcomed.
 
 Nestybox uses Sysbox as the core of it's Sysbox enterprise product (Sysbox-EE),
-which consists of Sysbox plus proprietary features meant for enterprise use.
+which consists of Sysbox plus proprietary features meant for enterprise use
+(e.g., enhanced security, efficiency, testing, as well as Nestybox support).
 
 To ensure synergy between the Sysbox project and commercial entities such as
 Nestybox, we use the following criteria when considering adding functionality to
