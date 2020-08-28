@@ -5,6 +5,7 @@
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
 -   [Uninstalling Sysbox](#uninstalling-sysbox)
+-   [Installing Sysbox w/o Docker restart](#Installing-Sysbox-without-Docker-restart)
 -   [Docker Installation](#docker-installation)
 
 ## Host Requirements
@@ -35,8 +36,8 @@ $ sha256sum sysbox_0.2.1-0.ubuntu-focal_amd64.deb
 ```
 
 3) Stop and eliminate all running Docker containers. Refer to the
-[Hitless Installation](#Hitless-Installation) process further below for information
-on how to avoid impacting existing containers.
+[Installing Sysbox w/o Docker restart](#Installing-Sysbox-without-Docker-restart) section
+further below for information on how to avoid impacting existing containers.
 
 ```
 $ docker rm $(docker ps -a -q) -f
@@ -159,7 +160,7 @@ $ sudo apt-get purge sysbox -y
 $ sudo userdel sysbox
 ```
 
-## Hitless Installation
+## Installing Sysbox without Docker restart
 
 To simplify the Sysbox installation process, we explicitly ask the user to stop and remove
 the existing containers. This may not be a feasible option in production scenarios though.
