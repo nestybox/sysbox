@@ -1,4 +1,14 @@
-<p align="center"><img alt="sysbox" src="./docs/figures/sysbox.png" width="800x" /></p>
+<p align="center">
+    <img alt="sysbox" src="./docs/figures/sysbox.png" width="800x" />
+</p>
+
+<p align="center">
+    <a href="https://github.com/nestybox/sysbox/blob/master/LICENSE"><img alt="GitHub license" src="https://img.shields.io/github/license/nestybox/sysbox"></a>
+    <a href="https://travis-ci.com/nestybox/sysbox">
+    <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
+    <a href="https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#">
+    <img src="https://img.shields.io/badge/chat-on%20slack-FF3386"></a>
+</p>
 
 ## Introduction
 
