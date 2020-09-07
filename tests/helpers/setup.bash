@@ -19,7 +19,7 @@ WORK_DIR="/work"
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
 SYSBOX_ROOT="${INTEGRATION_ROOT}/../../"
 RECVTTY="${INTEGRATION_ROOT}/../../sysbox-runc/contrib/cmd/recvtty/recvtty"
-BUNDLES="${INTEGRATION_ROOT}/../../sys-container/bundles"
+BUNDLES="${INTEGRATION_ROOT}/../bundles"
 
 CONSOLE_SOCKET="$WORK_DIR/console.sock"
 
