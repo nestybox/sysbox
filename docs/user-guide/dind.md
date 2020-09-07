@@ -30,7 +30,7 @@ The easiest way is to use a system container image that has Docker preinstalled
 in it.
 
 You can find a few such images in the [Nestybox DockerHub repo](https://hub.docker.com/r/nestybox). The
-Dockerfiles for the images are [here](../../sys-container/dockerfiles).
+Dockerfiles for the images are [here](https://github.com/nestybox/dockerfiles).
 
 Alternatively, you can always deploy a baseline system container image (e.g.,
 ubuntu or alpine) and install Docker in it just as you would on a physical host

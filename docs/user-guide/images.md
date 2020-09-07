@@ -36,7 +36,7 @@ we provide as reference for users.
 
 We often use these in the examples we provide in this User-Guide and [Quickstart guide](../quickstart/README.md).
 
-The Dockerfiles are [here](../../sys-container/dockerfiles). Feel free to copy them and adapt them to
+The Dockerfiles are [here](https://github.com/nestybox/dockerfiles). Feel free to copy them and adapt them to
 your needs.
 
 If you see an error on them or think they can be improved, please file a [GitHub issue](../../CONTRIBUTING.md).
@@ -89,7 +89,7 @@ This process also works if the system container image has containerd inside
 (rather than Docker). In this case, the Dockerfile must request containerd
 to pull the inner images.
 
-We use this feature often. For example, the [Dockerfile](../../sys-container/dockerfiles/k8s-node)
+We use this feature often. For example, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/main/k8s-node/Dockerfile)
 for the `k8s-node` image (used for running Kubernetes-in-Docker) preloads the Kubernetes pod images using
 this same approach.
 

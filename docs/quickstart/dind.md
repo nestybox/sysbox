@@ -17,7 +17,7 @@ deeper detail.
 
 We will use a system container image that has Alpine + Docker inside. It's called
 `nestybox/alpine-docker` and it's in the [Nestybox DockerHub repo](https://hub.docker.com/u/nestybox). The
-Dockerfile is [here](../../sys-container/dockerfiles/alpine-docker/Dockerfile).
+Dockerfile is [here](https://github.com/nestybox/dockerfiles/blob/main/alpine-docker/Dockerfile).
 
 1) Start the system container:
 
@@ -83,7 +83,8 @@ We've also added an SSH daemon in into the system container image, so that you
 can login remotely into it, just as you would on a physical host or VM.
 
 We will use a system container image called `nestybox/ubuntu-bionic-systemd-docker:latest` which is in
-[Nestybox DockerHub repo](https://hub.docker.com/u/nestybox). The Dockerfile is [here](../../sys-container/dockerfiles/ubuntu-bionic-systemd-docker/Dockerfile).
+[Nestybox DockerHub repo](https://hub.docker.com/u/nestybox). The Dockerfile is
+[here](https://github.com/nestybox/dockerfiles/blob/main/ubuntu-bionic-systemd-docker/Dockerfile).
 
 1) Start the system container:
 
@@ -224,7 +225,7 @@ manager inside a system container.
 
 We will use a system container image called `nestybox/alpine-supervisord-docker:latest`.
 Nestybox DockerHub public repo. The Dockerfile, supervisord.conf, and docker-entrypoint.sh files
-can be found [here](../../sys-container/dockerfiles/alpine-supervisord-docker).
+can be found [here](https://github.com/nestybox/dockerfiles/tree/main/alpine-supervisord-docker).
 
 1) Start the system container:
 
