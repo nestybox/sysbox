@@ -13,3 +13,6 @@
 [submodule "sysbox-libs"]
 	path = sysbox-libs
 	url = git@github.com:nestybox/sysbox-libs.git
+[submodule "sysbox-dockerfiles"]
+	path = sysbox-dockerfiles
+	url = git@github.com:nestybox/dockerfiles.git
