@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="sysbox" src="./docs/figures/sysbox.png" width="800x" />
+    <img alt="sysbox" src="./docs/figures/sysbox_community_edition.png"/>
 </p>
 
 <p align="center">
