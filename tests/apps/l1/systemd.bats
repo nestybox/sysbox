@@ -105,15 +105,15 @@ function check_systemd_mounts() {
   [ "$status" -eq 0 ]
 }
 
-@test "systemd ubuntu disco" {
+@test "systemd ubuntu focal" {
 
-  # In ubuntu disco, systemd-resolved requires /proc/kcore to be
+  # In ubuntu focal, systemd-resolved requires /proc/kcore to be
   # exposed inside the container (i.e., not masked with a /dev/null
   # bind mount), otherwise systemd fails to initialize.
 
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-disco-systemd)
+                            --hostname=sys-cont-systemd nestybox/ubuntu-focal-systemd)
 
   wait_for_init
 
@@ -196,7 +196,7 @@ function check_systemd_mounts() {
   # /proc/kallsyms, /proc/kmsg) do not present a security hole.
 
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-disco-systemd)
+                            --hostname=sys-cont-systemd nestybox/ubuntu-focal-systemd)
 
   wait_for_init
 
