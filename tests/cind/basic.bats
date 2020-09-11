@@ -14,7 +14,7 @@ function teardown() {
 
 @test "cind basic" {
 
-  syscont=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "containerd > /var/log/containerd.log --log-level=debug 2>&1"
   [ "$status" -eq 0 ]

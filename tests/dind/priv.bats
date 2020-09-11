@@ -18,7 +18,7 @@ function teardown() {
 
 @test "dind privileged basic" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -52,7 +52,7 @@ function teardown() {
 # Privileged container security (privileged with respect to sys container context only)
 @test "dind privileged security" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -98,9 +98,9 @@ function teardown() {
   docker_stop "$syscont_name"
 }
 
-@test "dind privileged ubuntu-disco" {
+@test "dind privileged ubuntu-bionic" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

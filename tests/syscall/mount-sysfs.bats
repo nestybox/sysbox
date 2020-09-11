@@ -248,8 +248,8 @@ function teardown() {
   local mnt_path=/tmp/sys
   local node=module/nf_conntrack/parameters/hashsize
 
-  syscont0=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   # mount sysfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"

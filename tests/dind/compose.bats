@@ -30,7 +30,7 @@ services:
     command: "tail -f /dev/null"
 EOF
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source="${file}",target=/mnt/docker-compose.yml nestybox/ubuntu-disco-compose:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source="${file}",target=/mnt/docker-compose.yml nestybox/ubuntu-bionic-compose:latest tail -f /dev/null)
 
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

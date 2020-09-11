@@ -272,8 +272,8 @@ function teardown() {
   local mnt_path=/tmp/proc
   local node=sys/net/netfilter/nf_conntrack_max
 
-  syscont0=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   # mount procfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"
@@ -592,7 +592,7 @@ function teardown() {
 
 @test "procfs mount in inner privileged container (ubuntu)" {
 
-  local syscont=$(docker_run --rm nestybox/ubuntu-disco-docker:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
