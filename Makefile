@@ -103,6 +103,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm                     \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
 			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
+			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
 			$(TEST_IMAGE)
 
 sysbox: ## Build sysbox
@@ -208,8 +209,8 @@ DOCKER_RUN := docker run -it --privileged --rm                        \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
 			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
+			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
 			$(TEST_IMAGE)
-
 
 ##@ Testing targets
 
@@ -351,7 +352,7 @@ clean:
 
 clean_libseccomp: ## Clean libseccomp
 clean_libseccomp:
-	cd $(LIBSECCOMP_DIR) && sudo make clean
+	cd $(LIBSECCOMP_DIR) && sudo make distclean
 
 # memoize all packages once
 
