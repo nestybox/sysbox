@@ -55,3 +55,13 @@ function cdr2mask()
    [ $1 -gt 1 ] && shift $1 || shift
    echo ${1-0}.${2-0}.${3-0}.${4-0}
 }
+
+# Identifies the system's firewall backend being utilized.
+function fwd_backend_type()
+{
+    if iptables --version | egrep -q "nf_tables"; then
+	echo "nftables"
+    else
+	echo "iptables"
+    fi
+}

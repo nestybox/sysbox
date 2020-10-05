@@ -69,37 +69,70 @@ function teardown() {
   [[ "$syscont_dns" != "$host_dns" ]]
 
   #
-  # verify iptables
+  # Verify firewall rules are the expected ones. Notice that this process depends
+  # on the backend utilized by fwd: traditional iptables vs nftables.
   #
 
-  # Chains
-  docker exec "$syscont" sh -c "iptables -t nat -n -L PREROUTING | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$gateway" ]]
+  local fwd_backend=$(fwd_backend_type)
 
-  docker exec "$syscont" sh -c "iptables -t nat -n -L OUTPUT | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$gateway" ]]
+  if [ "$fwd_backend" = "iptables" ]; then
+     # Chains
+     docker exec "$syscont" sh -c "iptables -t nat -n -L PREROUTING | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -n -L POSTROUTING | grep DOCKER_POSTROUTING | awk '{ print \$5 }'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$gateway" ]]
+     docker exec "$syscont" sh -c "iptables -t nat -n -L OUTPUT | grep DOCKER_OUTPUT | awk '{ print \$5 }'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
 
-  # DNAT
-  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+tcp.+to:127.0.0.11\" | awk '{ print \$5 }'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$gateway" ]]
+     docker exec "$syscont" sh -c "iptables -t nat -n -L POSTROUTING | grep DOCKER_POSTROUTING | awk '{ print \$5 }'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+udp.+to:127.0.0.11\" | awk '{ print \$5 }'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$gateway" ]]
+     # DNAT
+     docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+tcp.+to:127.0.0.11\" | awk '{ print \$5 }'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
 
-  # SNAT
-  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+tcp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
-  [ "$status" -eq 0 ]
+     docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_OUTPUT | egrep \"DNAT.+udp.+to:127.0.0.11\" | awk '{ print \$5 }'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
 
-  docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+udp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
-  [ "$status" -eq 0 ]
+     # SNAT
+     docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+tcp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
+     [ "$status" -eq 0 ]
+
+     docker exec "$syscont" sh -c "iptables -t nat -n -L DOCKER_POSTROUTING | egrep \"SNAT.+udp.+127.0.0.11\" | grep -q \"to:${gateway}:53\""
+     [ "$status" -eq 0 ]
+
+  elif [ "$fwd_backend" = "nftables" ]; then
+     # Chains
+     docker exec "$syscont" sh -c "nft list chain nat PREROUTING | egrep DOCKER_OUTPUT | awk '{print \$3}'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
+
+     docker exec "$syscont" sh -c "nft list chain nat OUTPUT | egrep DOCKER_OUTPUT | awk '{print \$3}'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
+
+     docker exec "$syscont" sh -c "nft list chain nat POSTROUTING | egrep DOCKER_POSTROUTING | awk '{print \$3}'"
+     [ "$status" -eq 0 ]
+     [[ "$output" == "$gateway" ]]
+
+     # DNAT
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"tcp ip daddr ${gateway}\""
+     [ "$status" -eq 0 ]
+
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"udp ip daddr ${gateway}\""
+     [ "$status" -eq 0 ]
+
+     # SNAT
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"tcp ip saddr 127.0.0.11\""
+     [ "$status" -eq 0 ]
+
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"udp ip saddr 127.0.0.11\""
+     [ "$status" -eq 0 ]
+  fi
 
   # verify DNS resolution
 
