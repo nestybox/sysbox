@@ -42,18 +42,15 @@ RUN dnf update -y && dnf install -y \
     libaio-devel \
     libcap-devel \
     libnl3-devel \
-#    libnet-devel \
     libseccomp \
     libseccomp-devel \
     python2 \
-#    uidmap \
     kmod \
     unzip \
     time \
     net-tools \
     wget \
     lsof \
-#    iproute2 \
     iputils \
     ca-certificates \
     # sysbox deps
@@ -138,6 +135,7 @@ COPY .docker/config.json /root/.docker/config.json
 # test scripts
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
 COPY bin/userns_child_exec /usr/bin
 
 RUN mkdir -p /root/nestybox
