@@ -31,12 +31,12 @@ function compare_syscont_unshare() {
   delta=$(diff --suppress-common-lines \
     <(echo "$sc_list" | sed -e 's/ /\n/g' | sort) \
     <(echo "$ns_list" | sed -e 's/ /\n/g' | sort) \
-    | grep "proc" | sed 's/^< //g')
+    | grep "proc" | sed 's/^< //g' | sed 's/>//g')
 
   for file in $delta; do
     found=false
-    for mnt in $SYSFS_PROC_SYS; do
-      if [ "$file" == "$mnt" ]; then
+    for sysfs_emu in $SYSFS_PROC_SYS; do
+      if [ "$file" == "$sysfs_emu" ]; then
         found=true
       fi
     done
