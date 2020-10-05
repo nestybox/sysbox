@@ -76,12 +76,12 @@ function fs_avail() {
   echo $(($diskAvail*1024))
 }
 
-# Currently not in used.
+# Finds out if selinux is enabled by looking at the file-system extended attributes.
 function selinux_on() {
 
-  if ls -l /proc/uptime | cut -d" " -f1 | tail -c 2 | egrep -q "."; then
-    echo 1
+  if ls -l /proc/uptime | cut -d" " -f1 | tail -c 2 | egrep -q "\."; then
+    return 0
   else
-    echo 0
+    return 1
   fi
 }

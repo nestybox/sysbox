@@ -11,6 +11,7 @@ load ../helpers/run
 load ../helpers/syscall
 load ../helpers/docker
 load ../helpers/sysbox-health
+load ../helpers/fs
 
 function teardown() {
   sysbox_log_check
@@ -45,7 +46,7 @@ function teardown() {
   # Verify sysfs mount attributes are the expected ones. Notice that CentOS/Redhat
   # enable SELinux by default so expected mount attributes may vary (i.e. "seclabel"
   # super-block attribute may be present).
-  if ! mount | egrep -q "sysfs.*seclabel"; then
+  if ! selinux_on; then
     docker exec "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"mount | grep sysfs\""
     [ "$status" -eq 0 ]
     [[ "$output" == "sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)" ]]

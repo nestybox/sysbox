@@ -52,10 +52,10 @@ export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the testing of sysbox installer.
 IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
-ifeq ($(IMAGE_BASE_DISTRO), ubuntu)
-	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+ifeq ($(IMAGE_BASE_DISTRO), centos)
+	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
 else
-	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d \. -f1)
+	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
 endif
 IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
