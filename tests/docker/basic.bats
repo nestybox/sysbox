@@ -29,7 +29,7 @@ function teardown() {
 
   docker exec "$syscont" pstree
   [ "$status" -eq 0 ]
-  [[ "$output" == "docker-init---tail" ]]
+  [[ "$output" =~ "init---tail" ]]
 
   docker_stop "$syscont"
 }
