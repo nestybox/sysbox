@@ -87,14 +87,31 @@ The Sysbox project is intended for anyone looking to experiment, invent, learn,
 and build systems using system containers. It's cutting-edge OS virtualization,
 and contributions are welcomed.
 
-The Sysbox project is not meant for people looking for a commercially supported
-solution. For such a solution, refer to the Sysbox Enterprise Edition
-(sysbox-EE) in the [Nestybox website](https://www.nestybox.com). Sysbox-EE uses
-Sysbox at its core, but complements it with enterprise-level features for
-improved security and efficiency, as well as Nestybox support.
+The Sysbox project is **not** meant for people looking for a commercially
+supported solution. For such a solution, use the **Sysbox Enterprise Edition
+(sysbox-EE)**.
 
-See [here](#relationship-to-nestybox) for more on the relationship between
-the Sysbox open-source project and Nestybox.
+Sysbox-EE uses Sysbox at its core, but complements it with enterprise-level
+features for improved security and efficiency as well as Nestybox support
+(see next section).
+
+For info on where to find and download Sysbox-EE, refer to the
+[Nestybox website](https://www.nestybox.com).
+
+## Sysbox Features
+
+The table below summarizes the key features of the Sysbox container
+runtime. It also provides a comparison between the Sysbox Community
+Edition (i.e., this repo) and the Sysbox Enterprise Edition
+(Sysbox EE).
+
+<p align="center">
+    <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000x" />
+</p>
+
+More on the features [below](#sysbox-feature-description).
+
+If you have questions, you can reach us [here](#contact).
 
 ## System Containers
 
@@ -192,7 +209,7 @@ Sysbox.
 
     -   Distro compatibility requirements.
 
-## Sysbox Features
+## Sysbox Feature Description
 
 ### OCI-based
 
@@ -342,16 +359,15 @@ and improve it, with the goal of increasing the use cases and benefits it
 enables. External maintainers and contributors are welcomed.
 
 Nestybox uses Sysbox as the core of it's Sysbox enterprise product (Sysbox-EE),
-which consists of Sysbox plus proprietary features meant for enterprise use
-(e.g., enhanced security, efficiency, testing, as well as Nestybox support).
+which consists of Sysbox plus proprietary features meant for enterprise use.
 
 To ensure synergy between the Sysbox project and commercial entities such as
 Nestybox, we use the following criteria when considering adding functionality to
 Sysbox:
 
 Any features that mainly benefit individual practitioners are made part of the Sysbox
-open-source project. Any features that mainly address enterprise-level needs are
-not part of the Sysbox open-source project.
+open-source project. Any features that mainly address enterprise-level are reserved
+for the Sysbox Enterprise Edition.
 
 The Sysbox project maintainers will make this determination on a feature by
 feature basis, with total transparency. The goal is to create a balanced
@@ -363,7 +379,9 @@ business around the technology.
 
 Slack: [Nestybox Slack Workspace][slack]
 
-We are there from Monday-Friday, 9am-5pm Pacific Time.
+Email: contact@nestybox.com
+
+We are available from Monday-Friday, 9am-5pm Pacific Time.
 
 ## Thank You
 
