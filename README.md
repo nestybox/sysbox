@@ -89,7 +89,7 @@ and contributions are welcomed.
 
 The Sysbox project is **not** meant for people looking for a commercially
 supported solution. For such a solution, use the **Sysbox Enterprise Edition
-(sysbox-EE)**.
+(Sysbox-EE)**.
 
 Sysbox-EE uses Sysbox at its core, but complements it with enterprise-level
 features for improved security and efficiency as well as Nestybox support
