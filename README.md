@@ -133,7 +133,11 @@ We plan to add support for more distros in the near future.
 ## Installing Sysbox
 
 1) Download the latest Sysbox community-edition package from the
-[release](https://github.com/nestybox/sysbox/releases) page.
+[release](https://github.com/nestybox/sysbox/releases) page:
+
+```console
+$ wget https://github.com/nestybox/sysbox/releases/download/v0.2.1/sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+```
 
 2) Verify that the checksum of the downloaded file fully matches the expected/published one.
    For example:
@@ -383,9 +387,9 @@ To ensure synergy between the Sysbox project and commercial entities such as
 Nestybox, we use the following criteria when considering adding functionality to
 Sysbox:
 
-Any features that mainly benefit individual practitioners are made part of the Sysbox
-open-source project. Any features that mainly address enterprise-level are reserved
-for the Sysbox Enterprise Edition.
+Any features that mainly benefit individual practitioners are made part of the
+Sysbox open-source project. Any features that mainly address enterprise-level
+needs are reserved for the Sysbox Enterprise Edition.
 
 The Sysbox project maintainers will make this determination on a feature by
 feature basis, with total transparency. The goal is to create a balanced
