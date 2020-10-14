@@ -133,3 +133,38 @@ function verify_syscont_sysfs_mnt() {
 
   true
 }
+
+# verifies the given sys container path contains an overlayfs mount.
+function verify_syscont_overlay_mnt() {
+
+  # argument check
+  ! [[ "$#" < 2 ]]
+  local syscont=$1
+  local mnt_path=$2
+  if [ $# -eq 3 ]; then
+     local readonly=$3
+  fi
+
+  if [ -n "$readonly" ]; then
+    local opt=\(ro,
+  fi
+
+  docker exec "$syscont" bash -c "mount | grep \"overlay on $mnt_path type overlay $opt\""
+  [ "$status" -eq 0 ]
+
+  true
+}
+
+# verifies the given sys container path does not contain an overlayfs mount.
+function verify_syscont_overlay_umnt() {
+
+  # argument check
+  ! [[ "$#" < 2 ]]
+  local syscont=$1
+  local mnt_path=$2
+
+  docker exec "$syscont" bash -c "mount | grep \"overlay on $mnt_path type overlay"
+  [ "$status" -eq 1 ]
+
+  true
+}
