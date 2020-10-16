@@ -62,6 +62,7 @@ The complete list of features is [here](#sysbox-features).
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
 -   [Using Sysbox](#using-sysbox)
+-   [Docker Default Runtime Config](#docker-default-runtime-config)
 -   [Documentation](#documentation)
 -   [Sysbox Features](#sysbox-features)
 -   [Integration with Container Managers & Orchestrators](#integration-with-container-managers--orchestrators)
@@ -192,6 +193,27 @@ Note that if you omit the `--runtime` option, Docker will use its default `runc`
 runtime to launch regular containers (rather than system containers). It's
 perfectly fine to run system containers launched with Docker + Sysbox alongside
 regular Docker containers; they won't conflict and can co-exist side-by-side.
+
+## Docker Default Runtime Config
+
+Optionally, you can make Sysbox the default runtime for Docker. To do this, add
+the `default-runtime` config to `/etc/docker/daemon.json`. It should look
+similar to this:
+
+```
+{
+  "runtimes": {
+     "sysbox-runc": {
+        "path": "/usr/local/sbin/sysbox-runc"
+     }
+  }
+  "default-runtime": "sysbox-runc"
+}
+```
+
+Then restart Docker (e.g., `sudo systemctl restart docker`). With this setup,
+you can omit the `--runtime=sysbox-runc` flag when using `docker run` to create
+containers with Sysbox.
 
 ## Documentation
 
