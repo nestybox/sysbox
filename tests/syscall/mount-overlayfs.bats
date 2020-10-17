@@ -10,7 +10,7 @@ load ../helpers/syscall
 load ../helpers/docker
 load ../helpers/sysbox-health
 
-ovs_path="/var/lib/docker/overlay2"
+ovfs_path="/var/lib/docker/overlay2"
 
 function teardown() {
   sysbox_log_check
@@ -19,10 +19,10 @@ function teardown() {
 # Verify basic overlayfs mount instruction.
 @test "mount overlayfs basic" {
 
-  local lower_path="$ovs_path"/root/lower
-  local upper_path="$ovs_path"/root/upper
-  local work_path="$ovs_path"/root/work
-  local merge_path="$ovs_path"/root/merge
+  local lower_path="$ovfs_path"/root/lower
+  local upper_path="$ovfs_path"/root/upper
+  local work_path="$ovfs_path"/root/work
+  local merge_path="$ovfs_path"/root/merge
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -50,22 +50,24 @@ function teardown() {
 # Verify fs addition operations.
 @test "mount overlayfs addition ops" {
 
-  local lower_path="$ovs_path"/root/lower
-  local upper_path="$ovs_path"/root/upper
-  local work_path="$ovs_path"/root/work
-  local merge_path="$ovs_path"/root/merge
+  local lower_path="$ovfs_path"/root/lower
+  local upper_path="$ovfs_path"/root/upper
+  local work_path="$ovfs_path"/root/work
+  local merge_path="$ovfs_path"/root/merge
 
-  local lower_dir="$ovs_path"/root/lower/lower_dir
-  local lower_file="$ovs_path"/root/lower/lower_file
-  local upper_dir="$ovs_path"/root/upper/upper_dir
-  local upper_file="$ovs_path"/root/upper/upper_file
+  local lower_file="$ovfs_path"/root/lower/lower_file
+  local lower_dir="$ovfs_path"/root/lower/lower_dir
+  local lower_dir_file="$ovfs_path"/root/lower/lower_dir/lower_file
+  local upper_file="$ovfs_path"/root/upper/upper_file
+  local upper_dir="$ovfs_path"/root/upper/upper_dir
+  local upper_dir_file="$ovfs_path"/root/upper/upper_dir/upper_file
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c \
     "mkdir -p $lower_path $upper_path $work_path $merge_path && \
      mkdir -p $lower_dir $upper_dir && \
-     touch $lower_file $upper_file"
+     touch $lower_file $lower_dir_file $upper_file $upper_dir_file"
   [ "$status" -eq 0 ]
 
   # Mount overlayfs at $merge_path.
@@ -76,7 +78,7 @@ function teardown() {
   verify_syscont_overlay_mnt $syscont $merge_path
 
   # Verify dir/file content in merge folder is the expected one.
-  docker exec "$syscont" stat $lower_dir $lower_file $upper_dir $upper_file
+  docker exec "$syscont" stat $lower_file $lower_dir $lower_dir_file $upper_file $upper_dir $upper_dir_file
   [ "$status" -eq 0 ]
 
   # Add new dir.
@@ -87,8 +89,12 @@ function teardown() {
   docker exec "$syscont" bash -c "touch $merge_path/new_file"
   [ "$status" -eq 0 ]
 
-  # Confirm new dir/file is present.
+  # Confirm new dir/file is present in merge layer.
   docker exec "$syscont" bash -c "stat $merge_path/new_dir $merge_path/new_file"
+  [ "$status" -eq 0 ]
+
+  # Confirm new dir/file is present in upper layer.
+  docker exec "$syscont" bash -c "stat $upper_path/new_dir $upper_path/new_file"
   [ "$status" -eq 0 ]
 
   # Umount overlayfs mountpoint.
@@ -103,15 +109,15 @@ function teardown() {
 # Verify fs deletion operations.
 @test "mount overlayfs deletion ops" {
 
-  local lower_path="$ovs_path"/root/lower
-  local upper_path="$ovs_path"/root/upper
-  local work_path="$ovs_path"/root/work
-  local merge_path="$ovs_path"/root/merge
+  local lower_path="$ovfs_path"/root/lower
+  local upper_path="$ovfs_path"/root/upper
+  local work_path="$ovfs_path"/root/work
+  local merge_path="$ovfs_path"/root/merge
 
-  local lower_dir="$ovs_path"/root/lower/lower_dir
-  local lower_file="$ovs_path"/root/lower/lower_file
-  local upper_dir="$ovs_path"/root/upper/upper_dir
-  local upper_file="$ovs_path"/root/upper/upper_file
+  local lower_dir="$ovfs_path"/root/lower/lower_dir
+  local lower_file="$ovfs_path"/root/lower/lower_file
+  local upper_dir="$ovfs_path"/root/upper/upper_dir
+  local upper_file="$ovfs_path"/root/upper/upper_file
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -176,7 +182,7 @@ function teardown() {
 }
 
 # Mix of various overlayfs mounts and umounts operations from chroot'ed contexts,
-# creation of whiteouts, etc -- fairly decent cocktail of ovs mount instructions.
+# creation of whiteouts, etc -- fairly decent cocktail of ovfs mount instructions.
 @test "mount overlayfs advanced ops" {
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -195,10 +201,10 @@ function teardown() {
 # Verify overlayfs mounts with relative paths.
 @test "mount overlayfs relative paths" {
 
-  local lower_path="$ovs_path"/root/lower
-  local upper_path="$ovs_path"/root/upper
-  local work_path="$ovs_path"/root/work
-  local merge_path="$ovs_path"/root/merge
+  local lower_path="$ovfs_path"/root/lower
+  local upper_path="$ovfs_path"/root/upper
+  local work_path="$ovfs_path"/root/work
+  local merge_path="$ovfs_path"/root/merge
 
   local rel_lower_dir=root/lower
   local rel_upper_dir=root/upper
@@ -213,14 +219,14 @@ function teardown() {
 
   # Mount overlayfs making use of relative paths.
   docker exec "$syscont" bash -c \
-    "cd $ovs_path && \
+    "cd $ovfs_path && \
     mount -t overlay overlay -olowerdir=$rel_lower_dir,upperdir=$rel_upper_dir,workdir=$rel_work_dir $rel_merge_dir"
   [ "$status" -eq 0 ]
 
   verify_syscont_overlay_mnt $syscont $merge_path
 
   # Umount overlayfs mountpoint.
-  docker exec "$syscont" bash -c "cd $ovs_path && umount $rel_merge_dir"
+  docker exec "$syscont" bash -c "cd $ovfs_path && umount $rel_merge_dir"
   [ "$status" -eq 0 ]
 
   verify_syscont_overlay_umnt $syscont $merge_path
@@ -231,21 +237,21 @@ function teardown() {
 # Verify overlayfs mounts with various lower-layers.
 @test "mount overlayfs multiple lower" {
 
-  local lower_path_1="$ovs_path"/root/lower1
-  local lower_path_2="$ovs_path"/root/lower2
-  local lower_path_3="$ovs_path"/root/lower3
-  local upper_path="$ovs_path"/root/upper
-  local work_path="$ovs_path"/root/work
-  local merge_path="$ovs_path"/root/merge
+  local lower_path_1="$ovfs_path"/root/lower1
+  local lower_path_2="$ovfs_path"/root/lower2
+  local lower_path_3="$ovfs_path"/root/lower3
+  local upper_path="$ovfs_path"/root/upper
+  local work_path="$ovfs_path"/root/work
+  local merge_path="$ovfs_path"/root/merge
 
-  local lower_dir_1="$ovs_path"/root/lower1/lower_dir_1
-  local lower_dir_2="$ovs_path"/root/lower2/lower_dir_2
-  local lower_dir_3="$ovs_path"/root/lower3/lower_dir_3
-  local lower_file_1="$ovs_path"/root/lower1/lower_file_1
-  local lower_file_2="$ovs_path"/root/lower1/lower_file_2
-  local lower_file_3="$ovs_path"/root/lower1/lower_file_3
-  local upper_dir="$ovs_path"/root/upper/upper_dir
-  local upper_file="$ovs_path"/root/upper/upper_file
+  local lower_dir_1="$ovfs_path"/root/lower1/lower_dir_1
+  local lower_dir_2="$ovfs_path"/root/lower2/lower_dir_2
+  local lower_dir_3="$ovfs_path"/root/lower3/lower_dir_3
+  local lower_file_1="$ovfs_path"/root/lower1/lower_file_1
+  local lower_file_2="$ovfs_path"/root/lower1/lower_file_2
+  local lower_file_3="$ovfs_path"/root/lower1/lower_file_3
+  local upper_dir="$ovfs_path"/root/upper/upper_dir
+  local upper_file="$ovfs_path"/root/upper/upper_file
 
   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
