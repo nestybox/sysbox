@@ -202,12 +202,12 @@ similar to this:
 
 ```
 {
+  "default-runtime": "sysbox-runc",
   "runtimes": {
      "sysbox-runc": {
         "path": "/usr/local/sbin/sysbox-runc"
      }
   }
-  "default-runtime": "sysbox-runc"
 }
 ```
 
