@@ -63,7 +63,7 @@ missing today, such as proper understanding of Golang's concurrency constructs
 (e.g. goroutines). In consequence, in this document i will be focusing on Delve
 debugger, which is not as feature-rich as the regular GDB, but it fully supports
 Golang's runtime. Luckily, most of the existing Delve instructions fully match
-GDB ones, so i will mainly concentrate on those that (slightly) deviate.
+GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
 -   Installation:
 
@@ -80,6 +80,11 @@ rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
 
 -   Attaching to a running process:
 
+First, find the PID of the running sysbox-runc process. Use `sudo pstree -SlpgT`
+to help with this.
+
+Then start the debugger and attach it to the sysbox-runc process via the PID:
+
 ```console
 rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
 ```
@@ -87,6 +92,11 @@ rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "P
 Notice that to allow Golang runtime to operate as we expect, we must
 export the existing Golang related env-vars to the newly-spawn delve
 process.
+
+-   Delve command reference:
+
+https://github.com/go-delve/delve/blob/master/Documentation/cli/README.md
+
 
 -   Setting break-points:
 
@@ -185,7 +195,8 @@ Example:
       Goroutine 7 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
       Goroutine 20 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
     [7 goroutines]
-    (dlv)
+
+    NOTE: Use `goroutines -t` to show a full stack trace for each goroutine. Then use `frame X` to switch to the desired frame.
 ```
 
 -   Printing:
