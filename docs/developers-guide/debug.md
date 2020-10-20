@@ -80,7 +80,7 @@ rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
 
 -   Attaching to a running process:
 
-First, find the PID of the running sysbox-runc process. Use `sudo pstree -SlpgT`
+First, find the PID of the running sysbox-runc process. Use `sudo pstree -SlpgT | grep sysbox`
 to help with this.
 
 Then start the debugger and attach it to the sysbox-runc process via the PID:
