@@ -54,6 +54,8 @@ export KERNEL_REL
 IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 ifeq ($(IMAGE_BASE_DISTRO), centos)
 	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
+else ifeq ($(IMAGE_BASE_DISTRO), fedora)
+	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
 else
 	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
 endif
