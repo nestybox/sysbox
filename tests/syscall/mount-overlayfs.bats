@@ -165,12 +165,12 @@ function teardown() {
   # Verify 'whiteout' has been created for removed dir.
   docker exec "$syscont" bash -c "ls -l $upper_path/lower_dir"
   [ "$status" -eq 0 ]
-  [[ $output =~ "c---------    1 root     root        0,   0".+"$upper_path/lower_dir" ]]
+  [[ $output =~ "c---------".+"root     root        0,   0".+"$upper_path/lower_dir" ]]
 
   # Verify 'whiteout' has been created for removed file.
   docker exec "$syscont" bash -c "ls -l $upper_path/lower_file"
   [ "$status" -eq 0 ]
-  [[ $output =~ "c---------    1 root     root        0,   0".+"$upper_path/lower_file" ]]
+  [[ $output =~ "c---------".+"root     root        0,   0".+"$upper_path/lower_file" ]]
 
   # Umount overlayfs mountpoint.
   docker exec "$syscont" bash -c "umount $merge_path"
