@@ -52,7 +52,6 @@ SYS_NON_NS=('e=(/sys/kernel/profiling BOOL) '\
             'e=(/sys/kernel/rcu_normal BOOL) '\
             'e=(/sys/kernel/rcu_expedited BOOL) '\
             'e=(/sys/module/kernel/parameters/panic BOOL) '\
-            'e=(/sys/fs/cgroup/rdma/notify_on_release BOOL) '\
             'e=(/sys/bus/pci/drivers_autoprobe BOOL)')
 
 # unshare all namespaces and execute the given command as a forked process

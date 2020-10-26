@@ -103,7 +103,7 @@ function teardown() {
 # Verify that /sys controls for non-namespaced kernel resources
 # can't be modified from within a sys container.
 @test "/sys non-namespaced resources" {
-skip
+
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
