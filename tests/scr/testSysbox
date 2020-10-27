@@ -40,6 +40,7 @@ else
   # the kind tests need plenty storage (otherwise kubelet fails);
   # remove all docker images from prior tests to make room, and
   # remove all docker images after test too.
+  printf "\n"
   docker system prune -a -f
   printf "\nExecuting kind tests ... \n"
   bats --tap tests/kind
@@ -48,7 +49,6 @@ else
   printf "\nExecuting perf tests ... \n"
   bats --tap tests/perf
 
-  # Note: this must be the last test
   printf "\nSysbox health checking ...\n"
   bats --tap tests/health/sysbox-health.bats
 
