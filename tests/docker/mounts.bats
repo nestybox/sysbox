@@ -265,11 +265,10 @@ function teardown() {
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
-  run __docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null
-  [ "$status" -eq 0 ]
-
+  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
+  docker_stop "$syscont_2"
   docker_stop "$syscont"
 
   sleep 2
@@ -405,11 +404,10 @@ function teardown() {
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
-  run __docker run --runtime=sysbox-runc -d --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null
-  [ "$status" -eq 0 ]
-
+  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
+  docker_stop "$syscont_2"
   docker_stop "$syscont"
 
   sleep 2
