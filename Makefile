@@ -54,17 +54,18 @@ export KERNEL_REL
 IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat))
 	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
-	HEADERS := kernels/$(KERNEL_REL)
-	export HEADERS
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro
+	KERNEL_HEADERS := kernels/$(KERNEL_REL)
+	export KERNEL_HEADERS
+	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
+	export KERNEL_HEADERS_MOUNTS
 else
 	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
-	HEADERS := linux-headers-$(KERNEL_REL)
-	export HEADERS
-	HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
-	export HEADERS_BASE
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
-				 -v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro
+	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
+	export KERNEL_HEADERS
+	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
+	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
+				 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+	export KERNEL_HEADERS_MOUNTS
 endif
 
 IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
