@@ -30,7 +30,7 @@ load ../helpers/sysbox-health
 @test "kernel headers mounts (ubuntu)" {
 
   local kernel_rel=$(uname -r)
-  local distro=$(get_distro)
+  local distro=$(get_host_distro)
 
   local syscont=$(docker_run --rm ubuntu:bionic tail -f /dev/null)
 
@@ -65,7 +65,7 @@ load ../helpers/sysbox-health
       fi
 
       # Verify that no /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
-      # softlink has been created -- shouldn't be needed in this case as sysbox-runc/mgr
+      # softlink has been created -- it's not needed in this case as sysbox-runc/mgr
       # already bind-mounts all the required paths.
       docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
       [ "$status" -eq 1 ]
@@ -78,7 +78,7 @@ load ../helpers/sysbox-health
 @test "kernel headers mounts (fedora)" {
 
   local kernel_rel=$(uname -r)
-  local distro=$(get_distro)
+  local distro=$(get_host_distro)
 
   local syscont=$(docker_run --rm fedora:31 tail -f /dev/null)
 
@@ -98,8 +98,8 @@ load ../helpers/sysbox-health
       fi
 
       # Verify that no /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
-      # softlink has been created -- shouldn't be needed in this case as sysbox-runc/mgr
-      # already bind-mount all required paths.
+      # softlink has been created -- it's not needed in this case as sysbox-runc/mgr
+      # already bind-mounts all the required paths.
       docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
       [ "$status" -eq 1 ]
 
