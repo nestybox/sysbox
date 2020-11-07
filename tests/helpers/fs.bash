@@ -85,3 +85,11 @@ function selinux_on() {
     return 1
   fi
 }
+
+# Returns linux distro running on the host (technically, in the test-priv container).
+function get_distro() {
+
+  local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
+
+  echo $distro
+}
