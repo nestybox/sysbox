@@ -50,13 +50,24 @@ TEST_IMAGE := sysbox-test
 KERNEL_REL := $(shell uname -r)
 export KERNEL_REL
 
-# Sysbox image-generation globals utilized during the testing of sysbox installer.
+# Sysbox image-generation globals utilized during the sysbox's building and testing process.
 IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
-ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora))
+ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat))
 	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
+	KERNEL_HEADERS := kernels/$(KERNEL_REL)
+	export KERNEL_HEADERS
+	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
+	export KERNEL_HEADERS_MOUNTS
 else
 	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
+	export KERNEL_HEADERS
+	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
+	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
+				 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+	export KERNEL_HEADERS_MOUNTS
 endif
+
 IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
@@ -107,9 +118,8 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm                     \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
-			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
 			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
+			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
 sysbox: ## Build sysbox
@@ -194,16 +204,6 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 # they are meant as development tests.
 #
 
-HEADERS := linux-headers-$(KERNEL_REL)
-export HEADERS
-
-# hacky: works on ubuntu but may not work on other distros
-HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | head -1)
-export HEADERS_BASE
-
-# Alternative: reads symlinks and finds longest common prefix with sed (works on shell but fails on makefile for some reason)
-# HEADERS_BASE := $(shell find /usr/src/$(HEADERS) -maxdepth 1 -type l -exec readlink -f {} \; | uniq | sed -e 's,$,/,;1{h;d;}' -e 'G;s,\(.*/\).*\n\1.*,\1,;h;$!d;s,/$,,' )
-
 DOCKER_RUN := docker run -it --privileged --rm                        \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
@@ -213,9 +213,8 @@ DOCKER_RUN := docker run -it --privileged --rm                        \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v /usr/src/$(HEADERS):/usr/src/$(HEADERS):ro \
-			-v /usr/src/$(HEADERS_BASE):/usr/src/$(HEADERS_BASE):ro \
 			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
+			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
 ##@ Testing targets
