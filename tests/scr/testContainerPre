@@ -15,8 +15,15 @@ if [ "$DISTRO" != "Ubuntu" ] && [ "$DISTRO" != "CentOS" ] && [ "$DISTRO" != "Fed
     exit 1
 fi
 
+# Verify that shiftfs is not mounted at host level (some tests assume this is the case)
+mount | grep -q shiftfs
+if [ $? -ne 1 ]; then
+  printf "\nError: detected a shiftfs mount at host level; some sysbox tests assume no shiftfs mounts exist at host level."
+  printf "\nIf you have any shiftfs mounts (e.g., maybe you have a sys container running at host level), remove them please.\n\n"
+  exit 1
+fi
+
 # See Makefile for description of test volumes
 mkdir -p $TEST_VOL1
 mkdir -p $TEST_VOL2
 mkdir -p $TEST_VOL3
-
