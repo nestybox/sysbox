@@ -35,8 +35,10 @@ sysctl -w fs.inotify.max_user_instances=1048576
 
 # Increase default keyring resources to meet sys container demands.
 # For a k8s cluster:
-# keys = 35 + (workers * 23) + (2 * pods)
+# maxkeys = 35 + (workers * 23) + (2 * pods)
+# maxbytes = 20 bytes * maxkeys
 sysctl -w kernel.keys.maxkeys=20000
+sysctl -w kernel.keys.maxbytes=$((20*20000))
 
 sleep 1
 
