@@ -44,7 +44,13 @@ sleep 1
 
 # start sysbox-mgr
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-retry 10 1 grep -q Ready /var/log/sysbox-mgr.log
+RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+
+if [ $? -ne 0 ]; then
+  printf "\nsysbox-mgr failed to start. Here is the log file:\n"
+  cat /var/log/sysbox-mgr.log
+  exit 1
+fi
 
 # start sysbox-fs
 #
@@ -54,6 +60,13 @@ retry 10 1 grep -q Ready /var/log/sysbox-mgr.log
 # (see sysbox issue #538).
 mkdir -p /var/lib/sysboxfs
 sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-retry 10 1 grep -q Initiating /var/log/sysbox-fs.log
+RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+
+if [ $? -ne 0 ]; then
+  printf "\nsysbox-fs failed to start. Here is the log file:\n"
+  cat /var/log/sysbox-fs.log
+  exit 1
+fi
+
 
 exit 0

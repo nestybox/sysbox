@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Launch Sysbox (requires root privileges)
@@ -50,14 +50,29 @@ sysctl -w fs.inotify.max_user_instances=1048576
 # Increase default keyring resources to meet sys container demands.
 # For a k8s cluster:
 # keys = 35 + (workers * 23) + (2 * pods)
+# maxbytes = 20 bytes * maxkeys
 sysctl -w kernel.keys.maxkeys=20000
+sysctl -w kernel.keys.maxbytes=$((20*20000))
 
 #
 # Start Sysbox components
 #
 mkdir -p /var/lib/sysboxfs
 sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-retry 5 1 grep -q Ready /var/log/sysbox-mgr.log
+
+RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+if [ $? -ne 0 ]; then
+  printf "\nsysbox-mgr failed to start. Here is the log file:\n"
+  cat /var/log/sysbox-mgr.log
+  exit 1
+fi
+
 
 sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-retry 5 1 grep -q Initiating /var/log/sysbox-fs.log
+
+RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+if [ $? -ne 0 ]; then
+  printf "\nsysbox-fs failed to start. Here is the log file:\n"
+  cat /var/log/sysbox-fs.log
+  exit 1
+fi
