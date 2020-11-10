@@ -9,9 +9,11 @@
 
 SYSBOX_MGR_NAME=sysbox-mgr
 SYSBOX_MGR_LOG=/var/log/sysbox-mgr.log
+SYSBOX_MGR_MAX_FDS=30
 
 SYSBOX_FS_NAME=sysbox-fs
 SYSBOX_FS_LOG=/var/log/sysbox-fs.log
+SYSBOX_FS_MAX_FDS=30
 
 #
 # sysbox-fs
@@ -27,7 +29,7 @@ function sysboxfs_log_check() {
 
 function sysboxfs_ps_check() {
   # verify sysbox-fs is alive
-  res=$(pidof $SYSBOX_FS_NAME > /dev/null)
+  local res=$(pidof $SYSBOX_FS_NAME > /dev/null)
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -42,8 +44,17 @@ function sysboxfs_ps_check() {
 
 function sysboxfs_mnt_check() {
   # verify there are no sysbox-fs mounts
-  res=$(mount | grep -c "/var/lib/sysboxfs")
+  local res=$(mount | grep -c "/var/lib/sysboxfs")
   if [ $res -ne 0 ]; then
+    return 1
+  fi
+  true
+}
+
+function sysboxfs_fd_check() {
+  # verify sysbox-fs is not leaking file descriptors
+  local num_fds=$(lsof -p $(pidof sysbox-fs) 2>/dev/null | wc -l)
+  if [ $num_fds -gt $SYBOX_FS_MAX_FDS ]; then
     return 1
   fi
   true
@@ -60,6 +71,10 @@ function sysboxfs_health_check() {
   fi
 
   if ! sysboxfs_mnt_check; then
+    return 1
+  fi
+
+  if ! sysboxfs_fd_check; then
     return 1
   fi
 
@@ -80,7 +95,7 @@ function sysboxmgr_log_check() {
 
 function sysboxmgr_ps_check() {
   # verify sysbox-mgr is alive
-  res=$(pidof $SYSBOX_MGR_NAME > /dev/null)
+  local res=$(pidof $SYSBOX_MGR_NAME > /dev/null)
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -93,6 +108,15 @@ function sysboxmgr_ps_check() {
   true
 }
 
+function sysboxmgr_fd_check() {
+  # verify sysbox-mgr is not leaking file descriptors
+  local num_fds=$(lsof -p $(pidof sysbox-mgr) 2>/dev/null | wc -l)
+  if [ $num_fds -gt $SYBOX_MGR_MAX_FDS ]; then
+    return 1
+  fi
+  true
+}
+
 function sysboxmgr_health_check() {
 
   if ! sysboxmgr_log_check; then
@@ -100,6 +124,10 @@ function sysboxmgr_health_check() {
   fi
 
   if ! sysboxmgr_ps_check; then
+    return 1
+  fi
+
+  if ! sysboxmgr_fd_check; then
     return 1
   fi
 
@@ -139,6 +167,19 @@ function sysbox_ps_check() {
 function sysbox_mnt_check() {
 
   if ! sysboxfs_mnt_check; then
+    return 1
+  fi
+
+  true
+}
+
+function sysbox_fd_check() {
+
+  if ! sysboxfs_fd_check; then
+    return 1
+  fi
+
+  if ! sysboxmgr_fd_check; then
     return 1
   fi
 
