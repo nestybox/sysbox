@@ -13,7 +13,6 @@ SYSBOX_MGR_MAX_FDS=30
 
 SYSBOX_FS_NAME=sysbox-fs
 SYSBOX_FS_LOG=/var/log/sysbox-fs.log
-SYSBOX_FS_MAX_FDS=30
 
 #
 # sysbox-fs
@@ -51,15 +50,6 @@ function sysboxfs_mnt_check() {
   true
 }
 
-function sysboxfs_fd_check() {
-  # verify sysbox-fs is not leaking file descriptors
-  local num_fds=$(lsof -p $(pidof sysbox-fs) 2>/dev/null | wc -l)
-  if [ $num_fds -gt $SYBOX_FS_MAX_FDS ]; then
-    return 1
-  fi
-  true
-}
-
 function sysboxfs_health_check() {
 
   if ! sysboxfs_log_check; then
@@ -71,10 +61,6 @@ function sysboxfs_health_check() {
   fi
 
   if ! sysboxfs_mnt_check; then
-    return 1
-  fi
-
-  if ! sysboxfs_fd_check; then
     return 1
   fi
 
@@ -174,10 +160,6 @@ function sysbox_mnt_check() {
 }
 
 function sysbox_fd_check() {
-
-  if ! sysboxfs_fd_check; then
-    return 1
-  fi
 
   if ! sysboxmgr_fd_check; then
     return 1
