@@ -10,9 +10,13 @@
 load ../helpers/sysbox-health
 
 @test "sysboxfs_health" {
-  sysboxfs_health_check
+  run sysboxfs_health_check
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
 }
 
 @test "sysboxmgr_health" {
-  sysboxmgr_health_check
+  run sysboxmgr_health_check
+  echo "output = ${output}"
+  [ "$status" -eq 0 ]
 }
