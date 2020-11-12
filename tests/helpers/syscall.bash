@@ -16,8 +16,10 @@ PROCFS_RDONLY=( "bus" "fs" "irq" "sysrq-trigger" )
 # List of procfs files masked by sysbox
 PROCFS_MASKED=( "keys" "timer_list" "sched_debug" )
 
-# List of procfs files exposed as tmpfs mounts by sysbox
-PROCFS_TMPFS=( "acpi" "scsi")
+# List of procfs files exposed as tmpfs mounts by sysbox. We originally had
+# 'acpi' and 'scsi' here, but ended up removing 'scsi' one to satisfy Debian
+# distro which by default doesn't expose this procfs node.
+PROCFS_TMPFS=( "acpi")
 
 # List of files or dirs under sysfs emulated by sysbox-fs
 SYSFS_EMU=( "module/nf_conntrack/parameters/hashsize" )

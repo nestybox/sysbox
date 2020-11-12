@@ -10,7 +10,10 @@ TEST_VOL3=$3
 
 DISTRO=$(lsb_release -is)
 
-if [ "$DISTRO" != "Ubuntu" ] && [ "$DISTRO" != "CentOS" ] && [ "$DISTRO" != "Fedora" ]; then
+if [ "$DISTRO" != "Ubuntu" ] &&
+   [ "$DISTRO" != "Debian" ] &&
+   [ "$DISTRO" != "CentOS" ] &&
+   [ "$DISTRO" != "Fedora" ]; then
     printf "\nError: sysbox is not supported in this distribution: %s.\n\n", $DISTRO
     exit 1
 fi
