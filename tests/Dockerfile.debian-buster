@@ -1,0 +1,157 @@
+#
+# Sysbox Test Container Dockerfile (Debian-Buster image)
+#
+# This Dockerfile creates the sysbox test container image. The image
+# contains all dependencies needed to build, run, and test sysbox.
+#
+# The image does not contain sysbox itself; the sysbox repo
+# must be bind mounted into the image. It can then be built,
+# installed, and executed within the container.
+#
+# The image must be run as a privileged container (i.e., docker run --privileged ...)
+# Refer to the sysbox Makefile test targets.
+#
+# This Dockerfile is based on a similar Dockerfile in the OCI runc
+# github repo, but adapted to sysbox testing.
+#
+# Instructions:
+#
+# docker build -t sysbox-test .
+#
+
+FROM debian:buster
+
+ARG k8s_version=v1.18.2
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    automake \
+    autoconf \
+    libtool \
+    procps \
+    psmisc \
+    nano \
+    less \
+    curl \
+    sudo \
+    gawk \
+    git \
+    iptables \
+    jq \
+    pkg-config \
+    libaio-dev \
+    libcap-dev \
+    libprotobuf-dev \
+    libnl-3-dev \
+    libnet-dev \
+    libseccomp2 \
+    libseccomp-dev \
+    protobuf-c-compiler \
+    protobuf-compiler \
+    python2 \
+    uidmap \
+    kmod \
+    unzip \
+    time \
+    net-tools \
+    lsb-release \
+    wget \
+    lsof \
+    iproute2 \
+    iputils-ping \
+    ca-certificates \
+    # sysbox deps
+    fuse \
+    rsync \
+    bash-completion \
+    --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+
+# Install Golang 1.13 release and explicitly activate modules functionality.
+RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz && \
+    /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN go env -w GONOSUMDB=/root/nestybox && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    chmod -R 777 "$GOPATH"
+
+# Add a dummy user for the rootless integration tests; needed by the
+# `git clone` operations below.
+RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+
+# install bats
+RUN cd /tmp \
+    && git clone https://github.com/sstephenson/bats.git \
+    && cd bats \
+    && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f \
+    && ./install.sh /usr/local \
+    && rm -rf /tmp/bats
+
+# install protoc compiler for gRPC
+RUN mkdir -p ~/bin/protoc \
+    && cd ~/bin/protoc/ \
+    && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip \
+    && unzip protoc-3.6.1-linux-x86_64.zip \
+    && cp -r include/* /usr/local/include/ \
+    && cp bin/protoc /usr/local/bin/ \
+    && cd \
+    && rm -rf ~/bin/protoc/ \
+    && GIT_TAG="v1.3.1" \
+    && go get -d -u github.com/golang/protobuf/protoc-gen-go \
+    && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null \
+    && go install github.com/golang/protobuf/protoc-gen-go
+
+# install Docker (used by most sysbox tests to launch sys containers)
+RUN  apt-get update \
+    && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add - \
+    && apt-key fingerprint 0EBFCD88 \
+    && add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) \
+    stable" \
+    && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
+
+# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in K8s (L2) nodes.
+#
+# TODO: Define a mechanism in our testing-framework to allow K8s version to be
+# configured in a centralized location, so that the installed K8s components
+# (both inside privileged test-container and within L2 K8s image) are all
+# matching the same K8s release.
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
+    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
+    && apt-get update \
+    && apt-get install kubectl="${k8s_version#v}"-00 \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# sysbox env
+RUN useradd sysbox \
+    && mkdir -p /var/lib/sysboxfs
+
+# nestybox docker hub login credentials (unsecure)
+COPY .docker/config.json /root/.docker/config.json
+
+# test scripts
+COPY scr/testContainerInit /usr/bin
+COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
+COPY bin/userns_child_exec /usr/bin
+
+RUN mkdir -p /root/nestybox
+WORKDIR /root/nestybox/sysbox
+CMD /bin/bash
