@@ -28,45 +28,163 @@ function retry() {
   false
 }
 
-# Increase default inotify resources to meet sys container demands.
-sysctl -w fs.inotify.max_queued_events=1048576
-sysctl -w fs.inotify.max_user_watches=1048576
-sysctl -w fs.inotify.max_user_instances=1048576
+# Ensure that kernel-modules expected by system-level apps (running within sys
+# containers) are properly loaded.
+load_required_modules() {
 
-# Increase default keyring resources to meet sys container demands.
-# For a k8s cluster:
-# maxkeys = 35 + (workers * 23) + (2 * pods)
-# maxbytes = 20 bytes * maxkeys
-sysctl -w kernel.keys.maxkeys=20000
-sysctl -w kernel.keys.maxbytes=$((20*20000))
+  # Sysbox requires 'configfs' module to ensure proper operation of containarized
+  # apps requiring access to kernel's config file (e.g. kubeadm).
+  if ! modprobe configfs &> /dev/null; then
+      echo "Could not load configfs kernel module. Exiting ..."
+      return 1
+  fi
 
-sleep 1
+  return 0
+}
 
-# start sysbox-mgr
-sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+# Returns linux distro running in the system.
+function get_host_distro() {
 
-if [ $? -ne 0 ]; then
-  printf "\nsysbox-mgr failed to start. Here is the log file:\n"
-  cat /var/log/sysbox-mgr.log
-  exit 1
-fi
+  local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
 
-# start sysbox-fs
-#
-# Note: inside the test container we must ignore sysbox-fs handler
-# errors when accessing procfs and sysfs, because some procfs and
-# sysfs resources are not writeable from within the test container
-# (see sysbox issue #538).
-mkdir -p /var/lib/sysboxfs
-sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+  echo $distro
+}
 
-if [ $? -ne 0 ]; then
-  printf "\nsysbox-fs failed to start. Here is the log file:\n"
-  cat /var/log/sysbox-fs.log
-  exit 1
-fi
+# Ensures unprivileged user-ns are allowed.
+function setup_userns() {
+
+  local distro=$1
+
+  if [[ "${distro}" == "ubuntu" ]] ||
+     [[ "${distro}" == "debian" ]]; then
+      echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+
+  elif [[ "${distro}" == "centos" ]] ||
+       [[ "${distro}" == "fedora" ]] ||
+       [[ "${distro}" == "redhat" ]]; then
+
+      # Setting 10k as max user-ns value.
+      max_user_ns=$(</proc/sys/user/max_user_namespaces)
+      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt 10000 ]]; then
+	  echo "10000" > /proc/sys/user/max_user_namespaces
+      fi
+
+  else
+      echo "Unsupported Linux distribution: $distro. Sysbox may not opperate as expected."
+  fi
+}
+
+# Identifies kernel-header's expected path based on distro.
+function kernel_header_path() {
+
+  local distro=$1
+  local path
+
+  if [[ "${distro}" == "centos" ]] ||
+     [[ "${distro}" == "fedora" ]] ||
+     [[ "${distro}" == "redhat" ]]; then
+      path="/usr/src/kernels/$(uname -r)"
+  else
+      path="/usr/src/linux-headers-$(uname -r)"
+  fi
+
+  echo "$path"
+}
+
+# Verifies that a kernel configuration file is found, and if that's not the case,
+# copy it from the original "/boot" folder. Notice that this may not work when
+# running sysbox within a test-priv container, as "/boot" folder may not be around;
+# in those cases initialization will proceed as normal and a log will be dumped to
+# alert the user.
+function setup_kernel_config() {
+
+  local distro=$1
+
+  local kernel_path=$(kernel_header_path $distro)
+
+  if [[ ! -f "${kernel_path}"/.config ]]; then
+      # Attempt to find kernel config in /boot path.
+      if [[ -d /boot ]] && [[ -f /boot/config-$(uname -r) ]]; then
+	  cp /boot/config-$(uname -r) "${kernel_path}"/.config
+	  return
+      fi
+
+      echo -e "\nUnable to find a kernel config file. This may affect some system" \
+	   "level apps running within sys-containers. As a solution, identify your" \
+	   "kernel config file in the host (typically: \"/boot/config-$(uname -r)\")" \
+	   "and copy it into your distro's expected kernel-headers path" \
+	   "(usually: \"$(kernel_header_path $distro)\").\n"
+  fi
+}
+
+function setup_maxs() {
+
+  # Increase default inotify resources to meet sys container's demands.
+  sysctl -w fs.inotify.max_queued_events=1048576 &> /dev/null
+  sysctl -w fs.inotify.max_user_watches=1048576 &> /dev/null
+  sysctl -w fs.inotify.max_user_instances=1048576 &> /dev/null
+
+  # Increase default keyring resources to meet sys container demands.
+  # For a k8s cluster:
+  # keys = 35 + (workers * 23) + (2 * pods)
+  # maxbytes = 20 bytes * maxkeys
+  sysctl -w kernel.keys.maxkeys=20000 &> /dev/null
+  sysctl -w kernel.keys.maxbytes=$((20*20000)) &> /dev/null
+}
+
+# Completes Sysbox's setup process.
+function sysbox_setup() {
+
+  local distro=$(get_host_distro)
+
+  if ! load_required_modules; then
+      exit 1
+  fi
+
+  setup_userns $distro
+  setup_kernel_config $distro
+  setup_maxs
+}
+
+# Stop all Sysbox components.
+function sysbox_stop() {
+
+  sysmgr_pids=$(pidof sysbox-mgr) || true
+  sysfs_pids=$(pidof sysbox-fs) || true
+
+  for pid in $sysmgr_pids; do
+    kill $pid
+  done
+
+  for pid in $sysfs_pids; do
+    kill $pid
+  done
+}
+
+# Start all Sysbox components
+function sysbox_start() {
+
+  # Start sysbox-mgr.
+  sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
+  RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+  if [ $? -ne 0 ]; then
+    printf "\nsysbox-mgr failed to start. Here is the log file:\n"
+    cat /var/log/sysbox-mgr.log
+    exit 1
+  fi
+
+  # Start sysbox-fs.
+  mkdir -p /var/lib/sysboxfs
+  sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+  RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+  if [ $? -ne 0 ]; then
+    printf "\nsysbox-fs failed to start. Here is the log file:\n"
+    cat /var/log/sysbox-fs.log
+    exit 1
+  fi
+}
 
 
-exit 0
+sysbox_stop
+sysbox_setup
+sysbox_start
