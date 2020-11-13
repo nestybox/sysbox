@@ -63,7 +63,7 @@ function teardown() {
   if [ -n "$SB_INSTALLER" ]; then
     systemctl start sysbox
   else
-    bats_bg sysbox
+    bats_bg sysbox testing-on
     sleep 2
   fi
 }
