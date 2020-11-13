@@ -163,6 +163,6 @@ make sysbox-local --no-print-directory && make install
 # Inside the test container we start sysbox with a dedicated script
 # that sets some test-specific configs
 echo "Starting sysbox with test-specific options"
-install -D -m0755 tests/scr/sysbox /usr/local/sbin/sysbox
-sysbox
+install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
+sysbox testing-on
 

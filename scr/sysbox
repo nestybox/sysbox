@@ -6,8 +6,20 @@
 # Note: normally Sysbox is installed via a distro-specific package
 # which sets up the Sysbox systemd units. This script is meant as a
 # quick alternative to the installer to help launch Sysbox manually
-# (e.g., for testing).
+# (e.g. for development & testing).
 #
+# Usage: ./sysbox [testing-on]
+#
+# Note: "testing-on" attribute is useful to launch Sysbox inside a privileged
+# container. In this context Sysbox may be unable to reach certain procfs
+# nodes, due to kernel not exposing them in non-init namespaces. This flag
+# alerts Sysbox of the need to obviate these potential errors when running
+# in testing mode.
+#
+
+# Max number of user-namespaces to configure in distros supporting this knob.
+sysbox_max_user_ns=10000
+
 
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
 # (copied from runc/tests/integration/helpers.bash)
@@ -32,9 +44,9 @@ function retry() {
 
 # Ensure that kernel-modules expected by system-level apps (running within sys
 # containers) are properly loaded.
-load_required_modules() {
+function load_required_modules() {
 
-  # Sysbox requires 'configfs' module to ensure proper operation of containarized
+  # Sysbox requires 'configfs' module to ensure proper operation of containerized
   # apps requiring access to kernel's config file (e.g. kubeadm).
   if ! modprobe configfs &> /dev/null; then
       echo "Could not load configfs kernel module. Exiting ..."
@@ -52,7 +64,7 @@ function get_host_distro() {
   echo $distro
 }
 
-# Ensures unprivileged user-ns are allowed.
+# Ensures unprivileged user-ns's are allowed.
 function setup_userns() {
 
   local distro=$1
@@ -62,13 +74,12 @@ function setup_userns() {
       echo "1" > /proc/sys/kernel/unprivileged_userns_clone
 
   elif [[ "${distro}" == "centos" ]] ||
-       [[ "${distro}" == "fedora" ]] ||
-       [[ "${distro}" == "redhat" ]]; then
+       [[ "${distro}" == "fedora" ]]; then
 
-      # Setting 10k as max user-ns value.
+      # Setting user-ns max value.
       max_user_ns=$(</proc/sys/user/max_user_namespaces)
-      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt 10000 ]]; then
-	  echo "10000" > /proc/sys/user/max_user_namespaces
+      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $sysbox_max_user_ns ]]; then
+	  echo $sysbox_max_user_ns > /proc/sys/user/max_user_namespaces
       fi
 
   else
@@ -119,6 +130,7 @@ function setup_kernel_config() {
   fi
 }
 
+# Increases system-level resources to satisfy Sysbox requirements.
 function setup_maxs() {
 
   # Increase default inotify resources to meet sys container's demands.
@@ -163,8 +175,10 @@ function sysbox_stop() {
   done
 }
 
-# Start all Sysbox components
+# Start all Sysbox components.
 function sysbox_start() {
+
+  local testing_mode=$1
 
   # Start sysbox-mgr.
   sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
@@ -177,7 +191,12 @@ function sysbox_start() {
 
   # Start sysbox-fs.
   mkdir -p /var/lib/sysboxfs
-  sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+
+  if [[ $testing_mode == "testing-on" ]]; then
+      sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+  else
+      sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+  fi
   RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
   if [ $? -ne 0 ]; then
     printf "\nsysbox-fs failed to start. Here is the log file:\n"
@@ -186,7 +205,12 @@ function sysbox_start() {
   fi
 }
 
+function main() {
 
-sysbox_stop
-sysbox_setup
-sysbox_start
+  sysbox_stop
+  sysbox_setup
+  sysbox_start "$@"
+}
+
+main "$@"
+
