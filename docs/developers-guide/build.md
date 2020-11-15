@@ -19,9 +19,11 @@ following requirements:
 
 1) It must have one of the [supported Linux distros](../distro-compat.md).
 
--   In particular, you should have a distro that carries the `shiftfs` module
-    (e.g., Ubuntu Server versions for Bionic, Eoan, or Focal). This is a requirement
-    to build or test Sysbox.
+-   For local development and testing purposes, you can build Sysbox in any of
+the [supported distributions](docs/distro-compat.md). However, if you are
+planning to contribute to Sysbox's public respositories, you should then have a
+distro that carries the `shiftfs` module (e.g. Ubuntu Server versions for Bionic
+or Focal) so that you can properly test your changes with and without `shiftfs`.
 
 2) Docker must be installed natively (i.e., **not** with the Docker snap package).
 

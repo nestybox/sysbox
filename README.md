@@ -124,10 +124,11 @@ More on system containers [here](docs/user-guide/concepts.md#system-container).
 
 ## Supported Distros
 
-Sysbox relies on functionality that is currently only present in Ubuntu Linux.
+Sysbox relies on functionality available only in relatively modern Linux
+kernel releases.
 
-See the [distro compatibility doc](docs/distro-compat.md) for information on what versions
-of Ubuntu kernels are supported.
+See the [distro compatibility doc](docs/distro-compat.md) for information about
+the supported Linux distributions and the required kernel releases.
 
 We plan to add support for more distros in the near future.
 
