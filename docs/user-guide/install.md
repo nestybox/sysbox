@@ -111,7 +111,8 @@ The installer uses the following logic:
 
 -   Otherwise, Docker does need to be placed in userns-remap mode.
 
-    -   This is likely the case for some Ubuntu cloud editions.
+    -   This is likely the case for some Ubuntu cloud editions and for all the
+    other [supported distributions](../distro-compat.md).
 
 If Docker needs to be placed in userns-remap, the Sysbox installer will check if
 Docker is already in this mode (by looking for `userns-remap` in
