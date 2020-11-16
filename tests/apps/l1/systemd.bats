@@ -157,7 +157,13 @@ function check_systemd_mounts() {
   [ "$status" -eq 0 ]
 }
 
-@test "systemd mount overlaps" {
+@test "systemd mount conflicts" {
+
+  # For sys containers with systemd inside, sysbox mounts tmpfs over
+  # certain directories of the container (this is a systemd
+  # requirement). If the spec has conflicting mounts that are
+  # non-tmpfs, these are ignored. If the conflicting spec mounts are
+  # tmpfs, they are honored (see next test).
 
   docker volume create testVol
   [ "$status" -eq 0 ]
@@ -182,6 +188,53 @@ function check_systemd_mounts() {
   # Verify that mount overlaps have been identified and replaced as per systemd
   # demands.
   check_systemd_mounts
+
+  # Cleanup
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker volume rm testVol
+}
+
+@test "systemd mount overrides" {
+
+  # For sys containers with systemd inside, sysbox mounts tmpfs over certain directories
+  # of the container (this is a systemd requirement). However, if the container spec
+  # already has tmpfs mounts over any of these directories, we honor the spec mounts.
+
+  docker volume create testVol
+  [ "$status" -eq 0 ]
+
+  # Launch systemd container.
+  SYSCONT_NAME=$(docker_run -d --rm \
+                            --tmpfs /tmp:rw,noexec,nosuid,size=128m \
+                            --tmpfs /run:rw,noexec,nosuid,size=256m \
+                            --tmpfs /run/lock:rw,noexec,nosuid,size=8m \
+                            --name=sys-cont-systemd \
+                            nestybox/ubuntu-bionic-systemd-docker)
+
+  wait_for_init
+
+  # Verify that systemd has been properly initialized (no major errors observed).
+  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" =~ "State: running" ]]
+
+  # Verify that mount overrides have been honored. We are looking for
+  # something like this inside the container:
+  #
+  # |-/run           tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=262144k,uid=268666528,gid=268666528
+  # | `-/run/lock    tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=8192k,uid=268666528,gid=268666528
+  # |-/tmp           tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=131072k,uid=268666528,gid=268666528
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run .*tmpfs.*rw.*size=262144k\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run\/lock .*tmpfs.*rw.*size=8192k\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/tmp .*tmpfs.*rw.*size=131072k\""
+  [ "$status" -eq 0 ]
 
   # Cleanup
   docker_stop "$SYSCONT_NAME"
