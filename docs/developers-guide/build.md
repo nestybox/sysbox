@@ -28,6 +28,12 @@ following requirements:
 -   See [below](#docker-installation) if you have a Docker snap installation and
     need to change it to a native installation.
 
+3) The C library Linux headers must be installed.
+
+-  On Ubuntu, you can install these with `sudo apt-get install linux-libc-dev`.
+
+-  Note: do not confuse these with the Linux kernel headers (used for building kernel modules).
+
 ## Cloning the Sysbox Repo
 
 Clone the repo with:

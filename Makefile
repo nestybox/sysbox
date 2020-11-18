@@ -288,7 +288,7 @@ test-shell-shiftuid: test-img
 		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-img: ## Build test container image
-test-img:
+test-img: host-prereq
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) \
 		-f Dockerfile.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE) .
@@ -299,6 +299,10 @@ test-cleanup: test-img
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 
+host-prereq:
+	@printf "\n** Checking host prerequisites **\n\n"
+	@test -f /usr/include/linux/seccomp.h || \
+		(echo 'Your host does not have the /usr/include/linux/seccomp.h header file; please install it (e.g., sudo apt-get install linux-libc-dev)'; exit 1)
 
 #
 # Local test targets (these are invoked from within the test container
