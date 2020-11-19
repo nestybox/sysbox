@@ -68,8 +68,8 @@ mappings.
 
 In Docker's case this is accomplished by enabling the `userns-remap` feature
 which, even though imposes certain [restrictions](https://docs.docker.com/engine/security/userns-remap/#user-namespace-known-limitations),
-it has no kernel requirements (i.e. `shiftfs`) and therefore allows Sysbox support
-in a larger number of distributions.
+does not require `shiftfs` and therefore allows Sysbox support in a larger
+number of distributions.
 
 Refer to the Sysbox [installation guide](./user-guide/install.md#docker-userns-remap)
 for more details.
