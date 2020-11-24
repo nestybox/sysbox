@@ -16,6 +16,7 @@
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
+	sysbox-in-docker centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal \
 	clean
 
 export SHELL=bash
@@ -149,7 +150,6 @@ sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 
 sysbox-runc-debug: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
-
 sysbox-runc-static: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
 
@@ -321,6 +321,17 @@ test-mgr-local: sysbox-ipc
 	sleep 2
 	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
 
+
+##@ Sysbox-In-Docker targets
+
+sysbox-in-docker: ## Build sysbox-in-docker sandbox image
+sysbox-in-docker: sysbox
+	@cp sysbox-mgr/sysbox-mgr sysbox-in-docker/
+	@cp sysbox-runc/sysbox-runc sysbox-in-docker/
+	@cp sysbox-fs/sysbox-fs sysbox-in-docker/
+	$(MAKE) -C sysbox-in-docker --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
+
+
 #
 # Misc targets
 #
@@ -328,6 +339,7 @@ test-mgr-local: sysbox-ipc
 # recvtty is a tool inside the sysbox-runc repo that is needed by some integration tests
 sysbox-runc-recvtty:
 	@cd $(SYSRUNC_DIR) && make recvtty
+
 
 #
 # Misc targets
