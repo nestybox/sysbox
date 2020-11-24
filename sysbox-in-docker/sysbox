@@ -1,0 +1,345 @@
+#!/bin/bash -e
+
+#
+# Launch Sysbox (requires root privileges)
+#
+# Note: normally Sysbox is installed via a distro-specific package
+# which sets up the Sysbox systemd units. This script is meant as a
+# quick alternative to the installer to help launch Sysbox manually
+# (e.g. for development & testing).
+#
+# Usage: ./sysbox [testing-on]
+#
+# Note: "testing-on" attribute is useful to launch Sysbox inside a privileged
+# container. In this context Sysbox may be unable to reach certain procfs
+# nodes, due to kernel not exposing them in non-init namespaces. This flag
+# alerts Sysbox of the need to obviate these potential errors when running
+# in testing mode.
+#
+
+# Max number of user-namespaces to configure in distros supporting this knob.
+sysbox_max_user_ns=10000
+
+# Default mtu value associated to container's egress-interface.
+default_mtu=1500
+
+# UID-shifting module
+shiftfs_module="shiftfs"
+
+# Dockerd default configuration dir/file.
+dockerCfgDir="/etc/docker"
+dockerCfgFile="${dockerCfgDir}/daemon.json"
+
+# Temp file for jq write operations.
+tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
+trap 'rm -f "${tmpfile}"' EXIT
+
+
+# Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
+# (copied from runc/tests/integration/helpers.bash)
+function retry() {
+  local attempts=$1
+  shift
+  local delay=$1
+  shift
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    $@
+    if [ "$?" -eq 0 ]; then
+	return 0
+    fi
+    sleep $delay
+  done
+
+  echo "Command \"$@\" failed $attempts times. Output: $?"
+  false
+}
+
+# Ensure that kernel-modules expected by system-level apps (running within sys
+# containers) are properly loaded.
+function load_required_modules() {
+
+  # Sysbox requires 'configfs' module to ensure proper operation of containerized
+  # apps requiring access to kernel's config file (e.g. kubeadm).
+  if ! modprobe configfs &> /dev/null; then
+      echo "Could not load configfs kernel module. Exiting ..."
+      return 1
+  fi
+
+  return 0
+}
+
+# Returns linux distro running in the system.
+function get_host_distro() {
+
+  local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
+
+  echo $distro
+}
+
+# Ensures unprivileged user-ns's are allowed.
+function userns_setup() {
+
+  local distro=$1
+
+  if [[ "${distro}" == "ubuntu" ]] ||
+     [[ "${distro}" == "debian" ]]; then
+      echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+
+  elif [[ "${distro}" == "centos" ]] ||
+       [[ "${distro}" == "fedora" ]]; then
+
+      # Setting user-ns max value.
+      max_user_ns=$(</proc/sys/user/max_user_namespaces)
+      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $sysbox_max_user_ns ]]; then
+	  echo $sysbox_max_user_ns > /proc/sys/user/max_user_namespaces
+      fi
+
+  else
+      echo "Unsupported Linux distribution: $distro. Sysbox may not opperate as expected."
+  fi
+}
+
+# Identifies kernel-header's expected path based on distro.
+function kernel_header_path() {
+
+  local distro=$1
+  local path
+
+  if [[ "${distro}" == "centos" ]] ||
+     [[ "${distro}" == "fedora" ]] ||
+     [[ "${distro}" == "redhat" ]]; then
+      path="/usr/src/kernels/$(uname -r)"
+  else
+      path="/usr/src/linux-headers-$(uname -r)"
+  fi
+
+  echo "$path"
+}
+
+# Verifies that a kernel configuration file is found, and if that's not the case,
+# copy it from the original "/boot" folder. Notice that this may not work when
+# running sysbox within a test-priv container, as "/boot" folder may not be around;
+# in those cases initialization will proceed as normal and a log will be dumped to
+# alert the user.
+function kernel_config_setup() {
+
+  local distro=$1
+
+  local kernel_path=$(kernel_header_path $distro)
+
+  if [[ ! -f "${kernel_path}"/.config ]]; then
+      # Attempt to find kernel config in /boot path.
+      if [[ -d /boot ]] && [[ -f /boot/config-$(uname -r) ]]; then
+	  cp /boot/config-$(uname -r) "${kernel_path}"/.config
+	  return
+      fi
+
+      echo -e "\nUnable to find a kernel config file. This may affect some system" \
+	   "level apps running within sys-containers. As a solution, identify your" \
+	   "kernel config file in the host (typically: \"/boot/config-$(uname -r)\")" \
+	   "and copy it into your distro's expected kernel-headers path" \
+	   "(usually: \"$(kernel_header_path $distro)\").\n"
+  fi
+}
+
+#
+# Obtain the MTU value to be configured for the docker interface within the test
+# container. This value shall be the lowest among these ...
+#
+#  * The 'physical' default-gateway interface at host level (L0).
+#  * The 'logical' default-gateway interface connecting the test-container (L1) with the host.
+#  * The 'default' mtu value (1500 bytes) supported by most NICs.
+#
+function docker_iface_mtu() {
+
+  local egress_iface
+  local l0_egress_mtu
+  local l1_egress_mtu
+
+  # Identify default egress iface.
+  local egress_iface=$(ip route show | awk '/default via/ {print $5}')
+  if [ -z "${egress_iface}" ]; then
+	  return
+  fi
+
+  # Obtain mtu value associated to the test-container's egress interface.
+  egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+  if [ ! -z "${egress_mtu}" ] &&
+     [ "${egress_mtu}" -lt "${default_mtu}" ]; then
+	  l1_egress_mtu=${egress_mtu}
+  else
+	  l1_egress_mtu=${default_mtu}
+  fi
+
+  # Pull L0 egress-mtu value passed from Sysbox's makefile.
+  l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
+
+  if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
+	  echo ${l0_egress_mtu}
+  else
+	  echo ${l1_egress_mtu}
+  fi
+}
+
+# Create docker configuration.
+function docker_setup() {
+
+  # Configure dockerd
+  mkdir -p "${dockerCfgDir}"
+
+  # If shiftfs module is not present then consider configuring docker in userns
+  # mode.
+  if ! modprobe "${shiftfs_module}" &> /dev/null ; then
+	  cat <<EOF > "${dockerCfgFile}"
+{
+    "debug": false,
+    "userns-remap": "sysbox",
+    "runtimes": {
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc"
+        }
+    },
+    "bip": "172.24.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.31.0.0/16",
+            "size": 24
+        }
+    ]
+}
+EOF
+  else
+	  cat <<EOF > "${dockerCfgFile}"
+{
+    "debug": false,
+    "userns-remap": "",
+    "runtimes": {
+        "sysbox-runc": {
+            "path": "/usr/local/sbin/sysbox-runc",
+            "runtimeArgs": [
+                "--no-kernel-check"
+            ]
+        }
+    },
+    "bip": "172.24.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.31.0.0/16",
+            "size": 24
+        }
+    ]
+}
+EOF
+  fi
+
+  # Adjust docker's interface mtu configuration. This is required to avoid forwarding issues
+  # in containers seating behind an egress-interface with lower-than-default mtu.
+  # egress_mtu=$(docker_iface_mtu)
+  # if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -ne "${default_mtu}" ]; then
+	#   jq --arg mtu "${egress_mtu}" --indent 4 '. + {"mtu": $mtu|tonumber}' "${dockerCfgFile}" \
+	#      > ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
+  # fi
+}
+
+# Increases system-level resources to satisfy Sysbox requirements.
+function maxs_setup() {
+
+  # Increase default inotify resources to meet sys container's demands.
+  sysctl -w fs.inotify.max_queued_events=1048576 &> /dev/null
+  sysctl -w fs.inotify.max_user_watches=1048576 &> /dev/null
+  sysctl -w fs.inotify.max_user_instances=1048576 &> /dev/null
+
+  # Increase default keyring resources to meet sys container demands.
+  # For a k8s cluster:
+  # keys = 35 + (workers * 23) + (2 * pods)
+  # maxbytes = 20 bytes * maxkeys
+  sysctl -w kernel.keys.maxkeys=20000 &> /dev/null
+  sysctl -w kernel.keys.maxbytes=$((20*20000)) &> /dev/null
+}
+
+# Completes Sysbox's setup process.
+function sysbox_setup() {
+
+  local distro=$(get_host_distro)
+
+  if ! load_required_modules; then
+      exit 1
+  fi
+
+  userns_setup $distro
+  kernel_config_setup $distro
+  docker_setup
+  maxs_setup
+}
+
+# Stop all Sysbox components.
+function sysbox_stop() {
+
+  sysmgr_pids=$(pidof sysbox-mgr) || true
+  sysfs_pids=$(pidof sysbox-fs) || true
+
+  for pid in $sysmgr_pids; do
+    kill $pid
+  done
+
+  for pid in $sysfs_pids; do
+    kill $pid
+  done
+}
+
+# Start all Sysbox components.
+function sysbox_start() {
+
+  local testing_mode=$1
+
+  # Start sysbox-mgr.
+  /usr/local/sbin/sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
+  RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+  if [ $? -ne 0 ]; then
+    printf "\nsysbox-mgr failed to start. Here is the log file:\n"
+    cat /var/log/sysbox-mgr.log
+    exit 1
+  fi
+
+  # Start sysbox-fs.
+  mkdir -p /var/lib/sysboxfs
+
+  if [[ $testing_mode == "testing-on" ]]; then
+      /usr/local/sbin/sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+  else
+      /usr/local/sbin/sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
+  fi
+  RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+  if [ $? -ne 0 ]; then
+    printf "\nsysbox-fs failed to start. Here is the log file:\n"
+    cat /var/log/sysbox-fs.log
+    exit 1
+  fi
+}
+
+# Start Docker.
+function docker_start() {
+
+  if ! pidof dockerd; then
+    dockerd > /var/log/dockerd.log 2>&1 &
+    RES=$(retry 10 1 docker ps > /dev/null 2>&1)
+    if [ $? -ne 0 ]; then
+      printf "\dockerd failed to start.\n"
+      exit 1
+    fi
+  fi
+}
+
+
+function main() {
+
+  sysbox_stop
+  sysbox_setup
+  docker_start
+  sysbox_start "$@"
+}
+
+main "$@"
+

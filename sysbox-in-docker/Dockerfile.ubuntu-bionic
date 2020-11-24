@@ -1,0 +1,59 @@
+#
+# Sysbox-In-Docker Container Dockerfile (Ubuntu-Bionic image)
+#
+# This Dockerfile creates the sysbox-in-docker container image, which holds
+# all Sysbox binaries and its dependencies. The goal is to allow users to run
+# an entire Sysbox sandbox within a container.
+#
+# Notice that the image must be run as a privileged container, and a few resources
+# must be bind-mounted to meet Sysbox requirements as well as those of system-level
+# apps running in inner containers. See instructions below.
+#
+# Instructions:
+#
+# * Image creation:
+#
+#   $ make sysbox-in-docker ubuntu-bionic
+#
+# * Container creation:
+#
+# docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker \
+#                -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker \
+#                -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox \
+#                -v /var/tmp/sysbox-test-scratch:/mnt/scratch \
+#                -v /lib/modules/$(uname -r):/lib/modules/$(uname -r):ro \
+#                -v /usr/src/linux-headers-$(uname -r):/usr/src/linux-headers-$(uname -r):ro \
+#                -v /usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):/usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):ro \
+#                nestybox/sysbox-in-docker:ubuntu-bionic
+#
+
+FROM ubuntu:bionic
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       apt-utils \
+       ca-certificates \
+       wget \
+       curl \
+       iproute2 \
+       jq \
+       fuse \
+       rsync \
+       dialog \
+       kmod \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker.
+RUN curl -fsSL https://get.docker.com -o get-docker.sh
+RUN sh get-docker.sh
+
+# Copy Sysbox artifacts.
+COPY sysbox-mgr /usr/local/sbin/sysbox-mgr
+COPY sysbox-fs /usr/local/sbin/sysbox-fs
+COPY sysbox-runc /usr/local/sbin/sysbox-runc
+COPY sysbox /usr/local/sbin/sysbox
+
+CMD bash -c "/usr/local/sbin/sysbox && /bin/bash"
