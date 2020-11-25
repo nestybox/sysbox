@@ -6,7 +6,7 @@
 # Note: for tests using bats.
 #
 
-load ../helpers/run
+. $(dirname ${BASH_SOURCE[0]})/run.bash
 
 function wait_for_dockerd {
   retry_run 10 1 "docker ps"
