@@ -332,7 +332,6 @@ function docker_start() {
   fi
 }
 
-
 function main() {
 
   sysbox_stop
@@ -342,4 +341,3 @@ function main() {
 }
 
 main "$@"
-
