@@ -5,10 +5,13 @@
 # all Sysbox binaries and its dependencies. The goal is to allow users to run
 # an entire Sysbox sandbox within a container.
 #
-# Notice that the image must be run as a privileged container, and a few resources
+# NOTE: Sysbox is a container runtime and thus needs host root privileges. As a
+# result, this image must be run as a privileged container, and a few resources
 # must be bind-mounted to meet Sysbox requirements as well as those of system-level
-# apps running in inner containers. See instructions below.
-#
+# apps running in inner containers. Notice that within the privileged container,
+# inner containers launched with Docker + Sysbox will be strongly isolated from the
+# host by Sysbox (e.g., via the Linux user-namespace).
+
 # Instructions:
 #
 # * Image creation:
@@ -18,9 +21,8 @@
 # * Container creation:
 #
 # docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker \
-#                -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker \
-#                -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox \
-#                -v /var/tmp/sysbox-test-scratch:/mnt/scratch \
+#                -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker \
+#                -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox \
 #                -v /lib/modules/$(uname -r):/lib/modules/$(uname -r):ro \
 #                -v /usr/src/kernels/$(uname -r):/usr/src/kernels/$(uname -r):ro \
 #                nestybox/sysbox-in-docker:fedora-32
@@ -51,5 +53,6 @@ COPY sysbox-mgr /usr/local/sbin/sysbox-mgr
 COPY sysbox-fs /usr/local/sbin/sysbox-fs
 COPY sysbox-runc /usr/local/sbin/sysbox-runc
 COPY sysbox /usr/local/sbin/sysbox
+COPY entrypoint.sh /entrypoint.sh
 
-CMD bash -c "/usr/local/sbin/sysbox && /bin/bash"
+ENTRYPOINT ["/entrypoint.sh"]

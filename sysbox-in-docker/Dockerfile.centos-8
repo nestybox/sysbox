@@ -1,5 +1,5 @@
 #
-# Sysbox-In-Docker Container Dockerfile (Ubuntu-Focal image)
+# Sysbox-In-Docker Container Dockerfile (CentOS-8 image)
 #
 # This Dockerfile creates the sysbox-in-docker container image, which holds
 # all Sysbox binaries and its dependencies. The goal is to allow users to run
@@ -16,7 +16,7 @@
 #
 # * Image creation:
 #
-#   $ make sysbox-in-docker ubuntu-focal
+#   $ make sysbox-in-docker centos-8
 #
 # * Container creation:
 #
@@ -24,29 +24,25 @@
 #                -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker \
 #                -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox \
 #                -v /lib/modules/$(uname -r):/lib/modules/$(uname -r):ro \
-#                -v /usr/src/linux-headers-$(uname -r):/usr/src/linux-headers-$(uname -r):ro \
-#                -v /usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):/usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):ro \
-#                nestybox/sysbox-in-docker:ubuntu-focal
+#                -v /usr/src/kernels/$(uname -r):/usr/src/kernels/$(uname -r):ro \
+#                nestybox/sysbox-in-docker:centos-8
 #
 
-FROM ubuntu:focal
+FROM centos:8
 
-ENV DEBIAN_FRONTEND=noninteractive
+RUN dnf update -y && dnf install -y \
+    procps \
+    curl \
+    iproute \
+    jq \
+    kmod \
+    net-tools \
+    iputils \
+    ca-certificates \
+    fuse \
+    rsync \
+    redhat-lsb-core
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-       apt-utils \
-       ca-certificates \
-       wget \
-       curl \
-       iproute2 \
-       jq \
-       fuse \
-       rsync \
-       dialog \
-       kmod \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install Docker.
 RUN curl -fsSL https://get.docker.com -o get-docker.sh
@@ -60,4 +56,3 @@ COPY sysbox /usr/local/sbin/sysbox
 COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-

@@ -32,9 +32,8 @@ help: ## Show supported docker images
 
 
 LAUNCH_INSTRUCTION := docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker \
-                -v /var/tmp/sysbox-test-var-lib-docker:/var/lib/docker \
-                -v /var/tmp/sysbox-test-var-lib-sysbox:/var/lib/sysbox \
-                -v /var/tmp/sysbox-test-scratch:/mnt/scratch \
+                -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker \
+                -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox \
                 -v /lib/modules/$(uname -r):/lib/modules/$(uname -r):ro \
 		$(KERNEL_HEADERS_MOUNTS)
 
