@@ -42,17 +42,15 @@ function check_systemd_mounts() {
   #
   # - /run                tmpfs   tmpfs    rw
   # - /run/lock           tmpfs   tmpfs    rw
-  # - /tmp                tmpfs   tmpfs    rw
   # - /sys/kernel/config  tmpfs   tmpfs    rw
   # - /sys/kernel/debug   tmpfs   tmpfs    rw
   #
   docker exec "$SYSCONT_NAME" sh -c \
          "findmnt | egrep -e \"\/run .*tmpfs.*rw\" \
                    -e \"\/run\/lock .*tmpfs.*rw\" \
-                   -e \"\/tmp .*tmpfs.*rw\" \
                    -e \"\/sys\/kernel\/config.*tmpfs.*rw\" \
                    -e \"\/sys\/kernel\/debug.*tmpfs.*rw\" \
-                   | wc -l | egrep -q 5"
+                   | wc -l | egrep -q 4"
 
   [ "$status" -eq 0 ]
 }
@@ -172,7 +170,6 @@ function check_systemd_mounts() {
   SYSCONT_NAME=$(docker_run -d --rm \
                             --mount source=testVol,destination=/run \
                             --mount source=testVol,destination=/run/lock \
-                            --mount source=testVol,destination=/tmp \
                             --mount source=testVol,destination=/sys/kernel/config \
                             --mount source=testVol,destination=/sys/kernel/debug \
                             --name=sys-cont-systemd \
@@ -207,7 +204,6 @@ function check_systemd_mounts() {
 
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm \
-                            --tmpfs /tmp:rw,noexec,nosuid,size=128m \
                             --tmpfs /run:rw,noexec,nosuid,size=256m \
                             --tmpfs /run/lock:rw,noexec,nosuid,size=8m \
                             --name=sys-cont-systemd \
@@ -225,15 +221,11 @@ function check_systemd_mounts() {
   #
   # |-/run           tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=262144k,uid=268666528,gid=268666528
   # | `-/run/lock    tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=8192k,uid=268666528,gid=268666528
-  # |-/tmp           tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=131072k,uid=268666528,gid=268666528
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run .*tmpfs.*rw.*size=262144k\""
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run\/lock .*tmpfs.*rw.*size=8192k\""
-  [ "$status" -eq 0 ]
-
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/tmp .*tmpfs.*rw.*size=131072k\""
   [ "$status" -eq 0 ]
 
   # Cleanup
