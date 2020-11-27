@@ -119,7 +119,6 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm                     \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -213,7 +212,6 @@ DOCKER_RUN := docker run -it --privileged --rm                        \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v /usr/include/linux/seccomp.h:/usr/include/linux/seccomp.h:ro \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
