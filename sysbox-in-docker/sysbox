@@ -259,17 +259,32 @@ function maxs_setup() {
   sysctl -w kernel.keys.maxbytes=$((20*20000)) &> /dev/null
 }
 
+# Sysbox performs certain operations that require read-write access to sysfs. In
+# the scenario where this script executes (i.e. privileged containers), sysfs is
+# usually mounted in read-write mode, but there is one bug (apparently in
+# containerd -- see https://github.com/containerd/containerd/issues/3221), that
+# prevents this from happening. This function ensures that sysfs is properly
+# mounted in sysbox-in-docker scenarios.
+function sysfs_mount_setup() {
+
+  if mount | egrep -q "/sys type sysfs.*ro" && mount -o remount,rw /sys; then
+    printf "\nUnable to remount /sys in read-write mode.\n"
+    exit 1
+  fi
+}
+
 # Completes Sysbox's setup process.
 function sysbox_setup() {
 
   local distro=$(get_host_distro)
 
   if ! load_required_modules; then
-      exit 1
+    exit 1
   fi
 
   userns_setup $distro
   kernel_config_setup $distro
+  sysfs_mount_setup
   docker_setup
   maxs_setup
 }
