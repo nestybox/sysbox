@@ -264,7 +264,7 @@ test-runc: $(LIBSECCOMP) sysbox-ipc
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
 test-fs: ## Run sysbox-fs unit tests
-test-fs: test-img
+test-fs: $(LIBSECCOMP) test-img
 	@printf "\n** Running sysbox-fs unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
 
