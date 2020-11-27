@@ -144,19 +144,12 @@ function kernel_config_setup() {
   fi
 }
 
-#
 # Obtain the MTU value to be configured for the docker interface within the test
 # container. This value shall be the lowest among these ...
 #
-#  * The 'physical' default-gateway interface at host level (L0).
-#  * The 'logical' default-gateway interface connecting the test-container (L1) with the host.
+#  * The privileged-container's egress interface (host-facing iface).
 #  * The 'default' mtu value (1500 bytes) supported by most NICs.
-#
 function docker_iface_mtu() {
-
-  local egress_iface
-  local l0_egress_mtu
-  local l1_egress_mtu
 
   # Identify default egress iface.
   local egress_iface=$(ip route show | awk '/default via/ {print $5}')
@@ -164,22 +157,13 @@ function docker_iface_mtu() {
 	  return
   fi
 
-  # Obtain mtu value associated to the test-container's egress interface.
-  egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+  # Obtain mtu value associated to the privileged-container's egress interface.
+  local egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
   if [ ! -z "${egress_mtu}" ] &&
      [ "${egress_mtu}" -lt "${default_mtu}" ]; then
-	  l1_egress_mtu=${egress_mtu}
+    echo ${egress_mtu}
   else
-	  l1_egress_mtu=${default_mtu}
-  fi
-
-  # Pull L0 egress-mtu value passed from Sysbox's makefile.
-  l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
-
-  if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
-	  echo ${l0_egress_mtu}
-  else
-	  echo ${l1_egress_mtu}
+    echo ${default_mtu}
   fi
 }
 
@@ -236,11 +220,11 @@ EOF
 
   # Adjust docker's interface mtu configuration. This is required to avoid forwarding issues
   # in containers seating behind an egress-interface with lower-than-default mtu.
-  # egress_mtu=$(docker_iface_mtu)
-  # if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -ne "${default_mtu}" ]; then
-	#   jq --arg mtu "${egress_mtu}" --indent 4 '. + {"mtu": $mtu|tonumber}' "${dockerCfgFile}" \
-	#      > ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
-  # fi
+  egress_mtu=$(docker_iface_mtu)
+  if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -ne "${default_mtu}" ]; then
+    jq --arg mtu "${egress_mtu}" --indent 4 '. + {"mtu": $mtu|tonumber}' "${dockerCfgFile}" \
+      > ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
+  fi
 }
 
 # Increases system-level resources to satisfy Sysbox requirements.
