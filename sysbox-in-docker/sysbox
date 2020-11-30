@@ -273,51 +273,6 @@ function sysbox_setup() {
   maxs_setup
 }
 
-# Stop all Sysbox components.
-function sysbox_stop() {
-
-  sysmgr_pids=$(pidof sysbox-mgr) || true
-  sysfs_pids=$(pidof sysbox-fs) || true
-
-  for pid in $sysmgr_pids; do
-    kill $pid
-  done
-
-  for pid in $sysfs_pids; do
-    kill $pid
-  done
-}
-
-# Start all Sysbox components.
-function sysbox_start() {
-
-  local testing_mode=$1
-
-  # Start sysbox-mgr.
-  /usr/local/sbin/sysbox-mgr --log /dev/stdout > /var/log/sysbox-mgr.log 2>&1 &
-  RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
-  if [ $? -ne 0 ]; then
-    printf "\nsysbox-mgr failed to start. Here is the log file:\n"
-    cat /var/log/sysbox-mgr.log
-    exit 1
-  fi
-
-  # Start sysbox-fs.
-  mkdir -p /var/lib/sysboxfs
-
-  if [[ $testing_mode == "testing-on" ]]; then
-      /usr/local/sbin/sysbox-fs --ignore-handler-errors --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-  else
-      /usr/local/sbin/sysbox-fs --log /dev/stdout > /var/log/sysbox-fs.log 2>&1 &
-  fi
-  RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
-  if [ $? -ne 0 ]; then
-    printf "\nsysbox-fs failed to start. Here is the log file:\n"
-    cat /var/log/sysbox-fs.log
-    exit 1
-  fi
-}
-
 # Start Docker.
 function docker_start() {
 
@@ -332,11 +287,7 @@ function docker_start() {
 }
 
 function main() {
-
-  sysbox_stop
   sysbox_setup
-  docker_start
-  sysbox_start "$@"
 }
 
 main "$@"
