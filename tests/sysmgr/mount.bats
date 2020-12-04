@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/fs
+load ../helpers/docker
 load ../helpers/sysbox-health
 
 # verify sys container has a mount for /lib/modules/<kernel>
@@ -120,4 +121,101 @@ load ../helpers/sysbox-health
   fi
 
   docker_stop "$syscont"
+}
+
+@test "chown bind mount special dir" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "needs UID shifting"
+  fi
+
+  local syscont
+  local uid
+  local gid
+
+  # verify that sysbox-mgr chown's the ownership of a host dir mounted
+  # into /var/lib/docker, to match the host uid:gid of the container's
+  # root user.
+
+  local mnt_src="/mnt/scratch/docker"
+  local mnt_dst="/var/lib/docker"
+
+  rm -rf $mnt_src
+  mkdir $mnt_src
+
+  orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
+  orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  # verify chown is applied when container starts
+  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst nestybox/alpine-docker-dbg tail -f /dev/null)
+
+  uid=$(docker_root_uid_map $syscont)
+  gid=$(docker_root_gid_map $syscont)
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  echo "uid=$uid"
+  echo "gid=$gid"
+  echo "mnt_src_uid=$mnt_src_uid"
+  echo "mnt_src_gid=$mnt_src_gid"
+
+  [ "$uid" -eq "$mnt_src_uid" ]
+  [ "$gid" -eq "$mnt_src_gid" ]
+
+  # verify chown is reverted when container stops
+  docker_stop "$syscont"
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
+  [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
+
+  rm -rf $mnt_src
+}
+
+@test "skip chown bind mount special dir" {
+
+  if [ -z "$SHIFT_UIDS" ]; then
+    skip "needs UID shifting"
+  fi
+
+  local syscont
+  local uid
+  local gid
+
+  # verify that sysbox-mgr skips changing the ownership of a host dir
+  # mounted into /var/lib/docker if the host dir and first-level subdirs
+  # match the container's root user uid:gid
+
+  local mnt_src="/mnt/scratch/docker"
+  local mnt_dst="/var/lib/docker"
+
+  rm -rf $mnt_src
+  mkdir -p $mnt_src/sub1/sub2
+
+  local sysbox_subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+
+  chown $sysbox_subid:$sysbox_subid $mnt_src $mnt_src/sub1
+
+  # verify chown is skipped when container starts
+  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst nestybox/alpine-docker-dbg tail -f /dev/null)
+
+  sub2_uid=$(stat -c "%u" $mnt_src/sub1/sub2)
+  sub2_gid=$(stat -c "%g" $mnt_src/sub1/sub2)
+
+  [ "$sub2_uid" -ne "$sysbox_subid" ]
+  [ "$sub2_gid" -ne "$sysbox_subid" ]
+
+  # verify chown revert is skipped when container stops
+  docker_stop "$syscont"
+
+  sub2_uid=$(stat -c "%u" $mnt_src/sub1/sub2)
+  sub2_gid=$(stat -c "%g" $mnt_src/sub1/sub2)
+
+  [ "$sub2_uid" -ne "$sysbox_subid" ]
+  [ "$sub2_gid" -ne "$sysbox_subid" ]
+
+  rm -rf $mnt_src
 }
