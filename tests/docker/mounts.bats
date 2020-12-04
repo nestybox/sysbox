@@ -472,6 +472,44 @@ function teardown() {
 
 }
 
+@test "nested mount sources" {
+
+  docker run --runtime=sysbox-runc --rm \
+         -v /mnt/a:/mnt/a \
+         -v /mnt/scratch/a:/mnt/scratch/a \
+         -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+         nestybox/alpine-docker-dbg:latest \
+         echo hello
+
+  [ "$status" -eq 0 ]
+
+  if [ -n "$SHIFT_UIDS" ]; then
+
+    # When using uid shifting, if the mount is on a special dir, and the
+    # source of that mount is a child dir of another bind-mount source,
+    # sysbox-runc will disallow it. Verify this.
+
+    docker run --runtime=sysbox-runc --rm \
+           -v /mnt/scratch:/mnt/scratch \
+           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+           nestybox/alpine-docker-dbg:latest \
+           echo hello
+
+    [ "$status" -ne 0 ]
+
+  else
+    # Without uid shifting, the restriction above does not apply.
+
+    docker run --runtime=sysbox-runc --rm \
+           -v /mnt/scratch:/mnt/scratch \
+           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+           nestybox/alpine-docker-dbg:latest \
+           echo hello
+
+    [ "$status" -eq 0 ]
+  fi
+}
+
 @test "shiftfs blacklist" {
 
   if [ -z "$SHIFT_UIDS" ]; then
@@ -500,5 +538,4 @@ function teardown() {
 
     docker_stop "$syscont"
   done
-
 }
