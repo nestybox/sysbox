@@ -182,6 +182,7 @@ function sysbox_start() {
 
   # Start sysbox-mgr.
   sysbox-mgr --log /var/log/sysbox-mgr.log &
+  sleep 1
   RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
   if [ $? -ne 0 ]; then
     printf "\nsysbox-mgr failed to start. Here is the log file:\n"
@@ -197,6 +198,7 @@ function sysbox_start() {
   else
       sysbox-fs --log /var/log/sysbox-fs.log &
   fi
+  sleep 1
   RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
   if [ $? -ne 0 ]; then
     printf "\nsysbox-fs failed to start. Here is the log file:\n"
