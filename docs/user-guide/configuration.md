@@ -8,6 +8,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 
 -   [Reconfiguration Procedure](#reconfiguration-procedure)
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
+-   [Sysbox Data Store Configuration](#sysbox-data-store-configuration)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Reconfiguration Procedure
