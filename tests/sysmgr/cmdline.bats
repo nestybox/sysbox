@@ -26,15 +26,13 @@ function sysbox_mgr_stopped() {
    rm -rf $new_data_root
 
    # Stop the sysbox-mgr
-   kill -9 $(pidof sysbox-mgr)
-   retry 10 1 sysbox_mgr_stopped
+   sysbox_mgr_stop
 
    # Create a new data root for it
    mkdir -p $new_data_root
 
    # Start it with the new data root
-   bats_bg sysbox-mgr --log /var/log/sysbox-mgr.log --data-root $new_data_root
-   retry 10 1 grep -q Ready /var/log/sysbox-mgr.log
+   sysbox_mgr_start --data-root $new_data_root
 
    # Launch an sys container and verify all is good
    local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
@@ -55,12 +53,10 @@ function sysbox_mgr_stopped() {
    docker_stop "$syscont"
 
    # Stop the sysbox-mgr
-   kill -9 $(pidof sysbox-mgr)
-   retry 10 1 pgrep -v sysbox-mgr
+   sysbox_mgr_stop
 
    # Re-start it with it's default data-root
-   bats_bg sysbox-mgr --log /var/log/sysbox-mgr.log
-   retry 10 1 grep -q Ready /var/log/sysbox-mgr.log
+   sysbox_mgr_start
 
    # Cleanup
    rm -rf $new_data_root
