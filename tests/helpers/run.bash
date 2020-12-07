@@ -121,6 +121,66 @@ function sysbox_mgr_stopped() {
    fi
 }
 
+function sysbox_fs_start() {
+  if [ -n "$SB_INSTALLER" ]; then
+    sed -i "s/^ExecStart=\(.*sysbox-fs.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-fs.service
+    systemctl daemon-reload
+    systemctl restart sysbox
+    sleep 1
+  else
+    bats_bg sysbox-fs --log /var/log/sysbox-fs.log $@
+  fi
+
+  sleep 1
+}
+
+function sysbox_fs_stop() {
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl stop sysbox
+  else
+    kill $(pidof sysbox-fs)
+  fi
+
+  retry 10 1 sysbox_fs_stopped
+}
+
+function sysbox_fs_stopped() {
+   if ! pgrep sysbox-fs; then
+      echo true
+   else
+      echo false
+   fi
+}
+
+function sysbox_start() {
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl start sysbox
+  else
+    bats_bg sysbox testing-on
+  fi
+
+  sleep 2
+}
+
+function sysbox_stop() {
+  if [ -n "$SB_INSTALLER" ]; then
+    systemctl stop sysbox
+  else
+    kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
+  fi
+
+  retry 10 1 sysbox_fs_stopped
+  retry 10 1 sysbox_mgr_stopped
+}
+
+function sysbox_stopped() {
+   if ! pgrep "sysbox-fs|sysbox-mgr"; then
+      echo true
+   else
+      echo false
+   fi
+}
+
 function dockerd_start() {
   if [ -n "$SB_INSTALLER" ]; then
     systemctl start docker.service
