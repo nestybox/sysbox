@@ -90,27 +90,35 @@ function bats_bg() {
   "$@" 3>/dev/null &
 }
 
-function sv_mgr_start() {
+function sysbox_mgr_start() {
   if [ -n "$SB_INSTALLER" ]; then
     sed -i "s/^ExecStart=\(.*sysbox-mgr.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-mgr.service
     systemctl daemon-reload
     systemctl restart sysbox
-    sleep 3
-  else
-    bats_bg sysbox-mgr --log /dev/stdout $@ > /var/log/sysbox-mgr.log 2>&1
     sleep 1
+  else
+    bats_bg sysbox-mgr --log /var/log/sysbox-mgr.log $@
   fi
+
+  retry 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
 }
 
-function sv_mgr_stop() {
+function sysbox_mgr_stop() {
   if [ -n "$SB_INSTALLER" ]; then
     systemctl stop sysbox
-    sleep 1
   else
-    local pid=$(pidof sysbox-mgr)
-    kill $pid
-    sleep 1
+    kill $(pidof sysbox-mgr)
   fi
+
+  retry 10 1 sysbox_mgr_stopped
+}
+
+function sysbox_mgr_stopped() {
+   if ! pgrep sysbox-mgr; then
+      echo true
+   else
+      echo false
+   fi
 }
 
 function dockerd_start() {
