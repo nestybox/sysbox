@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+#
+# script to run sysbox-in-docker (sind) integration tests
+#
+
+progName=$(basename "$0")
+
+usage()
+{
+  echo "
+Usage: $progName <testName>
+
+"
+  exit 1
+}
+
+# argument testName is optional
+if [ $# -eq 1 ]; then
+  printf "\nExecuting $1 ... \n"
+  bats --tap $1
+else
+  printf "\nExecuting sind tests ... \n"
+  bats --tap tests/sind
+fi
+
+exit 0
