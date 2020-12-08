@@ -1,5 +1,5 @@
 #
-# Sysbox-In-Docker Container Dockerfile (Debian-Buster image)
+# Sysbox-In-Docker Container Dockerfile (Ubuntu-Eoan image)
 #
 # This Dockerfile creates the sysbox-in-docker container image, which holds
 # all Sysbox binaries and its dependencies. The goal is to allow users to run
@@ -16,7 +16,7 @@
 #
 # * Image creation:
 #
-#   $ make sysbox-in-docker debian-buster
+#   $ make sysbox-in-docker ubuntu-eoan
 #
 # * Container creation:
 #
@@ -26,15 +26,15 @@
 #                -v /lib/modules/$(uname -r):/lib/modules/$(uname -r):ro \
 #                -v /usr/src/linux-headers-$(uname -r):/usr/src/linux-headers-$(uname -r):ro \
 #                -v /usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):/usr/src/linux-headers-$(uname -r | cut -d"-" -f 1,2):ro \
-#                nestybox/sysbox-in-docker:debian-buster
+#                nestybox/sysbox-in-docker:ubuntu-eoan
 #
 
-FROM debian:buster
+FROM ubuntu:eoan
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
-   && apt-get install --no-install-recommends -y \
+    && apt-get install --no-install-recommends -y \
        apt-utils \
        ca-certificates \
        wget \
@@ -55,7 +55,7 @@ RUN curl -fsSL https://get.docker.com -o get-docker.sh
 RUN sh get-docker.sh
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
-# S6 process-supervisor installation & configuration.
+# S6 process-supervisor installation.
 ADD https://github.com/just-containers/s6-overlay/releases/download/v2.1.0.2/s6-overlay-amd64-installer /tmp/
 RUN chmod +x /tmp/s6-overlay-amd64-installer && /tmp/s6-overlay-amd64-installer /
 
