@@ -185,10 +185,10 @@ function docker_setup() {
             "path": "/usr/local/sbin/sysbox-runc"
         }
     },
-    "bip": "172.24.0.1/16",
+    "bip": "172.25.0.1/16",
     "default-address-pools": [
         {
-            "base": "172.31.0.0/16",
+            "base": "172.32.0.0/16",
             "size": 24
         }
     ]
@@ -207,10 +207,10 @@ EOF
             ]
         }
     },
-    "bip": "172.24.0.1/16",
+    "bip": "172.25.0.1/16",
     "default-address-pools": [
         {
-            "base": "172.31.0.0/16",
+            "base": "172.32.0.0/16",
             "size": 24
         }
     ]

@@ -11,7 +11,6 @@ export dockerCfgFile="${dockerCfgDir}/daemon.json"
 # Default MTU value associated to egress-interface.
 export default_mtu=1500
 
-
 # Returns container's egress interface mtu.
 function egress_iface_mtu() {
 
@@ -26,4 +25,20 @@ function egress_iface_mtu() {
   else
     echo $default_mtu
   fi
+}
+
+function get_distro() {
+   lsb_release -is | tr '[:upper:]' '[:lower:]'
+}
+
+function get_release() {
+   local distro=$(get_distro)
+
+   if [[ ${distro} == centos || \
+         ${distro} == redhat || \
+         ${distro} == fedora ]]; then
+      lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1
+   else
+      lsb_release -cs
+   fi
 }
