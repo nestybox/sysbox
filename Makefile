@@ -16,7 +16,9 @@
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	pjdfstest pjdfstest-clean \
-	sysbox-in-docker centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal \
+	sysbox-in-docker sysbox-in-docker-local \
+	test-sind-shell \
+	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal ubuntu-eoan \
 	clean
 
 export SHELL=bash
@@ -31,6 +33,7 @@ SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
 LIB_SECCOMP_DIR := sysbox-libs/libseccomp-golang
+SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
 # Consider to have this one moved out within sysbox-runc folder.
 SYSRUNC_BUILDTAGS := seccomp apparmor
@@ -149,6 +152,7 @@ sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 
 sysbox-runc-debug: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
+
 sysbox-runc-static: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
 
@@ -297,7 +301,6 @@ test-cleanup: test-img
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
 	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 
-
 #
 # Local test targets (these are invoked from within the test container
 # by the test target above); in theory they can run directly on a host
@@ -327,8 +330,19 @@ sysbox-in-docker: sysbox
 	@cp sysbox-mgr/sysbox-mgr sysbox-in-docker/
 	@cp sysbox-runc/sysbox-runc sysbox-in-docker/
 	@cp sysbox-fs/sysbox-fs sysbox-in-docker/
-	$(MAKE) -C sysbox-in-docker --no-print-directory $(filter-out $@,$(MAKECMDGOALS))
+	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
 
+sysbox-in-docker-local: sysbox-local
+	@cp sysbox-mgr/sysbox-mgr sysbox-in-docker/
+	@cp sysbox-runc/sysbox-runc sysbox-in-docker/
+	@cp sysbox-fs/sysbox-fs sysbox-in-docker/
+	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
+
+test-sind-shell: ## Get a shell in the test container for sysbox-in-docker (useful for debug)
+test-sind-shell: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		sindTestContainerInit && /bin/bash"
 
 #
 # Misc targets
@@ -365,9 +379,13 @@ clean:
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSIPC_DIR) && make clean
 
-clean_libseccomp: ## Clean libseccomp
-clean_libseccomp:
+clean-libseccomp: ## Clean libseccomp
+clean-libseccomp:
 	cd $(LIBSECCOMP_DIR) && sudo make distclean
+
+clean-sysbox-in-docker: ## Clean sysbox-in-docker
+clean-sysbox-in-docker:
+	cd $(SYSBOX_IN_DOCKER_DIR) && rm -f sysbox-fs sysbox-runc sysbox-mgr
 
 # memoize all packages once
 
