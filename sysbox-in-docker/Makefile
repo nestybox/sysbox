@@ -44,7 +44,7 @@ help: ## Show supported docker images
 	{ printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
-LAUNCH_INSTRUCTION := docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker \
+LAUNCH_INSTRUCTION := docker run -d --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker \
                 -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker \
                 -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox \
                 -v /lib/modules/$$(uname -r):/lib/modules/$$(uname -r):ro \

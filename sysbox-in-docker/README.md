@@ -71,7 +71,7 @@ as part of this output.
     ...
     *** Launch container with the following instruction ***
 
-    docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox -v /lib/modules/5.4.0-48-generic:/lib/modules/5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48-generic:/usr/src/linux-headers-5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48:/usr/src/linux-headers-5.4.0-48:ro nestybox/sysbox-in-docker:ubuntu-bionic
+    docker run -d --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox -v /lib/modules/5.4.0-48-generic:/lib/modules/5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48-generic:/usr/src/linux-headers-5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48:/usr/src/linux-headers-5.4.0-48:ro nestybox/sysbox-in-docker:ubuntu-bionic
 
     make: Nothing to be done for 'ubuntu-bionic'.
     $
@@ -81,11 +81,11 @@ as part of this output.
 in the previous step:
 
     ```
-    $ docker run -it --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox -v /lib/modules/5.4.0-48-generic:/lib/modules/5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48-generic:/usr/src/linux-headers-5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48:/usr/src/linux-headers-5.4.0-48:ro nestybox/sysbox-in-docker:ubuntu-bionic
+    $ docker run -d --privileged --rm --hostname sysbox-in-docker --name sysbox-in-docker -v /var/tmp/sysbox-var-lib-docker:/var/lib/docker -v /var/tmp/sysbox-var-lib-sysbox:/var/lib/sysbox -v /lib/modules/5.4.0-48-generic:/lib/modules/5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48-generic:/usr/src/linux-headers-5.4.0-48-generic:ro -v /usr/src/linux-headers-5.4.0-48:/usr/src/linux-headers-5.4.0-48:ro nestybox/sysbox-in-docker:ubuntu-bionic
     ...
     ```
 
-    In a separate terminal do ...
+    Enter the container context:
 
     ```
    $ docker exec -it sysbox-in-docker bash
