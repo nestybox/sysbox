@@ -77,9 +77,15 @@ Usage:
     test-img                Build test container image
     test-cleanup            Clean up sysbox integration tests (requires root privileges)
 
+  Sysbox-In-Docker targets
+    sysbox-in-docker        Build sysbox-in-docker sandbox image
+    test-sind               Run the sysbox-in-docker integration tests
+    test-sind-shell         Get a shell in the test container for sysbox-in-docker (useful for debug)
+
   Cleaning targets
     clean                   Eliminate sysbox binaries
-    clean_libseccomp        Clean libseccomp
+    clean-libseccomp        Clean libseccomp
+    clean-sysbox-in-docker  Clean sysbox-in-docker
 ```
 
 ## Building & Installing from Source
