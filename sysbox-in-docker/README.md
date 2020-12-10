@@ -18,14 +18,15 @@ Sysbox is currently only supported in the distributions shown in this
 [doc](../docs/distro-compat.md).
 
 * Root-privileges: As a container runtime, Sysbox requires root privileges to
-operate. As a result, Sysbox-In-Docker container must be launched in "privileged"
-mode.
+operate. As a result, the Sysbox-In-Docker container must be launched in
+"privileged" mode.
 
     **Note**: Within the privileged container, inner containers launched with Docker +
     Sysbox will be strongly isolated from the host by Sysbox (e.g., via the Linux
     user-namespace).
 
-* Required bind-mounts:
+* Also, in order for the Sysbox-In-Docker container to operate properly, the
+following host bind-mounts are required:
 
     - "/var/lib/docker"
 
@@ -38,10 +39,11 @@ mode.
 
 ## Execution
 
-Sysbox-In-Docker environment can be created in three simple steps:
+The Sysbox-In-Docker environment can be created in a few simple steps:
 
 1) Pick the Linux distribution on which to run Sysbox by choosing one of the
-Makefile targets displayed below.
+Makefile targets displayed below. This instruction must be executed from the
+'sysbox' repository folder, and not from within the 'sysbox-in-docker' one.
 
     ```
     $ make sysbox-in-docker
@@ -61,8 +63,8 @@ Makefile targets displayed below.
     ```
 
 2) Build the Sysbox-In-Docker image by executing the chosen target. Notice that
-the precise instruction to utlize to launch the Sysbox-In-Docker container will
-be displayed as part of this output.
+a sample instruction to launch the Sysbox-In-Docker container will be displayed
+as part of this output.
 
     ```
     $ make sysbox-in-docker ubuntu-bionic
@@ -89,3 +91,23 @@ in the previous step:
    $ docker exec -it sysbox-in-docker bash
    #
     ```
+
+4) Once inside the Sysbox-In-Docker container, you should see Docker and Sysbox
+running:
+
+    ```
+    ps -fu root | egrep "sysbox|docker"
+    ```
+
+    And you should be able to launch containers with Docker + Sysbox as usual:
+
+    ```
+    # docker run  --runtime=sysbox-runc -it --rm nestybox/ubuntu-focal-systemd-docker
+    ```
+
+    Keep in mind that the containers launched by Sysbox are strongly isolated via
+    the Linux user namespace, and are capable of running not just microservices,
+    but also low-level system software such as systemd, Docker, K8s, and more.
+
+    Refer to the Sysbox [quickstart](../docs/quickstart/README.md) guide
+    for more examples on how to use Sysbox.
