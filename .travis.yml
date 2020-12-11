@@ -1,6 +1,4 @@
-dist: bionic
-group: edge
-
+dist: focal
 language: go
 
 git:
