@@ -116,6 +116,9 @@ RUN add-apt-repository \
 RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 # bash completion
 RUN apt-get update && apt-get install bash-completion
 RUN echo ". /etc/bash_completion" >> /etc/bash.bashrc
