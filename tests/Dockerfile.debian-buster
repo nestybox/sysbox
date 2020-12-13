@@ -139,6 +139,9 @@ RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
 # This is needed because the definition changed in the mainline kernel

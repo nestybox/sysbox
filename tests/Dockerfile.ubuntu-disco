@@ -120,6 +120,9 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
 RUN apt-get update && apt-get install bash-completion
 RUN echo ". /etc/bash_completion" >> /etc/bash.bashrc
 
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 # sysbox deps
 RUN apt-get update && apt-get install -y \
     fuse \

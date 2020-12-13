@@ -125,6 +125,9 @@ RUN dnf update -y \
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker \
     /etc/bash_completion.d/docker.sh
 
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
 # This is needed because the definition changed in the mainline kernel
