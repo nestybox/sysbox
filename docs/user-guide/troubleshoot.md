@@ -62,6 +62,43 @@ $ sudo systemctl restart docker.service
 **NOTE:** The Sysbox installer automatically does this configuration and
 restarts Docker. Thus this error is uncommon.
 
+## Docker indicates "unable to retrieve OCI runtime error"
+
+When creating a system container, Docker may report the following error:
+
+```
+# docker run --runtime=sysbox-runc -it --rm nestybox/alpine-docker
+33a50b33f0e23f7ce9c2e42b9c6521d91ab1f833b9b8cd5884d8f32c60dfd144
+docker: Error response from daemon: OCI runtime create failed: unable to retrieve OCI runtime error (open /run/containerd/io.containerd.runtime.v1.linux/moby/33a50b33f0e23f7ce9c2e42b9c6521d91ab1f833b9b8cd5884d8f32c60dfd144/log.json: no such file or directory): /usr/local/sbin/sysbox-runc did not terminate successfully: unknown.
+```
+
+This can occur is distros such as Fedora and CentOS where `shiftfs` is not
+supported.  In such distros, Sysbox requires that Docker be configured with
+"userns-remap". If it's not, the error above can occur.
+
+To solve it, please configure Docker with userns-remap as follows:
+
+1) Add the userns-remap line to the `/etc/docker/daemon.json` file as shown below:
+
+```console
+# cat /etc/docker/daemon.json
+{
+   "userns-remap": "sysbox",
+   "runtimes": {
+      "sysbox-runc": {
+         "path": "/usr/local/sbin/sysbox-runc"
+      }
+   }
+}
+```
+
+2) Restart the Docker daemon (make sure any running containers are stopped):
+
+```console
+# sudo docker stop $(docker ps -aq)
+# sudo systemctl restart docker
+```
+
 ## Ubuntu Shiftfs Module Not Present
 
 When creating a system container, the following error indicates that
@@ -130,6 +167,24 @@ sudo sh -c "echo 1 > /proc/sys/kernel/unprivileged_userns_clone"
 **Note:** The Sysbox package installer automatically executes this
 instruction, so normally there is no need to do this configuration
 manually.
+
+## Duplicate Sysbox entries in /etc/subuid
+
+The host's `/etc/subuid` and `/etc/subgid` files contain the host user-id and
+group-id ranges that Sysbox assigns to the containers. These files should
+have a single entry for user `sysbox` that looks similar to this:
+
+```
+$ more /etc/subuid
+sysbox:165536:65536
+```
+
+If for some reason this file has more than one entry for user `sysbox`, you'll
+see the following error when creating a container:
+
+```
+docker: Error response from daemon: OCI runtime create failed: error in the container spec: invalid user/group ID config: sysbox-runc requires user namespace uid mapping array have one element; found [{0 231072 65536} {65536 296608 65536}]: unknown.
+```
 
 ## Bind Mount Permissions Error
 
