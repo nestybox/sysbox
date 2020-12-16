@@ -305,6 +305,8 @@ EOF
     [ "$status" -eq 0 ]
   done
 
+  sleep 2
+
   for i in $(seq 1 $num_workers); do
     docker exec "$sc" sh -c "cat result_$i.txt"
     [ "$status" -eq 0 ]
@@ -323,7 +325,18 @@ EOF
     [ "$output" == "$new_val" ]
   done
 
-  # cleanup
+  # Stop the worker scripts before stopping the sys container, such way there
+  # are no accesses to sysbox-fs when the container is stopped. This is not
+  # strictly needed functionally (sysbox-fs deals with this case), but we do it
+  # here as otherwise the sysbox-fs health check may fail when it finds
+  # sysbox-fs child processes that are active after the container stops (before
+  # the sysbox-fs child process reaper has had a chance to kill them).
+
+  docker exec "$sc" sh -c "kill -9 \$(pidof worker.sh)"
+  [ "$status" -eq 0 ]
+  sleep 1
+
+  # Cleanup
   docker_stop "$sc"
   rm ${work_scr}
 }
