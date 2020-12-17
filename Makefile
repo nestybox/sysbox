@@ -116,7 +116,7 @@ help:
 
 ##@ Building targets
 
-DOCKER_SYSBOX_BLD := docker run --privileged --rm                     \
+DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			--hostname sysbox-build                       \
 			--name sysbox-build                           \
 			-v $(CURDIR):$(PROJECT)                       \
@@ -207,7 +207,7 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 # they are meant as development tests.
 #
 
-DOCKER_RUN := docker run -it --privileged --rm                        \
+DOCKER_RUN := docker run -it --privileged --rm --runtime=runc         \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			-v $(CURDIR):$(PROJECT)                       \
