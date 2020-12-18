@@ -8,7 +8,7 @@ load ../helpers/sysbox-health
 export docker_cfgfile_bak="/etc/docker/daemon.json.bak"
 
 export distro=$(get_distro)
-export release=$(get_release)
+export release=$(get_distro_release)
 
 @test "sind build" {
    make sysbox-in-docker-local ${distro}-${release}
