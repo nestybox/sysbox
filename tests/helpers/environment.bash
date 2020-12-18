@@ -31,7 +31,7 @@ function get_distro() {
    lsb_release -is | tr '[:upper:]' '[:lower:]'
 }
 
-function get_release() {
+function get_distro_release() {
    local distro=$(get_distro)
 
    if [[ ${distro} == centos || \
@@ -41,4 +41,8 @@ function get_release() {
    else
       lsb_release -cs
    fi
+}
+
+function get_kernel_release() {
+  uname -r
 }
