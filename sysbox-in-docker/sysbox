@@ -78,6 +78,15 @@ function get_host_distro() {
   echo $distro
 }
 
+# Ensures user "sysbox" is present on the host
+function setup_sysbox_user() {
+   local exit_code=0
+   grep -q "^sysbox:" /etc/passwd || exit_code=$?
+   if (( $exit_code == 1 )); then
+      useradd -r -s /usr/sbin/nologin sysbox
+   fi
+}
+
 # Ensures unprivileged user-ns's are allowed.
 function userns_setup() {
 
@@ -266,6 +275,7 @@ function sysbox_setup() {
     exit 1
   fi
 
+  setup_sysbox_user
   userns_setup $distro
   kernel_config_setup $distro
   sysfs_mount_setup
@@ -287,6 +297,11 @@ function docker_start() {
 }
 
 function main() {
+  if [ "$EUID" -ne 0 ]; then
+     echo "Please run as root."
+     exit
+  fi
+
   sysbox_setup
 }
 

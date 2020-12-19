@@ -58,10 +58,17 @@ function load_required_modules() {
 
 # Returns linux distro running in the system.
 function get_host_distro() {
-
   local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
-
   echo $distro
+}
+
+# Ensures user "sysbox" is present on the host
+function setup_sysbox_user() {
+   local exit_code=0
+   grep -q "^sysbox:" /etc/passwd || exit_code=$?
+   if (( $exit_code == 1 )); then
+      useradd -r -s /usr/sbin/nologin sysbox
+   fi
 }
 
 # Ensures unprivileged user-ns's are allowed.
@@ -155,6 +162,7 @@ function sysbox_setup() {
       exit 1
   fi
 
+  setup_sysbox_user
   setup_userns $distro
   setup_kernel_config $distro
   setup_maxs
@@ -208,6 +216,11 @@ function sysbox_start() {
 }
 
 function main() {
+
+  if [ "$EUID" -ne 0 ]; then
+     echo "Please run as root."
+     exit
+  fi
 
   sysbox_stop
   sysbox_setup
