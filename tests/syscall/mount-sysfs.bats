@@ -16,7 +16,7 @@ function teardown() {
 # Verify a new sysfs mount is a replica of the sysfs mount at /sys
 @test "mount sysfs" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   # mount sysfs at $mnt_path and verify it's backed by sysbox-fs
@@ -38,7 +38,7 @@ function teardown() {
 
 @test "mount sysfs read-only" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -60,7 +60,7 @@ function teardown() {
 
 @test "mount sysfs redudant" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -83,7 +83,7 @@ function teardown() {
   local mnt_path=/root/sys
   local node=module/nf_conntrack/parameters/hashsize
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # mount sysfs at $mnt_path
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -139,7 +139,7 @@ function teardown() {
   local mnt_path2=/tmp/sys2
   local node=module/nf_conntrack/parameters/hashsize
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path1"
   [ "$status" -eq 0 ]
@@ -195,8 +195,8 @@ function teardown() {
   local mnt_path=/tmp/sys
   local node=module/nf_conntrack/parameters/hashsize
 
-  syscont0=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # mount sysfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"
@@ -248,8 +248,8 @@ function teardown() {
   local mnt_path=/tmp/sys
   local node=module/nf_conntrack/parameters/hashsize
 
-  syscont0=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   # mount sysfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"
@@ -301,7 +301,7 @@ function teardown() {
   # Verify remount of sysfs causes a remount of all submounts.
 
   # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
-  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
@@ -334,7 +334,7 @@ function teardown() {
 @test "sysfs mount & remount (superblock)" {
 
   # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
-  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
@@ -367,7 +367,7 @@ function teardown() {
 @test "/sys remount & mount (superblock)" {
 
   # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
-  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/sys
 
@@ -407,7 +407,7 @@ function teardown() {
   local mnt_path=/root/sys
   local node=module/nf_conntrack/parameters/hashsize
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
@@ -429,7 +429,7 @@ function teardown() {
   docker_stop "$syscont"
 
   # test read-only sysfs mount with read-write remounts of submounts
-  syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
@@ -453,7 +453,7 @@ function teardown() {
 
 @test "sysfs move mount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path1=/tmp/sys1
   local mnt_path2=/tmp/sys2
 
@@ -478,7 +478,7 @@ function teardown() {
 
   # verify that unmounting /sys is not allowed
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "umount /sys"
   [ "$status" -eq 1 ]
@@ -515,7 +515,7 @@ function teardown() {
 # verify that it's not possible to do unmounts of sysfs submounts managed by sysbox-fs
 @test "sysfs unmount submount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # try to unmount sysfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
   for node in "${SYSFS_EMU[@]}"; do
@@ -555,7 +555,7 @@ function teardown() {
 
   # verify /sys can be bind-mounted somewhere else
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -582,7 +582,7 @@ function teardown() {
 @test "bind-to-self sysfs submount" {
 
   # Verify sysbox-fs ignores bind-to-self on submounts
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local node=/sys/module/nf_conntrack/parameters/hashsize
 
   docker exec "$syscont" bash -c "mount --bind $node $node"
@@ -605,7 +605,7 @@ function teardown() {
 
 @test "bind over sysfs submount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local node=/sys/module/nf_conntrack/parameters/hashsize
 
   # Verify bind-mount over submount managed by sysbox-fs
@@ -649,7 +649,7 @@ function teardown() {
   # bind-mount to be applied recursively on all sysbox-fs managed
   # submounts.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -675,7 +675,7 @@ function teardown() {
   # bind-mount to be applied only to that submount and no other sysbox-fs
   # submounts.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local submount=/sys/module/nf_conntrack/parameters/hashsize
   local mnt_path=/root/hashsize
 
@@ -706,7 +706,7 @@ function teardown() {
 
   # verify a bind mount of /proc to another dir has private propagation by default
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -732,7 +732,7 @@ function teardown() {
 
   # verify a shared propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -778,7 +778,7 @@ function teardown() {
 
   # verify a slave propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -822,7 +822,7 @@ function teardown() {
 
   # verify unbindable propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"

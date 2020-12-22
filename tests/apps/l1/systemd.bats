@@ -59,7 +59,7 @@ function check_systemd_mounts() {
 
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-bionic-systemd)
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-bionic-systemd)
 
   wait_for_init
 
@@ -111,7 +111,7 @@ function check_systemd_mounts() {
 
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-focal-systemd)
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
   wait_for_init
 
@@ -173,7 +173,7 @@ function check_systemd_mounts() {
                             --mount source=testVol,destination=/sys/kernel/config \
                             --mount source=testVol,destination=/sys/kernel/debug \
                             --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-bionic-systemd)
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-bionic-systemd)
 
   wait_for_init
 
@@ -207,7 +207,7 @@ function check_systemd_mounts() {
                             --tmpfs /run:rw,noexec,nosuid,size=256m \
                             --tmpfs /run/lock:rw,noexec,nosuid,size=8m \
                             --name=sys-cont-systemd \
-                            nestybox/ubuntu-bionic-systemd-docker)
+                            ${CTR_IMG_REPO}/ubuntu-bionic-systemd-docker)
 
   wait_for_init
 
@@ -241,7 +241,7 @@ function check_systemd_mounts() {
   # /proc/kallsyms, /proc/kmsg) do not present a security hole.
 
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd nestybox/ubuntu-focal-systemd)
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
   wait_for_init
 

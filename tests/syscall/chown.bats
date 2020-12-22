@@ -66,14 +66,14 @@ function verify_sys_chown {
 }
 
 @test "chown /proc" {
-   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
    verify_proc_owner root root
    verify_proc_chown
    docker_stop "$syscont"
 }
 
 @test "chown /sys" {
-   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
    verify_sys_owner nobody nobody
    verify_sys_chown nobody nobody
    docker_stop "$syscont"
@@ -97,7 +97,7 @@ function verify_sys_chown {
 }
 
 @test "chown other" {
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "mkdir /test"
   [ "$status" -eq 0 ]
@@ -117,7 +117,7 @@ function verify_sys_chown {
 }
 
 @test "chown inner container" {
-   local syscont=$(docker_run --rm nestybox/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    docker exec "$syscont" sh -c "docker run -d --rm alpine tail -f /dev/null"
@@ -154,7 +154,7 @@ function verify_sys_chown {
 }
 
 @test "fchownat inner container" {
-   local syscont=$(docker_run --rm nestybox/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    # Note: in Ubuntu, chown(1) uses the fchownat syscall

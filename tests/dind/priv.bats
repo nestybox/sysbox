@@ -19,7 +19,7 @@ function teardown() {
 
 @test "dind privileged basic" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -62,7 +62,7 @@ function teardown() {
 # Privileged container security (privileged with respect to sys container context only)
 @test "dind privileged security" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -110,7 +110,7 @@ function teardown() {
 
 @test "dind privileged ubuntu-bionic" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -133,7 +133,7 @@ function teardown() {
 
 @test "dind privileged ubuntu-bionic" {
 
-  local syscont_name=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -156,7 +156,7 @@ function teardown() {
 
 @test "dind privileged debian-stretch" {
 
-  local syscont_name=$(docker_run --rm nestybox/debian-stretch-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-stretch-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -181,7 +181,7 @@ function teardown() {
 @test "dind privileged docker" {
 
   # launch sys cont
-  local syscont_name=$(docker_run --rm nestybox/debian-stretch-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-stretch-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -189,7 +189,7 @@ function teardown() {
   wait_for_inner_dockerd $syscont_name
 
   # launch priv container inside sys cont
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d nestybox/alpine-docker:latest tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/alpine-docker:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""

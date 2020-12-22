@@ -36,7 +36,7 @@ EOF
   # launch sys container; bind-mount the index.html into it
   SYSCONT_NAME=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/index.html,target=/html/index.html \
-                   nestybox/test-syscont:latest tail -f /dev/null)
+                   ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -72,7 +72,7 @@ EOF
   # container and verifies nginx client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"

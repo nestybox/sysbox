@@ -25,7 +25,7 @@ function wait_for_inner_fluentd() {
   # another container can send logs to it.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"

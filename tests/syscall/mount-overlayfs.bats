@@ -24,7 +24,7 @@ function teardown() {
   local work_path="$ovfs_path"/root/work
   local merge_path="$ovfs_path"/root/merge
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # Prepare mount setup.
   docker exec "$syscont" bash -c \
@@ -62,7 +62,7 @@ function teardown() {
   local upper_dir="$ovfs_path"/root/upper/upper_dir
   local upper_dir_file="$ovfs_path"/root/upper/upper_dir/upper_file
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c \
     "mkdir -p $lower_path $upper_path $work_path $merge_path && \
@@ -119,7 +119,7 @@ function teardown() {
   local upper_dir="$ovfs_path"/root/upper/upper_dir
   local upper_file="$ovfs_path"/root/upper/upper_file
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c \
     "mkdir -p $lower_path $upper_path $work_path $merge_path && \
@@ -185,7 +185,7 @@ function teardown() {
 # creation of whiteouts, etc -- fairly decent cocktail of ovfs mount instructions.
 @test "mount overlayfs advanced ops" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -211,7 +211,7 @@ function teardown() {
   local rel_work_dir=root/work
   local rel_merge_dir=root/merge
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c \
     "mkdir -p $lower_path $upper_path $work_path $merge_path"
@@ -253,7 +253,7 @@ function teardown() {
   local upper_dir="$ovfs_path"/root/upper/upper_dir
   local upper_file="$ovfs_path"/root/upper/upper_file
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c \
     "mkdir -p $lower_path_1 $lower_path_2 $lower_path_3 $upper_path $work_path $merge_path && \

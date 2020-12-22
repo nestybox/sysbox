@@ -16,7 +16,7 @@ SYSCONT_NAME=""
 
 @test "dind basic" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -31,7 +31,7 @@ SYSCONT_NAME=""
 
 @test "dind busybox" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -66,7 +66,7 @@ EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

@@ -18,7 +18,7 @@ function teardown() {
 
 @test "syscont dns (def bridge)" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -52,7 +52,7 @@ function teardown() {
 
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
 
-  local syscont=$(docker_run --rm --net=usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --net=usernet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -146,7 +146,7 @@ function teardown() {
 @test "inner container dns (def bridge)" {
 
   # sys container on default docker bridge
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -202,7 +202,7 @@ function teardown() {
   # sys container on **user-defined** docker bridge
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
 
-  local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --net usernet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -257,7 +257,7 @@ function teardown() {
 @test "syscont with custom dns" {
 
   local custom_dns="1.0.0.1"
-  local syscont=$(docker_run --rm --dns $custom_dns nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --dns $custom_dns ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf | cut -d ' ' -f 2"
   [ "$status" -eq 0 ]
@@ -289,7 +289,7 @@ function teardown() {
 
   # sys container on default docker bridge
   local custom_dns="1.0.0.1"
-  local syscont=$(docker_run --rm --dns=$custom_dns nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --dns=$custom_dns ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -343,7 +343,7 @@ function teardown() {
 @test "inner container custom dns" {
 
   # sys container on default docker bridge
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
@@ -402,7 +402,7 @@ function teardown() {
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
   [ "$status" -eq 0 ]
 
-  local syscont=$(docker_run --rm --net usernet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --net usernet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]

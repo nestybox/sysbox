@@ -17,7 +17,7 @@ function teardown() {
    # Verify that we can launch a number of sys-containers in parallel and we
    # don't hit timeouts (in Docker or Sysbox). In this test we choose a sys
    # container image that comes preloaded with inner containers (e.g.,
-   # nestybox/k8s-node). This causes strain on Sysbox because when each
+   # ${CTR_IMG_REPO}/k8s-node). This causes strain on Sysbox because when each
    # container starts it needs to copy those inner images from the container's
    # root file system (on overlayfs) into a sysbox data store. These copy
    # operations can take a while especially when the number of containers
@@ -28,7 +28,7 @@ function teardown() {
 
    [ "$num_syscont" -ge 1 ]
 
-   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} nestybox/k8s-node:v1.18.2
+   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} ${CTR_IMG_REPO}/k8s-node:v1.18.2
 
    # verify all containers are up
    for i in $(seq 0 $((num_syscont-1))); do

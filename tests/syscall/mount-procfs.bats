@@ -20,7 +20,7 @@ function teardown() {
 # Verify a new procfs mount is a replica of the procfs mount at /proc
 @test "mount procfs" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   # mount procfs at $mnt_path and verify it's backed by sysbox-fs
@@ -64,7 +64,7 @@ function teardown() {
 
 @test "mount procfs read-only" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -84,7 +84,7 @@ function teardown() {
 
 @test "mount procfs redudant" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/tmp/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -116,7 +116,7 @@ function teardown() {
   local mnt_path=/root/proc
   local node=sys/net/netfilter/nf_conntrack_max
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # mount procfs at $mnt_path
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -172,7 +172,7 @@ function teardown() {
   local mnt_path2=/tmp/proc2
   local node=sys/net/netfilter/nf_conntrack_max
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path1"
   [ "$status" -eq 0 ]
@@ -228,8 +228,8 @@ function teardown() {
   local mnt_path=/tmp/proc
   local node=sys/net/netfilter/nf_conntrack_max
 
-  syscont0=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # mount procfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"
@@ -281,8 +281,8 @@ function teardown() {
   local mnt_path=/tmp/proc
   local node=sys/net/netfilter/nf_conntrack_max
 
-  syscont0=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
-  syscont1=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont0=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
+  syscont1=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   # mount procfs inside the first sys container
   docker exec "$syscont0" bash -c "mkdir -p $mnt_path"
@@ -333,7 +333,7 @@ function teardown() {
 @test "procfs remount" {
 
   # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
-  # local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  # local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/root/proc
 
@@ -360,7 +360,7 @@ function teardown() {
 
 @test "mount procfs hidepid" {
 
-  #local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  #local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
   local mnt_path=/tmp/proc
 
@@ -393,7 +393,7 @@ function teardown() {
   local mnt_path=/root/sys
   local node=sys/net/netfilter/nf_conntrack_max
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
@@ -415,7 +415,7 @@ function teardown() {
   docker_stop "$syscont"
 
   # test read-only procfs mount with read-write remounts of submounts
-  syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
   [ "$status" -eq 0 ]
@@ -439,7 +439,7 @@ function teardown() {
 
 @test "procfs move mount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path1=/tmp/proc1
   local mnt_path2=/tmp/proc2
 
@@ -464,7 +464,7 @@ function teardown() {
 
   # verify that unmounting /proc is not allowed
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "umount /proc"
   [ "$status" -eq 1 ]
@@ -501,7 +501,7 @@ function teardown() {
 # verify that it's not possible to do unmounts of procfs submounts managed by sysbox-fs
 @test "procfs unmount submount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
   for node in "${PROCFS_EMU[@]}"; do
@@ -539,7 +539,7 @@ function teardown() {
 
 @test "procfs mount in inner container" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -564,7 +564,7 @@ function teardown() {
 
 @test "procfs mount in inner privileged container" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -601,7 +601,7 @@ function teardown() {
 
 @test "procfs mount in inner privileged container (ubuntu)" {
 
-  local syscont=$(docker_run --rm nestybox/ubuntu-bionic-docker:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -658,7 +658,7 @@ function teardown() {
   #
   # That is, we should see stacked mounts backed by sysbox-fs for /proc/sys, /proc/uptime, etc.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "unshare -i -m -n -p -u -f --mount-proc=/proc bash -c \"mount | grep sysbox\""
   local sysbox_mounts=$output
@@ -680,7 +680,7 @@ function teardown() {
   # its namespaces; this should create stacked mounts on /proc in the
   # process' mount ns.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" bash -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -717,7 +717,7 @@ function teardown() {
 
   # verify /proc can be bind-mounted somewhere else
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -747,7 +747,7 @@ function teardown() {
 @test "bind-to-self procfs submount" {
 
   # Verify sysbox-fs ignores bind-to-self on submounts
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local node=/proc/sys
 
   docker exec "$syscont" bash -c "mount --bind $node $node"
@@ -770,7 +770,7 @@ function teardown() {
 
 @test "bind over procfs submount" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local node=/proc/uptime
 
   # Verify bind-mount over submount managed by sysbox-fs
@@ -820,7 +820,7 @@ function teardown() {
   # bind-mount to be applied recursively on all sysbox-fs managed
   # submounts.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -846,7 +846,7 @@ function teardown() {
   # bind-mount to be applied only to /proc/sys and no other sysbox-fs
   # submounts.
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc/sys
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -876,7 +876,7 @@ function teardown() {
 
   # verify a bind mount of /proc to another dir has private propagation by default
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -902,7 +902,7 @@ function teardown() {
 
   # verify a shared propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -948,7 +948,7 @@ function teardown() {
 
   # verify a slave propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -992,7 +992,7 @@ function teardown() {
 
   # verify unbindable propagation
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"

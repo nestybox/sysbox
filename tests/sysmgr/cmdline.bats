@@ -35,7 +35,7 @@ function sysbox_mgr_stopped() {
    sysbox_mgr_start --data-root $new_data_root
 
    # Launch an sys container and verify all is good
-   local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
    docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
    [ "$status" -eq 0 ]

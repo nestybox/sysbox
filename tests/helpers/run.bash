@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 
+. $(dirname ${BASH_SOURCE[0]})/setup.bash
+
 #
 # Bats command execution wrappers
 #
-
-. $(dirname ${BASH_SOURCE[0]})/setup.bash
 
 # Call this from setup() to run a single test
 #

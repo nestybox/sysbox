@@ -15,7 +15,7 @@ function teardown() {
 
 @test "dind default net" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify basic docker bridge networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
@@ -85,7 +85,7 @@ function teardown() {
   # verify basic docker user-defined networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -181,7 +181,7 @@ function teardown() {
   # verify basic docker host networking inside a sys container
   # (based on https://docs.docker.com/network/network-tutorial-standalone/)
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

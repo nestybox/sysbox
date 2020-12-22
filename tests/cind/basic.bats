@@ -14,7 +14,7 @@ function teardown() {
 
 @test "cind basic" {
 
-  syscont=$(docker_run --rm nestybox/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "containerd > /var/log/containerd.log --log-level=debug 2>&1"
   [ "$status" -eq 0 ]
@@ -47,7 +47,7 @@ function teardown() {
 
 @test "commit with inner images" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "containerd > /var/log/containerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -125,7 +125,7 @@ function teardown() {
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/cind
-  docker build --no-cache -t nestybox/sc-with-inner-ctrd-img:latest .
+  docker build --no-cache -t sc-with-inner-ctrd-img:latest .
   [ "$status" -eq 0 ]
 
   docker image prune -f
@@ -133,7 +133,7 @@ function teardown() {
   popd
 
   # run generated container to confirm that images are embedded in it
-  local syscont=$(docker_run --rm nestybox/sc-with-inner-ctrd-img:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm sc-with-inner-ctrd-img:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "containerd > /var/log/containerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -161,6 +161,6 @@ function teardown() {
 
   # cleanup
   docker_stop "$syscont"
-  docker image rm nestybox/sc-with-inner-ctrd-img:latest
+  docker image rm sc-with-inner-ctrd-img:latest
   docker image prune -f
 }

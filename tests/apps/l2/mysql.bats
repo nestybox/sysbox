@@ -39,7 +39,7 @@ EOF
   # launch sys container; bind-mount the mysql script into it
   local syscont=$(docker_run --rm \
                    --mount type=bind,source="${HOME}"/mysql-scr.txt,target=/mysql-scr.txt \
-                   nestybox/test-syscont tail -f /dev/null)
+                   ${CTR_IMG_REPO}/test-syscont tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -78,7 +78,7 @@ EOF
   # ubuntu image which is a bit too heavy for an already painfully slow test.
 
   # launch a sys container
-  local syscont=$(docker_run --rm nestybox/test-syscont tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"

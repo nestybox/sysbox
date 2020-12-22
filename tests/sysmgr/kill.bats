@@ -15,8 +15,8 @@ function teardown() {
 
 @test "kill SIGTERM" {
 
-  local syscont0=$(docker_run --rm nestybox/syscont-inner-img:latest tail -f /dev/null)
-  local syscont1=$(docker_run --rm nestybox/syscont-inner-img:latest tail -f /dev/null)
+  local syscont0=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img:latest tail -f /dev/null)
+  local syscont1=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img:latest tail -f /dev/null)
 
   # write some data into the sys container's /var/lib/docker; we will
   # later verify that this data is sync'd to the sys container's

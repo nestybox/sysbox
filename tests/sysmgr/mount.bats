@@ -13,7 +13,7 @@ load ../helpers/sysbox-health
 @test "kernel lib-module mount" {
 
   local kernel_rel=$(uname -r)
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
@@ -147,7 +147,7 @@ load ../helpers/sysbox-health
   orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
 
   # verify chown is applied when container starts
-  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst nestybox/alpine-docker-dbg tail -f /dev/null)
+  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   uid=$(docker_root_uid_map $syscont)
   gid=$(docker_root_gid_map $syscont)
@@ -200,7 +200,7 @@ load ../helpers/sysbox-health
   chown $sysbox_subid:$sysbox_subid $mnt_src $mnt_src/sub1
 
   # verify chown is skipped when container starts
-  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst nestybox/alpine-docker-dbg tail -f /dev/null)
+  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   sub2_uid=$(stat -c "%u" $mnt_src/sub1/sub2)
   sub2_gid=$(stat -c "%g" $mnt_src/sub1/sub2)

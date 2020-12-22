@@ -28,7 +28,7 @@ export num_workers1=2
 export KUBECONFIG=${HOME}/.kube/${cluster1}-config
 
 # Cluster's node image.
-export node_image="nestybox/k8s-node-test:v1.18.2"
+export node_image="${CTR_IMG_REPO}/k8s-node-test:v1.18.2"
 
 
 function teardown() {

@@ -18,7 +18,7 @@ function teardown() {
 
   # TODO: test chmod dir permissions & path-resolution
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
