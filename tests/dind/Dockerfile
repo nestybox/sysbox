@@ -1,4 +1,4 @@
-FROM nestybox/alpine-docker-dbg
+FROM ghcr.io/nestybox/alpine-docker-dbg
 
 COPY docker-pull.sh /usr/bin
 RUN chmod +x /usr/bin/docker-pull.sh && docker-pull.sh
