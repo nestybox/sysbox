@@ -50,7 +50,7 @@ export release=$(get_release)
 
    wait_for_inner_dockerd sind
 
-   docker exec sind sh -c "docker run --name inner --runtime=sysbox-runc -d --rm nestybox/ubuntu-focal-systemd-docker"
+   docker exec sind sh -c "docker run --name inner --runtime=sysbox-runc -d --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker"
    [ "$status" -eq 0 ]
 
    # TODO: for some reason the following retry does not work; thus we opt for a

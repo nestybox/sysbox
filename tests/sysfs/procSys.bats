@@ -371,7 +371,7 @@ EOF
   # deploy the sys containers
   declare -a syscont
   for i in $(seq 1 $num_sc); do
-    syscont[$i]=$(docker_run --rm --hostname="sc_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont[$i]=$(docker_run --rm --hostname="sc_$i" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
     docker cp $worker_scr ${syscont[$i]}:/worker.sh
     [ "$status" -eq 0 ]
   done
@@ -452,7 +452,7 @@ EOF
   chmod +x $worker_scr
 
   # launch a sys container
-  local syscont=$(docker_run --rm --name syscont nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --name syscont ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -548,7 +548,7 @@ EOF
   chmod +x $worker_scr
 
   # launch a sys container
-  local syscont=$(docker_run --rm --name syscont nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --name syscont ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # leave some wiggle room
   sleep 2

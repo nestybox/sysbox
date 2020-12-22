@@ -18,7 +18,7 @@ function teardown() {
 
   pre=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
-  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   docker_stop "$syscont_name"
 
   post=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
@@ -33,7 +33,7 @@ function teardown() {
 
   pre=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
-  local syscont_name=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   docker exec "$syscont_name" echo
   docker_stop "$syscont_name"
 

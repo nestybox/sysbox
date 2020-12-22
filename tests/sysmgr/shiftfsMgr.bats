@@ -25,7 +25,7 @@ function teardown() {
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
 
@@ -83,7 +83,7 @@ function teardown() {
   declare -a syscont_name
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   done
 
   # verify shiftfs mounts on each look good
@@ -165,7 +165,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # Launch sys container with bind mount
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/target" | wc -l'
@@ -202,7 +202,7 @@ function teardown() {
   run touch "$test_file"
   [ "$status" -eq 0 ]
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${test_file},target=/mnt/testFile nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${test_file},target=/mnt/testFile ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/testFile" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
@@ -263,7 +263,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # Launch sys container with bind mount
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${bind_src},target=/mnt/target ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # Verify things look good inside the sys container
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/target" | wc -l'

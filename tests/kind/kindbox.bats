@@ -29,7 +29,7 @@ export net=bridge
 export KUBECONFIG=${HOME}/.kube/${cluster}-config
 
 # Cluster's node image.
-export node_image="nestybox/k8s-node-test:v1.18.2"
+export node_image="${CTR_IMG_REPO}/k8s-node-test:v1.18.2"
 
 function teardown() {
   sysbox_log_check

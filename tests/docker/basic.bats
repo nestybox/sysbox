@@ -12,7 +12,7 @@ function teardown() {
 }
 
 @test "basic sys container" {
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" hostname syscont
   [ "$status" -eq 0 ]
@@ -25,7 +25,7 @@ function teardown() {
 }
 
 @test "docker --init" {
-  local syscont=$(docker_run --init --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --init --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" pstree
   [ "$status" -eq 0 ]
@@ -41,7 +41,7 @@ function teardown() {
   local oom_max_val=1000
   local syscont=""
 
-  syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # Verify default docker oom value is 0
   docker exec "$syscont" cat /proc/1/oom_score_adj
@@ -59,7 +59,7 @@ function teardown() {
 
   # Verify override of default oom value
   local custom_val=-1
-  syscont=$(docker_run --rm --oom-score-adj=$custom_val nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --oom-score-adj=$custom_val ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" cat /proc/1/oom_score_adj
   [ "$status" -eq 0 ]

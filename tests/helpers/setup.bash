@@ -7,7 +7,12 @@
 # Note: these should not use bats, so as to allow their use
 # when manually reproducing tests.
 
-SYSCONT_NAME=""
+# Container registry for test container images
+#
+# NOTE: we use the GitHub Container Registry (ghcr.io); in the past we used the
+# Docker registry but we don't do this since late 2020 because it's rate-limited
+# on anonymous downloads.
+export CTR_IMG_REPO="ghcr.io/nestybox"
 
 # Note: work-dir must not be on tmpfs; otherwise the sys container
 # fails to launch with "permission-denied" when not using uid-shifting
@@ -40,6 +45,8 @@ RUNC_FLAGS="--no-kernel-check"
 UID_MAP=100000
 GID_MAP=100000
 ID_MAP_SIZE=65536
+
+SYSCONT_NAME=""
 
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
 # (copied from runc/tests/integration/helpers.bash)

@@ -40,7 +40,7 @@ function teardown() {
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
-  docker build --no-cache -t nestybox/sc-with-inner-img:latest .
+  docker build --no-cache -t sc-with-inner-img:latest .
   [ "$status" -eq 0 ]
 
   docker image prune -f
@@ -48,7 +48,7 @@ function teardown() {
   popd
 
   # run generated container to confirm that images are embedded in it
-  local syscont=$(docker_run --rm nestybox/sc-with-inner-img:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm sc-with-inner-img:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -80,7 +80,7 @@ function teardown() {
 
   # cleanup
   docker_stop "$syscont"
-  docker image rm nestybox/sc-with-inner-img:latest
+  docker image rm sc-with-inner-img:latest
   docker image prune -f
 
   if [[ $premount == "true" ]]; then
@@ -95,7 +95,7 @@ function teardown() {
 
 @test "commit with inner images" {
 
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -177,7 +177,7 @@ function teardown() {
 @test "commit with removed inner image" {
 
   # launch a sys container that comes with inner images baked-in
-  local syscont=$(docker_run --rm nestybox/syscont-inner-img tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -223,5 +223,5 @@ function teardown() {
   # cleanup
   docker_stop "$syscont"
   docker image rm image-commit
-  docker image rm nestybox/syscont-inner-img:latest
+  docker image rm ${CTR_IMG_REPO}/syscont-inner-img:latest
 }

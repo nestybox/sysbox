@@ -115,7 +115,7 @@ function teardown() {
   docker volume create testVol
   [ "$status" -eq 0 ]
 
-  local syscont=$(docker_run --rm --mount source=testVol,target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount source=testVol,target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
@@ -161,7 +161,7 @@ function teardown() {
     chown -R $subid:$subid ${testDir}
   fi
 
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/docker  \""
   [ "$status" -eq 0 ]
@@ -215,7 +215,7 @@ function teardown() {
   fi
 
   # Let's start a new container with the same bind-mount, and verify the mount looks good
-  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   if [ -n "$SHIFT_UIDS" ]; then
     uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
@@ -262,10 +262,10 @@ function teardown() {
     chown -R $subid:$subid ${testDir}
   fi
 
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
-  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
   docker_stop "$syscont_2"
@@ -273,7 +273,7 @@ function teardown() {
 
   sleep 2
 
-  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   docker_stop "$syscont"
 
   rm -r ${testDir}
@@ -306,7 +306,7 @@ function teardown() {
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/docker nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
     if [ -n "$SHIFT_UIDS" ]; then
       uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
@@ -352,7 +352,7 @@ function teardown() {
     chown -R $subid:$subid ${testDir}
   fi
 
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" sh -c "findmnt | grep \"\/var\/lib\/kubelet  \""
   [ "$status" -eq 0 ]
@@ -401,10 +401,10 @@ function teardown() {
     chown -R $subid:$subid ${testDir}
   fi
 
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
-  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
   docker_stop "$syscont_2"
@@ -412,7 +412,7 @@ function teardown() {
 
   sleep 2
 
-  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   docker_stop "$syscont"
 
   rm -r ${testDir}
@@ -445,7 +445,7 @@ function teardown() {
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/kubelet nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
     if [ -n "$SHIFT_UIDS" ]; then
       uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
@@ -478,7 +478,7 @@ function teardown() {
          -v /mnt/a:/mnt/a \
          -v /mnt/scratch/a:/mnt/scratch/a \
          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-         nestybox/alpine-docker-dbg:latest \
+         ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
          echo hello
 
   [ "$status" -eq 0 ]
@@ -492,7 +492,7 @@ function teardown() {
     docker run --runtime=sysbox-runc --rm \
            -v /mnt/scratch:/mnt/scratch \
            -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-           nestybox/alpine-docker-dbg:latest \
+           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
            echo hello
 
     [ "$status" -ne 0 ]
@@ -503,7 +503,7 @@ function teardown() {
     docker run --runtime=sysbox-runc --rm \
            -v /mnt/scratch:/mnt/scratch \
            -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-           nestybox/alpine-docker-dbg:latest \
+           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
            echo hello
 
     [ "$status" -eq 0 ]

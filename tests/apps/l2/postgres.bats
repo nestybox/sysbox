@@ -25,7 +25,7 @@ function wait_for_inner_postgres() {
   # postgres works
 
   # launch sys container; bind-mount the postgres script into it
-  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   # must choose "overlay" driver to avoid an "overlay2" driver bug
   # (https://stackoverflow.com/questions/45731683/docker-pull-operation-not-permitted)
@@ -56,7 +56,7 @@ function wait_for_inner_postgres() {
   # container and verifies postgres client can access the server.
 
   # launch a sys container
-  SYSCONT_NAME=$(docker_run --rm nestybox/test-syscont:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1"

@@ -13,7 +13,7 @@ function teardown() {
 
 @test "containerdVolMgr basic" {
 
-  SYSCONT_NAME=$(docker_run --rm nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   #
   # verify things look good inside the sys container
@@ -54,7 +54,7 @@ function teardown() {
   # Verify the sys container containerd vol persists across container
   # start-stop-start events
 
-  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
@@ -81,7 +81,7 @@ function teardown() {
   # Verify the sys container containerd vol is removed when a
   # container is removed
 
-  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # short ID -> full ID
   run sh -c "docker inspect \"$SYSCONT_NAME\" | jq '.[0] | .Id' | sed 's/\"//g'"
@@ -112,7 +112,7 @@ function teardown() {
 
 @test "containerdVolMgr consecutive restart" {
 
-  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/test"
   [ "$status" -eq 0 ]
@@ -137,7 +137,7 @@ function teardown() {
 
 @test "containerdVolMgr sync-out" {
 
-  SYSCONT_NAME=$(docker_run nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
 
   docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/dummyFile"

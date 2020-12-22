@@ -36,7 +36,7 @@ EOF
   # launch a sys container
   SYSCONT_NAME=$(docker_run --rm \
                  --mount type=bind,source="${HOME}"/prometheus.yml,target=/root/prometheus.yml \
-                 nestybox/test-syscont:latest tail -f /dev/null)
+                 ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
   docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"

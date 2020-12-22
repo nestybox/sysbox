@@ -14,7 +14,7 @@ function teardown() {
 
 @test "rpm in inner redhat container (sysbox issue 130)" {
 
-   local syscont=$(docker_run --rm nestybox/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    docker exec "$syscont" sh -c "docker run -d --rm registry.access.redhat.com/ubi8/ubi:8.2-347 tail -f /dev/null"

@@ -17,7 +17,7 @@ function basic_test {
    net=$1
 
    # Launch swarm manager sys container
-   local mgr=$(docker_run --rm --name manager --net=$net nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+   local mgr=$(docker_run --rm --name manager --net=$net ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
    # init swarm in manager, get join token
    docker exec -d $mgr sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -39,7 +39,7 @@ function basic_test {
    local join_cmd="docker swarm join --token $mgr_token $mgr_ip:2377"
 
    # Launch worker node
-   local worker=$(docker_run --rm --name worker --net=$net nestybox/alpine-docker-dbg:latest tail -f /dev/null)
+   local worker=$(docker_run --rm --name worker --net=$net ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
    # Join the worker to the swarm
    docker exec -d $worker sh -c "dockerd > /var/log/dockerd.log 2>&1"
