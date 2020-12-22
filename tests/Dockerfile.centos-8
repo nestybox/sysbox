@@ -144,9 +144,6 @@ RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
 
-# nestybox docker hub login credentials (unsecure)
-COPY .docker/config.json /root/.docker/config.json
-
 # test scripts
 COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
