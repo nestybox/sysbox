@@ -266,7 +266,7 @@ function teardown() {
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
   local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
+  egrep -q "mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
   docker_stop "$syscont_2"
   docker_stop "$syscont"
@@ -405,7 +405,7 @@ function teardown() {
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
   local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  egrep -q "WARN.+ mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
+  egrep -q "mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
   docker_stop "$syscont_2"
   docker_stop "$syscont"

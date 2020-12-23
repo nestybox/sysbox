@@ -23,7 +23,7 @@ GREP_CTX_LINES=10
 function sysboxfs_log_check() {
   local ret
 
-  ret=$(grep -C $GREP_CTX_LINES "ERRO" $SYSBOX_FS_LOG)
+  ret=$(grep -C $GREP_CTX_LINES "level=error" $SYSBOX_FS_LOG)
   if [ $? -eq 0 ]; then
     printf "sysbox-fs log has errors:\n $ret"
     return 1
@@ -95,7 +95,7 @@ function sysboxfs_health_check() {
 function sysboxmgr_log_check() {
   local ret
 
-  ret=$(grep -C $GREP_CTX_LINES "ERRO" $SYSBOX_MGR_LOG)
+  ret=$(grep -C $GREP_CTX_LINES "level=error" $SYSBOX_MGR_LOG)
   if [ $? -eq 0 ]; then
     printf "sysbox-mgr log has errors:\n $ret"
     return 1
