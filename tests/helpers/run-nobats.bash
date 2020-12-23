@@ -43,7 +43,7 @@ function sv_mgr_start() {
     systemctl restart sysbox
     sleep 3
   else
-    sysbox-mgr --log /dev/stdout $@ > /var/log/sysbox-mgr.log 2>&1 &
+    sysbox-mgr --log /var/log/sybox-mgr.log $@ &
     sleep 1
   fi
 }
