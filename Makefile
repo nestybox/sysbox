@@ -150,19 +150,19 @@ sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
-sysbox-runc-debug: sysbox-ipc
+sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
 
-sysbox-runc-static: sysbox-ipc
+sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
 
 sysbox-fs: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make
 
-sysbox-fs-debug: sysbox-ipc
+sysbox-fs-debug: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-debug
 
-sysbox-fs-static: sysbox-ipc
+sysbox-fs-static: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-static
 
 sysbox-mgr: sysbox-ipc
