@@ -53,6 +53,19 @@ learn new tools.
 
 The complete list of features is [here](#sysbox-features).
 
+## ** NOTICE FOR DEVELOPERS **
+
+For developers cloning this repo: the sysbox-runc sub-repo will be rebased on
+01/09/2021. This rebasing brings in the many changes from the [OCI runc](https://github.com/opencontainers/runc)
+added to that repo over the last year (security fixes, functional improvements, etc.)
+
+As part of this, the Git commit history for sysbox-runc will be rewritten. Thus,
+you'll likely need to clone the Sysbox repo again after 01/09/20201 (as otherwise
+pulls from the sysbox-runc sub-repo won't work).
+
+We expect this to be a one-time occurrence. Going forward we will periodically
+merge in changes from the OCI runc into sysbox-runc without rebasing.
+
 ## Contents
 
 -   [License](#license)
@@ -439,4 +452,3 @@ find it interesting and that it helps you use containers in new and more powerfu
 ways.
 
 [slack]: https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/
-
