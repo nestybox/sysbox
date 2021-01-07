@@ -139,6 +139,9 @@ RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# shellcheck for lint of shell scripts
+RUN apt-get update && apt-get install -y shellcheck
+
 # Go Dlv for debugging
 RUN go get github.com/go-delve/delve/cmd/dlv
 
