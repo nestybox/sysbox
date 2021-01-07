@@ -32,7 +32,8 @@ SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
-LIB_SECCOMP_DIR := sysbox-libs/libseccomp-golang
+SYSLIBS_DIR     := sysbox-libs
+LIB_SECCOMP_DIR := $(SYSLIBS_DIR)/libseccomp-golang
 SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
 # Consider to have this one moved out within sysbox-runc folder.
@@ -49,6 +50,8 @@ endif
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
+TEST_FILES := $(shell find tests -type f | egrep "\.bats")
+TEST_SCR := $(shell find tests -type f | egrep "\.sh|\.bash")
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
@@ -356,17 +359,39 @@ test-sind-shell: test-img
 		sindTestContainerInit && /bin/bash"
 
 #
+# Code Hygiene targets
+#
+
+validate: ## runs lint checker on sysbox source code and tests
+validate: test-img
+	@printf "\n** Building sysbox **\n\n"
+	$(DOCKER_SYSBOX_BLD) /bin/bash -c "make validate-local"
+
+validate-local: validate-sysbox-local validate-tests-local
+
+validate-sysbox-local:
+	@cd $(SYSRUNC_DIR) && make validate
+	@cd $(SYSFS_DIR) && make validate
+	@cd $(SYSMGR_DIR) && make validate
+	@cd $(SYSLIBS_DIR) && make validate
+	@cd $(SYSIPC_DIR) && make validate
+
+validate-tests-local:
+	shellcheck $(TEST_FILES)
+	shellcheck $(TEST_SCR)
+
+shfmt: ## formats shell scripts in the repo; requires shfmt.
+shfmt:
+	shfmt -ln bats -d -w $(TEST_FILES)
+	shfmt -ln bash -d -w $(TEST_SCR)
+
+#
 # Misc targets
 #
 
 # recvtty is a tool inside the sysbox-runc repo that is needed by some integration tests
 sysbox-runc-recvtty:
 	@cd $(SYSRUNC_DIR) && make recvtty
-
-
-#
-# Misc targets
-#
 
 listRuncPkgs:
 	@echo $(runcPkgs)
