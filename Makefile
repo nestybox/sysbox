@@ -19,6 +19,7 @@
 	sysbox-in-docker sysbox-in-docker-local \
 	test-sind-shell \
 	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal ubuntu-eoan \
+	lint lint-local lint-sysbox-local lint-tests-local shfmt
 	clean
 
 export SHELL=bash
@@ -51,7 +52,7 @@ endif
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
 TEST_FILES := $(shell find tests -type f | egrep "\.bats")
-TEST_SCR := $(shell find tests -type f | egrep "\.sh|\.bash")
+TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
@@ -362,21 +363,21 @@ test-sind-shell: test-img
 # Code Hygiene targets
 #
 
-validate: ## runs lint checker on sysbox source code and tests
-validate: test-img
+lint: ## runs lint checker on sysbox source code and tests
+lint: test-img
 	@printf "\n** Building sysbox **\n\n"
-	$(DOCKER_SYSBOX_BLD) /bin/bash -c "make validate-local"
+	$(DOCKER_SYSBOX_BLD) /bin/bash -c "make lint-local"
 
-validate-local: validate-sysbox-local validate-tests-local
+lint-local: lint-sysbox-local lint-tests-local
 
-validate-sysbox-local:
-	@cd $(SYSRUNC_DIR) && make validate
-	@cd $(SYSFS_DIR) && make validate
-	@cd $(SYSMGR_DIR) && make validate
-	@cd $(SYSLIBS_DIR) && make validate
-	@cd $(SYSIPC_DIR) && make validate
+lint-sysbox-local:
+	@cd $(SYSRUNC_DIR) && make lint
+	@cd $(SYSMGR_DIR) && make lint
+	@cd $(SYSFS_DIR) && make lint
+	@cd $(SYSIPC_DIR) && make lint
+	@cd $(SYSLIBS_DIR) && make lint
 
-validate-tests-local:
+lint-tests-local:
 	shellcheck $(TEST_FILES)
 	shellcheck $(TEST_SCR)
 
