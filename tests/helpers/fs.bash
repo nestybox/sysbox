@@ -37,6 +37,23 @@ SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
                 /proc/sys/net/ipv4/vs/conntrack \
                 /proc/sys/net/unix/max_dgram_qlen"
 
+# Given an 'ls -l' listing of a single file, verifies the ownership is as expected
+function verify_owner() {
+  if [ $# -le 2 ]; then
+     return 1
+  fi
+
+  local want_uid=$1
+  local want_gid=$2
+  shift 2
+  local listing=$@
+
+  local uid=$(echo "${listing}" | awk '{print $3}')
+  local gid=$(echo "${listing}" | awk '{print $4}')
+
+  [[ "$uid" == "$want_uid" ]] && [[ "$gid" == "$want_gid" ]]
+}
+
 # Given an 'ls -l' listing of a single file, verifies the permissions and ownership
 function verify_perm_owner() {
   if [ $# -le 3 ]; then
