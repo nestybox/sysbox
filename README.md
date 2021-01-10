@@ -55,13 +55,13 @@ The complete list of features is [here](#sysbox-features).
 
 ## ** NOTICE FOR DEVELOPERS **
 
-For developers cloning this repo: the sysbox-runc sub-repo will be rebased on
+For developers cloning this repo: the sysbox-runc sub-repo was rebased on
 01/09/2021. This rebasing brings in the many changes from the [OCI runc](https://github.com/opencontainers/runc)
 added to that repo over the last year (security fixes, functional improvements, etc.)
 
-As part of this, the Git commit history for sysbox-runc will be rewritten. Thus,
-you'll likely need to clone the Sysbox repo again after 01/09/20201 (as otherwise
-pulls from the sysbox-runc sub-repo won't work).
+As part of this, the Git commit history for sysbox-runc has been rewritten. Thus,
+you'll likely need to [clone the Sysbox repo](docs/developers-guide/build.md#cloning-the-sysbox-repo)
+again after 01/09/20201 (as otherwise pulls from the sysbox-runc sub-repo won't work).
 
 We expect this to be a one-time occurrence. Going forward we will periodically
 merge in changes from the OCI runc into sysbox-runc without rebasing.
