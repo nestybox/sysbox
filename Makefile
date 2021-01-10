@@ -283,13 +283,13 @@ test-mgr: test-img
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
 
 test-shell: ## Get a shell in the test container (useful for debug)
-test-shell: test-img
+test-shell: test-img sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && /bin/bash"
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
-test-shell-shiftuid: test-img
+test-shell-shiftuid: test-img sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
@@ -313,10 +313,10 @@ test-cleanup: test-img
 # of the host.
 #
 
-test-sysbox-local:
+test-sysbox-local: sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testSysbox $(TESTPATH)
 
-test-sysbox-local-ci:
+test-sysbox-local-ci: sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testSysboxCI $(TESTPATH)
 
 test-fs-local: sysbox-ipc
