@@ -482,7 +482,7 @@ function teardown() {
 
   docker exec "$syscont" bash -c "umount /sys"
   [ "$status" -eq 1 ]
-  [[ "$output" =~ "busy" ]]
+  [[ "$output" =~ "not permitted" ]]
 
   docker exec "$syscont" bash -c "mount | grep \"sysfs on /sys\""
   [ "$status" -eq 0 ]
@@ -517,10 +517,12 @@ function teardown() {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  # try to unmount sysfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
+  # try to unmount sysfs sysbox-fs backed submounts (sysbox-fs should prevent this
+  # from happening).
   for node in "${SYSFS_EMU[@]}"; do
     docker exec "$syscont" bash -c "umount /sys/$node"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "not permitted" ]]
   done
 
   verify_syscont_sysfs_mnt $syscont /sys
@@ -592,9 +594,9 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 
-  # unmount is also ignored
+  # Unmount of an immutable resource must not be allowed
   docker exec "$syscont" bash -c "umount $node"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
 
   docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
   [ "$status" -eq 0 ]
