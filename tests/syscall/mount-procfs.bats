@@ -469,7 +469,7 @@ function teardown() {
 
   docker exec "$syscont" bash -c "umount /proc"
   [ "$status" -eq 1 ]
-  [[ "$output" =~ "not permitted" ]]
+  [[ "$output" =~ "busy" ]]
 
   docker exec "$syscont" bash -c "mount | grep \"proc on /proc\""
   [ "$status" -eq 0 ]
@@ -504,12 +504,10 @@ function teardown() {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should prevent this
-  # from happening).
+  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
   for node in "${PROCFS_EMU[@]}"; do
     docker exec "$syscont" bash -c "umount /proc/$node"
-    [ "$status" -eq 1 ]
-    [[ "$output" =~ "not permitted" ]]
+    [ "$status" -eq 0 ]
   done
 
   verify_syscont_procfs_mnt $syscont /proc
@@ -760,9 +758,9 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 
-  # Unmount of an immutable resource must not be allowed
+  # unmount be also ignored
   docker exec "$syscont" bash -c "umount $node"
-  [ "$status" -eq 1 ]
+  [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
   [ "$status" -eq 0 ]
