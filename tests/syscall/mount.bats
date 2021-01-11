@@ -11,6 +11,8 @@ load ../helpers/environment
 load ../helpers/mounts
 load ../helpers/sysbox-health
 
+skipTest=0
+
 function teardown() {
   sysbox_log_check
 }
@@ -19,9 +21,13 @@ function teardown() {
 # Test to verify common mount syscall checks performed by sysbox
 #
 
+# Testcase #1.
+#
 # Verify that mount syscall emulation performs correct path resolution (per path_resolution(7))
 @test "mount path-resolution" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   # TODO: test chmod dir permissions & path-resolution
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -110,9 +116,13 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #2.
+#
 # Verify that mount syscall emulation does correct permission checks
 @test "mount permission checking" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
@@ -137,9 +147,13 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #3.
+#
 # Verify that mount syscall emulation does correct capability checks
 @test "mount capability checking" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
@@ -182,16 +196,19 @@ function teardown() {
   docker_stop "$syscont"
 }
 
-#
 # Test to verify sys container immutable mounts.
 #
 # Note: a sys container immutable mount is a mount that is setup at container
 # creation time.
 #
 
+# Testcase #4.
+#
 # Ensure immutable mounts can't be unmounted from inside the container
 @test "immutable mount can't be unmounted" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_mounts=$(list_container_mounts $syscont)
 
@@ -208,10 +225,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #5.
+#
 # Ensure that a read-only immutable mount can't be remounted as read-write
 # inside the container.
 @test "immutable ro mount can't be remounted rw" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
 
@@ -228,10 +249,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #6.
+#
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
 # the container.
 @test "immutable rw mount can be remounted ro" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts $syscont)
 
@@ -253,10 +278,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #7.
+#
 # Ensure that a read-only immutable mount *can* be remounted as read-only inside
 # the container.
 @test "immutable ro mount can be remounted ro" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
 
@@ -273,10 +302,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #8.
+#
 # Ensure that a read-write immutable mount *can* be remounted as read-write or
 # read-only inside the container.
 @test "immutable rw mount can be remounted rw" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts $syscont)
 
@@ -293,10 +326,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #9.
+#
 # Ensure that a read-only immutable mount can't be bind-mounted
 # to a new mountpoint then re-mounted read-write
 @test "immutable ro mount can't be bind-mounted rw" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
   local target=/root/target
@@ -342,10 +379,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #10.
+#
 # Ensure that a read-write immutable mount can be bind-mounted
 # to a new mountpoint then re-mounted read-only
 @test "immutable rw mount can be bind-mounted ro" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts $syscont)
   local target=/root/target
@@ -407,10 +448,14 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #11.
+#
 # Ensure that a read-only immutable mount *can* be masked by
 # a new read-write mount on top of it.
 @test "rw mount on top of immutable ro mount" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
 
@@ -448,12 +493,16 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #12.
+#
 # Ensure that a read-write immutable mount *can* be masked by
 # a new read-only mount on top of it.
 @test "ro mount on top of immutable rw mount" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
-  local immutable_rw_mounts=$(list_container_rw_mounts $syscont)
+  local immutable_rw_mounts=$(list_container_rw_dir_mounts $syscont)
 
   for m in $immutable_rw_mounts; do
 
@@ -489,8 +538,11 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #13.
 @test "immutable ro mount in inner mnt ns" {
-
+  # if [[ $skipTest -eq 1 ]]; then
+  #   skip
+  # fi
   local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
 
@@ -502,6 +554,13 @@ function teardown() {
   inner_pid=$output
 
   for m in $immutable_ro_mounts; do
+    # skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover unmounting ops).
+    if [[ $m =~ "/proc" ]] || [[ $m =~ "/proc/*" ]] ||
+        [[ $m =~ "/sys" ]] || [[ $m =~ "/sys/*" ]]; then
+      continue
+    fi
+
     docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount $m"
     [ "$status" -ne 0 ]
 
@@ -512,9 +571,12 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #14.
 @test "immutable ro mount in inner container" {
-
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg tail -f /dev/null)
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
   local linux_libmod_mount=$(echo $immutable_ro_mounts |  tr ' ' '\n' | grep "lib/modules")
 
@@ -538,9 +600,12 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #15.
 @test "immutable ro mount in inner priv container" {
-
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg tail -f /dev/null)
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
   local linux_libmod_mount=$(echo $immutable_ro_mounts |  tr ' ' '\n' | grep "lib/modules")
 
@@ -559,7 +624,7 @@ function teardown() {
   [ "$status" -ne 0 ]
 
   # This should also fail (can't remount a sysbox immutable mount from inside an inner priv container)
-  docker exec "$syscont" sh -c "docker exec inner sh -c \"mount -o remount,bind,rw $linux_libmod_mount\""
+    docker exec "$syscont" sh -c "docker exec inner sh -c \"mount -o remount,bind,rw $linux_libmod_mount\""
   [ "$status" -ne 0 ]
 
   docker exec "$syscont" sh -c "docker stop -t0 inner"
@@ -568,8 +633,11 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #16.
 @test "immutable rw mount in inner container" {
-
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
   local mnt=/root/dummy
   mkdir -p $mnt
 
@@ -578,7 +646,7 @@ function teardown() {
     chown -R $subid:$subid $mnt
   fi
 
-  local syscont=$(docker_run --rm -v $mnt:$mnt nestybox/alpine-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v $mnt:$mnt ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "touch $mnt"
   [ "$status" -eq 0 ]
@@ -611,9 +679,12 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+# Testcase #17.
 @test "don't confuse inner priv container mount with immutable mount" {
-
-  local syscont=$(docker_run --rm nestybox/alpine-docker-dbg tail -f /dev/null)
+  if [[ $skipTest -eq 1 ]]; then
+    skip
+  fi
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts $syscont)
   local linux_libmod_mount=$(echo $immutable_ro_mounts |  tr ' ' '\n' | grep "lib/modules")
 
@@ -650,6 +721,106 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker stop -t0 inner"
   [ "$status" -eq 0 ]
+
+  docker_stop "$syscont"
+}
+
+# Testcase #18.
+@test "immutable null mount in inner mnt ns" {
+  # if [[ $skipTest -eq 1 ]]; then
+  #   skip
+  # fi
+  local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper debian:latest tail -f /dev/null)
+  local immutable_null_mounts=$(list_container_null_mounts $syscont)
+
+  docker exec -d "$syscont" sh -c "unshare -m bash -c \"sleep 1000\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "pidof sleep"
+  [ "$status" -eq 0 ]
+  inner_pid=$output
+
+  for m in $immutable_null_mounts; do
+    # Skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover unmounting ops).
+    if [[ $m =~ "/proc" ]] || [[ $m =~ "/proc/*" ]] ||
+        [[ $m =~ "/sys" ]] || [[ $m =~ "/sys/*" ]]; then
+      continue
+    fi
+
+    #
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid mount -o bind /dev/null $m"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount $m"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount $m"
+    [ "$status" -ne 0 ]
+
+    #
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid touch ${m}2"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid mount -o bind $m ${m}2"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount ${m}2"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount $m"
+    [ "$status" -ne 0 ]
+
+  done
+
+  docker_stop "$syscont"
+}
+
+
+# Testcase #19.
+@test "immutable tmpfs mount in inner mnt ns" {
+  # if [[ $skipTest -eq 1 ]]; then
+  # #  skip
+  # fi
+  local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app debian:latest tail -f /dev/null)
+  local immutable_null_mounts=$(list_container_tmpfs_mounts $syscont)
+
+  docker exec -d "$syscont" sh -c "unshare -m bash -c \"sleep 1000\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "pidof sleep"
+  [ "$status" -eq 0 ]
+  inner_pid=$output
+
+  for m in $immutable_null_mounts; do
+    # Skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover unmounting ops).
+    if [[ $m =~ "/proc" ]] || [[ $m =~ "/proc/*" ]] ||
+        [[ $m =~ "/sys" ]] || [[ $m =~ "/sys/*" ]]; then
+      continue
+    fi
+
+    # Create bind-mount target (dir or file, depending on bind-mount source type)
+    docker exec "$syscont" bash -c "[[ -d $m ]]"
+
+    if [ "$status" -eq 0 ]; then
+      docker exec "$syscont" sh -c "mkdir -p ${m}2"
+      [ "$status" -eq 0 ]
+    else
+      docker exec "$syscont" sh -c "touch ${m}2"
+      [ "$status" -eq 0 ]
+    fi
+
+    #
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid mount -o bind $m ${m}2"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount ${m}2"
+    [ "$status" -eq 0 ]
+
+    docker exec "$syscont" sh -c "nsenter -a -t $inner_pid umount $m"
+    [ "$status" -ne 0 ]
+  done
 
   docker_stop "$syscont"
 }
