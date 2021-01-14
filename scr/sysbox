@@ -8,18 +8,15 @@
 # quick alternative to the installer to help launch Sysbox manually
 # (e.g. for development & testing).
 #
-# Usage: ./sysbox [testing-on]
-#
-# Note: "testing-on" attribute is useful to launch Sysbox inside a privileged
-# container. In this context Sysbox may be unable to reach certain procfs
-# nodes, due to kernel not exposing them in non-init namespaces. This flag
-# alerts Sysbox of the need to obviate these potential errors when running
-# in testing mode.
-#
+# Type "sudo ./sysbox --help". for usage info.
+
+PROGNAME=$(basename $0)
+VERBOSE=1
+TEST_MODE=0
+DEBUG_MODE=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
-sysbox_max_user_ns=10000
-
+SYSBOX_MAX_USER_NS=10000
 
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
 # (copied from runc/tests/integration/helpers.bash)
@@ -85,8 +82,8 @@ function setup_userns() {
 
       # Setting user-ns max value.
       max_user_ns=$(</proc/sys/user/max_user_namespaces)
-      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $sysbox_max_user_ns ]]; then
-	  echo $sysbox_max_user_ns > /proc/sys/user/max_user_namespaces
+      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $SYSBOX_MAX_USER_NS ]]; then
+	  echo $SYSBOX_MAX_USER_NS > /proc/sys/user/max_user_namespaces
       fi
 
   else
@@ -175,47 +172,130 @@ function sysbox_stop() {
   sysfs_pids=$(pidof sysbox-fs) || true
 
   for pid in $sysmgr_pids; do
+	  [[ $VERBOSE ]] && printf "Stopping sysbox-mgr\n"
     kill $pid
   done
 
   for pid in $sysfs_pids; do
+	  [[ $VERBOSE ]] && printf "Stopping sysbox-fs\n"
     kill $pid
   done
 }
 
-# Start all Sysbox components.
-function sysbox_start() {
+function sysbox_mgr_start() {
 
-  local testing_mode=$1
+  [[ $VERBOSE ]] && printf "Starting sysbox-mgr\n"
 
-  # Start sysbox-mgr.
-  sysbox-mgr --log /var/log/sysbox-mgr.log &
+  declare -a mgr_options=("--log /var/log/sysbox-mgr.log")
+
+  if [ $DEBUG_MODE -eq 1 ]; then
+	  mgr_options+=("--log-level=debug")
+  fi
+
+  sysbox-mgr ${mgr_options[@]} &
   sleep 1
-  RES=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+  res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
   if [ $? -ne 0 ]; then
     printf "\nsysbox-mgr failed to start. Here is the log file:\n"
     cat /var/log/sysbox-mgr.log
     exit 1
   fi
+}
 
-  # Start sysbox-fs.
+function sysbox_fs_start() {
+
   mkdir -p /var/lib/sysboxfs
 
-  if [[ $testing_mode == "testing-on" ]]; then
-      sysbox-fs --ignore-handler-errors --log /var/log/sysbox-fs.log &
-  else
-      sysbox-fs --log /var/log/sysbox-fs.log &
+  declare -a fs_options=("--log /var/log/sysbox-fs.log")
+
+  if [ $TEST_MODE -eq 1 ]; then
+	  fs_options+=("--ignore-handler-errors")
   fi
+
+  if [ $DEBUG_MODE -eq 1 ]; then
+	  fs_options+=("--log-level=debug")
+  fi
+
+  [[ $VERBOSE ]] && printf "Starting sysbox-fs\n"
+
+  sysbox-fs ${fs_options[@]} &
+
   sleep 1
-  RES=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+  res=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
   if [ $? -ne 0 ]; then
     printf "\nsysbox-fs failed to start. Here is the log file:\n"
     cat /var/log/sysbox-fs.log
     exit 1
   fi
+
+}
+
+function sysbox_start() {
+
+	# Note: sysbox-runc is started by the higher level container manager (e.g.,
+	# Docker, containerd)
+
+	sysbox_mgr_start
+	sysbox_fs_start
+}
+
+function show_usage() {
+	printf "\n"
+	printf "Usage: $PROGNAME [OPTIONS]\n"
+	printf "\n"
+	printf "Starts Sysbox without using the Sysbox systemd service units.\n"
+	printf "Useful when building Sysbox from source and for testing. Must run as root.\n"
+	printf "\n"
+	printf "Options:\n"
+	printf "  -t, --test-mode   Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
+	printf "  -d, --debug       Enables debug logging in Sysbox (useful for debugging).\n"
+	printf "  -h, --help        Display usage.\n"
+	printf "\n"
+}
+
+function parse_args() {
+  options=$(getopt -o tdh -l test-mode,debug,help -- "$@")
+
+  eval set -- "$options"
+
+  while true; do
+    case "$1" in
+      -h | --help)
+        show_usage
+		  exit 1
+        ;;
+      -t | --test-mode)
+        TEST_MODE=1
+        ;;
+      -d | --debug)
+        DEBUG_MODE=1
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        show_usage
+		  exit 1
+        ;;
+      *)
+        show_usage
+		  exit 1
+        ;;
+    esac
+    shift
+  done
+
+  [[ "$1" == "" ]] || {
+    show_usage
+    exit 1
+  }
+
 }
 
 function main() {
+
+  parse_args "$@"
 
   if [ "$EUID" -ne 0 ]; then
      echo "Please run as root."
@@ -224,7 +304,9 @@ function main() {
 
   sysbox_stop
   sysbox_setup
-  sysbox_start "$@"
+  sysbox_start
+
+  [[ $VERBOSE ]] && printf "Done.\n"
 }
 
 main "$@"
