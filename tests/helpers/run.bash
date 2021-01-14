@@ -156,7 +156,7 @@ function sysbox_start() {
   if [ -n "$SB_INSTALLER" ]; then
     systemctl start sysbox
   else
-    bats_bg sysbox testing-on
+    bats_bg sysbox -t
   fi
 
   sleep 2
