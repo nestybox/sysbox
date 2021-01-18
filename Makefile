@@ -51,6 +51,10 @@ endif
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
+
+TEST_SYSTEMD_IMAGE := sysbox-systemd-test
+TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd
+
 TEST_FILES := $(shell find tests -type f | egrep "\.bats")
 TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
 
@@ -225,10 +229,31 @@ DOCKER_RUN := docker run -it --privileged --rm --runtime=runc         \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
+# Must use "--cgroups private" as otherwise configuring Docker with systemd
+# cgroup driver gets confused with the cgroup paths.
+DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
+			--hostname sysbox-test                        \
+			--name sysbox-test                            \
+			--cgroupns private                            \
+			-v $(CURDIR):$(PROJECT)                       \
+			-v $(TEST_VOL1):/var/lib/docker               \
+			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(TEST_VOL3):/mnt/scratch                  \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			-v /lib/modules:/lib/modules:ro               \
+			$(KERNEL_HEADERS_MOUNTS)                      \
+			--mount type=tmpfs,destination=/run           \
+			--mount type=tmpfs,destination=/run/lock      \
+			--mount type=tmpfs,destination=/tmp           \
+			$(TEST_SYSTEMD_IMAGE)
+
+DOCKER_EXEC := docker exec -it sysbox-test
+DOCKER_STOP := docker stop -t0 sysbox-test
+
 ##@ Testing targets
 
 test: ## Run all sysbox test suites
-test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid
+test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid test-sysbox-systemd
 
 test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-img
@@ -243,6 +268,15 @@ test-sysbox-ci: test-img test-fs test-mgr
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
+
+test-sysbox-systemd: ## Run sysbox integration tests in a test container with systemd
+test-sysbox-systemd: test-img-systemd
+	@printf "\n** Running sysbox integration tests (with systemd) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP)
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
 test-sysbox-shiftuid: test-img
@@ -268,6 +302,19 @@ else
 		make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
 endif
 
+test-sysbox-shiftuid-systemd: ## Run sysbox integration tests with uid-shifting (shiftfs) and systemd
+test-sysbox-shiftuid-systemd: test-img-systemd
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
+	@printf "\n** Running sysbox integration tests (with uid shifting and systemd) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP)
+endif
+
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: $(LIBSECCOMP) sysbox-ipc
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
@@ -289,10 +336,24 @@ test-shell: test-img sysbox-runc-recvtty
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && /bin/bash"
 
+test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
+test-shell-systemd: test-img-systemd
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec -it sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && /bin/bash"
+
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
+
+test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
+test-shell-shiftuid-systemd: test-img-systemd
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec -it sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-img: ## Build test container image
@@ -300,6 +361,12 @@ test-img:
 	@printf "\n** Building the test container **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) \
 		-f Dockerfile.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE) .
+
+test-img-systemd: ## Build test container image that includes systemd
+test-img-systemd: test-img
+	@printf "\n** Building the test container image (includes systemd) **\n\n"
+	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) \
+		-f $(TEST_SYSTEMD_DOCKERFILE) .
 
 test-cleanup: ## Clean up sysbox integration tests (requires root privileges)
 test-cleanup: test-img
