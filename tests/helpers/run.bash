@@ -90,6 +90,15 @@ function bats_bg() {
   "$@" 3>/dev/null &
 }
 
+function systemd_env() {
+	ret=$(file /sbin/init)
+	if [[ "$ret" =~ "symbolic link to /lib/systemd/systemd" ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 function sysbox_mgr_start() {
   if [ -n "$SB_INSTALLER" ]; then
     sed -i "s/^ExecStart=\(.*sysbox-mgr.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-mgr.service
@@ -114,11 +123,12 @@ function sysbox_mgr_stop() {
 }
 
 function sysbox_mgr_stopped() {
-   if ! pgrep sysbox-mgr; then
-      echo true
-   else
-      echo false
-   fi
+	run pgrep sysbox-mgr
+	if [ "$status" -eq 0 ]; then
+		return 1
+	else
+		return 0
+	fi
 }
 
 function sysbox_fs_start() {
@@ -136,7 +146,7 @@ function sysbox_fs_start() {
 
 function sysbox_fs_stop() {
   if [ -n "$SB_INSTALLER" ]; then
-    systemctl stop sysbox
+     systemctl stop sysbox
   else
     kill $(pidof sysbox-fs)
   fi
@@ -145,11 +155,12 @@ function sysbox_fs_stop() {
 }
 
 function sysbox_fs_stopped() {
-   if ! pgrep sysbox-fs; then
-      echo true
-   else
-      echo false
-   fi
+   run pgrep sysbox-fs
+	if [ "$status" -eq 0 ]; then
+		return 1
+	else
+		return 0
+	fi
 }
 
 function sysbox_start() {
@@ -174,11 +185,12 @@ function sysbox_stop() {
 }
 
 function sysbox_stopped() {
-   if ! pgrep "sysbox-fs|sysbox-mgr"; then
-      echo true
-   else
-      echo false
-   fi
+   run pgrep "sysbox-fs|sysbox-mgr"
+	if [ "$status" -eq 0 ]; then
+		return 1
+	else
+		return 0
+	fi
 }
 
 function dockerd_start() {

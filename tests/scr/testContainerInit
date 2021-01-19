@@ -8,14 +8,8 @@
 dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
 
-dockerd=$(which dockerd)
-
 # Default mtu value associated to test-container's egress-interface.
 default_mtu=1500
-
-# Temp file for jq write operations.
-tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
-trap 'rm -f "${tmpfile}"' EXIT
 
 # Retries the given command a given number of attempts, each after a given delay
 # (e.g., retry 10 1 <command>)
@@ -48,33 +42,33 @@ function retry() {
 #
 function docker_iface_mtu() {
 
-    local egress_iface
-    local l0_egress_mtu
-    local l1_egress_mtu
+   local egress_iface
+   local l0_egress_mtu
+   local l1_egress_mtu
 
-    # Identify default egress iface.
-    local egress_iface=$(ip route show | awk '/default via/ {print $5}')
-    if [ -z "${egress_iface}" ]; then
-		 return
-    fi
+   # Identify default egress iface.
+   local egress_iface=$(ip route show | awk '/default via/ {print $5}')
+   if [ -z "${egress_iface}" ]; then
+		return
+   fi
 
-    # Obtain mtu value associated to the test-container's egress interface.
-    egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
-    if [ ! -z "${egress_mtu}" ] &&
-       [ "${egress_mtu}" -lt "${default_mtu}" ]; then
-	l1_egress_mtu=${egress_mtu}
-    else
-	l1_egress_mtu=${default_mtu}
-    fi
+   # Obtain mtu value associated to the test-container's egress interface.
+   egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+   if [ ! -z "${egress_mtu}" ] &&
+			[ "${egress_mtu}" -lt "${default_mtu}" ]; then
+		l1_egress_mtu=${egress_mtu}
+   else
+		l1_egress_mtu=${default_mtu}
+   fi
 
-    # Pull L0 egress-mtu value passed from Sysbox's makefile.
-    l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
+   # Pull L0 egress-mtu value passed from Sysbox's makefile.
+   l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
 
-    if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
-	echo ${l0_egress_mtu}
-    else
-	echo ${l1_egress_mtu}
-    fi
+   if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
+		echo ${l0_egress_mtu}
+   else
+		echo ${l1_egress_mtu}
+   fi
 }
 
 # Adjust the test container's Docker mtu configuration. This is required to
@@ -88,51 +82,85 @@ function docker_config_mtu() {
 	fi
 }
 
-#
-# Execution starts here ...
-#
+function systemd_env() {
+	ret=$(readlink /proc/1/exe)
+	if [[ "$ret" =~ "/usr/lib/systemd/systemd" ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
 
-# Install helper scripts
-install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
-install -D -m0755 scr/docker-cfg /usr/local/sbin/docker-cfg
+function systemd_running() {
+	ps -ef | egrep systemd | wc -l | egrep [4-9]+
+}
 
-# Start the test container's Docker daemon
-$dockerd > /var/log/dockerd.log 2>&1 &
-retry 10 1 docker ps
-[ $? -eq 0 ] || exit 1
+function wait_systemd_ready() {
+	retry 15 1 systemd_running
+}
 
-# Configure Docker to use Sysbox (leveraging the docker-cfg script)
-common_opt="-v --config-only --sysbox-runtime=enable --skip-network-config --default-runtime=sysbox-runc"
+function wait_docker_ready() {
+	retry 10 1 docker ps
+}
 
-if [ -z "$SHIFT_UIDS" ]; then
-	docker-cfg $common_opt --userns-remap=enable
-	[ $? -eq 0 ] || exit 1
-else
-	docker-cfg $common_opt
-	[ $? -eq 0 ] || exit 1
-fi
+function main() {
 
-docker_config_mtu
+	if systemd_env; then
+		echo "Waiting for systemd to be ready ..."
+		wait_systemd_ready
+	fi
 
-# Restart Docker after MTU config
-docker-cfg --force-restart --skip-network-config
+	# Temp file for jq write operations
+	tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
+	trap 'rm -f "${tmpfile}"' EXIT
 
-# Build & install sysbox
-thisHost=$(hostname)
+	# Install helper scripts
+	install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
+	install -D -m0755 scr/docker-cfg /usr/local/sbin/docker-cfg
 
-# Build cookie (to build from scratch when necessary only)
-if [[ ! -f .buildinfo ]]; then
-  touch .buildinfo
-  chown rootless:rootless .buildinfo
-fi
+	# Without systemd, we must start Docker ourselves
+	if ! systemd_env; then
+		dockerd=$(which dockerd)
+		$dockerd > /var/log/dockerd.log 2>&1 &
+		wait_docker_ready || exit 1
+	fi
 
-lastBuildHost=$(cat .buildinfo)
-if [[ "$lastBuildHost" != "$thisHost" ]]; then
-  make clean
-fi
+	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
+	common_opt="--config-only --sysbox-runtime=enable --skip-network-config --default-runtime=sysbox-runc"
 
-# Build sysbox suite.
-make sysbox-local --no-print-directory && make install
+	if [ -z "$SHIFT_UIDS" ]; then
+		docker-cfg $common_opt --userns-remap=enable
+		[ $? -eq 0 ] || exit 1
+	else
+		docker-cfg $common_opt
+		[ $? -eq 0 ] || exit 1
+	fi
 
-echo "Starting sysbox in test mode"
-sysbox -t
+	docker_config_mtu
+
+	# Restart Docker after MTU config
+	docker-cfg --force-restart --skip-network-config
+
+	# Build & install sysbox
+	thisHost=$(hostname)
+
+	# Build cookie (to build from scratch when necessary only)
+	if [[ ! -f .buildinfo ]]; then
+		touch .buildinfo
+		chown rootless:rootless .buildinfo
+	fi
+
+	lastBuildHost=$(cat .buildinfo)
+	if [[ "$lastBuildHost" != "$thisHost" ]]; then
+		make clean
+	fi
+
+	# Build sysbox suite.
+	make sysbox-local --no-print-directory && make install
+
+	echo "Starting sysbox in test mode"
+	sysbox -t
+
+}
+
+main "$@"
