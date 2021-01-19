@@ -14,6 +14,8 @@ dry_run=0
 force_restart=0
 skip_network_config=0
 
+systemd_reload_daemon=0
+
 # Dockerd default configuration dir/file.
 dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
@@ -26,6 +28,7 @@ pool_subnet="172.25.0.0/16"
 docker_network_config_changed="false"
 docker_userns_config_changed="false"
 docker_runtime_config_changed="false"
+docker_cgroup_config_changed="false"
 
 dockerd=$(which dockerd)
 
@@ -224,6 +227,55 @@ function docker_config_default_runtime() {
 	fi
 }
 
+function docker_config_cgroup_driver() {
+
+	# NOTE: for some reason configuring the cgroup-driver via the
+	# /etc/docker/daemon.json file does not work (i.e., dockerd does not pick up
+	# the cgroup driver config). Thus, we resort to configuring via the dockerd
+	# command line.
+
+	docker_systemd_unit="/lib/systemd/system/docker.service"
+
+	if [[ "$cgroup_driver" == "systemd" ]]; then
+
+		if [ ! -f $docker_systemd_unit ]; then
+			printf "Error: Docker systemd unit file at $docker_systemd_unit does not exist.\n"
+			exit 1
+		fi
+
+		docker_cmd=$(grep ExecStart $docker_systemd_unit | awk -F "ExecStart=" '{print $2_}')
+
+		ret=$(echo $docker_cmd | grep "exec-opt native.cgroupdriver=systemd")
+
+		if [ "$?" -eq 0 ]; then
+			return
+		fi
+
+		docker_cmd_new="${docker_cmd} --exec-opt native.cgroupdriver=systemd"
+		sed -i "s@${docker_cmd}@${docker_cmd_new}@g" $docker_systemd_unit
+
+		systemd_reload_daemon=1
+		docker_cgroup_config_changed="true"
+	else
+
+		if [ ! -f $docker_systemd_unit ]; then
+			return
+		fi
+
+		docker_cmd=$(grep ExecStart $docker_systemd_unit | awk -F "ExecStart=" '{print $2_}')
+
+		ret=$(echo $docker_cmd | grep "exec-opt native.cgroupdriver=systemd")
+
+		if [ "$?" -eq 0 ]; then
+			sed -i "s@--exec-opt native.cgroupdriver=systemd@@g" $docker_systemd_unit
+			systemd_reload_daemon=1
+			docker_cgroup_config_changed="true"
+		fi
+	fi
+
+	log "Docker config: cgroup driver set to $cgroup_driver.\n"
+}
+
 function docker_config_userns() {
 
 	if [[ "$userns_remap" == "enable" ]]; then
@@ -263,6 +315,7 @@ function docker_notify() {
 	# Restart docker if disruptive changes have been made.
 	if [[ ${docker_userns_config_changed} = "true" ]] ||
 			[[ ${docker_network_config_changed} = "true" ]] ||
+			[[ ${docker_cgroup_config_changed} = "true" ]] ||
 			[[ ${force_restart} -eq 1 ]]; then
 
 		# Check if Docker is running; otherwise skip
@@ -281,7 +334,21 @@ function docker_notify() {
               "sudo systemctl restart docker\"\n"
 		else
 			if systemd_host; then
+
+				if [ "$systemd_reload_daemon" -eq 1 ]; then
+					systemctl daemon-reload
+					if [ $? -ne 0 ]; then
+						printf "Failed to reload the systemd config. Do \"systemctl status\" to get further info."
+						exit 1
+					fi
+				fi
+
 				systemctl restart docker
+				if [ $? -ne 0 ]; then
+					printf "Failed to restart the Docker systemd service unit. Do \"systemctl status docker\" to get further info."
+					exit 1
+				fi
+
 			else
 				dockerd_manual_restart
 			fi
@@ -318,6 +385,7 @@ function docker_config() {
 	 docker_config_userns
 	 docker_config_runtime
 	 docker_config_default_runtime
+	 docker_config_cgroup_driver
 
 	 if [ "$dry_run" -eq 1 ]; then
 		 cat ${tmpCfgFile}
@@ -364,6 +432,7 @@ function show_usage() {
 	printf "                                          In this case, you must ensure that the networks used by Docker at host level and Docker inside a container don't have overlapping IP addresses\n"
 	printf '                                          (by configuring the Docker "bip" and "default-address-pool" for the Docker on the host and/or the Docker inside the container).\n'
 	printf "      --default-runtime=<runtime>         Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If ommitted, no change to the Docker default runtime is made.\n"
+	printf "      --cgroup-driver=<cgroupfs|systemd>  Configures the cgroup driver to be used. If ommitted, no change to the Docker cgroup driver is made.\n"
 	printf "  -c, --config-only                       Writes to the Docker daemon config file but does not restart Docker. Docker will not pick up the new config until it's restarted.\n"
 	printf "  -f, --force-restart                     Forces restart of the Docker daemon (even if no config changes have occurred).\n"
 	printf "      --dry-run                           Does not modify the Docker config; instead outputs the changes to stdout.\n"
@@ -373,7 +442,7 @@ function show_usage() {
 }
 
 function parse_args() {
-  options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,skip-network-config,default-runtime:,sysbox-runtime:,userns-remap: -- "$@")
+  options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,skip-network-config,default-runtime:,sysbox-runtime:,userns-remap:,cgroup-driver: -- "$@")
 
   eval set -- "$options"
 
@@ -399,14 +468,25 @@ function parse_args() {
         shift;
         sysbox_runtime=$1
         if [[ ${sysbox_runtime} != "enable" ]] && [[ ${sysbox_runtime} != "disable" ]]; then
-          show_usage
-			 exit 1
+			  printf "\nInvalid value for sysbox-runtime.\n"
+           show_usage
+			  exit 1
         fi
 		  ;;
       --userns-remap)
         shift;
         userns_remap=$1
         if [[ ${userns_remap} != "enable" ]] && [[ ${userns_remap} != "disable" ]]; then
+			  printf "\nInvalid value for userns-remap.\n"
+          show_usage
+			 exit 1
+        fi
+		  ;;
+      --cgroup-driver)
+        shift;
+        cgroup_driver=$1
+        if [[ ${cgroup_driver} != "cgroupfs" ]] && [[ ${cgroup_driver} != "systemd" ]]; then
+			  printf "\nInvalid value for cgroup-driver.\n"
           show_usage
 			 exit 1
         fi
