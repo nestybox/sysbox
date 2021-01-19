@@ -29,13 +29,15 @@ SYSFS_PROC="/proc/uptime \
 # to be exposed here, just the ones that mismatch between these two contexts being
 # compared.
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
-		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_close_wait \
-		/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established \
+                /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_close_wait \
+                /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established \
                 /proc/sys/net/ipv4/vs/expire_nodest_conn \
                 /proc/sys/net/ipv4/vs/expire_quiescent_template \
                 /proc/sys/net/ipv4/vs/conn_reuse_mode \
                 /proc/sys/net/ipv4/vs/conntrack \
-                /proc/sys/net/unix/max_dgram_qlen"
+                /proc/sys/net/unix/max_dgram_qlen \
+                /proc/sys/fs/binfmt_misc/register \
+                /proc/sys/fs/binfmt_misc/status"
 
 # Given an 'ls -l' listing of a single file, verifies the ownership is as expected
 function verify_owner() {
