@@ -43,7 +43,7 @@ outside your $GOPATH.
 
 In case of authentication error, make sure your setup is properly configured
 to allow ssh connectivity to Github. Refer to [this](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh)
-doc for details.
+doc for details. Or make git use `https` instead of `ssh` by configuring `git config --global url.https://github.com/.insteadOf git@github.com:`.
 
 ## The Sysbox Makefile
 
