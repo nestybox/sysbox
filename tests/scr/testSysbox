@@ -28,6 +28,8 @@ else
   bats --tap tests/syscall
   printf "\nExecuting docker tests ... \n"
   bats --tap tests/docker
+  printf "\nExecuting cgroup tests ... \n"
+  bats --tap tests/cgroup
   printf "\nExecuting dind tests ... \n"
   bats --tap tests/dind
   printf "\nExecuting cind tests ... \n"
