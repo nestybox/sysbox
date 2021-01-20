@@ -102,6 +102,19 @@ function dockerd_manual_restart() {
 	fi
 }
 
+# Stops and removes any existing Docker containers
+function docker_remove_containers() {
+	docker_conts=$(docker ps -aq)
+	if [[ "$docker_conts" != "" ]]; then
+		ret=$(docker stop -t0 $(docker ps -aq))
+	fi
+
+	docker_conts=$(docker ps -aq)
+	if [[ "$docker_conts" != "" ]]; then
+		ret=$(docker rm -f $(docker ps -aq))
+	fi
+}
+
 #
 # Returns 'true' if passed ipv4 address overlaps with any of the system local
 # subnets. Return 'false' otherwise.
@@ -253,6 +266,7 @@ function docker_config_cgroup_driver() {
 
 		docker_cmd_new="${docker_cmd} --exec-opt native.cgroupdriver=systemd"
 		sed -i "s@${docker_cmd}@${docker_cmd_new}@g" $docker_systemd_unit
+		log "Docker config: cgroup driver set to $cgroup_driver.\n"
 
 		systemd_reload_daemon=1
 		docker_cgroup_config_changed="true"
@@ -268,12 +282,12 @@ function docker_config_cgroup_driver() {
 
 		if [ "$?" -eq 0 ]; then
 			sed -i "s@--exec-opt native.cgroupdriver=systemd@@g" $docker_systemd_unit
+			log "Docker config: cgroup driver set to $cgroup_driver.\n"
 			systemd_reload_daemon=1
 			docker_cgroup_config_changed="true"
 		fi
 	fi
 
-	log "Docker config: cgroup driver set to $cgroup_driver.\n"
 }
 
 function docker_config_userns() {
@@ -325,14 +339,16 @@ function docker_notify() {
 			return
 		fi
 
-		# If existing containers are found then skip docker-restart to avoid disruption
+		# If existing containers are found then skip docker-restart to avoid disruption (unless force_restart is set).
 		ret=$(docker ps -a | wc -l | egrep -q "1$")
-		if [ $? -ne 0 ]; then
+		if [ $? -ne 0 ] && [ ${force_restart} -ne 1 ]; then
 			echo -e "\nModified the Docker config but did not restart Docker as there are containers running.\n" \
-              "Please remove them and restart Docker by doing:\n" \
-              "\t\"docker rm \$(docker ps -a -q) -f &&" \
-              "sudo systemctl restart docker\"\n"
+				  "Please remove them and restart Docker by doing:\n" \
+				  "\t\"docker rm \$(docker ps -a -q) -f &&" \
+				  "sudo systemctl restart docker\"\n"
 		else
+			docker_remove_containers
+
 			if systemd_host; then
 
 				if [ "$systemd_reload_daemon" -eq 1 ]; then
@@ -434,7 +450,7 @@ function show_usage() {
 	printf "      --default-runtime=<runtime>         Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If ommitted, no change to the Docker default runtime is made.\n"
 	printf "      --cgroup-driver=<cgroupfs|systemd>  Configures the cgroup driver to be used. If ommitted, no change to the Docker cgroup driver is made.\n"
 	printf "  -c, --config-only                       Writes to the Docker daemon config file but does not restart Docker. Docker will not pick up the new config until it's restarted.\n"
-	printf "  -f, --force-restart                     Forces restart of the Docker daemon (even if no config changes have occurred).\n"
+	printf "  -f, --force-restart                     Forces restart of the Docker daemon (even if no config changes have occurred). This will stop and remove any existing Docker containers.\n"
 	printf "      --dry-run                           Does not modify the Docker config; instead outputs the changes to stdout.\n"
 	printf "  -v, --verbose                           Enables verbose logging (useful for debugging).\n"
 	printf "  -h, --help                              Display usage.\n"
