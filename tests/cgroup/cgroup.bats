@@ -15,13 +15,14 @@ load ../helpers/run
 load ../helpers/fs
 load ../helpers/docker
 load ../helpers/cgroups
+load ../helpers/systemd
 load ../helpers/sysbox-health
 
 function teardown() {
   sysbox_log_check
 }
 
-@test "cgroup: cpuset" {
+function test_cgroup_cpuset() {
 
 	if [ $(nproc) -lt 2 ]; then
 		skip "skip (requires host with > 2 processors)"
@@ -34,10 +35,12 @@ function teardown() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	getDockerCgroupPaths $syscont cg_paths
+	get_docker_cgroup_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 	local cgPathHost=${cg_paths[cpuset]}
+
+	echo "cgPathHost = ${cgPathHost}"
 
 	run cat "${cgPathHost}/cpuset.cpus"
 	[ "$status" -eq 0 ]
@@ -91,7 +94,7 @@ function teardown() {
 	done
 }
 
-@test "cgroup: cpus" {
+function test_cgroup_cpus() {
 
 	# Run a container and give it 10% cpu bandwidth
 	local syscont=$(docker_run --rm --cpus="0.1" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -100,7 +103,7 @@ function teardown() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	getDockerCgroupPaths $syscont cg_paths
+	get_docker_cgroup_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 	local cgPathHost=${cg_paths[cpu]}
@@ -170,7 +173,7 @@ function teardown() {
 	done
 }
 
-@test "cgroup: memory" {
+function test_cgroup_memory() {
 
 	# Run a container and give it a max RAM of 16M
 	local syscont=$(docker_run --rm --memory="16M" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -179,7 +182,7 @@ function teardown() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	getDockerCgroupPaths $syscont cg_paths
+	get_docker_cgroup_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 	local cgPathHost=${cg_paths[memory]}
@@ -257,7 +260,7 @@ function teardown() {
 	done
 }
 
-@test "cgroup: permissions" {
+function test_cgroup_perm() {
 
 	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -278,7 +281,7 @@ function teardown() {
 
 	local files
 	declare -A cg_paths
-	getDockerCgroupPaths $syscont cg_paths
+	get_docker_cgroup_paths $syscont cg_paths
 
 	# verify cgroup for sys container is owned by root:root at host level
 	for cg_path in ${cg_paths[@]}; do
@@ -305,11 +308,10 @@ function teardown() {
 	docker_stop "$syscont"
 }
 
-@test "cgroup: systemd-in-docker delegation" {
+function test_cgroup_delegation() {
 
 	#
-	# Verify systemd-in-docker can assign cgroups without problem (i.e, cgroup
-	# delegation works)
+	# Verify cgroup delegation works (e.g., systemd-in-docker can assign cgroups without problem).
 	#
 
 	# Launch sys container with systemd
@@ -333,4 +335,85 @@ function teardown() {
 	[[ "$output" == "$inner_docker_pid" ]]
 
 	docker_stop "$syscont"
+}
+
+@test "cgroup v1: cpuset" {
+	test_cgroup_cpuset
+}
+
+@test "cgroup v1: cpus" {
+	test_cgroup_cpus
+}
+
+@test "cgroup v1: memory" {
+	test_cgroup_memory
+}
+
+@test "cgroup v1: permissions" {
+	test_cgroup_perm
+}
+
+@test "cgroup v1: delegation" {
+	test_cgroup_delegation
+}
+
+@test "cgroup v1 systemd: enable docker systemd driver" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	docker-cfg -v --cgroup-driver=systemd
+}
+
+@test "cgroup v1 systemd: cpuset" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	test_cgroup_cpuset
+}
+
+@test "cgroup v1 systemd: cpus" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	test_cgroup_cpus
+}
+
+@test "cgroup v1 systemd: memory" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	test_cgroup_memory
+}
+
+@test "cgroup v1 systemd: permissions" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	test_cgroup_perm
+}
+
+@test "cgroup v1 systemd: delegation" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	test_cgroup_delegation
+}
+
+@test "cgroup v1 systemd: disable docker systemd driver" {
+	if ! systemd_env; then
+		skip "no systemd detected"
+	fi
+
+	docker-cfg --cgroup-driver=cgroupfs
+}
+
+# Verify all is good with the revert back to the Docker cgroupfs driver
+@test "cgroup v1: revert" {
+	test_cgroup_cpus
 }
