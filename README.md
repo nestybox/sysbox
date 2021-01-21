@@ -61,7 +61,7 @@ added to that repo over the last year (security fixes, functional improvements, 
 
 As part of this, the Git commit history for sysbox-runc has been rewritten. Thus,
 you'll likely need to [clone the Sysbox repo](docs/developers-guide/build.md#cloning-the-sysbox-repo)
-again after 01/09/20201 (as otherwise pulls from the sysbox-runc sub-repo won't work).
+again after 01/09/2021 (as otherwise pulls from the sysbox-runc sub-repo won't work).
 
 We expect this to be a one-time occurrence. Going forward we will periodically
 merge in changes from the OCI runc into sysbox-runc without rebasing.
