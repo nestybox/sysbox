@@ -115,6 +115,49 @@ function wait_docker_ready() {
 	retry 10 1 docker ps
 }
 
+function install_sysbox_pkg() {
+
+	if [ ! -f ${SB_INSTALLER_PKG} ]; then
+		echo "Did not find sysbox installer: file ${SB_INSTALLER_PKG} does not exist"
+		exit 1
+	fi
+
+	set -e
+
+	rm -rf /usr/sbin/policy-rc.d
+
+	echo "Installing Sysbox package at ${SB_INSTALLER_PKG}"
+	dpkg -i ${SB_INSTALLER_PKG}
+
+	# Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
+	# (need this flag inside the test container)
+	sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --ignore-handler-errors|g' \
+		 /lib/systemd/system/sysbox-fs.service && \
+		systemctl daemon-reload && \
+		systemctl restart sysbox.service
+
+	set +e
+}
+
+function build_sysbox() {
+
+	thisHost=$(hostname)
+
+	# Build cookie (to build from scratch when necessary only)
+	if [[ ! -f .buildinfo ]]; then
+		touch .buildinfo
+		chown rootless:rootless .buildinfo
+	fi
+
+	lastBuildHost=$(cat .buildinfo)
+	if [[ "$lastBuildHost" != "$thisHost" ]]; then
+		make clean
+	fi
+
+	echo "Building sysbox ..."
+	make sysbox-local --no-print-directory && make install
+}
+
 function main() {
 
 	if systemd_env; then
@@ -158,27 +201,14 @@ function main() {
 	echo "Removing left-over Docker containers ..."
 	remove_docker_containers
 
-	# Build & install sysbox
-	thisHost=$(hostname)
+	if [[ "$SB_INSTALLER" == "true" ]]; then
+		install_sysbox_pkg
+	else
+		build_sysbox
 
-	# Build cookie (to build from scratch when necessary only)
-	if [[ ! -f .buildinfo ]]; then
-		touch .buildinfo
-		chown rootless:rootless .buildinfo
+		echo "Starting sysbox in test mode ..."
+		sysbox -t
 	fi
-
-	lastBuildHost=$(cat .buildinfo)
-	if [[ "$lastBuildHost" != "$thisHost" ]]; then
-		make clean
-	fi
-
-	# Build sysbox suite.
-	echo "Building sysbox ..."
-	make sysbox-local --no-print-directory && make install
-
-	echo "Starting sysbox in test mode ..."
-	sysbox -t
-
 }
 
 main "$@"

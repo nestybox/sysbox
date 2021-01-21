@@ -28,6 +28,8 @@ ifeq ($(HOSTNAME),)
 export HOSTNAME=$(shell hostname)
 endif
 
+export VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
+
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
@@ -82,7 +84,7 @@ endif
 export KERNEL_HEADERS
 export KERNEL_HEADERS_MOUNTS
 
-IMAGE_FILE_PATH := image/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
+IMAGE_FILE_PATH := sysbox-pkgr/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
 # Volumes to mount into the privileged test container. These are
@@ -121,7 +123,7 @@ LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUsage:\n  make \033[36m<target>\033[0m\n"} \
-	/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-30s\033[0m %s\n", $$1, $$2 } /^##@/ \
+	/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-40s\033[0m %s\n", $$1, $$2 } /^##@/ \
 	{ printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Building targets
@@ -278,6 +280,16 @@ test-sysbox-systemd: test-img-systemd
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 
+test-sysbox-systemd-installer: ## Run sysbox integration tests in a test container with systemd and the sysbox installer
+test-sysbox-systemd-installer: test-img-systemd
+	@printf "\n** Running sysbox integration tests (with systemd + the sysbox installer) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
+		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP)
+
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
 test-sysbox-shiftuid: test-img
 ifeq ($(SHIFTUID_ON), )
@@ -315,6 +327,20 @@ else
 	$(DOCKER_STOP)
 endif
 
+test-sysbox-shiftuid-systemd-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
+test-sysbox-shiftuid-systemd-installer: test-img-systemd
+ifeq ($(SHIFTUID_ON), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
+	@printf "\n** Running sysbox integration tests (with uid shifting + systemd + the sysbox installer) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SHIFT_UIDS=true SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
+		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP)
+endif
+
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: $(LIBSECCOMP) sysbox-ipc
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
@@ -338,10 +364,22 @@ test-shell: test-img sysbox-runc-recvtty
 
 test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
 test-shell-systemd: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
-	docker exec -it sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		testContainerInit && /bin/bash"
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
+test-shell-systemd-installer: ## Get a shell in the test container that includes systemd and the sysbox installer (useful for debug)
+test-shell-systemd-installer: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img sysbox-runc-recvtty
@@ -351,10 +389,22 @@ test-shell-shiftuid: test-img sysbox-runc-recvtty
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
 test-shell-shiftuid-systemd: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
-	docker exec -it sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
+test-shell-shiftuid-systemd-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
+test-shell-shiftuid-systemd-installer: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
 
 test-img: ## Build test container image
 test-img:
