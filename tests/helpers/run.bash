@@ -100,16 +100,25 @@ function systemd_env() {
 }
 
 function sysbox_mgr_start() {
-  if [ -n "$SB_INSTALLER" ]; then
-    sed -i "s/^ExecStart=\(.*sysbox-mgr.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-mgr.service
-    systemctl daemon-reload
-    systemctl restart sysbox
-    sleep 1
-  else
-    bats_bg sysbox-mgr --log /var/log/sysbox-mgr.log $@
-  fi
 
-  retry_run 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
+	# Note: here we assume sysbox-mgr is started with this command
+	cmd="/usr/local/sbin/sysbox-mgr --log /var/log/sysbox-mgr.log"
+
+	if [ -n "$SB_INSTALLER" ]; then
+		systemd_unit="/lib/systemd/system/sysbox-mgr.service"
+
+		cmd_old=$(grep "^ExecStart" $systemd_unit | awk -F "ExecStart=" '{print $2_}')
+		cmd_new="${cmd} $@"
+		sed -i "s@${cmd_old}@${cmd_new}@g" $systemd_unit
+
+		systemctl daemon-reload
+		systemctl restart sysbox
+		sleep 1
+	else
+		bats_bg ${cmd} $@
+	fi
+
+	retry_run 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
 }
 
 function sysbox_mgr_stop() {
@@ -132,16 +141,26 @@ function sysbox_mgr_stopped() {
 }
 
 function sysbox_fs_start() {
-  if [ -n "$SB_INSTALLER" ]; then
-    sed -i "s/^ExecStart=\(.*sysbox-fs.log\).*$/ExecStart=\1 $@/" /lib/systemd/system/sysbox-fs.service
-    systemctl daemon-reload
-    systemctl restart sysbox
-    sleep 1
-  else
-    bats_bg sysbox-fs --log /var/log/sysbox-fs.log $@
-  fi
 
-  sleep 1
+	# Note: here we assume sysbox-fs is started with this command
+	cmd="/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log"
+
+	if [ -n "$SB_INSTALLER" ]; then
+		systemd_unit="/lib/systemd/system/sysbox-fs.service"
+
+		cmd_old=$(grep "^ExecStart" $systemd_unit | awk -F "ExecStart=" '{print $2_}')
+		cmd_new="${cmd} $@"
+		sed -i "s@${cmd_old}@${cmd_new}@g" $systemd_unit
+
+		systemctl daemon-reload
+		systemctl restart sysbox
+		sleep 1
+	else
+		bats_bg ${cmd} $@
+	fi
+
+	# TODO: find a better way to know when sysbox-fs is ready
+	sleep 1
 }
 
 function sysbox_fs_stop() {
@@ -164,21 +183,26 @@ function sysbox_fs_stopped() {
 }
 
 function sysbox_start() {
-  if [ -n "$SB_INSTALLER" ]; then
-    systemctl start sysbox
-  else
-    bats_bg sysbox -t
-  fi
 
-  sleep 2
+	# NOTE: for sysbox, just being in a systemd environment is not sufficient to
+	# know if we are using the sysbox systemd services (i.e, we could have installed
+	# sysbox from source). Thus we check for SB_INSTALLER instead of systemd_env.
+
+	if [ -n "$SB_INSTALLER" ]; then
+		systemctl start sysbox
+	else
+		bats_bg sysbox -t
+	fi
+
+	sleep 2
 }
 
 function sysbox_stop() {
-  if [ -n "$SB_INSTALLER" ]; then
-    systemctl stop sysbox
-  else
-    kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
-  fi
+	if [ -n "$SB_INSTALLER" ]; then
+		systemctl stop sysbox
+	else
+		kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
+	fi
 
   retry_run 10 1 sysbox_fs_stopped
   retry_run 10 1 sysbox_mgr_stopped
@@ -194,7 +218,7 @@ function sysbox_stopped() {
 }
 
 function dockerd_start() {
-  if [ -n "$SB_INSTALLER" ]; then
+  if systemd_env; then
     systemctl start docker.service
     sleep 2
   else
@@ -204,7 +228,7 @@ function dockerd_start() {
 }
 
 function dockerd_stop() {
-  if [ -n "$SB_INSTALLER" ]; then
+  if systemd_env; then
     systemctl stop docker.service
     sleep 1
   else
