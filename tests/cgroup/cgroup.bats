@@ -28,7 +28,7 @@ function test_cgroup_cpuset() {
 		skip "skip (requires host with > 2 processors)"
 	fi
 
-	# Run a container and contrain it to cpus [0,1]
+	# Run a container and constrain it to cpus [0,1]
 	local syscont=$(docker_run --rm --cpuset-cpus="0-1" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	#
