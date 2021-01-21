@@ -56,7 +56,7 @@ index bb551950..a2b29beb 100644
 
 ```
 
-## Debugger instructions
+## Delve instructions
 
 Even though GDB offers Golang support, in reality there are a few key features
 missing today, such as proper understanding of Golang's concurrency constructs
@@ -67,59 +67,58 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
 -   Installation:
 
-```console
-$ go get -u github.com/derekparker/delve/cmd/dlv
-```
+    ```console
+    rodny@vm-1:~$ go get -u github.com/derekparker/delve/cmd/dlv
+    ```
 
--   Change working directory to the location that contains the source
-    files of the the binary to debug:
+-   Change working directory to the sysbox workspace location:
 
-```console
-rodny@deepblue-vm-1:~$ cd ~/go/src/github.com/nestybox/sysbox/sysbox-runc
-```
+    ```console
+    rodny@vm-1:~$ cd ~/wsp/sysbox
+    ```
 
 -   Attaching to a running process:
 
-First, find the PID of the running sysbox-runc process. Use `sudo pstree -SlpgT | grep sysbox`
-to help with this.
+    Let's pick sysbox-runc as an example. First, we need to find the PID of the
+    running sysbox-runc process. Use `pstree -SlpgT | grep sysbox` or
+    `ps -ef | grep sysbox` to help with this.
 
-Then start the debugger and attach it to the sysbox-runc process via the PID:
+    Then start the debugger and attach it to the sysbox-runc process via the PID:
 
-```console
-rodny@deepblue-vm-1:~/go/src/github.com/nestybox/sysbox/sysbox-runc$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
-```
+    ```console
+    rodny@vm-1:~/wsp/sysbox/sysbox$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+    ```
 
-Notice that to allow Golang runtime to operate as we expect, we must
-export the existing Golang related env-vars to the newly-spawn delve
-process.
+    Notice that to allow Golang runtime to operate as we expect, we must
+    export the existing Golang related env-vars to the newly-spawn delve
+    process.
 
 -   Delve command reference:
 
-https://github.com/go-delve/delve/blob/master/Documentation/cli/README.md
-
+    https://github.com/go-delve/delve/blob/master/Documentation/cli/README.md
 
 -   Setting break-points:
 
-Depending on the level of granularity required, we can set breakpoints
-attending to either one of these approches:
+    Depending on the level of granularity required, we can set breakpoints
+    attending to either one of these approches:
 
     - Package + Receiver + Method: (dlv) b libcontainer.(*initProcess).start
     - File + Line:                 (dlv) b process_linux.go:290
 
-Example:
+    Example:
 
-```console
-(dlv) b libcontainer.(*initProcess).start
-Breakpoint 1 set at 0x55731c80152d for github.com/opencontainers/runc/libcontainer.(*initProcess).start() /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263
-```
+    ```console
+    (dlv) b libcontainer.(*initProcess).start
+    Breakpoint 1 set at 0x55731c80152d for github.com/opencontainers/runc/libcontainer.(*initProcess).start() /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263
+    ```
 
 -   Process iteration:
 
-We can make use of the typical `n` (next), `s` (step), `c` (continue) instruccions to iterate through a process' instruction-set.
+    We can make use of the typical `n` (next), `s` (step), `c` (continue) instruccions to iterate through a process' instruction-set.
 
-Example:
+    Example:
 
-```console
+    ```console
     (dlv) c
     > github.com/opencontainers/runc/libcontainer.(*initProcess).start() /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263 (hits goroutine(1):1 total:1) (PC: 0x55731c80152d)
        258:         p.cmd.Process = process
@@ -133,87 +132,131 @@ Example:
        266:         p.process.ops = p
        267:         p.childPipe.Close()
        268:         if err != nil {
-```
+    ```
 
 -   Inspecting the stack-trace:
 
-```console
+    ```console
     (dlv) bt
-     0  0x000055731c80152d in github.com/opencontainers/runc/libcontainer.(*initProcess).start
-        at /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263
-     1  0x000055731c7dc2e2 in github.com/opencontainers/runc/libcontainer.(*linuxContainer).start
-        at /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/container_linux.go:348
-     2  0x000055731c7db749 in github.com/opencontainers/runc/libcontainer.(*linuxContainer).Start
-        at /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/container_linux.go:249
-     3  0x000055731c86a489 in main.(*runner).run
-        at /home/rodny/go/src/github.com/opencontainers/runc/utils_linux.go:324
-     4  0x000055731c86b7bc in main.startContainer
-        at /home/rodny/go/src/github.com/opencontainers/runc/utils_linux.go:464
-     5  0x000055731c86c0fd in main.glob..func2
-        at /home/rodny/go/src/github.com/opencontainers/runc/create.go:75
-     6  0x000055731c1c781d in runtime.call32
-        at /usr/local/go/src/runtime/asm_amd64.s:522
-     7  0x000055731c252006 in reflect.Value.call
-        at /usr/local/go/src/reflect/value.go:447
-     8  0x000055731c2512dc in reflect.Value.Call
-        at /usr/local/go/src/reflect/value.go:308
-     9  0x000055731c825433 in github.com/opencontainers/runc/vendor/github.com/urfave/cli.HandleAction
-        at /home/rodny/go/src/github.com/opencontainers/runc/vendor/github.com/urfave/cli/app.go:487
-    10  0x000055731c826d2c in github.com/opencontainers/runc/vendor/github.com/urfave/cli.Command.Run
-        at /home/rodny/go/src/github.com/opencontainers/runc/vendor/github.com/urfave/cli/command.go:191
-    11  0x000055731c822f27 in github.com/opencontainers/runc/vendor/github.com/urfave/cli.(*App).Run
-        at /home/rodny/go/src/github.com/opencontainers/runc/vendor/github.com/urfave/cli/app.go:240
-    12  0x000055731c85f510 in main.main
-        at /home/rodny/go/src/github.com/opencontainers/runc/main.go:194
-    13  0x000055731c19b699 in runtime.main
-        at /usr/local/go/src/runtime/proc.go:201
-    14  0x000055731c1c9581 in runtime.goexit
-        at /usr/local/go/src/runtime/asm_amd64.s:1333
+     0  0x00000000004ead9a in syscall.Syscall6
+        at /usr/local/go/src/syscall/asm_linux_amd64.s:53
+     1  0x0000000000524f55 in os.(*Process).blockUntilWaitable
+        at /usr/local/go/src/os/wait_waitid.go:31
+     2  0x00000000005194ae in os.(*Process).wait
+        at /usr/local/go/src/os/exec_unix.go:22
+     3  0x00000000005180a1 in os.(*Process).Wait
+        at /usr/local/go/src/os/exec.go:125
+     4  0x00000000007d870f in os/exec.(*Cmd).Wait
+        at /usr/local/go/src/os/exec/exec.go:501
+     5  0x0000000000d6c2fa in github.com/opencontainers/runc/libcontainer.  (*initProcess).wait
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/process_linux.go:655
+     6  0x0000000000d6c43f in github.com/opencontainers/runc/libcontainer.(*initProcess).terminate
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/process_linux.go:668
+     7  0x0000000000d89f35 in github.com/opencontainers/runc/libcontainer.(*initProcess).start.func1
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/process_linux.go:353
+     8  0x0000000000d6bace in github.com/opencontainers/runc/libcontainer.(*initProcess).start
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/process_linux.go:592
+     9  0x0000000000d3f3ae in github.com/opencontainers/runc/libcontainer.(*linuxContainer).start
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/container_linux.go:390
+    10  0x0000000000d3e426 in github.com/opencontainers/runc/libcontainer.(*linuxContainer).Start
+        at /root/nestybox/sysbox/sysbox-runc/libcontainer/container_linux.go:287
+    11  0x0000000000e1da2e in main.(*runner).run
+        at /root/nestybox/sysbox/sysbox-runc/utils_linux.go:383
+    12  0x0000000000e1f08f in main.startContainer
+        at /root/nestybox/sysbox/sysbox-runc/utils_linux.go:553
+    13  0x0000000000e1f78c in main.glob..func2
+        at /root/nestybox/sysbox/sysbox-runc/create.go:108
+    14  0x0000000000bac838 in github.com/urfave/cli.HandleAction
+        at /go/pkg/mod/github.com/urfave/cli@v1.22.1/app.go:523
+    15  0x0000000000bade00 in github.com/urfave/cli.Command.Run
+        at /go/pkg/mod/github.com/urfave/cli@v1.22.1/command.go:174
+    16  0x0000000000baa123 in github.com/urfave/cli.(*App).Run
+        at /go/pkg/mod/github.com/urfave/cli@v1.22.1/app.go:276
+    17  0x0000000000e11880 in main.main
+        at /root/nestybox/sysbox/sysbox-runc/main.go:145
+    18  0x000000000043ad24 in runtime.main
+        at /usr/local/go/src/runtime/proc.go:203
+    19  0x000000000046c0b1 in runtime.goexit
+        at /usr/local/go/src/runtime/asm_amd64.s:1357
     (dlv)
+    ```
+
+-   Configure the source-code path:
+
+    If no code is displayed while iterating through the back-trace frames, then
+    ensure that Delve is properly configured with the path to your Sysbox
+    workspace.
+
+    By default, Sysbox expects its source-code to be at `/root/nestybox/sysbox`.
+    Modify Delve configuration to replace this path as displayed below.
+
+    ```console
+    (dlv) config substitute-path /root/nestybox/sysbox /home/rodny/wsp/sysbox
+    ```
+
+    The source-code should be now properly shown:
+
+    ```console
+    (dlv) frame 10
+    > syscall.Syscall6() /usr/local/go/src/syscall/asm_linux_amd64.s:53 (PC: 0x4ead9a)
+    Frame 10: /root/nestybox/sysbox/sysbox-runc/libcontainer/container_linux.go:287 (PC: d3e426)
+       282:				if err := c.setupShiftfsMarks(); err != nil {
+       283:					return err
+       284:				}
+       285:			}
+       286:		}
+    => 287:		if err := c.start(process); err != nil {
+       288:			if process.Init {
+       289:				c.deleteExecFifo()
+       290:			}
+       291:			return err
+       292:		}
+    (dlv)
+    ```
 
 -   Inspecting POSIX threads:
 
-
+    ```console
     (dlv) threads
-      Thread 26558 at 0x55731c1cb403 /usr/local/go/src/runtime/sys_linux_amd64.s:532 runtime.futex
-      Thread 26559 at 0x55731c1cae7d /usr/local/go/src/runtime/sys_linux_amd64.s:131 runtime.usleep
-    * Thread 26560 at 0x55731c80152d /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263 github.com/opencontainers/runc/libcontainer.(*initProcess).start
-      Thread 26561 at 0x55731c1cb403 /usr/local/go/src/runtime/sys_linux_amd64.s:532 runtime.futex
-      Thread 26562 at :0
-      Thread 26575 at :0
+      Thread 2955507 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955508 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955509 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955510 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955511 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955512 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955517 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+    * Thread 2955520 at 0x4ead9a /usr/local/go/src/syscall/asm_linux_amd64.s:53 syscall.Syscall6
+      Thread 2955523 at 0x46dfd3 /usr/local/go/src/runtime/sys_linux_amd64.s:536 runtime.futex
+      Thread 2955564 at 0x46e180 /usr/local/go/src/runtime/sys_linux_amd64.s:673 runtime.epollwait
     (dlv)
+    ```
 
 -   Inspecting goroutines:
 
-
+    ```console
     (dlv) goroutines
-    * Goroutine 1 - User: /home/rodny/go/src/github.com/opencontainers/runc/libcontainer/process_linux.go:263 github.com/opencontainers/runc/libcontainer.(*initProcess).start (0x55731c80152d) (thread 26560)
-      Goroutine 2 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
-      Goroutine 3 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
-      Goroutine 4 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
-      Goroutine 6 - User: /usr/local/go/src/runtime/sigqueue.go:139 os/signal.signal_recv (0x55731c1b101e)
-      Goroutine 7 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
-      Goroutine 20 - User: /usr/local/go/src/runtime/proc.go:303 runtime.gopark (0x55731c19ba76)
-    [7 goroutines]
+    * Goroutine 1 - User: /usr/local/go/src/syscall/asm_linux_amd64.s:53 syscall.Syscall6 (0x4ead9a) (thread 2955520)
+      Goroutine 2 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 3 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 4 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 5 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 9 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 18 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 20 - User: /usr/local/go/src/runtime/sigqueue.go:147 os/signal.signal_recv (0x450dec)
+      Goroutine 23 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 26 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      Goroutine 32 - User: /usr/local/go/src/runtime/proc.go:305 runtime.gopark (0x43b0db)
+      [11 goroutines]
+    (dlv)
+    ```
 
     NOTE: Use `goroutines -t` to show a full stack trace for each goroutine. Then use `frame X` to switch to the desired frame.
-```
 
--   Printing:
+- Configure print length of strings:
 
-There's nothing new here, just use the regular `p` (print) instruction. But keep in mind this instruction when trying to print long strings in the debugger, as by default only 64 characters are displayed. This instruction extends that limit to any other value:
-
-```console
+    ```console
     (dlv) config max-string-len 1000
-```
-
-## Useful Debugger Options
-
-Configure print length of strings:
-
-```console
-    (dlv) config max-string-len 1000
-```
+    ```
 
 ## Debugging CGO code
 
@@ -265,9 +308,11 @@ Instructions:
 
     warning: Could not load vsyscall page because no executable was specified
     0x00007f0d78abf2e2 in ?? ()
+```
 
 4) Point gdb to the sysbox-runc binary so it can load the symbols:
 
+```console
     (gdb) file /usr/local/sbin/sysbox-runc
     A program is being debugged already.
     Are you sure you want to change the file? (y or n) y
