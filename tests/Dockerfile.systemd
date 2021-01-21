@@ -41,6 +41,10 @@ RUN apt-get update &&                            \
     useradd --create-home --shell /bin/bash admin && echo "admin:admin" | \
         chpasswd && adduser admin sudo
 
+# The sysbox installer will look for the linux-headers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+            linux-headers-generic
+
 # Make use of stopsignal (instead of sigterm) to stop systemd containers.
 STOPSIGNAL SIGRTMIN+3
 
