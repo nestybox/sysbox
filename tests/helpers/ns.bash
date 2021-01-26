@@ -30,7 +30,6 @@ PROC_SYS_NS=('e=(/proc/sys/net/ipv4/ip_default_ttl INT)' \
 PROC_SYS_NON_NS=('e=(/proc/sys/abi/vsyscall32 BOOL) '\
                  'e=(/proc/sys/debug/exception-trace BOOL) '\
                  'e=(/proc/sys/debug/kprobes-optimization BOOL) '\
-                 'e=(/proc/sys/fs/file-max INT) '\
                  'e=(/proc/sys/fs/pipe-max-size INT) '\
                  'e=(/proc/sys/fs/mount-max INT)' \
                  'e=(/proc/sys/fs/mqueue/msg_max INT)'
