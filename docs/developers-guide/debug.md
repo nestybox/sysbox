@@ -56,7 +56,7 @@ index bb551950..a2b29beb 100644
 
 ```
 
-## Delve instructions
+## Delve Debugger Instructions
 
 Even though GDB offers Golang support, in reality there are a few key features
 missing today, such as proper understanding of Golang's concurrency constructs
@@ -183,12 +183,17 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
 -   Configure the source-code path:
 
-    If no code is displayed while iterating through the back-trace frames, then
-    ensure that Delve is properly configured with the path to your Sysbox
-    workspace.
+    Sysbox compilation process is carried out inside a docker container. In
+    order to do this, we bind-mount the user's Sysbox workspace (i.e.
+    "sysbox" folder) into this path within the container: `/root/nestybox/sysbox`.
 
-    By default, Sysbox expects its source-code to be at `/root/nestybox/sysbox`.
-    Modify Delve configuration to replace this path as displayed below.
+    Golang compiler includes this path into the generated Sysbox binaries.
+    Thereby, if you are debugging Sysbox daemon in your host, unless your
+    workspace path fully matches the one above (unlikely), Delve will not be
+    able to display the Sysbox source-code.
+
+    The typical solution in these cases is to modify Delve's configuration to
+    replace the containerized path with the one of your local environment.
 
     ```console
     (dlv) config substitute-path /root/nestybox/sysbox /home/rodny/wsp/sysbox
