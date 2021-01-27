@@ -8,7 +8,7 @@ load ../../helpers/run
 load ../../helpers/sysbox-health
 
 function teardown() {
-  sysbox_log_check
+	sysbox_log_check
 }
 
 function wait_for_init() {
@@ -153,6 +153,56 @@ function check_systemd_mounts() {
   # Cleanup
   docker_stop "$SYSCONT_NAME"
   [ "$status" -eq 0 ]
+}
+
+@test "systemd archlinux" {
+
+  # Launch systemd container.
+  SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/archlinux-systemd)
+
+  wait_for_init
+
+  # Verify that systemd has been properly initialized (no major errors observed).
+  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" =~ "State: running" ]]
+
+  # Verify that systemd's required resources are properly mounted.
+  check_systemd_mounts
+
+  # Verify that the hostname was properly set during container initialization,
+  # which would confirm that 'hostnamectl' feature and its systemd dependencies
+  # (i.e. dbus) are working as expected.
+  docker exec "$SYSCONT_NAME" sh -c \
+         "hostnamectl | egrep -q \"hostname: sys-cont-systemd\""
+  [ "$status" -eq 0 ]
+
+  # verify virtualization type
+  docker exec "$SYSCONT_NAME" systemd-detect-virt
+  [ "$status" -eq 0 ]
+  [[ "$output" == "container-other" ]]
+
+  # Restart a systemd service (journald) and verify it returns to 'running'
+  # state.
+  docker exec "$SYSCONT_NAME" sh -c \
+         "systemctl status systemd-journald.service | egrep \"active \(running\)\""
+  [ "$status" -eq 0 ]
+
+  docker exec "$SYSCONT_NAME" systemctl restart systemd-journald.service
+  [ "$status" -eq 0 ]
+
+  sleep 2
+
+  docker exec "$SYSCONT_NAME" sh -c \
+         "systemctl status systemd-journald.service | egrep \"active \(running\)\""
+  [ "$status" -eq 0 ]
+
+  # Cleanup
+  docker_stop "$SYSCONT_NAME"
+  [ "$status" -eq 0 ]
+
+  docker image rm ${CTR_IMG_REPO}/archlinux-systemd
 }
 
 @test "systemd mount conflicts" {
