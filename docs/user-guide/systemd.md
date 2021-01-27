@@ -36,8 +36,9 @@ problems.
 
 You can find examples of system container images that come with Systemd in
 the [Dockerfiles](https://github.com/nestybox/dockerfiles) repository. The
-[Nestybox Dockerhub repo](https://hub.docker.com/u/nestybox) has a number of
-these images too.
+Nestybox [Dockerhub repo](https://hub.docker.com/u/nestybox) and
+[GitHub Container Registry](https://github.com/orgs/nestybox/packages) have
+a number of these images too.
 
 The Sysbox Quick Start Guide has a [few examples](../quickstart/systemd.md#deploy-a-system-container-with-systemd-inside)
 on how to use them.
@@ -48,6 +49,51 @@ image build process. For example, the [Dockerfile](https://github.com/nestybox/d
 for the `nestybox/ubuntu-bionic-systemd-docker` image includes Docker's systemd
 service unit by simply installing Docker in the container. As a result, when you
 launch that container, Systemd automatically starts Docker.
+
+## Unsupported Systemd Services
+
+The great majority of systemd services work well inside system container
+deployed with Sysbox.
+
+However, the following services are known not to work:
+
+### systemd-journald-audit.socket
+
+This service pulls audit logs from the kernel and enters them into the systemd
+journal. It fails inside the container because it does not have permission to
+access the kernel's audit log.
+
+Note that this log is currently a system-wide log, so accessing inside the
+container may not be appropriate anyway.
+
+### systemd-udev-trigger.service
+
+This services monitors device events from the kernel's udev subsystem. It fails
+inside the container because it does not have the required permissions.
+
+This service is not needed inside a system container, as devices exposed in the
+container are setup when the container is started and are immutable
+(i.e., hot-plug is not supported).
+
+### systemd-networkd-wait-online.service
+
+This service waits for all network devices to be online. For some
+yet-to-be-determined reason, this service is failing inside a system container.
+
+Note that the service is usually not required, given that the container's
+network interfaces are virtual and are thus normally up and running when the
+container starts.
+
+## Disabling Systemd Services
+
+To disable systemd services inside a container, the best approach is to
+modify the Dockerfile for the container and add a line such as:
+
+```
+RUN systemctl mask systemd-journald-audit.socket systemd-udev-trigger.service systemd-firstboot.service systemd-networkd-wait-online.service
+```
+
+See this [example](https://github.com/nestybox/dockerfiles/blob/master/archlinux-systemd/Dockerfile).
 
 ## Systemd Alternatives
 
