@@ -4,6 +4,8 @@
 
 -   [Intro](#intro)
 -   [Systemd-in-Docker](#systemd-in-docker)
+-   [Unsupported Systemd Services](#unsupported-systemd-services)
+-   [Disabling Systemd Services](#disabling-systemd-services)
 -   [Systemd Alternatives](#systemd-alternatives)
 
 ## Intro
@@ -93,7 +95,12 @@ modify the Dockerfile for the container and add a line such as:
 RUN systemctl mask systemd-journald-audit.socket systemd-udev-trigger.service systemd-firstboot.service systemd-networkd-wait-online.service
 ```
 
-See this [example](https://github.com/nestybox/dockerfiles/blob/master/archlinux-systemd/Dockerfile).
+See this [Dockerfile example](https://github.com/nestybox/dockerfiles/blob/master/archlinux-systemd/Dockerfile).
+
+We recommend disabling the unsupported systemd services (see prior section), as
+well as other services which don't make sense to have in the container for your
+use case. This results in faster container startup time and possibly better
+performance.
 
 ## Systemd Alternatives
 
