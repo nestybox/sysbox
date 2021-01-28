@@ -28,7 +28,7 @@ ifeq ($(HOSTNAME),)
 export HOSTNAME=$(shell hostname)
 endif
 
-export VERSION := $(shell egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
+export VERSION := $(shell cat ./VERSION)
 
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
