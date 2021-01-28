@@ -137,7 +137,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
-sysbox: ## Build sysbox
+sysbox: ## Build sysbox (the build occurs inside a container, so the host is not polluted)
 sysbox: test-img
 	@printf "\n** Building sysbox **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-local"

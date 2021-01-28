@@ -21,7 +21,7 @@ following requirements:
 
 -   For local development and testing purposes, you can build Sysbox in any of
 the [supported distributions](docs/distro-compat.md). However, if you are
-planning to contribute to Sysbox's public respositories, you should then have a
+planning to contribute to Sysbox's public repositories, you should then have a
 distro that carries the `shiftfs` module (e.g. Ubuntu Server versions for Bionic
 or Focal) so that you can properly test your changes with and without `shiftfs`.
 
@@ -57,7 +57,7 @@ Usage:
   make <target>
 
   Building targets
-    sysbox                  Build sysbox
+    sysbox                  Build sysbox (the build occurs inside a container, so the host is not polluted)
     sysbox-debug            Build sysbox (with debug symbols)
     sysbox-static           Build sysbox (static linking)
 
@@ -68,19 +68,16 @@ Usage:
   Testing targets
     test                    Run all sysbox test suites
     test-sysbox             Run sysbox integration tests
-    test-sysbox-shiftuid    Run sysbox integration tests with uid-shifting (shiftfs)
-    test-runc               Run sysbox-runc unit & integration tests
-    test-fs                 Run sysbox-fs unit tests
-    test-mgr                Run sysbox-mgr unit tests
-    test-shell              Get a shell in the test container (useful for debug)
-    test-shell-shiftuid     Get a shell in the test container with uid-shifting
-    test-img                Build test container image
-    test-cleanup            Clean up sysbox integration tests (requires root privileges)
+    ...
 
   Sysbox-In-Docker targets
     sysbox-in-docker        Build sysbox-in-docker sandbox image
     test-sind               Run the sysbox-in-docker integration tests
-    test-sind-shell         Get a shell in the test container for sysbox-in-docker (useful for debug)
+    ...
+
+  Code Hygiene targets
+    lint                    Runs lint checker on sysbox source code and tests
+    shfmt                   Formats shell scripts in the repo; requires shfmt.
 
   Cleaning targets
     clean                   Eliminate sysbox binaries
@@ -98,7 +95,7 @@ $ make sysbox
 
 This target creates a temporary container and builds the binaries for the Sysbox
 components inside that container. The resulting binaries are then placed in the
-sysbox-fs, sysbox-mgr, and sysbox-runc subdirectories.
+sysbox-fs, sysbox-mgr, and sysbox-runc sub-directories.
 
 Once you've built Sysbox, you install it with:
 
@@ -115,20 +112,30 @@ This last target simply copies the Sysbox binaries to your machine's
 Once Sysbox is installed, you start it with:
 
 ```
-$ sudo scr/sysbox
+$ sudo ./scr/sysbox
 ```
 
 This script starts the sysbox-fs and sysbox-mgr daemons. The daemons will log into
 `/var/log/sysbox-fs.log` and `/var/log/sysbox-mgr.log` (these logs are useful
 for troubleshooting).
 
+If you wish to start Sysbox with debug logging, use `sudo ./scr/sysbox --debug`.
+This slows down Sysbox but it's useful for diagnosing problems.
+
 ## Configuring Docker
 
 If you plan to use Docker to deploy system containers with Sysbox, you
 must first configure Docker so that it becomes aware of Sysbox.
 
-You do this by stopping all docker containers, and modifying the
-`/etc/docker/daemon.json` file as follows:
+We suggest you do this by using the convenience script `docker-cfg` located in
+the `scr` directory of the Sysbox repo. For example, to configure Docker such
+that it's ready to use Sysbox, type:
+
+```
+$ sudo ./scr/docker-cfg --sysbox-runtime=enable
+```
+
+This will add the sysbox-runtime in the `/etc/docker/daemon.json` as follows:
 
 ```json
 {
@@ -140,11 +147,19 @@ You do this by stopping all docker containers, and modifying the
 }
 ```
 
-Then restart docker:
+The script will also to configure Docker networking to avoid conflicts between
+host and inner container subnets, and will restart Docker (unless it's told
+not to).
 
-```
-$ sudo systemctl restart docker
-```
+This script takes several other configuration options, and you can use it to
+configure Docker with userns-remap mode (e.g., to use Sysbox in hosts where
+shiftfs is not available), to set the default runtime to Sysbox, to output the
+config without actually applying it, and several other options. Type
+`docker-cfg --help` for more info.
+
+If you don't wish to use the script, then you will have to manually modify
+the `/etc/docker/daemon.json` file and restart Docker yourself (e.g.,
+`systemctl restart docker`).
 
 ## Using Sysbox
 
