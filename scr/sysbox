@@ -21,42 +21,42 @@ SYSBOX_MAX_USER_NS=10000
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
 # (copied from runc/tests/integration/helpers.bash)
 function retry() {
-  local attempts=$1
-  shift
-  local delay=$1
-  shift
-  local i
+	local attempts=$1
+	shift
+	local delay=$1
+	shift
+	local i
 
-  for ((i = 0; i < attempts; i++)); do
-    $@
-    if [ "$?" -eq 0 ]; then
-	return 0
-    fi
-    sleep $delay
-  done
+	for ((i = 0; i < attempts; i++)); do
+		$@
+		if [ "$?" -eq 0 ]; then
+			return 0
+		fi
+		sleep $delay
+	done
 
-  echo "Command \"$@\" failed $attempts times. Output: $?"
-  false
+	echo "Command \"$@\" failed $attempts times. Output: $?"
+	false
 }
 
 # Ensure that kernel-modules expected by system-level apps (running within sys
 # containers) are properly loaded.
 function load_required_modules() {
 
-  # Sysbox requires 'configfs' module to ensure proper operation of containerized
-  # apps requiring access to kernel's config file (e.g. kubeadm).
-  if ! modprobe configfs &> /dev/null; then
+	# Sysbox requires 'configfs' module to ensure proper operation of containerized
+	# apps requiring access to kernel's config file (e.g. kubeadm).
+	if ! modprobe configfs &> /dev/null; then
       echo "Could not load configfs kernel module. Exiting ..."
       return 1
-  fi
+	fi
 
-  return 0
+	return 0
 }
 
 # Returns linux distro running in the system.
 function get_host_distro() {
-  local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
-  echo $distro
+	local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
+	echo $distro
 }
 
 # Ensures user "sysbox" is present on the host
@@ -71,41 +71,41 @@ function setup_sysbox_user() {
 # Ensures unprivileged user-ns's are allowed.
 function setup_userns() {
 
-  local distro=$1
+	local distro=$1
 
-  if [[ "${distro}" == "ubuntu" ]] ||
-     [[ "${distro}" == "debian" ]]; then
+	if [[ "${distro}" == "ubuntu" ]] ||
+			[[ "${distro}" == "debian" ]]; then
       echo "1" > /proc/sys/kernel/unprivileged_userns_clone
 
-  elif [[ "${distro}" == "centos" ]] ||
-       [[ "${distro}" == "fedora" ]]; then
+	elif [[ "${distro}" == "centos" ]] ||
+			  [[ "${distro}" == "fedora" ]]; then
 
       # Setting user-ns max value.
       max_user_ns=$(</proc/sys/user/max_user_namespaces)
       if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $SYSBOX_MAX_USER_NS ]]; then
-	  echo $SYSBOX_MAX_USER_NS > /proc/sys/user/max_user_namespaces
+			echo $SYSBOX_MAX_USER_NS > /proc/sys/user/max_user_namespaces
       fi
 
-  else
+	else
       echo "Unsupported Linux distribution: $distro. Sysbox may not opperate as expected."
-  fi
+	fi
 }
 
 # Identifies kernel-header's expected path based on distro.
 function kernel_header_path() {
 
-  local distro=$1
-  local path
+	local distro=$1
+	local path
 
-  if [[ "${distro}" == "centos" ]] ||
-     [[ "${distro}" == "fedora" ]] ||
-     [[ "${distro}" == "redhat" ]]; then
+	if [[ "${distro}" == "centos" ]] ||
+			[[ "${distro}" == "fedora" ]] ||
+			[[ "${distro}" == "redhat" ]]; then
       path="/usr/src/kernels/$(uname -r)"
-  else
+	else
       path="/usr/src/linux-headers-$(uname -r)"
-  fi
+	fi
 
-  echo "$path"
+	echo "$path"
 }
 
 # Verifies that a kernel configuration file is found, and if that's not the case,
@@ -115,118 +115,118 @@ function kernel_header_path() {
 # alert the user.
 function setup_kernel_config() {
 
-  local distro=$1
+	local distro=$1
 
-  local kernel_path=$(kernel_header_path $distro)
+	local kernel_path=$(kernel_header_path $distro)
 
-  if [[ ! -f "${kernel_path}"/.config ]]; then
+	if [[ ! -f "${kernel_path}"/.config ]]; then
       # Attempt to find kernel config in /boot path.
       if [[ -d /boot ]] && [[ -f /boot/config-$(uname -r) ]]; then
-	  cp /boot/config-$(uname -r) "${kernel_path}"/.config
-	  return
+			cp /boot/config-$(uname -r) "${kernel_path}"/.config
+			return
       fi
 
       echo -e "\nUnable to find a kernel config file. This may affect some system" \
-	   "level apps running within sys-containers. As a solution, identify your" \
-	   "kernel config file in the host (typically: \"/boot/config-$(uname -r)\")" \
-	   "and copy it into your distro's expected kernel-headers path" \
-	   "(usually: \"$(kernel_header_path $distro)\").\n"
-  fi
+			  "level apps running within sys-containers. As a solution, identify your" \
+			  "kernel config file in the host (typically: \"/boot/config-$(uname -r)\")" \
+			  "and copy it into your distro's expected kernel-headers path" \
+			  "(usually: \"$(kernel_header_path $distro)\").\n"
+	fi
 }
 
 # Increases system-level resources to satisfy Sysbox requirements.
 function setup_maxs() {
 
-  # Increase default inotify resources to meet sys container's demands.
-  sysctl -w fs.inotify.max_queued_events=1048576 &> /dev/null
-  sysctl -w fs.inotify.max_user_watches=1048576 &> /dev/null
-  sysctl -w fs.inotify.max_user_instances=1048576 &> /dev/null
+	# Increase default inotify resources to meet sys container's demands.
+	sysctl -w fs.inotify.max_queued_events=1048576 &> /dev/null
+	sysctl -w fs.inotify.max_user_watches=1048576 &> /dev/null
+	sysctl -w fs.inotify.max_user_instances=1048576 &> /dev/null
 
-  # Increase default keyring resources to meet sys container demands.
-  # For a k8s cluster:
-  # keys = 35 + (workers * 23) + (2 * pods)
-  # maxbytes = 20 bytes * maxkeys
-  sysctl -w kernel.keys.maxkeys=20000 &> /dev/null
-  sysctl -w kernel.keys.maxbytes=$((20*20000)) &> /dev/null
+	# Increase default keyring resources to meet sys container demands.
+	# For a k8s cluster:
+	# keys = 35 + (workers * 23) + (2 * pods)
+	# maxbytes = 20 bytes * maxkeys
+	sysctl -w kernel.keys.maxkeys=20000 &> /dev/null
+	sysctl -w kernel.keys.maxbytes=$((20*20000)) &> /dev/null
 }
 
 # Completes Sysbox's setup process.
 function sysbox_setup() {
 
-  local distro=$(get_host_distro)
+	local distro=$(get_host_distro)
 
-  if ! load_required_modules; then
+	if ! load_required_modules; then
       exit 1
-  fi
+	fi
 
-  setup_sysbox_user
-  setup_userns $distro
-  setup_kernel_config $distro
-  setup_maxs
+	setup_sysbox_user
+	setup_userns $distro
+	setup_kernel_config $distro
+	setup_maxs
 }
 
 # Stop all Sysbox components.
 function sysbox_stop() {
 
-  sysmgr_pids=$(pidof sysbox-mgr) || true
-  sysfs_pids=$(pidof sysbox-fs) || true
+	sysmgr_pids=$(pidof sysbox-mgr) || true
+	sysfs_pids=$(pidof sysbox-fs) || true
 
-  for pid in $sysmgr_pids; do
-	  [[ $VERBOSE ]] && printf "Stopping sysbox-mgr\n"
-    kill $pid
-  done
+	for pid in $sysmgr_pids; do
+		[[ $VERBOSE ]] && printf "Stopping sysbox-mgr\n"
+		kill $pid
+	done
 
-  for pid in $sysfs_pids; do
-	  [[ $VERBOSE ]] && printf "Stopping sysbox-fs\n"
-    kill $pid
-  done
+	for pid in $sysfs_pids; do
+		[[ $VERBOSE ]] && printf "Stopping sysbox-fs\n"
+		kill $pid
+	done
 }
 
 function sysbox_mgr_start() {
 
-  [[ $VERBOSE ]] && printf "Starting sysbox-mgr\n"
+	[[ $VERBOSE ]] && printf "Starting sysbox-mgr\n"
 
-  declare -a mgr_options=("--log /var/log/sysbox-mgr.log")
+	declare -a mgr_options=("--log /var/log/sysbox-mgr.log")
 
-  if [ $DEBUG_MODE -eq 1 ]; then
-	  mgr_options+=("--log-level=debug")
-  fi
+	if [ $DEBUG_MODE -eq 1 ]; then
+		mgr_options+=("--log-level=debug")
+	fi
 
-  sysbox-mgr ${mgr_options[@]} &
-  sleep 1
-  res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
-  if [ $? -ne 0 ]; then
-    printf "\nsysbox-mgr failed to start. Here is the log file:\n"
-    cat /var/log/sysbox-mgr.log
-    exit 1
-  fi
+	sysbox-mgr ${mgr_options[@]} &
+	sleep 1
+	res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
+	if [ $? -ne 0 ]; then
+		printf "\nsysbox-mgr failed to start. Here is the log file:\n"
+		cat /var/log/sysbox-mgr.log
+		exit 1
+	fi
 }
 
 function sysbox_fs_start() {
 
-  mkdir -p /var/lib/sysboxfs
+	mkdir -p /var/lib/sysboxfs
 
-  declare -a fs_options=("--log /var/log/sysbox-fs.log")
+	declare -a fs_options=("--log /var/log/sysbox-fs.log")
 
-  if [ $TEST_MODE -eq 1 ]; then
-	  fs_options+=("--ignore-handler-errors")
-  fi
+	if [ $TEST_MODE -eq 1 ]; then
+		fs_options+=("--ignore-handler-errors")
+	fi
 
-  if [ $DEBUG_MODE -eq 1 ]; then
-	  fs_options+=("--log-level=debug")
-  fi
+	if [ $DEBUG_MODE -eq 1 ]; then
+		fs_options+=("--log-level=debug")
+	fi
 
-  [[ $VERBOSE ]] && printf "Starting sysbox-fs\n"
+	[[ $VERBOSE ]] && printf "Starting sysbox-fs\n"
 
-  sysbox-fs ${fs_options[@]} &
+	sysbox-fs ${fs_options[@]} &
 
-  sleep 1
-  res=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
-  if [ $? -ne 0 ]; then
-    printf "\nsysbox-fs failed to start. Here is the log file:\n"
-    cat /var/log/sysbox-fs.log
-    exit 1
-  fi
+	sleep 1
+	res=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+	if [ $? -ne 0 ]; then
+		printf "\nsysbox-fs failed to start. Here is the log file:\n"
+		cat /var/log/sysbox-fs.log
+		exit 1
+	fi
 
 }
 
@@ -254,59 +254,59 @@ function show_usage() {
 }
 
 function parse_args() {
-  options=$(getopt -o tdh -l test-mode,debug,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,help -- "$@")
 
-  eval set -- "$options"
+	eval set -- "$options"
 
-  while true; do
-    case "$1" in
-      -h | --help)
-        show_usage
-		  exit 1
-        ;;
-      -t | --test-mode)
-        TEST_MODE=1
-        ;;
-      -d | --debug)
-        DEBUG_MODE=1
-        ;;
-      --)
-        shift
-        break
-        ;;
-      -*)
-        show_usage
-		  exit 1
-        ;;
-      *)
-        show_usage
-		  exit 1
-        ;;
-    esac
-    shift
-  done
+	while true; do
+		case "$1" in
+			-h | --help)
+				show_usage
+				exit 1
+				;;
+			-t | --test-mode)
+				TEST_MODE=1
+				;;
+			-d | --debug)
+				DEBUG_MODE=1
+				;;
+			--)
+				shift
+				break
+				;;
+			-*)
+				show_usage
+				exit 1
+				;;
+			*)
+				show_usage
+				exit 1
+				;;
+		esac
+		shift
+	done
 
-  [[ "$1" == "" ]] || {
-    show_usage
-    exit 1
-  }
+	[[ "$1" == "" ]] || {
+		show_usage
+		exit 1
+	}
 
 }
 
 function main() {
 
-  parse_args "$@"
+	parse_args "$@"
 
-  if [ "$EUID" -ne 0 ]; then
-     echo "Please run as root."
-     exit
-  fi
+	if [ "$EUID" -ne 0 ]; then
+		echo "Please run as root."
+		exit
+	fi
 
-  sysbox_stop
-  sysbox_setup
-  sysbox_start
+	sysbox_stop
+	sysbox_setup
+	sysbox_start
 
-  [[ $VERBOSE ]] && printf "Done.\n"
+	[[ $VERBOSE ]] && printf "Done.\n"
 }
 
 main "$@"
