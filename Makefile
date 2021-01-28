@@ -18,7 +18,7 @@
 	pjdfstest pjdfstest-clean \
 	sysbox-in-docker sysbox-in-docker-local \
 	test-sind-shell \
-	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal ubuntu-eoan \
+	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal \
 	lint lint-local lint-sysbox-local lint-tests-local shfmt
 	clean
 
@@ -231,8 +231,8 @@ DOCKER_RUN := docker run -it --privileged --rm --runtime=runc         \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
-# Must use "--cgroups private" as otherwise configuring Docker with systemd
-# cgroup driver gets confused with the cgroup paths.
+# Must use "--cgroups private" as otherwise the inner Docker may get confused
+# when configured with the systemd cgroup driver.
 DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \

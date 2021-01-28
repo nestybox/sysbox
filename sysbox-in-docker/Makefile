@@ -97,13 +97,6 @@ ubuntu-bionic: ## Build Ubuntu-Bionic docker image
 	@printf "$(LAUNCH_INSTRUCTION) "
 	@printf "$(SIND_IMAGE):$@\n\n"
 
-ubuntu-eoan: ## Build Ubuntu-Eoan docker image
-	@printf "\n** Building $@ sysbox-in-docker image **\n\n"
-	@docker build -t $(SIND_IMAGE):$@ -f Dockerfile.$@ .
-	@printf "\n*** Launch container with the following instruction ***\n\n"
-	@printf "$(LAUNCH_INSTRUCTION) "
-	@printf "$(SIND_IMAGE):$@\n\n"
-
 ubuntu-focal: ## Build Ubuntu-Focal docker image
 	@printf "\n** Building $@ sysbox-in-docker image **\n\n"
 	@docker build -t $(SIND_IMAGE):$@ -f Dockerfile.$@ .

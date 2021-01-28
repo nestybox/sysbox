@@ -170,7 +170,7 @@ root@my_cont:/# findmnt | grep sysboxfs
 In addition, the sysbox-fs and sysbox-mgr logs should show activity:
 
 ```
-cesar@eoan:/mnt/dev-ws/cesar/nestybox/sysbox$ sudo cat /var/log/sysbox-mgr.log
+$ sudo cat /var/log/sysbox-mgr.log
 INFO[2020-08-04 17:09:12] Starting ...
 INFO[2020-08-04 17:09:13] Sys container DNS aliasing enabled.
 INFO[2020-08-04 17:09:13] Listening on /run/sysbox/sysmgr.sock
