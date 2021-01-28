@@ -288,10 +288,10 @@ Instructions:
     the nsenter pid and attach the debugger to it), then execute
     sysbox-runc, find the pid with pstree, and attach gdb to it (next step).
 
-3) Attach gdb to the target process:
+3) Attach gdb to the target process (need root access):
 
 ```console
-    root@eoan:/mnt/dev-ws/cesar/nestybox/sysbox# gdb --pid 17089
+    # gdb --pid 17089
 
     GNU gdb (Ubuntu 8.3-0ubuntu1) 8.3
     Copyright (C) 2019 Free Software Foundation, Inc.
