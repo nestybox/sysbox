@@ -476,11 +476,9 @@ test-sind-shell: test-img
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		sindTestContainerInit && /bin/bash"
 
-#
-# Code Hygiene targets
-#
+##@ Code Hygiene targets
 
-lint: ## runs lint checker on sysbox source code and tests
+lint: ## Runs lint checker on sysbox source code and tests
 lint: test-img
 	@printf "\n** Building sysbox **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "make lint-local"
@@ -498,7 +496,7 @@ lint-tests-local:
 	shellcheck $(TEST_FILES)
 	shellcheck $(TEST_SCR)
 
-shfmt: ## formats shell scripts in the repo; requires shfmt.
+shfmt: ## Formats shell scripts in the repo; requires shfmt.
 shfmt:
 	shfmt -ln bats -d -w $(TEST_FILES)
 	shfmt -ln bash -d -w $(TEST_SCR)
