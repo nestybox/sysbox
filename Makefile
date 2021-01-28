@@ -280,8 +280,8 @@ test-sysbox-systemd: test-img-systemd
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 
-test-sysbox-systemd-installer: ## Run sysbox integration tests in a test container with systemd and the sysbox installer
-test-sysbox-systemd-installer: test-img-systemd
+test-sysbox-installer: ## Run sysbox integration tests in a test container with systemd and the sysbox installer
+test-sysbox-installer: test-img-systemd
 	@printf "\n** Running sysbox integration tests (with systemd + the sysbox installer) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
@@ -327,8 +327,8 @@ else
 	$(DOCKER_STOP)
 endif
 
-test-sysbox-shiftuid-systemd-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
-test-sysbox-shiftuid-systemd-installer: test-img-systemd
+test-sysbox-shiftuid-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
+test-sysbox-shiftuid-installer: test-img-systemd
 ifeq ($(SHIFTUID_ON), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -371,8 +371,8 @@ test-shell-systemd: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
-test-shell-systemd-installer: ## Get a shell in the test container that includes systemd and the sysbox installer (useful for debug)
-test-shell-systemd-installer: test-img-systemd
+test-shell-installer: ## Get a shell in the test container that includes systemd and the sysbox installer (useful for debug)
+test-shell-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
 		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -396,8 +396,8 @@ test-shell-shiftuid-systemd: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
-test-shell-shiftuid-systemd-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
-test-shell-shiftuid-systemd-installer: test-img-systemd
+test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
+test-shell-shiftuid-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
 		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
