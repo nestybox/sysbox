@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.3.0-dev] - 2021-01-28
+### Added
+  * TBD
+### Removed
+  * TBD
+
 ## [0.2.1] - 2020-08-25
 ### Added
   * Created debian packages for first community-edition release.
