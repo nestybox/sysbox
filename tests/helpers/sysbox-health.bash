@@ -131,7 +131,7 @@ function sysboxmgr_fd_check() {
   num_fds=$(lsof -p $(pidof sysbox-mgr) 2>/dev/null | wc -l)
   if [ $num_fds -gt $SYSBOX_MGR_MAX_FDS ]; then
     output=$(lsof -p $(pidof sysbox-mgr) 2>/dev/null)
-    printf "sysbox-mgr has > $SYSBOX_MGR_MAX_FDS files opened:\n $output"
+    printf "sysbox-mgr has $num_fds (> $SYSBOX_MGR_MAX_FDS) files opened:\n $output"
     return 1
   fi
 

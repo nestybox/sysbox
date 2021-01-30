@@ -109,7 +109,7 @@ function sysbox_mgr_start() {
     bats_bg sysbox-mgr --log /var/log/sysbox-mgr.log $@
   fi
 
-  retry 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
+  retry_run 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
 }
 
 function sysbox_mgr_stop() {
@@ -119,7 +119,7 @@ function sysbox_mgr_stop() {
     kill $(pidof sysbox-mgr)
   fi
 
-  retry 10 1 sysbox_mgr_stopped
+  retry_run 10 1 sysbox_mgr_stopped
 }
 
 function sysbox_mgr_stopped() {
@@ -151,7 +151,7 @@ function sysbox_fs_stop() {
     kill $(pidof sysbox-fs)
   fi
 
-  retry 10 1 sysbox_fs_stopped
+  retry_run 10 1 sysbox_fs_stopped
 }
 
 function sysbox_fs_stopped() {
@@ -180,8 +180,8 @@ function sysbox_stop() {
     kill $(pidof sysbox-fs) && kill $(pidof sysbox-mgr)
   fi
 
-  retry 10 1 sysbox_fs_stopped
-  retry 10 1 sysbox_mgr_stopped
+  retry_run 10 1 sysbox_fs_stopped
+  retry_run 10 1 sysbox_mgr_stopped
 }
 
 function sysbox_stopped() {
