@@ -144,5 +144,5 @@ fs.inotify.max_queued_events = 1048576
 fs.inotify.max_user_watches = 1048576
 fs.inotify.max_user_instances = 1048576
 kernel.keys.maxkeys = 20000
-kernel.keys.maxbytes = 4000000
+kernel.keys.maxbytes = 400000
 ```
