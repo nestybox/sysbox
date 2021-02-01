@@ -3,7 +3,7 @@
 This document shows, by way of example, how to deploy system containers and
 quickly take advantage of their features.
 
-It assumes you've [installed](../developers-guide/build.md) Sysbox.
+It assumes you've [installed](../user-guide/install.md) Sysbox.
 
 For an in-depth description of Sysbox's functionality, refer to the [Sysbox Users Guide](../user-guide/README.md).
 
