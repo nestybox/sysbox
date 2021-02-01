@@ -13,6 +13,8 @@ functionality.
 
 [Concepts & Terminology](concepts.md)
 
+[Installing Sysbox](install.md)
+
 [Deploying System Containers](deploy.md)
 
 [Docker-in-Docker](dind.md)

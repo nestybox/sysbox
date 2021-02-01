@@ -2,6 +2,7 @@
 
 ## Contents
 
+-   [Sysbox Installation Problems](#sysbox-installation-problems)
 -   [Docker reports Unknown Runtime error](#docker-reports-unknown-runtime-error)
 -   [Ubuntu Shiftfs Module Not Present](#ubuntu-shiftfs-module-not-present)
 -   [Unprivileged User Namespace Creation Error](#unprivileged-user-namespace-creation-error)
@@ -13,6 +14,62 @@
 -   [Sysbox Logs](#sysbox-logs)
 -   [The `/var/lib/sysbox` is not empty even though there are no containers](#the-varlibsysbox-is-not-empty-even-though-there-are-no-containers)
 -   [Kubernetes-in-Docker fails to create pods](#kubernetes-in-docker-fails-to-create-pods)
+
+## Sysbox Installation Problems
+
+When installing the Sysbox package with the `dpkg` command
+(see the [Installation instructions](../../README.md#installing-sysbox)), the expected output is:
+
+```console
+$ sudo dpkg -i sysbox_0.2.0-0.ubuntu-eoan_amd64.deb
+Selecting previously unselected package sysbox.
+(Reading database ... 155191 files and directories currently installed.)
+Preparing to unpack sysbox_0.2.0-0.ubuntu-eoan_amd64.deb ...
+Unpacking sysbox (0.1.2-0.ubuntu-eoan) ...
+Setting up sysbox (0.1.2-0.ubuntu-eoan) ...
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
+Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
+```
+
+In case an error occurs during installation as a consequence of a missing
+software dependency, proceed to download and install the missing package(s) as
+indicated below. Once this requirement is satisfied, Sysbox's installation
+process will be automatically re-launched to conclude this task.
+
+Missing dependency output:
+
+```console
+...
+dpkg: dependency problems prevent configuration of sysbox:
+sysbox depends on jq; however:
+Package jq is not installed.
+
+dpkg: error processing package sysbox (--install):
+dependency problems - leaving unconfigured
+Errors were encountered while processing:
+sysbox
+```
+
+Install missing package by fixing (-f) system's dependency structures.
+
+```console
+$ sudo apt-get update
+$ sudo apt-get install -f -y
+```
+
+Verify that Sysbox's systemd units have been properly installed, and
+associated daemons are properly running:
+
+```console
+$ systemctl list-units -t service --all | grep sysbox
+sysbox-fs.service                   loaded    active   running sysbox-fs component
+sysbox-mgr.service                  loaded    active   running sysbox-mgr component
+sysbox.service                     loaded    active   exited  Sysbox General Service
+```
+
+The sysbox.service is ephemeral (it exits once it launches the other sysbox services),
+so the `active exited` status above is expected.
 
 ## Docker reports Unknown Runtime error
 
@@ -36,7 +93,7 @@ This is likely due to one of the following reasons:
 For (1):
 
 At this time, Sysbox does not support Docker installations via snap.
-See [host requirements](../developers-guide/build.md#host-requirements) for more info
+See [host requirements](install.md#host-requirements) for more info
 and how to overcome this.
 
 For (2):
