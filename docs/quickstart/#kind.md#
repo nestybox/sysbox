@@ -18,8 +18,9 @@ detail.
 
 ## Why Sysbox for K8s-in-Docker?
 
-In K8s-in-Docker, each Docker container acts as a K8s node. Multiple such containers,
-connected via a Docker network form a K8s cluster (see [here](../user-guide/kind.md#intro) for a diagram).
+In K8s-in-Docker, each Docker container acts as a K8s node. Multiple such
+containers, connected via a Docker network form a K8s cluster (see
+[here](../user-guide/kind.md#intro) for a diagram).
 
 Sysbox is the first container runtime capable of creating containers that can
 run K8s seamlessly, using simple Docker images, no special configurations, and
