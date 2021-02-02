@@ -23,12 +23,14 @@ The Linux host on which Sysbox runs must meet the following requirements:
 
 ## Installing Sysbox
 
-**NOTE**: if you have a prior version of Sysbox already installed, please [uninstall it](#uninstalling-sysbox) first and then follow the installation instructions below.
+**NOTE**: if you have a prior version of Sysbox already installed, please
+[uninstall it](#uninstalling-sysbox) first and then follow the installation
+instructions below.
 
 1) Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page.
 
-2) Verify that the checksum of the downloaded file fully matches the expected/published one.
-   For example:
+2) Verify that the checksum of the downloaded file fully matches the
+   expected/published one. For example:
 
 ```console
 $ sha256sum sysbox_0.2.1-0.ubuntu-focal_amd64.deb
@@ -128,6 +130,11 @@ will need to make these changes manually and restart Docker service afterwards (
 ```console
 {
    "userns-remap": "sysbox",
+   "runtimes": {
+       "sysbox-runc": {
+          "path": "/usr/local/sbin/sysbox-runc"
+       }
+   }
 }
 ```
 
@@ -220,7 +227,6 @@ Notice that it is up to the user to decide which specific `bip` or `default-addr
 values/ranges are pre-configured, and the same applies to the `userns-remap` entry.
 Sysbox will not restart Docker as long as there's one instance of these must-have attributes
 in Docker's `/etc/docker/daemon.json` configuration file.
-
 
 ## Docker Installation
 

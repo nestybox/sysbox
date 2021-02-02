@@ -116,10 +116,14 @@ There is one advantage of Directed userns ID mapping:
     This means Sysbox can run in kernels that don't carry that module (e.g.,
     Ubuntu cloud images).
 
-But there is a drawback:
+But are a couple of drawbacks:
 
 -   Configuring Docker with userns-remap places a few [functional limitations](https://docs.docker.com/engine/security/userns-remap/#user-namespace-known-limitations)
     on regular Docker containers (those launched with Docker's default runc).
+
+-   Docker assigns the same user-ID mapping to all containers. This is not ideal:
+    it would be better to assign each container exclusive user-ID mappings for
+    improved cross-container isolation.
 
 ### Auto userns ID mapping
 
@@ -128,15 +132,12 @@ a container, Sysbox automatically enables it and allocates user-ID mappings for
 the container.
 
 For Docker specifically, this occurs when Docker is not configured with
-userns-remap (by default, Docker is not configured with userns-remap).
+userns-remap (which is normally the case).
 
 This has the advantage that no change in the configuration of the container
-manager (e.g., Docker) is required.
-
-**NOTE**: Sysbox allocates the same user-ID mapping for all system
-containers. Exclusive per-container user-ID mappings is considered an
-enterprise-level feature (implemented in the Sysbox Enterprise version from
-Nestybox).
+manager (e.g., Docker) is required, so it can continue to launch regular
+containers (i.e., with the OCI runc) as usual while at the same time launch
+system containers with Sysbox.
 
 #### Dependence on Shiftfs
 
@@ -149,6 +150,89 @@ Linux kernel, Sysbox will fail to launch containers and issue an error such as
 
 Note that shiftfs is present in Ubuntu Desktop and Server editions, but likely
 not present in Ubuntu cloud editions.
+
+### Common vs Exclusive Userns ID Mappings
+
+The Sysbox Community Edition (Sysbox-CE) uses a common user-ID mapping for all
+system containers. In other words, the root user in all containers is mapped to
+the same user-ID on the host.
+
+While this provides strong container-to-host isolation (i.e., root in the
+container is not root in the host), container-to-container is not as strong as
+it could be.
+
+The Sysbox Enterprise Edition (Sysbox-EE) improves on this by providing
+exclusive user-ID mappings to each container.
+
+#### **-------- Sysbox-EE Feature Highlight --------**
+
+### Exclusive Userns ID mapping allocation
+
+In order to provide strong cross-container isolation, Sysbox-EE allocates
+exclusive userns ID mappings to each container,
+
+By way of example: if we launch two containers with Sysbox-EE, notice the ID
+mappings assigned to each:
+
+    $ docker run --runtime=sysbox-runc --name=syscont1 --rm -d alpine tail -f /dev/null
+    16c1abcc48259a47ef749e2d292ceef6a9f7d6ab815a6a5d12f06efc3c09d0ce
+
+    $ docker run --runtime=sysbox-runc --name=syscont2 --rm -d alpine tail -f /dev/null
+    573843fceac623a93278aafd4d8142bf631bc1b214b1bcfcd183b1be77a00b69
+
+    $ docker exec syscont1 cat /proc/self/uid_map
+    0     165536      65536
+
+    $ docker exec syscont2 cat /proc/self/uid_map
+    0     231072      65536
+
+Each system container gets an **exclusive range of 64K user IDs**. For syscont1,
+user IDs [0, 65536] are mapped to host user IDs [165536, 231071]. And for
+syscont2 user IDs [0, 65536] are mapped to host user IDs [231072, 65536].
+
+The same applies to the group IDs.
+
+The reason 64K user-IDs are given to each system container is to allow the
+container to have IDs ranging from the `root` (ID 0) all the way up to user
+`nobody` (ID 65534).
+
+Exclusive ID mappings ensure that if a container process somehow escapes the
+container's root filesystem jail, it will find itself without any permissions to
+access any other files in the host or in other containers.
+
+#### Userns ID Mapping Range
+
+The exclusive host user IDs chosen by Sysbox-EE are obtained from the `/etc/subuid`
+and `/etc/subgid` files:
+
+    $ more /etc/subuid
+    cesar:100000:65536
+    sysbox:165536:268435456
+
+    $ more /etc/subgid
+    cesar:100000:65536
+    sysbox:165536:268435456
+
+These files are automatically configured by Sysbox during installation (or more
+specifically when the `sysbox-mgr` component is started during installation)
+
+By default, Sysbox reserves a range of 268435456 user IDs (enough to accommodate
+4K system containers, each with 64K user IDs).
+
+If more than 4K containers are running at the same time, Sysbox will by default
+re-use user-ID mappings from the range specified in `/etc/subuid`. The same
+applies to group-ID mappings. In this scenario multiple system containers may
+share the same user-ID mapping, reducing container-to-container isolation a bit.
+
+For extra security, it's possible to configure Sysbox to not re-use mappings and
+instead fail to launch new system containers until host user IDs become
+available (i.e., when other system containers are stopped).
+
+The size of the reserved ID range, as well as the policy in case the range is
+exhausted, is configurable via the sysbox-mgr command line.  If you wish to
+change this, See `sudo sysbox-mgr --help` and use the [Sysbox reconfiguration procedure](configuration.md#reconfiguration-procedure).
+
+#### **----------------------------------------------------------**
 
 ## Procfs Virtualization
 
