@@ -15,7 +15,6 @@
 	test-fs-local test-mgr-local \
 	test-img test-cleanup \
 	listRuncPkgs listFsPkgs listMgrPkgs \
-	pjdfstest pjdfstest-clean \
 	sysbox-in-docker sysbox-in-docker-local \
 	test-sind-shell \
 	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal \
