@@ -15,6 +15,8 @@ We show the following system container isolation features:
 
 -   Immutable Mountpoints
 
+-   Exclusive Userns ID Mappings (Sysbox-EE only)
+
 First let's deploy a system container:
 
 ```console
@@ -80,6 +82,9 @@ root@syscont:/# cat /proc/self/gid_map
 This means that user-IDs in the range \[0:65535] inside the container are mapped
 to a range of unprivileged user-IDs on the host (chosen by Sysbox). In this
 example they map to the host user-ID range \[268994208 : 268994208+65535].
+
+Sysbox assigns all containers the same user-ID mappings. Sysbox Enterprise
+Edition (Sysbox-EE) improves on this as described in the next section.
 
 Now, let's check the capabilities of a process created by the root user inside
 the system container:
@@ -318,3 +323,43 @@ root@syscont:/# umount /root/tmp
 
 The [user-guide](../user-guide/security.md#initial-mount-immutability--v030-)
 has more info on this.
+
+#### **-------- Sysbox-EE Feature Highlight --------**
+
+### Exclusive User-ID Mappings
+
+Sysbox-EE improves on Sysbox-CE by automatically assigning each system container
+exclusive user-ID and group-ID mappings. This further isolates system containers
+from the host and from each other.
+
+For example, if you launch a couple of containers with Docker and Sysbox-EE,
+you'll see they are both assigned exclusive user-ID and group-ID mappings.
+
+In the first container:
+
+
+```console
+root@syscont:/# cat /proc/self/uid_map
+         0  268994208      65536
+root@syscont:/# cat /proc/self/gid_map
+         0  268994208      65536
+```
+
+In the second container:
+
+```console
+$ docker run --runtime=sysbox-runc --rm -it --hostname syscont2 debian:latest
+
+root@syscont2:/# cat /proc/self/uid_map
+         0  269059744      65536
+root@syscont2:/# cat /proc/self/gid_map
+         0  269059744      65536
+```
+
+This capability of Sysbox-EE provides enhanced cross-container isolation: if
+a process in one container somehow escapes the container, it will find itself
+with no permissions to access any data in other containers or on the host.
+
+More info on this can be found in the [Sysbox User Guide](../user-guide/security.md#user-namespace-id-mapping).
+
+#### **----------------------------------------------------------**

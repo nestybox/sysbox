@@ -18,9 +18,48 @@ detail.
 
 ## Why Sysbox for K8s-in-Docker?
 
+In K8s-in-Docker, each Docker container acts as a K8s node. Multiple such
+containers, connected via a Docker network form a K8s cluster (see
+[here](../user-guide/kind.md#intro) for a diagram).
+
 Sysbox is the first container runtime capable of creating containers that can
 run K8s seamlessly, using simple Docker images, no special configurations, and
 strongly isolated containers (i.e,. using the Linux user-namespace).
+
+Other approaches at creating K8s-in-Docker clusters (e.g., K8s.io KinD) are good
+but use very unsecure privileged containers and require customized images. With
+Sysbox, you get well isolated containers and there are no special image
+requirements (i.e., you fully control the container image).
+
+This is an excellent choice for CI/CD, local testing, and learning environments.
+It's a quick, very efficient, cost effective, and secure way of creating K8s
+clusters, compared to using cloud-hosted K8s clusters or local virtual machines.
+
+As Sysbox continues to mature, we expect K8s-in-Docker will be used in
+production scenarios (just like K8s runs inside VMs in production currently).
+
+#### **-------- Sysbox-EE Feature Highlight --------**
+
+Sysbox-EE contains [optimizations](../user-guide/images.md#inner-docker-image-sharing)
+that enable deployment of K8s-in-Docker very efficiently, resulting in
+significantly less storage consumption and much more scalability (i.e., more and
+larger K8s-in-Docker clusters).
+
+For example, here is a comparison for deploying a 10-node K8s cluster on a 4
+CPU, 4GB RAM host:
+
+| Criteria              | Sysbox-CE | Sysbox-EE |
+| --------------------- | :------: | :---------: |
+| Host storage overhead |   10 GB  |     1 GB    |
+| Cluster creation time |   2 min  |    2 min    |
+
+With Sysbox-EE, devOps teams can create larger and/or more K8s-in-Docker clusters
+on the same host machine, quickly and efficiently, reducing costs and allowing
+them to recreate the size/scale of production clusters.
+
+#### **----------------------------------------------------------**
+
+## Creating a K8s-in-Docker Cluster with Sysbox
 
 There are currently two ways you can deploy the cluster:
 
@@ -256,6 +295,17 @@ $ docker exec k8s-master cat /proc/self/uid_map
 
 This means that the root user in the container is mapped to unprivileged host
 user-ID 165536.
+
+#### **-------- Sysbox-EE Feature Highlight --------**
+
+Sysbox-EE assigns each container an [exclusive range of Linux user-namespace user-ID mappings](../user-guide/security.md#exclusive-userns-id-mapping-allocation)
+in order to improve cross-container isolation.
+
+Exclusive ID mappings ensure that if a container process somehow escapes the
+container's root filesystem jail, it will find itself without any permissions to
+access any other files in the host or in other containers.
+
+#### **----------------------------------------------------------**
 
 11) After you are done, bring down the cluster:
 
