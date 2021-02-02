@@ -147,7 +147,7 @@ This will add the sysbox-runtime in the `/etc/docker/daemon.json` as follows:
 }
 ```
 
-The script will also to configure Docker networking to avoid conflicts between
+The script will also configure Docker networking to avoid conflicts between
 host and inner container subnets, and will restart Docker (unless it's told
 not to).
 
