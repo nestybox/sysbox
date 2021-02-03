@@ -8,15 +8,6 @@
 
 load ../helpers/run
 
-function systemd_env() {
-	ret=$(readlink /proc/1/exe)
-	if [[ "$ret" =~ "/usr/lib/systemd/systemd" ]]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
 function wait_for_inner_systemd {
   local syscont=$1
 

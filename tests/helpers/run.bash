@@ -91,8 +91,8 @@ function bats_bg() {
 }
 
 function systemd_env() {
-	ret=$(file /sbin/init)
-	if [[ "$ret" =~ "symbolic link to /lib/systemd/systemd" ]]; then
+	ret=$(readlink /proc/1/exe)
+	if [[ "$ret" =~ "/lib/systemd/systemd" ]]; then
 		return 0
 	else
 		return 1
