@@ -96,7 +96,7 @@ function remove_docker_containers() {
 
 function systemd_env() {
 	ret=$(readlink /proc/1/exe)
-	if [[ "$ret" =~ "/usr/lib/systemd/systemd" ]]; then
+	if [[ "$ret" =~ "/usr/lib/systemd/systemd" ]] || [[ "$ret" =~ "/lib/systemd/systemd" ]]; then
 		return 0
 	else
 		return 1
