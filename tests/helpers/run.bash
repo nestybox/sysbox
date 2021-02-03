@@ -113,11 +113,11 @@ function sysbox_mgr_start() {
 
 		systemctl daemon-reload
 		systemctl restart sysbox
-		sleep 1
 	else
 		bats_bg ${cmd} $@
 	fi
 
+	sleep 2
 	retry_run 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
 }
 
@@ -160,7 +160,7 @@ function sysbox_fs_start() {
 	fi
 
 	# TODO: find a better way to know when sysbox-fs is ready
-	sleep 1
+	sleep 2
 }
 
 function sysbox_fs_stop() {
