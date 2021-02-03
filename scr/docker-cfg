@@ -310,9 +310,8 @@ fi
 		 fi
 	 elif [[ "$userns_remap" == "disable" ]]; then
 
-		 # If present, eliminate sysbox's userns-remap entry.
-		 if [ $(jq 'has("userns-remap")' ${tmpCfgFile}) = "true" ] &&
-				 [ $(jq '."userns-remap"' ${tmpCfgFile}) = "\"sysbox\"" ]; then
+		 # If present, eliminate the userns-remap entry.
+		 if [ $(jq 'has("userns-remap")' ${tmpCfgFile}) = "true" ]; then
 
           jq 'del(."userns-remap")' \
              ${tmpCfgFile} > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
