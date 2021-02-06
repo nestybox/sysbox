@@ -96,7 +96,7 @@ function remove_docker_containers() {
 
 function systemd_env() {
 	ret=$(readlink /proc/1/exe)
-	if [[ "$ret" =~ "/usr/lib/systemd/systemd" ]] || [[ "$ret" =~ "/lib/systemd/systemd" ]]; then
+	if [[ "$ret" =~ "/lib/systemd/systemd" ]]; then
 		return 0
 	else
 		return 1
@@ -173,7 +173,17 @@ function main() {
 	install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
 	install -D -m0755 scr/docker-cfg /usr/local/sbin/docker-cfg
 
-	# Without systemd, we must start Docker ourselves
+   # Install sysbox
+	if [[ "$SB_INSTALLER" == "true" ]]; then
+		install_sysbox_pkg
+	else
+		build_sysbox
+
+		echo "Starting sysbox in test mode ..."
+		sysbox -t
+	fi
+
+	# Start docker (without systemd, we must start Docker manually)
 	if ! systemd_env; then
 		dockerd=$(which dockerd)
 		$dockerd > /var/log/dockerd.log 2>&1 &
@@ -186,10 +196,10 @@ function main() {
 	common_opt="--config-only --sysbox-runtime=enable --skip-network-config --default-runtime=sysbox-runc"
 
 	if [ -z "$SHIFT_UIDS" ]; then
-		docker-cfg $common_opt --userns-remap=enable
+		docker-cfg -v $common_opt --userns-remap=enable
 		[ $? -eq 0 ] || exit 1
 	else
-		docker-cfg $common_opt
+		docker-cfg -v $common_opt
 		[ $? -eq 0 ] || exit 1
 	fi
 
@@ -201,14 +211,7 @@ function main() {
 	echo "Removing left-over Docker containers ..."
 	remove_docker_containers
 
-	if [[ "$SB_INSTALLER" == "true" ]]; then
-		install_sysbox_pkg
-	else
-		build_sysbox
-
-		echo "Starting sysbox in test mode ..."
-		sysbox -t
-	fi
+	echo "Test container ready ..."
 }
 
 main "$@"
