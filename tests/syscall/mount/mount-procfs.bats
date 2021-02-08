@@ -4,10 +4,10 @@
 # Verify trapping & emulation on "mount" and "unmount2" syscalls for procfs mounts
 #
 
-load ../helpers/run
-load ../helpers/syscall
-load ../helpers/docker
-load ../helpers/sysbox-health
+load ../../helpers/run
+load ../../helpers/syscall
+load ../../helpers/docker
+load ../../helpers/sysbox-health
 
 function teardown() {
   sysbox_log_check
