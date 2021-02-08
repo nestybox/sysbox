@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"syscall"
+	"time"
 
 	"golang.org/x/sys/unix"
 )
@@ -78,6 +80,60 @@ func do_shiftfs_mount_rw(s, t string) error {
 	return nil
 }
 
+func chroot(path string) (func() error, error) {
+	root, err := os.Open("/")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := syscall.Chroot(path); err != nil {
+		root.Close()
+		return nil, err
+	}
+
+	return func() error {
+		defer root.Close()
+		if err := root.Chdir(); err != nil {
+			return err
+		}
+		return syscall.Chroot(".")
+	}, nil
+}
+
+// func do_chroot(path string, instructions []string) error {
+//     exit, err := chroot(path)
+//     if err != nil {
+// 		return err
+//     }
+
+// 	for _, i := range instructions {
+
+// 	}
+//     // do some work
+//     //...
+
+//     // exit from the chroot
+//     if err := exit(); err != nil {
+//         panic(err)
+//     }
+// }
+
+func do_chroot_sleep(path string) error {
+	exit, err := chroot(path)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(time.Duration(1<<63 - 1))
+
+	// exit from the chroot
+	if err := exit(); err != nil {
+		panic(err)
+	}
+
+	return nil
+}
+
 func usage() {
 	fmt.Printf("\nUsage: mount_syscall <bind | ro-remount | rw-remount> <source> <target>\n\n")
 }
@@ -85,11 +141,11 @@ func usage() {
 func main() {
 	args := os.Args[1:]
 
-	if len(args) != 3 {
-		fmt.Printf("\nNumber of arguments received: %d, expected: %d\n", len(args), 3)
-		usage()
-		os.Exit(1)
-	}
+	// if len(args) != 3 {
+	// 	fmt.Printf("\nNumber of arguments received: %d, expected: %d\n", len(args), 3)
+	// 	usage()
+	// 	os.Exit(1)
+	// }
 
 	var err error
 
@@ -108,6 +164,8 @@ func main() {
 		err = do_shiftfs_mount_ro(args[1], args[1])
 	case "rw-shiftfs-mount":
 		err = do_shiftfs_mount_rw(args[1], args[1])
+	case "chroot-sleep":
+		err = do_chroot_sleep(args[1])
 	default:
 		fmt.Printf("Unsupported command option: %s\n", args[0])
 		err = fmt.Errorf("Unsupported command option: %s", args[0])

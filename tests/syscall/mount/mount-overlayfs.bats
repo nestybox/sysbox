@@ -5,10 +5,10 @@
 #
 
 
-load ../helpers/run
-load ../helpers/syscall
-load ../helpers/docker
-load ../helpers/sysbox-health
+load ../../helpers/run
+load ../../helpers/syscall
+load ../../helpers/docker
+load ../../helpers/sysbox-health
 
 ovfs_path="/var/lib/docker/overlay2"
 
