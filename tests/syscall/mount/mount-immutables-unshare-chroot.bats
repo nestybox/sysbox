@@ -18,7 +18,8 @@ function teardown() {
 }
 
 #
-# Test to verify sys container immutable mounts.
+# Test to verify immutable mounts within a sys container's unshare(mnt) +
+# chroot() context.
 #
 # Note: a sys container immutable mount is a mount that is setup at container
 # creation time.
