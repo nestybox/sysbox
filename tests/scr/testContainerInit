@@ -82,7 +82,7 @@ function docker_config_mtu() {
 	fi
 }
 
-function remove_docker_containers() {
+function cleanup_docker_env() {
 	docker_conts=$(docker ps -aq)
 	if [[ "$docker_conts" != "" ]]; then
 		ret=$(docker stop -t0 $(docker ps -aq))
@@ -91,6 +91,18 @@ function remove_docker_containers() {
 	docker_conts=$(docker ps -aq)
 	if [[ "$docker_conts" != "" ]]; then
 		ret=$(docker rm -f $(docker ps -aq))
+	fi
+
+	ret=$(docker volume prune -f)
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to remove Docker volumes: $ret"
+		exit 1
+	fi
+
+	ret=$(docker network prune -f)
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to remove Docker networks: $ret"
+		exit 1
 	fi
 }
 
@@ -208,8 +220,8 @@ function main() {
 	# Restart Docker after MTU config
 	docker-cfg --force-restart --skip-network-config
 
-	echo "Removing left-over Docker containers ..."
-	remove_docker_containers
+	echo "Removing left-over Docker containers, volumes, and networks ..."
+	cleanup_docker_env
 
 	echo "Test container ready ..."
 }
