@@ -17,44 +17,44 @@ Usage: $progName <testName>
 
 # argument testName is optional
 if [ $# -eq 1 ]; then
-  printf "\nExecuting $1 ... \n"
-  bats --tap $1
+	printf "\nExecuting $1 ... \n"
+	bats --tap $1
 else
-  printf "\nExecuting sysbox-mgr tests ... \n"
-  bats --tap tests/sysmgr
-  printf "\nExecuting sysbox-fs tests ... \n"
-  bats --tap tests/sysfs
-  printf "\nExecuting syscall tests ... \n"
-  bats --tap tests/syscall
-  printf "\nExecuting docker tests ... \n"
-  bats --tap tests/docker
-  printf "\nExecuting cgroup tests ... \n"
-  bats --tap tests/cgroup
-  printf "\nExecuting dind tests ... \n"
-  bats --tap tests/dind
-  printf "\nExecuting cind tests ... \n"
-  bats --tap tests/cind
-  printf "\nExecuting app tests (l1) ... \n"
-  bats --tap tests/apps/l1
-  printf "\nExecuting app tests (l2) ... \n"
-  bats --tap tests/apps/l2
+	printf "\nExecuting sysbox-mgr tests ... \n"
+	bats --tap tests/sysmgr
+	printf "\nExecuting sysbox-fs tests ... \n"
+	bats --tap tests/sysfs
+	printf "\nExecuting syscall tests ... \n"
+	bats --tap tests/syscall
+	printf "\nExecuting docker tests ... \n"
+	bats --tap tests/docker
+	printf "\nExecuting cgroup tests ... \n"
+	bats --tap tests/cgroup
+	printf "\nExecuting dind tests ... \n"
+	bats --tap tests/dind
+	printf "\nExecuting cind tests ... \n"
+	bats --tap tests/cind
+	printf "\nExecuting app tests (l1) ... \n"
+	bats --tap tests/apps/l1
+	printf "\nExecuting app tests (l2) ... \n"
+	bats --tap tests/apps/l2
 
-  # the kind tests need plenty storage (otherwise kubelet fails);
-  # remove all docker images from prior tests to make room, and
-  # remove all docker images after test too.
-  printf "\n"
-  docker system prune -a -f
-  printf "\nExecuting kind tests ... \n"
-  bats --tap tests/kind
-  docker system prune -a -f
+	# the kind tests need plenty storage (otherwise kubelet fails);
+	# remove all docker images from prior tests to make room, and
+	# remove all docker images after test too.
+	printf "\n"
+	docker system prune -a -f
+	printf "\nExecuting kind tests ... \n"
+	bats --tap tests/kind
+	docker system prune -a -f
 
-  printf "\nExecuting perf tests ... \n"
-  bats --tap tests/perf
+	printf "\nExecuting perf tests ... \n"
+	bats --tap tests/perf
 
-  printf "\nSysbox health checking ...\n"
-  bats --tap tests/health/sysbox-health.bats
+	printf "\nSysbox health checking ...\n"
+	bats --tap tests/health/sysbox-health.bats
 
-  docker system prune -a -f
+	docker system prune -a -f
 fi
 
 exit 0
