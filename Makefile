@@ -341,7 +341,7 @@ else
 endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
-test-runc: $(LIBSECCOMP) sysbox-ipc
+test-runc: $(LIBSECCOMP) sysbox
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
