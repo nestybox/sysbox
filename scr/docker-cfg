@@ -1,6 +1,22 @@
 #!/bin/bash
 
 #
+# Copyright 2019-2020 Nestybox, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
 # Configure Docker to use Sysbox.
 #
 # Type "sudo ./docker-cfg --help". for usage info.
@@ -12,17 +28,12 @@ config_only=0
 verbose=0
 dry_run=0
 force_restart=0
-skip_network_config=0
 
 systemd_reload_daemon=0
 
 # Dockerd default configuration dir/file.
 dockerCfgDir="/etc/docker"
 dockerCfgFile="${dockerCfgDir}/daemon.json"
-
-# Default docker network parameters
-bip_subnet="172.20.0.1/16"
-pool_subnet="172.25.0.0/16"
 
 # Docker config vars.
 docker_network_config_changed="false"
@@ -135,55 +146,92 @@ function systemd_host() {
 	return 1
 }
 
-#
-# Adjust docker's network configuration to avoid subnet overlapping ranges.
-#
-docker_config_network() {
+function docker_config_network_bip() {
 
-   local bip_host=$(echo ${bip_subnet} | cut -d'/' -f 1)
-   local pool_host=$(echo $pool_subnet} | cut -d'/' -f 1)
+   jq --arg bip ${bip_subnet} --indent 4 '. + {"bip": $bip}' ${tmpCfgFile} \
+		> ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
 
-# If no 'bip' key-entry is present, proceed to add one.
-if [ $(jq 'has("bip")' ${tmpCfgFile}) = "false" ] ||
-      [ $(jq '."bip"' ${tmpCfgFile}) = "\"\"" ]; then
+	docker_network_config_changed="true"
 
-   # If bip address to add overlaps with an existing local subnet, then
-   # dump a log message to user and skip bip's configuration.
-   if dockerd_running && system_local_subnet ${bip_host} &&
-         ! ip -4 address show dev docker0 | egrep -q "${bip_subnet}"; then
-      echo -e "\nDocker bridge-ip network to configure (${bip_subnet}) overlaps"\
-           "with existing system subnet. Please manually configure docker's"\
-			  "'bip' subnet to avoid connectivity issues.\n"
-   else
-      jq --arg bip ${bip_subnet} --indent 4 '. + {"bip": $bip}' ${tmpCfgFile} \
-         > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
+	log "Docker config: configured bridge-ip network to $bip_subnet.\n"
+}
 
-		docker_network_config_changed="true"
+function docker_config_network_pool() {
 
-		log "Docker config: configured bridge-ip network (to avoid connectivity issues).\n"
-   fi
-fi
+	jq --arg subnet ${pool_subnet} --indent 4 \
+		'."default-address-pools"[0] |= . + {"base": $subnet, "size": 24}' ${tmpCfgFile} \
+		> ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
 
-# If no 'default-address-pool' is found, do add one here.
-if [ $(jq 'has("default-address-pools")' ${tmpCfgFile}) = "false" ] ||
-		[ $(jq '."default-address-pools" | length' ${tmpCfgFile}) -eq "0" ]; then
+	docker_network_config_changed="true"
 
-   # If address-pool overlaps with an existing local subnet, then
-   # dump a log message to user and skip this attribute's configuration.
-   if system_local_subnet ${pool_host}; then
-      echo -e "\nDocker default-address-pool to configure (${pool_subnet}) overlaps"\
-           "with existing system subnet. Please manually configure docker's"\
-			  "'default-address-pool' subnet to avoid connectivity issues.\n"
-   else
-      jq --arg subnet ${pool_subnet} --indent 4 \
-         '."default-address-pools"[0] |= . + {"base": $subnet, "size": 24}' ${tmpCfgFile} \
-         > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
+	log "Docker config: configured default-address-pool to $pool_subnet.\n"
+}
 
-		docker_network_config_changed="true"
+function docker_check_network_config() {
+	local subnet
 
-		log "Docker config: configured default-address-pool (to avoid connectivity issues).\n"
-   fi
-fi
+	# If bip address overlaps with an existing local subnet, then
+	# dump a warning message to the user.
+	subnet=""
+
+	if [ -n "$bip_subnet" ]; then
+		subnet=${bip_subnet}
+	else
+		if [ -f ${dockerCfgFile} ]; then
+			subnet=$(jq '.bip' ${dockerCfgFile})
+		fi
+	fi
+
+	if [[ "$subnet" != "" ]]; then
+		subnet=$(echo $subnet | tr -d '"')
+		local bip_ip=$(echo ${subnet} | cut -d'/' -f 1)
+		if dockerd_running && system_local_subnet ${bip_ip} &&
+				! ip -4 address show dev docker0 | egrep -q "${bip_subnet}"; then
+			echo -e "WARN: Docker bridge-ip network (${subnet}) overlaps"\
+				  "with existing system subnet. Try another subnet to avoid connectivity issues."
+			return 1
+		fi
+	fi
+
+	# Same as above but for default-address-pool
+	subnet=""
+
+	if [ -n "$pool_subnet" ]; then
+		subnet=${pool_subnet}
+	else
+		if [ -f ${dockerCfgFile} ]; then
+			subnet=$(jq '."default-address-pools" | .[0] | ."base"' ${dockerCfgFile})
+		fi
+	fi
+
+	if [[ "$subnet" != "" ]]; then
+		subnet=$(echo $subnet | tr -d '"')
+		local pool_ip=$(echo ${subnet} | cut -d'/' -f 1)
+		if system_local_subnet ${pool_ip}; then
+			echo -e "WARN: Docker default-address-pool to configure (${subnet}) overlaps"\
+				  "with existing system subnet. Try another IP range to avoid connectivity issues."
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+function docker_config_network() {
+
+	docker_check_network_config
+	if [ $? -ne 0 ]; then
+		printf "INFO: Refusing to configure Docker networking due to IP address overlap with existing system subnet(s).\n"
+		return
+	fi
+
+	if [ -n "$bip_subnet" ]; then
+		docker_config_network_bip
+	fi
+
+	if [ -n "$pool_subnet" ]; then
+		docker_config_network_pool
+	fi
 }
 
  function docker_config_runtime() {
@@ -207,12 +255,6 @@ fi
 
 		 if [ ${docker_runtime_config_changed} = true ]; then
 			 log "Docker config: added Sysbox runtime.\n"
-		 fi
-
-		 # Sysbox requires Docker network config to avoid IP subnet overlaps
-		 # between the host network and networks inside Sysbox containers.
-		 if [ $skip_network_config -eq 0 ]; then
-			 docker_config_network
 		 fi
 
 	 elif [[ "$sysbox_runtime" == "disable" ]]; then
@@ -401,6 +443,7 @@ fi
 	 docker_config_runtime
 	 docker_config_default_runtime
 	 docker_config_cgroup_driver
+	 docker_config_network
 
 	 if [ "$dry_run" -eq 1 ]; then
 		 cat ${tmpCfgFile}
@@ -430,9 +473,7 @@ fi
 	 printf 'Configures Docker to use Sysbox by changing the "/etc/docker/daemon.json" file\n'
 	 printf 'and restarting Docker as needed. Must run as root.\n'
 	 printf "\n"
-	 printf "Example:\n"
-	 printf "\n"
-	 printf "   $ sudo $progname --sysbox-runtime=enable\n"
+	 printf "Example: $ sudo $progname --sysbox-runtime=enable\n"
 	 printf "\n"
 	 printf "It's best to run this script when no Docker containers are running.\n"
 	 printf "\n"
@@ -442,11 +483,9 @@ fi
 	 printf "Options:\n"
 	 printf "      --sysbox-runtime=<enable|disable>   Adds or removes the Sysbox runtime to the Docker daemon config and restarts Docker. If ommitted, no change to the runtime config occurs.\n"
 	 printf "      --userns-remap=<enable|disable>     Adds or removes userns-remap mode to the Docker daemon config and restarts Docker. If ommitted, no change to the userns-remap config occurs.\n"
-	 printf "      --skip-network-config               Skip any network configs. Normally, this program configures the Docker networks to ensure no IP address overlaps occur between the \n"
-	 printf "                                          Docker networks at host level and Docker networks inside a Docker-in-Docker container. If this option is present, no such configuration is done.\n"
-	 printf "                                          In this case, you must ensure that the networks used by Docker at host level and Docker inside a container don't have overlapping IP addresses\n"
-	 printf '                                          (by configuring the Docker "bip" and "default-address-pool" for the Docker on the host and/or the Docker inside the container).\n'
 	 printf "      --default-runtime=<runtime>         Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If ommitted, no change to the Docker default runtime is made.\n"
+	 printf "      --bip=<ip-addr>                     Configures the IP address for the docker0 bridge (e.g., 172.20.0.1/16).\n"
+	 printf "      --default-address-pool=<ip-addr>    Configures the starting IP address for user-defined Docker networks (e.g., 172.25.0.0/16).\n"
 	 printf "      --cgroup-driver=<cgroupfs|systemd>  Configures the cgroup driver to be used. If ommitted, no change to the Docker cgroup driver is made.\n"
 	 printf "  -c, --config-only                       Writes to the Docker daemon config file but does not restart Docker. Docker will not pick up the new config until it's restarted.\n"
 	 printf "  -f, --force-restart                     Forces restart of the Docker daemon (even if no config changes have occurred). This will stop and remove any existing Docker containers.\n"
@@ -457,7 +496,7 @@ fi
  }
 
  function parse_args() {
-	 options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,skip-network-config,default-runtime:,sysbox-runtime:,userns-remap:,cgroup-driver: -- "$@")
+	 options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,bip:,default-address-pool:,default-runtime:,sysbox-runtime:,userns-remap:,cgroup-driver: -- "$@")
 
 	 eval set -- "$options"
 
@@ -472,9 +511,6 @@ fi
 				 ;;
 			 -c | --config-only)
 				 config_only=1
-				 ;;
-			 --skip-network-config)
-				 skip_network_config=1
 				 ;;
 			 --dry-run)
 				 dry_run=1
@@ -496,6 +532,14 @@ fi
 					 show_usage
 					 exit 1
 				 fi
+				 ;;
+			 --bip)
+				 shift;
+				 bip_subnet=$1
+				 ;;
+			 --default-address-pool)
+				 shift;
+				 pool_subnet=$1
 				 ;;
 			 --cgroup-driver)
 				 shift;
