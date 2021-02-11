@@ -205,7 +205,7 @@ function main() {
 	wait_docker_ready || exit 1
 
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
-	common_opt="--config-only --sysbox-runtime=enable --skip-network-config --default-runtime=sysbox-runc"
+	common_opt="--config-only --sysbox-runtime=enable --default-runtime=sysbox-runc"
 
 	if [ -z "$SHIFT_UIDS" ]; then
 		docker-cfg -v $common_opt --userns-remap=enable
@@ -215,10 +215,17 @@ function main() {
 		[ $? -eq 0 ] || exit 1
 	fi
 
+	# Configure the Docker networks to avoid overlap with host networking.
+	# Note: the chosen IP addresses will likely not overlap with the host Docker networks
+	# (even when Sysbox is installed at host level) or with inner container Docker networks.
+	docker-cfg -v --config-only --bip=172.21.0.1/16 --default-address-pool=172.81.0.0/16
+	[ $? -eq 0 ] || exit 1
+
 	docker_config_mtu
 
-	# Restart Docker after MTU config
-	docker-cfg --force-restart --skip-network-config
+	# Restart Docker to pickup the new configs
+	docker-cfg --force-restart
+	[ $? -eq 0 ] || exit 1
 
 	echo "Removing left-over Docker containers, volumes, and networks ..."
 	cleanup_docker_env
