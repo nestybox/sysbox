@@ -17,7 +17,6 @@
 	listRuncPkgs listFsPkgs listMgrPkgs \
 	sysbox-in-docker sysbox-in-docker-local \
 	test-sind-shell \
-	centos-8 debian-buster debian-bullseye fedora-31 fedora-32 ubuntu-bionic ubuntu-focal \
 	lint lint-local lint-sysbox-local lint-tests-local shfmt
 	clean
 
