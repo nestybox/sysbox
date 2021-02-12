@@ -218,7 +218,21 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 # they are meant as development tests.
 #
 
-DOCKER_RUN := docker run -it --privileged --rm --runtime=runc         \
+# For batch targets
+DOCKER_RUN := docker run --privileged --rm --runtime=runc         \
+			--hostname sysbox-test                        \
+			--name sysbox-test                            \
+			-v $(CURDIR):$(PROJECT)                       \
+			-v $(TEST_VOL1):/var/lib/docker               \
+			-v $(TEST_VOL2):/var/lib/sysbox               \
+			-v $(TEST_VOL3):/mnt/scratch                  \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
+			$(KERNEL_HEADERS_MOUNTS) \
+			$(TEST_IMAGE)
+
+# For interactive targets
+DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			-v $(CURDIR):$(PROJECT)                       \
@@ -358,7 +372,7 @@ test-mgr: test-img
 test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-img sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && /bin/bash"
 
 test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
@@ -383,7 +397,7 @@ test-shell-installer: test-img-systemd sysbox-runc-recvtty
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
@@ -472,7 +486,7 @@ test-sind-local:
 test-sind-shell: ## Get a shell in the test container for sysbox-in-docker (useful for debug)
 test-sind-shell: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		sindTestContainerInit && /bin/bash"
 
 ##@ Code Hygiene targets
