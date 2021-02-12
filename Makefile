@@ -354,12 +354,12 @@ else
 endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
-test-runc: $(LIBSECCOMP) sysbox
+test-runc: sysbox
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
 test-fs: ## Run sysbox-fs unit tests
-test-fs: $(LIBSECCOMP) test-img
+test-fs: sysbox
 	@printf "\n** Running sysbox-fs unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
 
