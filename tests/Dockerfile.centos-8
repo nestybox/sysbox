@@ -58,7 +58,6 @@ RUN dnf update -y && dnf install -y \
     rsync \
     redhat-lsb-core \
     bash-completion \
-    && dnf --enablerepo=PowerTools -y install protobuf-devel protobuf-compiler \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc
 
 # Install Golang 1.13 release and explicitly activate modules functionality.
