@@ -1,5 +1,5 @@
 #
-# Sysbox Test Container Dockerfile (Fedora-31 image)
+# Sysbox Test Container Dockerfile (Fedora-32 image)
 #
 # This Dockerfile creates the sysbox test container image. The image
 # contains all dependencies needed to build, run, and test sysbox.
@@ -19,7 +19,7 @@
 # docker build -t sysbox-test .
 #
 
-FROM fedora:31
+FROM fedora:32
 
 ARG k8s_version=v1.18.2
 
@@ -54,6 +54,7 @@ RUN dnf update -y && dnf install -y \
     lsof \
     iputils \
     ca-certificates \
+    bc \
     # sysbox deps
     fuse \
     rsync \
