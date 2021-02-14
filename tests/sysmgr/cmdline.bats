@@ -42,7 +42,7 @@ function sysbox_mgr_stopped() {
 
    wait_for_inner_dockerd $syscont
 
-   docker exec "$syscont" sh -c "docker run -d --rm alpine tail -f /dev/null"
+   docker exec "$syscont" sh -c "docker run -d --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null"
    [ "$status" -eq 0 ]
 
    # Verify the new data root is in use

@@ -546,7 +546,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" bash -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" bash -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "docker ps --format \"{{.ID}}\""
@@ -571,7 +571,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" bash -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "docker ps --format \"{{.ID}}\""
@@ -608,7 +608,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" bash -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "docker ps --format \"{{.ID}}\""
@@ -687,7 +687,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" bash -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" bash -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "docker ps --format \"{{.ID}}\""

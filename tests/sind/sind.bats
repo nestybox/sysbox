@@ -89,7 +89,7 @@ export release=$(get_release)
    done
 
    for i in `seq 0 $max_sind`; do
-      docker exec sind${i} sh -c "docker run --name inner --runtime=sysbox-runc -d --rm alpine tail -f /dev/null"
+      docker exec sind${i} sh -c "docker run --name inner --runtime=sysbox-runc -d --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null"
       [ "$status" -eq 0 ]
 
       docker exec sind${i} sh -c "docker exec inner sh -c \"apk update && apk add bash\""

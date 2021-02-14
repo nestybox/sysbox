@@ -38,7 +38,7 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""

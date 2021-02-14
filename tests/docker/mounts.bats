@@ -126,7 +126,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
@@ -192,7 +192,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" sh -c "docker run -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""

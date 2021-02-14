@@ -159,7 +159,7 @@ function teardown() {
   wait_for_inner_dockerd $syscont
 
   # verify DNS in inner container (on inner default bridge)
-  docker exec "$syscont" sh -c "docker run -d --name inner alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf\""
@@ -178,7 +178,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create inner-net"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -215,7 +215,7 @@ function teardown() {
   wait_for_inner_dockerd $syscont
 
   # verify DNS in inner container (on inner default bridge)
-  docker exec "$syscont" sh -c "docker run -d --name inner alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf\""
@@ -234,7 +234,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create inner-net"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -302,7 +302,7 @@ function teardown() {
   wait_for_inner_dockerd $syscont
 
   # verify DNS in inner container (on inner default bridge)
-  docker exec "$syscont" sh -c "docker run -d --name inner alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf\""
@@ -321,7 +321,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create inner-net"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -357,7 +357,7 @@ function teardown() {
 
   # verify DNS in inner container (launched with --dns)
   local inner_custom_dns="1.0.0.1"
-  docker exec "$syscont" sh -c "docker run -d --name inner --dns $inner_custom_dns alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner --dns $inner_custom_dns ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -377,7 +377,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create inner-net"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -416,7 +416,7 @@ function teardown() {
 
   # verify DNS in inner container (launched with --dns)
   local inner_custom_dns="1.0.0.1"
-  docker exec "$syscont" sh -c "docker run -d --name inner --dns $inner_custom_dns alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner --dns $inner_custom_dns ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
@@ -436,7 +436,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create inner-net"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name inner2 --net inner-net --dns $inner_custom_dns ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""

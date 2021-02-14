@@ -67,7 +67,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$syscont" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
@@ -105,10 +105,10 @@ function teardown() {
   docker exec "$syscont" sh -c "echo testdata > /root/testfile"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker pull busybox:latest"
+  docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/busybox:latest"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker pull alpine:latest"
+  docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/alpine:latest"
   [ "$status" -eq 0 ]
 
   # commit the sys container image
@@ -158,7 +158,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$syscont" sh -c "docker run --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""

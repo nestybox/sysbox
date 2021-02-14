@@ -57,10 +57,10 @@ function teardown() {
   docker exec "$syscont" sh -c "echo testdata > /root/testfile"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "ctr image pull docker.io/library/busybox:latest"
+  docker exec "$syscont" sh -c "ctr image pull ${CTR_IMG_REPO}/busybox:latest"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "ctr image pull docker.io/library/alpine:latest"
+  docker exec "$syscont" sh -c "ctr image pull ${CTR_IMG_REPO}/alpine:latest"
   [ "$status" -eq 0 ]
 
   # commit the sys container image
@@ -105,7 +105,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$syscont" sh -c "ctr container create docker.io/library/alpine:latest demo"
+  docker exec "$syscont" sh -c "ctr container create ${CTR_IMG_REPO}/alpine:latest demo"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ctr container ls -q"
@@ -152,7 +152,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # run an inner container using one of the embedded images
-  docker exec "$syscont" sh -c "ctr container create docker.io/library/alpine:latest demo"
+  docker exec "$syscont" sh -c "ctr container create ${CTR_IMG_REPO}/alpine:latest demo"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ctr container ls -q"
