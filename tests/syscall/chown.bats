@@ -120,7 +120,7 @@ function verify_sys_chown {
    local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
-   docker exec "$syscont" sh -c "docker run -d --rm alpine tail -f /dev/null"
+   docker exec "$syscont" sh -c "docker run -d --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null"
    [ "$status" -eq 0 ]
 
    docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
@@ -158,7 +158,7 @@ function verify_sys_chown {
    wait_for_inner_dockerd "$syscont"
 
    # Note: in Ubuntu, chown(1) uses the fchownat syscall
-   docker exec "$syscont" sh -c "docker run -d --rm ubuntu tail -f /dev/null"
+   docker exec "$syscont" sh -c "docker run -d --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null"
    [ "$status" -eq 0 ]
 
    docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""

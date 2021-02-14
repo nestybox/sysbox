@@ -26,5 +26,5 @@ containerd > /var/log/containerd.log 2>&1 &
 retry 10 1 "ctr -v"
 
 # pull inner images
-ctr image pull docker.io/library/busybox:latest
-ctr image pull docker.io/library/alpine:latest
+ctr image pull ghcr.io/nestybox/busybox:latest
+ctr image pull ghcr.io/nestybox/alpine:latest

@@ -26,7 +26,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont_name
 
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d alpine tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""
@@ -69,7 +69,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont_name
 
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d alpine tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""
@@ -117,7 +117,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont_name
 
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""
@@ -140,7 +140,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont_name
 
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""
@@ -163,7 +163,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont_name
 
-  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d busybox tail -f /dev/null"
+  docker exec "$syscont_name" sh -c "docker run --privileged --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker ps --format \"{{.ID}}\""
@@ -202,7 +202,7 @@ function teardown() {
   sleep 3
 
   # launch container inside priv container inside sys cont
-  docker exec "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"docker run --rm -d busybox tail -f /dev/null\""
+  docker exec "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null\""
   [ "$status" -eq 0 ]
 
   docker exec "$syscont_name" sh -c "docker exec $inner_cont_name sh -c \"docker ps --format \"{{.ID}}\"\""

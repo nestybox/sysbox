@@ -39,7 +39,7 @@ function teardown() {
 
   # spawn a couple of inner containers and check that their network config is fine
   for inner in alpine1 alpine2; do
-    docker exec "$syscont" sh -c "docker run -d --name $inner alpine tail -f /dev/null"
+    docker exec "$syscont" sh -c "docker run -d --name $inner ${CTR_IMG_REPO}/alpine tail -f /dev/null"
     [ "$status" -eq 0 ]
 
     docker exec "$syscont" sh -c "docker exec $inner ip a"
@@ -101,19 +101,19 @@ function teardown() {
   docker exec "$syscont" sh -c "docker network create --driver bridge alpine-net"
   [ "$status" -eq 0 ]
 
-  # Create four inner containers; two of them are connected to apline-net;
+  # Create four inner containers; two of them are connected to alpine-net;
   # one of them is connected to the default bridge net; one of them is
   # connected to both alpine-net and the default bridge net.
-  docker exec "$syscont" sh -c "docker run -d --name alpine1 --network alpine-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name alpine1 --network alpine-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name alpine2 --network alpine-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name alpine2 --network alpine-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name alpine3 alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name alpine3 ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker run -d --name alpine4 --network alpine-net alpine tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run -d --name alpine4 --network alpine-net ${CTR_IMG_REPO}/alpine tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker network connect bridge alpine4"

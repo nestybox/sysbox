@@ -26,8 +26,8 @@ dockerd > /var/log/dockerd.log 2>&1 &
 retry 10 1 "docker ps"
 
 # pull inner images
-docker pull busybox:latest
-docker pull alpine:latest
+docker pull ghcr.io/nestybox/busybox:latest
+docker pull ghcr.io/nestybox/alpine:latest
 
 # dockerd cleanup (remove the .pid file as otherwise it prevents
 # dockerd from launching correctly inside sys container)
