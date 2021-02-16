@@ -176,7 +176,7 @@ function test_cgroup_cpus() {
 function test_cgroup_memory() {
 
 	# Run a container and give it a max RAM of 16M
-	local syscont=$(docker_run --rm --memory="16M" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local syscont=$(docker_run --rm --memory="16M" --oom-kill-disable ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	#
 	# Verify cgroup config looks good at host-level
@@ -231,7 +231,6 @@ function test_cgroup_memory() {
 	[ "$status" -eq 0 ]
 
 	docker exec "$syscont" sh -c "dd if=/dev/zero of=/root/tmp/test bs=1M count=20"
-	[ "$status" -eq 0 ]
 
 	# ... and verify it never got across the 16M limit
 	docker exec "$syscont" sh -c "cat ${cgPathCont}/memory.usage_in_bytes"
