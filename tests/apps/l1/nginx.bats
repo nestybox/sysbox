@@ -44,7 +44,7 @@ EOF
   SYSCONT_NAME=$(docker_run \
                    --mount type=bind,source=${tmpdir},target=/usr/share/nginx/html \
                    -p 8080:80 \
-                   nginx:latest)
+                   ${CTR_IMG_REPO}/nginx:latest)
 
   wait_for_nginx
 
@@ -72,12 +72,12 @@ EOF
   docker network create --driver bridge -o "com.docker.network.driver.mtu"="${iface_mtu}" nginx-net
   [ "$status" -eq 0 ]
 
-  SERVER=$(docker_run -d --name nginx-server --network nginx-net nginx:latest)
+  SERVER=$(docker_run -d --name nginx-server --network nginx-net ${CTR_IMG_REPO}/nginx:latest)
   [ "$status" -eq 0 ]
 
   wait_for_nginx
 
-  CLIENT=$(docker_run -d --name nginx-client --network nginx-net busybox:latest tail -f /dev/null)
+  CLIENT=$(docker_run -d --name nginx-client --network nginx-net ${CTR_IMG_REPO}/busybox:latest tail -f /dev/null)
   [ "$status" -eq 0 ]
 
   docker exec nginx-client sh -c "wget nginx-server:80"
