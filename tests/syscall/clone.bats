@@ -16,7 +16,7 @@ function teardown() {
 # Verify that mount syscall emulation performs correct path resolution (per path_resolution(7))
 @test "clone new namespaces" {
 
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "apt-get update && apt-get install --no-install-recommends -y libcap2"
   [ "$status" -eq 0 ]

@@ -32,7 +32,7 @@ function teardown() {
 
   # start multiple sys containers
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" alpine:latest tail -f /dev/null)
+    syscont_name[$i]=$(docker_run --rm --hostname "syscont_$i" ${CTR_IMG_REPO}/alpine:latest tail -f /dev/null)
   done
 
   # verify all sys containers got the uid(gid) range of 64k each

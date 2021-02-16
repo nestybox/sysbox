@@ -82,7 +82,7 @@ function verify_sys_chown {
 
 @test "fchownat /proc" {
    # Note: in Ubuntu, chown uses the fchownat syscall
-   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
    verify_proc_owner root root
    verify_proc_chown
    docker_stop "$syscont"
@@ -90,7 +90,7 @@ function verify_sys_chown {
 
 @test "fchownat /sys" {
    # Note: in Ubuntu, chown(1) uses the fchownat syscall
-   local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
+   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
    verify_sys_owner nobody nogroup
    verify_sys_chown nobody nogroup
    docker_stop "$syscont"

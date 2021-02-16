@@ -163,7 +163,7 @@ function wait_for_inner_dockerd() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sc2=$(docker_run --rm alpine:3.10 tail -f /dev/null)
+  sc2=$(docker_run --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null)
 
   # For each /proc/sys control associated with a namespaced resource,
   # modify the value in the sys container and check isolation. Then
@@ -291,7 +291,7 @@ EOF
 
   chmod +x ${work_scr}
 
-  local sc=$(docker_run --rm alpine:3.10 tail -f /dev/null)
+  local sc=$(docker_run --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null)
 
   docker cp ${work_scr} $sc:/worker.sh
   [ "$status" -eq 0 ]
@@ -468,7 +468,7 @@ EOF
   declare -a app_cntr
   for i in $(seq 1 $num_ac); do
     app_cntr[$i]=$(docker exec $syscont sh -c "docker run -d --privileged --rm \
-      --hostname=\"ac_$i\" --name=\"ac_$i\" bashell/alpine-bash tail -f /dev/null")
+      --hostname=\"ac_$i\" --name=\"ac_$i\" ${CTR_IMG_REPO}/alpine-bash tail -f /dev/null")
     [ "$status" -eq 0 ]
 
     docker exec "$syscont" sh -c "docker cp /worker.sh ac_$i:/worker.sh"
@@ -741,7 +741,7 @@ EOF
   make -C "$SYSBOX_ROOT/tests/scr/capRaise"
 
   # launch sys container
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
 
   # add a regular user in it
   docker exec "$syscont" bash -c "useradd -u 1000 someone"

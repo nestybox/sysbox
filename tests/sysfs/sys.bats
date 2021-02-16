@@ -26,7 +26,7 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
-  sc2=$(docker_run --rm alpine:3.10 tail -f /dev/null)
+  sc2=$(docker_run --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null)
 
   # For each /sys control associated with a namespaced resource,
   # modify the value in the sys container and check isolation. Then
