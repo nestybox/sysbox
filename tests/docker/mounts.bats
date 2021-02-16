@@ -18,7 +18,7 @@ function teardown() {
   docker volume create testVol
   [ "$status" -eq 0 ]
 
-  local syscont=$(docker_run --rm --mount source=testVol,target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount source=testVol,target=/mnt/testVol ${CTR_IMG_REPO}/busybox tail -f /dev/null)
 
   # verify the mount was done correctly
   docker exec "$syscont" sh -c "mount | grep testVol"
@@ -56,7 +56,7 @@ function teardown() {
   fi
 
   # start the container
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol ${CTR_IMG_REPO}/busybox tail -f /dev/null)
 
   # verify bind mount was done correctly
   docker exec "$syscont" sh -c "mount | grep testVol"
@@ -90,7 +90,7 @@ function teardown() {
 @test "docker tmpfs mount" {
 
   # start container with tmpfs mount
-  local syscont=$(docker_run --rm --mount type=tmpfs,target=/mnt/testVol busybox tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=tmpfs,target=/mnt/testVol ${CTR_IMG_REPO}/busybox tail -f /dev/null)
 
   # verify the mount was done correctly
   docker exec "$syscont" sh -c "mount | grep testVol"
@@ -527,7 +527,7 @@ function teardown() {
       continue
     fi
 
-    syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist busybox tail -f /dev/null)
+    syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist ${CTR_IMG_REPO}/busybox tail -f /dev/null)
 
     # verify that shiftfs is not mounted on the source or destination of the mount
     run sh -c "mount | grep \"shiftfs\" | grep \"$blacklist\""

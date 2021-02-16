@@ -334,7 +334,7 @@ function teardown() {
 
   # Alpine image not working -- refer to issue #645 https://github.com/nestybox/sysbox/issues/645
   # local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
   local mnt_path=/root/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -360,8 +360,7 @@ function teardown() {
 
 @test "mount procfs hidepid" {
 
-  #local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local syscont=$(docker_run --rm ubuntu tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
   local mnt_path=/tmp/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"

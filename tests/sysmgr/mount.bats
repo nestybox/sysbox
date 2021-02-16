@@ -33,7 +33,7 @@ load ../helpers/sysbox-health
   local kernel_rel=$(uname -r)
   local distro=$(get_host_distro)
 
-  local syscont=$(docker_run --rm ubuntu:bionic tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:bionic tail -f /dev/null)
 
   # Expected behavior will vary depending on the linux-distro running on the
   # host (i.e. test-priv container).
@@ -81,7 +81,7 @@ load ../helpers/sysbox-health
   local kernel_rel=$(uname -r)
   local distro=$(get_host_distro)
 
-  local syscont=$(docker_run --rm fedora:31 tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/fedora:31 tail -f /dev/null)
 
   # Expected behavior will vary depending on the linux-distro running on the
   # host (i.e. test-priv container).

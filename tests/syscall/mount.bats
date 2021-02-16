@@ -107,7 +107,7 @@ function teardown() {
 # Verify that mount syscall emulation does correct permission checks
 @test "mount permission checking" {
 
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -134,7 +134,7 @@ function teardown() {
 # Verify that mount syscall emulation does correct capability checks
 @test "mount capability checking" {
 
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
   local mnt_path=/root/l1/l2/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
