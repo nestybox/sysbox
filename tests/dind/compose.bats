@@ -23,10 +23,10 @@ SYSCONT_NAME=""
 version: '3'
 services:
   alpine:
-    image: "alpine"
+    image: "ghcr.io/nestybox/alpine"
     command: "tail -f /dev/null"
   busybox:
-    image: "busybox"
+    image: "ghcr.io/nestybox/busybox"
     command: "tail -f /dev/null"
 EOF
 
