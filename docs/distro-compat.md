@@ -33,6 +33,17 @@ procedure for details.
 installation (i.e. kernel 5.5+ is deployed). Otherwise, a kernel-upgrade will be
 expected. Refer to [Fedora's kernel-upgrade](#Fedora-kernel-upgrade) procedure for details.
 
+* Note 3: Fedora >= 31 requires that the Linux kernel be booted with cgroups v1,
+  as Sysbox does not yet support cgroups v2 (the latter is the default in recent
+  Fedora kernels). We will be adding support for cgroups v2 in Sysbox very
+  soon. To boot the Fedora kernel with cgroups v1, set kernel parameter
+  `systemd.unified_cgroup_hierarchy=0` as follows and reboot the kernel.
+
+  ```
+  sudo dnf install grubby
+  sudo grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
+  ```
+
 ## Sysbox Operational Modes
 
 The Sysbox runtime relies on the kernel's user-namespace feature to secure
