@@ -23,7 +23,7 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run hello-world | grep \"Hello from Docker!\""
+  docker exec "$SYSCONT_NAME" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
 
   docker_stop "$SYSCONT_NAME"

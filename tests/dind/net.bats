@@ -188,7 +188,7 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  docker exec "$syscont" sh -c "docker run -d --network host --name my_nginx nginx"
+  docker exec "$syscont" sh -c "docker run -d --network host --name my_nginx ${CTR_IMG_REPO}/nginx"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "netstat -tulpn | grep :80"
