@@ -67,7 +67,7 @@ function remove_test_dir() {
 
 @test "kindbox deployment" {
 
-  run kubectl create deployment nginx --image=nginx:1.16-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   echo "status = ${status}"
   echo "output = ${output}"
   echo "kubeconfig = $(echo $KUBECONFIG)"
@@ -82,7 +82,7 @@ function remove_test_dir() {
   retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
 
   # rollout new nginx image
-  run kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record
+  run kubectl set image deployment/nginx nginx=${CTR_IMG_REPO}/nginx:1.17-alpine --record
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_rollout_ready $cluster1 $controller1 default nginx"
@@ -100,7 +100,7 @@ function remove_test_dir() {
 
 @test "kindbox service clusterIP" {
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
   run kubectl scale --replicas=3 deployment nginx
@@ -126,7 +126,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
@@ -167,7 +167,7 @@ EOF
 
   local num_workers=$(cat "$test_dir/."${cluster1}"_num_workers")
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_ready $cluster1 $controller1 default nginx"
@@ -200,7 +200,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
@@ -231,7 +231,7 @@ EOF
 
   # launch a deployment with an associated service
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
   run kubectl expose deployment/nginx --port 80
@@ -246,7 +246,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
