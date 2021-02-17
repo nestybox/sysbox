@@ -1,0 +1,157 @@
+#
+# Sysbox Test Container Dockerfile (Fedora-32 image)
+#
+# This Dockerfile creates the sysbox test container image. The image
+# contains all dependencies needed to build, run, and test sysbox.
+#
+# The image does not contain sysbox itself; the sysbox repo
+# must be bind mounted into the image. It can then be built,
+# installed, and executed within the container.
+#
+# The image must be run as a privileged container (i.e., docker run --privileged ...)
+# Refer to the sysbox Makefile test targets.
+#
+# This Dockerfile is based on a similar Dockerfile in the OCI runc
+# github repo, but adapted to sysbox testing.
+#
+# Instructions:
+#
+# docker build -t sysbox-test .
+#
+
+FROM fedora:32
+
+ARG k8s_version=v1.18.2
+
+RUN dnf update -y && dnf install -y \
+    yum-utils \
+    automake \
+    autoconf \
+    libtool \
+    procps \
+    psmisc \
+    nano \
+    less \
+    curl \
+    sudo \
+    gawk \
+    git \
+    iptables \
+    iproute \
+    jq \
+    pkg-config \
+    libaio-devel \
+    libcap-devel \
+    libnl3-devel \
+    libseccomp \
+    libseccomp-devel \
+    python2 \
+    kmod \
+    unzip \
+    time \
+    net-tools \
+    wget \
+    lsof \
+    iputils \
+    ca-certificates \
+    bc \
+    # sysbox deps
+    fuse \
+    rsync \
+    redhat-lsb-core \
+    bash-completion \
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+
+# Install Golang 1.13 release and explicitly activate modules functionality.
+RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz && \
+    /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN go env -w GONOSUMDB=/root/nestybox && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    chmod -R 777 "$GOPATH"
+
+# Add a dummy user for the rootless integration tests; needed by the
+# `git clone` operations below.
+RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+
+# install bats
+RUN cd /tmp \
+    && git clone https://github.com/sstephenson/bats.git \
+    && cd bats \
+    && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f \
+    && ./install.sh /usr/local \
+    && rm -rf /tmp/bats
+
+# install protoc compiler for gRPC
+RUN mkdir -p ~/bin/protoc \
+    && cd ~/bin/protoc/ \
+    && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip \
+    && unzip protoc-3.6.1-linux-x86_64.zip \
+    && cp -r include/* /usr/local/include/ \
+    && cp bin/protoc /usr/local/bin/ \
+    && cd \
+    && rm -rf ~/bin/protoc/ \
+    && GIT_TAG="v1.3.1" \
+    && go get -d -u github.com/golang/protobuf/protoc-gen-go \
+    && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null \
+    && go install github.com/golang/protobuf/protoc-gen-go
+
+# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in K8s (L2) nodes.
+#
+# TODO: Define a mechanism in our testing-framework to allow K8s version to be
+# configured in a centralized location, so that the installed K8s components
+# (both inside privileged test-container and within L2 K8s image) are all
+# matching the same K8s release.
+RUN echo -e "\
+[kubernetes] \n\
+name=Kubernetes \n\
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64 \n\
+enabled=1 \n\
+gpgcheck=1 \n\
+repo_gpgcheck=1 \n\
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
+" > /etc/yum.repos.d/kubernetes.repo \
+  && yum update -y \
+  && yum install -y kubectl --nobest
+
+# install Docker (used by most sysbox tests to launch sys containers)
+RUN dnf update -y \
+    && dnf config-manager --add-repo=https://download.docker.com/linux/fedora/docker-ce.repo \
+    && dnf install -y docker-ce --nobest
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker \
+    /etc/bash_completion.d/docker.sh
+
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
+# Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
+#
+# This is needed because the definition changed in the mainline kernel
+# on 06/2020 (from SECCOMP_IOR -> SECCOMP_IOW), and some distros we
+# support have picked it up in their latest releases / kernels
+# updates. The kernel change was backward compatible, so by using the
+# old definition, we are guaranteed it will work on kernels before and
+# after the change. On the other hand, if we were to use the new
+# definition, seccomp notify would fail when sysbox runs in old
+# kernels.
+RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
+
+# sysbox env
+RUN useradd sysbox \
+    && mkdir -p /var/lib/sysboxfs
+
+# test scripts
+COPY scr/testContainerInit /usr/bin
+COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
+COPY scr/sindTestContainerInit /usr/bin
+COPY bin/userns_child_exec /usr/bin
+
+RUN mkdir -p /root/nestybox
+WORKDIR /root/nestybox/sysbox
+CMD /bin/bash
