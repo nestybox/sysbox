@@ -58,7 +58,7 @@ SYSCONT_NAME=""
   file="/root/Dockerfile"
 
   cat << EOF > ${file}
-FROM alpine:3.10
+FROM ${CTR_IMG_REPO}/alpine
 MAINTAINER Nestybox
 RUN apk update && apk add nginx
 COPY . /root
