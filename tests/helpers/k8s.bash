@@ -420,7 +420,7 @@ function verify_nginx_ingress() {
   # server pod and create a service in front of it (note that we could
   # have chosen any other pod for this purpose); the nginx ingress
   # controller will redirect traffic to these pods.
-  run kubectl create deployment nginx --image=nginx:1.16-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
   run kubectl expose deployment/nginx --port 80

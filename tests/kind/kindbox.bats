@@ -70,7 +70,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx
+    image: ${CTR_IMG_REPO}/nginx
 EOF
 
   k8s_create_pod $cluster $controller "$test_dir/basic-pod.yaml"
@@ -96,11 +96,11 @@ metadata:
 spec:
   containers:
   - name: alpine1
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     command: ["tail"]
     args: ["-f", "/dev/null"]
   - name: alpine2
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     command: ["tail"]
     args: ["-f", "/dev/null"]
 EOF
@@ -127,7 +127,7 @@ EOF
 
 @test "kindbox deployment" {
 
-  run kubectl create deployment nginx --image=nginx:1.16-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
@@ -139,7 +139,7 @@ EOF
   retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
 
   # rollout new nginx image
-  run kubectl set image deployment/nginx nginx=nginx:1.17-alpine --record
+  run kubectl set image deployment/nginx nginx=${CTR_IMG_REPO}/nginx:1.17-alpine --record
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_rollout_ready $cluster $controller default nginx"
@@ -157,7 +157,7 @@ EOF
 
 @test "kindbox service clusterIP" {
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
   run kubectl scale --replicas=4 deployment nginx
@@ -183,7 +183,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
@@ -224,7 +224,7 @@ EOF
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
   retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
@@ -257,7 +257,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
@@ -288,7 +288,7 @@ EOF
 
   # launch a deployment with an associated service
 
-  run kubectl create deployment nginx --image=nginx:1.17-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   echo "status = ${status}"
   echo "output = ${output}"
   [ "$status" -eq 0 ]
@@ -305,7 +305,7 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     args:
     - sleep
     - "1000000"
@@ -399,7 +399,7 @@ EOF
   rm $test_dir/index.html
 
   # deploy nginx and create a service for it
-  run kubectl create deployment nginx --image=nginx:1.16-alpine
+  run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
 
   run kubectl scale --replicas=8 deployment nginx
@@ -473,7 +473,7 @@ metadata:
 spec:
   containers:
   - name: alpine1
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     command: ["tail"]
     args: ["-f", "/dev/null"]
     volumeMounts:
@@ -482,7 +482,7 @@ spec:
     - mountPath: /cache-mem
       name: cache-vol-mem
   - name: alpine2
-    image: alpine
+    image: ${CTR_IMG_REPO}/alpine
     command: ["tail"]
     args: ["-f", "/dev/null"]
     volumeMounts:
@@ -552,7 +552,7 @@ spec:
   nodeSelector:
     kubernetes.io/hostname: cluster1-worker-0
   containers:
-  - image: alpine
+  - image: ${CTR_IMG_REPO}/alpine
     name: alpine
     command: ["tail"]
     args: ["-f", "/dev/null"]
@@ -682,7 +682,7 @@ metadata:
   name: pvol-test
 spec:
   containers:
-  - image: alpine
+  - image: ${CTR_IMG_REPO}/alpine
     name: alpine
     command: ['tail', '-f', '/dev/null']
     volumeMounts:

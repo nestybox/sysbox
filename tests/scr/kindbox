@@ -30,7 +30,7 @@ VERSION=v0.1
 
 CLUSTER_NAME=k8s-cluster
 NUM_WORKERS=1
-IMAGE=nestybox/k8s-node:v1.18.2
+IMAGE=ghcr.io/nestybox/k8s-node:v1.18.2
 K8S_VERSION=v1.18.2
 
 VERBOSE=1
