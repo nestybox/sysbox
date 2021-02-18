@@ -31,7 +31,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -72,7 +72,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -101,12 +101,12 @@ function teardown() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# an inner mount namespace.
+# an inner mount namespace, and then back to read-only.
 @test "immutable rw mount can be remounted ro -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -145,7 +145,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -179,7 +179,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -213,7 +213,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -276,7 +276,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -355,7 +355,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -410,7 +410,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -469,7 +469,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -530,7 +530,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -591,7 +591,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ubuntu:latest tail -f /dev/null)  
+  local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]

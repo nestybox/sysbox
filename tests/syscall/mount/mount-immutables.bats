@@ -30,7 +30,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_mounts=$(list_container_mounts ${syscont} "0" "/")
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]
@@ -63,7 +63,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
@@ -84,12 +84,12 @@ function teardown() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# the container.
+# the container, and then back to read-only.
 @test "immutable rw mount can be remounted ro" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
   run empty_list ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
@@ -120,7 +120,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
@@ -146,7 +146,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
   run empty_list ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
@@ -172,7 +172,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
@@ -227,7 +227,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
   run empty_list ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
@@ -298,7 +298,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
@@ -345,7 +345,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_dir_mounts ${syscont} "0" "/")
   run empty_list ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
@@ -404,7 +404,7 @@ function teardown() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner debian tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
 
   # In the inner container, create a dir and mountpoint whose name matches that
@@ -439,7 +439,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_file_mounts=$(list_container_file_mounts ${syscont} "0" "/")
   run empty_list ${immutable_file_mounts}
   [ "$status" -ne 0 ]
@@ -485,7 +485,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_char_mounts=$(list_container_char_mounts ${syscont} "0" "/")
   run empty_list ${immutable_char_mounts}
   [ "$status" -ne 0 ]  
@@ -531,7 +531,7 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_dir_mounts=$(list_container_dir_mounts ${syscont} "0" "/")
   run empty_list ${immutable_dir_mounts}
   [ "$status" -ne 0 ]

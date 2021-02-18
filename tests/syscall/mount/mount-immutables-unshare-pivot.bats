@@ -58,7 +58,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -107,7 +107,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -147,7 +147,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -192,7 +192,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -232,7 +232,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -272,7 +272,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -341,7 +341,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -426,7 +426,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -493,7 +493,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -557,7 +557,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
@@ -632,7 +632,7 @@ function local_rootfs_prepare() {
 
   wait_for_inner_dockerd ${syscont}
 
-  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null"
+  docker exec ${syscont} sh -c "docker run --privileged -d --name inner -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null"
   [ "$status" -eq 0 ]
   docker exec ${syscont} sh -c "docker inspect --format='{{.State.Pid}}' inner"
   [ "$status" -eq 0 ]
