@@ -133,7 +133,7 @@ function local_rootfs_prepare() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# the container.
+# the container, and then back to read-only.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -168,7 +168,12 @@ function local_rootfs_prepare() {
 
     printf "\ntesting ro remount of immutable rw mount ${m}\n"
 
-    docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,ro ${m}\""
+    docker exec ${syscont} sh -c \
+      "docker exec inner sh -c \"mount -o remount,bind,ro ${m}\""
+    [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c \
+      "docker exec inner sh -c \"mount -o remount,bind,rw ${m}\""
     [ "$status" -eq 0 ]
   done
 

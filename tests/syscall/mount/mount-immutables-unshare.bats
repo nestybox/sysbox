@@ -132,6 +132,9 @@ function teardown() {
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,ro ${m}"
     [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,rw ${m}"
+    [ "$status" -eq 0 ]
   done
 
   docker_stop ${syscont}

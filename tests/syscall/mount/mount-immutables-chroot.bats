@@ -140,6 +140,9 @@ function local_rootfs_prepare() {
 
     docker exec ${syscont} sh -c "chroot ${chrootpath} mount -o remount,bind,ro ${m}"
     [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c "chroot ${chrootpath} mount -o remount,bind,rw ${m}"
+    [ "$status" -eq 0 ]
   done
 
   docker_stop ${syscont}
