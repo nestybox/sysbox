@@ -53,7 +53,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -98,7 +98,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -130,14 +130,14 @@ function local_rootfs_prepare() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# an inner mount namespace.
+# an inner mount namespace, and then back to read-only.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -181,7 +181,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -220,7 +220,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -259,7 +259,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -335,7 +335,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -429,7 +429,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -500,7 +500,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -568,7 +568,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
@@ -627,7 +627,7 @@ function local_rootfs_prepare() {
   fi
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ubuntu:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
