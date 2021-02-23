@@ -1,11 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.3.0-dev] - 2021-01-28
+## [0.3.0] - 2021-02-23
 ### Added
-  * TBD
+  * Secured system container initial mounts (mount/remount/unmounts on these from within the container are now restricted). See [here](docs/user-guide/security.md#initial-mount-immutability) for details.
+  * Improved Sysbox systemd service unit files (dependencies, open-file limits).
+  * Improved logging by sysbox-mgr and sysbox-fs (json logging, more succint logs).
+  * Added support for systemd-managed cgroups v1 on the host (cgroups v2 still not supported).
+  * Added support for read-only Docker containers.
+  * Synced-up sysbox-runc to include the latest changes from the OCI runc.
+  * Added ground-work to support Sysbox on RedHat, Fedora, and CentOS (next step is creating a package manager for these).
+  * Added config option to configure the Sysbox work directory (defaults to /var/lib/sysbox).
+  * Fixed sysbox-mgr file descriptor leak (sysbox issue #195).
+  * Fixed problem with "docker --restart" on Sysbox containers (sysbox issue #184).
+  * Fixed race condition in sysbox-fs procfs & sysfs emulation.
 ### Removed
-  * TBD
+  * None.
 
 ## [0.2.1] - 2020-08-25
 ### Added
@@ -18,7 +28,6 @@ All notable changes to this project will be documented in this file.
 ## [0.2.0] - 2020-07-03
 ### Added
   * Added initial Kubernetes-in-Docker support to enable secure, flexible and portable K8s clusters.
-  * Implemented inner Docker Image Sharing feature, to dramatically reduce host storage utilization for system containers that come preloaded with Docker images.
   * Added support for running privileged-containers within secure system containers.
   * Added support for containerd to run within system containers.
   * Made multiple performance improvements to expedite container initialization and i/o operations.
