@@ -31,9 +31,9 @@ $ docker run --runtime=sysbox-runc -it some-image
 In this container, you can now run Systemd, Docker, Kubernetes, etc., just like
 you would on a physical host or virtual machine. You can launch inner containers
 (and even inner privileged containers), knowing that the outer container is
-strongly isolated from the underlying host (via the Linux user-namespace). No
-more complex docker images or docker run commands, and no need for unsecure
-privileged containers.
+strongly isolated from the underlying host (via the Linux user-namespace as well
+as other features setup by Sysbox). No more complex docker images or docker run
+commands, and no need for unsecure privileged containers.
 
 In order to do this, Sysbox uses many OS-virtualization features of the Linux
 kernel and complements these with OS-virtualization techniques implemented in
@@ -282,7 +282,12 @@ Sysbox.
 -   Programs running inside the system container (e.g., Docker, Kubernetes, etc)
     are limited to using the resources given to the system container itself.
 
--   Avoid the need for unsecure privileged containers.
+-   The system container's initial mounts are immutable (can't be changed from
+    inside the container, even though processes in the container can setup
+    other mounts).
+
+-   See the [security section](docs/user-guide/security.md) of the User Guide
+    for details.
 
 ### Fast & Efficient
 
