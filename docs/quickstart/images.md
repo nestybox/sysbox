@@ -160,6 +160,43 @@ There they are!
 You can preload as many inner container images as you want. Just keep in mind
 that they will add to the size of the system container image.
 
+### A Caveat on Inner Image Preloading
+
+In the Dockerfile for the system container (see step (2) above), make sure that
+the container's `/var/lib/docker` is not backed by a host volume. Otherwise, the
+contents of `/var/lib/docker` will be stored in that volume rather than the
+Docker image being built (i.e., the built image won't have any inner containers
+preloaded in it).
+
+As an example, avoid using the `docker:19-dind` image as the base image in the
+system container Dockerfile, because this image [implicitly mounts a volume](https://github.com/docker-library/docker/blob/master/19.03/dind/Dockerfile)
+over the container's `/var/lib/docker` directory.
+
+For example, this will **not work**:
+
+```
+FROM docker:19-dind
+COPY docker-pull.sh /usr/bin
+RUN chmod +x /usr/bin/docker-pull.sh && docker-pull.sh && rm /usr/bin/docker-pull.sh
+```
+
+If you build this image (e.g., `docker built -t my-image .`), you'll see that
+the resulting image builds properly, but it won't have any inner containers
+preloaded in it (i.e., the inner containers pulled by the `docker-pull.sh`
+script end up in the host volume that backs `/var/lib/docker`, rather than in
+the container image itself).
+
+If you want to use the `docker:19-dind` image and preload it with inner
+containers, create a new image by copying it's [Dockerfile](https://github.com/docker-library/docker/blob/master/19.03/dind/Dockerfile)
+and removing the `VOLUME /var/lib/docker` line from it. You can then
+preload inner containers into that new image with:
+
+```
+FROM new_image
+COPY docker-pull.sh /usr/bin
+RUN chmod +x /usr/bin/docker-pull.sh && docker-pull.sh && rm /usr/bin/docker-pull.sh
+```
+
 ## Committing A System Container That Includes Inner Container Images
 
 **Check out this [video](https://asciinema.org/a/SeinIdpOJBxuDvSf2cGS4NvHZ?speed=2).**
