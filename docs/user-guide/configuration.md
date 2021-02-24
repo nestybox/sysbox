@@ -8,6 +8,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 
 -   [Reconfiguration Procedure](#reconfiguration-procedure)
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
+-   [Sysbox Log Configuration](#sysbox-log-configuration)
 -   [Sysbox Data Store Configuration](#sysbox-data-store-configuration)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
@@ -82,6 +83,19 @@ As root, type `sysbox-mgr --help` to get a list of command line options
 supported by the sysbox-mgr component.
 
 Same for sysbox-fs: `sysbox-fs --help`.
+
+## Sysbox Log Configuration
+
+The Sysbox logs are located at `/var/log/sysbox-*.log`. You can change the
+location of the log file via the `--log` option in both the sysbox-fs and
+sysbox-mgr daemons.
+
+In addition, the format of the logs can be controlled. By default they are in
+text format, but you can change them to json format via the `--log-format`
+config option in both the sysbox-mgr and sysbox-fs daemons.
+
+Finally, the log-level (info, debug, etc) can be changed via the
+`--log-level` option. This is useful for debugging.
 
 ## Sysbox Data Store Configuration
 
