@@ -344,7 +344,8 @@ The Sysbox daemons (i.e. sysbox-fs and sysbox-mgr) will log information related
 to their activities in `/var/log/sysbox-fs.log` and `/var/log/sysbox-mgr.log`
 respectively. These logs should be useful during troubleshooting exercises.
 
-You can modify the log level as described [here](configuration.md#reconfiguration-procedure).
+You can modify the log file location, log level, and log format. See [here](configuration.md#reconfiguration-procedure)
+and [here](configuration.md#sysbox-log-configuration) for more info.
 
 ### sysbox-runc
 
