@@ -3,6 +3,7 @@
 ## Contents
 
 -   [Supported Linux Distros](#supported-linux-distros)
+-   [Supported Package](#sysbox-package)
 -   [Sysbox Operational Modes](#Sysbox-Operational-Modes)
 -   [Kernel Upgrade Procedures](#Kernel-Upgrade-Procedures)
 
@@ -43,6 +44,16 @@ expected. Refer to [Fedora's kernel-upgrade](#Fedora-kernel-upgrade) procedure f
   sudo dnf install grubby
   sudo grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
   ```
+
+## Sysbox Package
+
+We currently only offer the [Sysbox package](../releases) for Ubuntu. This means that for
+other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
+It's pretty easy though, since the Sysbox Makefile has targets that automate this process.
+The build occurs entirely inside a container, so it won't mess up your host.
+
+We are working on creating packaged versions for other Linux distros now, and
+expect to have them very soon (ETA spring 2021).
 
 ## Sysbox Operational Modes
 
