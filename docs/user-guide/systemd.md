@@ -24,9 +24,9 @@ in the container.
 
 ## Systemd-in-Docker
 
-Sysbox has preliminary support for running Systemd inside a system container,
-meaning that Systemd works but there are still some minor issues that need
-resolution.
+Starting with release v0.1.2, Sysbox has preliminary support for running Systemd
+inside a system container, meaning that Systemd works but there are still some
+minor issues that need resolution.
 
 With Sysbox, you can run Systemd-in-Docker easily and securely, without the need
 to create complex Docker run commands or specialized image entrypoints, and

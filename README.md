@@ -252,7 +252,7 @@ Sysbox.
 -   Sysbox is ~90% OCI-compatible. See [here](docs/user-guide/design.md#sysbox-oci-compatibility) for
     more on this.
 
-### Systemd-in-Docker
+### Systemd-in-Docker [ +v0.1.2 ]
 
 -   Run Systemd inside a Docker container easily, without complex container configurations.
 
@@ -264,7 +264,7 @@ Sysbox.
 
 -   Full isolation between the Docker inside the container and the Docker on the host.
 
-### Kubernetes-in-Docker
+### Kubernetes-in-Docker [ +v0.2.0 ]
 
 -   Deploy Kubernetes (K8s) inside containers with proper isolation (no
     privileged containers), using simple Docker images and Docker run commands
