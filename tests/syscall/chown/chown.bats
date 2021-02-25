@@ -4,10 +4,10 @@
 # Verify trapping & emulation on "chown", "fchown", and "fchownat"
 #
 
-load ../helpers/run
-load ../helpers/docker
-load ../helpers/fs
-load ../helpers/sysbox-health
+load ../../helpers/run
+load ../../helpers/docker
+load ../../helpers/fs
+load ../../helpers/sysbox-health
 
 function teardown() {
   sysbox_log_check

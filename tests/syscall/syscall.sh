@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Script to run sysbox integration testcases for mount syscall-interception
+# Script to run sysbox integration testcases for syscall-interception
 # feature.
 #
 
@@ -12,6 +12,12 @@ if [ $# -eq 1 ]; then
   bats --tap $1
   return
 fi
+
+printf "\nExecuting chown syscall tests ... \n"
+bats --tap tests/syscall/chown
+
+printf "\nExecuting clone syscall tests ... \n"
+bats --tap tests/syscall/clone
 
 printf "\nExecuting basic mount syscall-interception tests ... \n"
 bats --tap tests/syscall/mount/mount.bats
@@ -39,4 +45,3 @@ bats --tap tests/syscall/mount/mount-immutables-unshare-chroot.bats
 
 printf "\nExecuting mount syscall-interception tests for immutable resources in unshare() + pivot() ctx ... \n"
 bats --tap tests/syscall/mount/mount-immutables-unshare-pivot.bats
-

@@ -5,9 +5,9 @@
 # works inside the sys container without problem.
 #
 
-load ../helpers/run
-load ../helpers/docker
-load ../helpers/sysbox-health
+load ../../helpers/run
+load ../../helpers/docker
+load ../../helpers/sysbox-health
 
 function teardown() {
   sysbox_log_check
