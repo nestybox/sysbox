@@ -45,8 +45,8 @@ function local_rootfs_prepare() {
 
 # Testcase #1.
 #
-# Ensure immutable mounts can't be unmounted from inside an inner mount
-# namespace if, and only if, sysbox-fs is running with
+# Within an inner mount namespace + chroot jail, ensure immutable mounts can't
+# be unmounted if, and only if, sysbox-fs is running with
 # 'allow-immutable-unmounts' option disabled. Alternatively, verify that
 # unmounts are always allowed.
 @test "immutable mount can't be unmounted -- unshare(mnt) + chroot()" {
@@ -76,7 +76,7 @@ function local_rootfs_prepare() {
   fi
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]
 
   for m in ${immutable_mounts}; do
@@ -109,10 +109,10 @@ function local_rootfs_prepare() {
 
 # Testcase #2.
 #
-# Ensure that a read-only immutable mount can't be remounted as read-write
-# inside an inner mount namespace if, and only if, sysbox-fs is running with
-# 'allow-immutable-remounts' option disabled. Alternatively, verify that
-# remounts are allowed.
+# Within an inner mount namespace + chroot jail, ensure that a read-only
+# immutable mount can't be remounted as read-write if, and only if, sysbox-fs
+# is running with 'allow-immutable-remounts' option disabled. Alternatively,
+# verify that remounts are allowed.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -131,7 +131,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
@@ -167,8 +167,9 @@ function local_rootfs_prepare() {
 
 # Testcase #3.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# an inner mount namespace, and then back to read-only.
+# Within an inner mount namespace + chroot jail, ensure that a read-write
+# immutable mount *can* be remounted as read-only, and then back to
+# read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -187,7 +188,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -215,8 +216,8 @@ function local_rootfs_prepare() {
 
 # Testcase #4.
 #
-# Ensure that a read-only immutable mount *can* be remounted as read-only inside
-# an inner mount namespace.
+# Within an inner mount namespace + chroot jail, ensure that a read-only
+# immutable mount *can* be remounted as read-only.
 @test "immutable ro mount can be remounted ro -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -235,7 +236,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_ro_mounts}; do
@@ -254,8 +255,8 @@ function local_rootfs_prepare() {
 
 # Testcase #5.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-write or
-# read-only inside an inner mount namespace.
+# Within an inner mount namespace + chroot jail, ensure that a read-write
+# immutable mount *can* be remounted as read-write.
 @test "immutable rw mount can be remounted rw -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -274,14 +275,14 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
     printf "\ntesting rw remount of immutable rw mount ${m}\n"
 
     docker exec ${syscont} sh -c \
-      "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -o remount,bind,rw ${m}"    
+      "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -o remount,bind,rw ${m}"
     [ "$status" -eq 0 ]
   done
 
@@ -293,10 +294,11 @@ function local_rootfs_prepare() {
 
 # Testcase #6.
 #
-# Within an inner mount namespace, ensure that a read-only immutable mount can't
-# be bind-mounted to a new mountpoint then re-mounted read-write if, and only if,
-# sysbox-fs is running with 'allow-immutable-remounts' knob disabled.
-# Alternatively, allow remounts to succeed.
+# Within an inner mount namespace + chroot jail, ensure that a read-only
+# immutable mount can be bind-mounted to a new mountpoint, but not re-mounted
+# read-write at the new mountpoint if, and only if, sysbox-fs is running with
+# 'allow-immutable-remounts' knob disabled. Otherwise, allow remounts to
+# succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -315,7 +317,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   local target="target"
 
@@ -330,7 +332,7 @@ function local_rootfs_prepare() {
 
   for m in ${immutable_ro_mounts}; do
 
-    printf "\ntesting bind-mount of immutable ro bind-mount ${m}-> ${target}\n"
+    printf "\ntesting bind-mount of immutable ro mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} sh -c \
@@ -384,8 +386,9 @@ function local_rootfs_prepare() {
 
 # Testcase #7.
 #
-# Within an inner mount namespace, ensure that a read-write immutable mount can
-# be bind-mounted to a new mountpoint then re-mounted read-only.
+# Within an inner mount namespace + chroot jail, ensure that a read-write
+# immutable mount can be bind-mounted to a new mountpoint then re-mounted
+# read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -404,7 +407,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
   local target="target"
 
@@ -418,7 +421,7 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    printf "\ntesting bind-mount of immutable rw bind-mount ${m}-> ${target}\n"
+    printf "\ntesting bind-mount of immutable rw mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} sh -c \
@@ -478,8 +481,8 @@ function local_rootfs_prepare() {
 
 # Testcase #8.
 #
-# Within an inner mount namespace, ensure that a read-only immutable mount
-# *can* be masked by a new read-write mount on top of it.
+# Within an inner mount namespace + chroot jail, ensure that a read-only
+# immutable mount *can* be masked by a new read-write mount on top of it.
 @test "rw mount on top of immutable ro mount -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -498,7 +501,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_ro_mounts}; do
@@ -549,8 +552,8 @@ function local_rootfs_prepare() {
 
 # Testcase #9.
 #
-# Within an inner mount namespace, ensure that a read-write immutable mount
-# *can* be masked by a new read-only mount on top of it.
+# Within an inner mount namespace + chroot jail, ensure that a read-write
+# immutable mount *can* be masked by a new read-only mount on top of it.
 @test "ro mount on top of immutable rw mount -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -569,7 +572,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}  
   
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
@@ -619,6 +622,10 @@ function local_rootfs_prepare() {
 }
 
 # Testcase #10.
+#
+# Within an inner mount namespace + chroot jail, ensure proper execution of
+# unmount ops over mount-stacks and bind-mount chains formed by regular files
+# mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -637,7 +644,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
@@ -692,6 +699,10 @@ function local_rootfs_prepare() {
 }
 
 # Testcase #11.
+#
+# Within an inner mount namespace + chroot jail, ensure proper execution of
+# unmount ops over mount-stacks and bind-mount chains formed by directory
+# mountpoints.
 @test "unmount chain of dir bind-mounts -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -710,7 +721,7 @@ function local_rootfs_prepare() {
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} ${chrootpath})
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.

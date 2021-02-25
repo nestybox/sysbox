@@ -11,7 +11,6 @@ load ../../helpers/environment
 load ../../helpers/mounts
 load ../../helpers/sysbox-health
 
-skipTest=0
 
 function teardown() {
   sysbox_log_check
@@ -29,12 +28,10 @@ function teardown() {
 # only if, sysbox-fs is running with 'allow-immutable-unmounts' option disabled.
 # Alternatively, verify that unmounts are always allowed.
 @test "immutable mount can't be unmounted" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_mounts=$(list_container_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -82,12 +79,10 @@ function teardown() {
 # 'allow-immutable-remounts' option disabled. Alternatively, verify that
 # remounts are allowed.
 @test "immutable ro mount can't be remounted rw" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -105,7 +100,13 @@ function teardown() {
     docker exec ${syscont} sh -c "mount -o remount,bind,rw ${m}"
     if [[ ${remounts_allowed} -eq 0 ]]; then
       [ "$status" -eq 0 ]
+      # Verify mountpoint is now read-write.
+      docker exec ${syscont} sh -c "touch ${m}"
+      [ "$status" -eq 0 ]
     else
+      [ "$status" -ne 0 ]
+      # Verify mountpoint continues to be read-only.
+      docker exec ${syscont} sh -c "touch ${m}"
       [ "$status" -ne 0 ]
     fi
   done
@@ -123,14 +124,12 @@ function teardown() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# the container, and then back to read-only.
+# the container, and then back to read-write.
 @test "immutable rw mount can be remounted ro" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
 
   for m in $immutable_rw_mounts; do
@@ -147,6 +146,10 @@ function teardown() {
     docker exec ${syscont} sh -c "mount -o remount,bind,ro ${m}"
     [ "$status" -eq 0 ]
 
+    # Verify mountpoint is now read-only.
+    docker exec ${syscont} sh -c "touch ${m}"
+    [ "$status" -ne 0 ]
+
     docker exec ${syscont} sh -c "mount -o remount,bind,rw ${m}"
     [ "$status" -eq 0 ]
   done
@@ -159,12 +162,10 @@ function teardown() {
 # Ensure that a read-only immutable mount *can* be remounted as read-only inside
 # the container.
 @test "immutable ro mount can be remounted ro" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   for m in $immutable_ro_mounts; do
@@ -172,6 +173,10 @@ function teardown() {
 
     docker exec ${syscont} sh -c "mount -o remount,bind,ro ${m}"
     [ "$status" -eq 0 ]
+
+    # Verify mountpoint continues to be read-only.
+    docker exec ${syscont} sh -c "touch ${m}"
+    [ "$status" -ne 0 ]
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} "0" "/")
@@ -182,21 +187,30 @@ function teardown() {
 
 # Testcase #5.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-write or
-# read-only inside the container.
+# Ensure that a read-write immutable mount *can* be remounted as read-write
+# inside the container.
 @test "immutable rw mount can be remounted rw" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
 
   for m in $immutable_rw_mounts; do
+    # Skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover unmounting ops).
+    if [[ ${m} =~ "/proc" ]] || [[ ${m} =~ "/proc/*" ]] ||
+       [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]]; then
+       continue
+    fi
+
     printf "\ntesting rw remount of immutable rw mount ${m}\n"
 
     docker exec ${syscont} sh -c "mount -o remount,bind,rw ${m}"
+    [ "$status" -eq 0 ]
+
+    # Verify mountpoint is now read-write.
+    docker exec ${syscont} sh -c "touch ${m}"
     [ "$status" -eq 0 ]
   done
 
@@ -208,17 +222,15 @@ function teardown() {
 
 # Testcase #6.
 #
-# Ensure that a read-only immutable mount can't be bind-mounted to a new
-# mountpoint and then re-mounted read-write if, and only if, sysbox-fs is
-# running with 'allow-immutable-remounts' knob disabled. Alternatively, allow
-# remounts to succeed.
+# Ensure that a read-only immutable mount can be bind-mounted to a new
+# mountpoint, but not re-mounted read-write at the new mountpoint if, and only
+# if, sysbox-fs is running with 'allow-immutable-remounts' knob disabled.
+# Otherwise, allow this remount to succeed.
 @test "immutable ro mount can't be bind-mounted rw" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
   local target=/root/target
 
@@ -233,11 +245,10 @@ function teardown() {
 
   for m in $immutable_ro_mounts; do
 
-    printf "\ntesting bind-mount of immutable ro bind-mount ${m} -> $target\n"
+    printf "\ntesting bind-mount of immutable ro mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
-
     if [ "$status" -eq 0 ]; then
       docker exec ${syscont} sh -c "mkdir -p $target"
       [ "$status" -eq 0 ]
@@ -259,7 +270,13 @@ function teardown() {
     docker exec ${syscont} sh -c "mount -o remount,bind,rw $target"
     if [[ ${remounts_allowed} -eq 0 ]]; then
       [ "$status" -eq 0 ]
+      # Verify the bind-mount is now read-write.
+      docker exec ${syscont} sh -c "touch $target"
+      [ "$status" -eq 0 ]
     else
+      [ "$status" -ne 0 ]
+      # Verify the bind-mount continues to be read-only.
+      docker exec ${syscont} sh -c "touch $target"
       [ "$status" -ne 0 ]
     fi
 
@@ -282,12 +299,10 @@ function teardown() {
 # Ensure that a read-write immutable mount can be bind-mounted to a new
 # mountpoint and then re-mounted read-only.
 @test "immutable rw mount can be bind-mounted ro" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
   local target=/root/target
 
@@ -301,7 +316,7 @@ function teardown() {
       continue
     fi
 
-    printf "\ntesting bind-mount of immutable rw bind-mount ${m} -> $target\n"
+    printf "\ntesting bind-mount of immutable rw mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
@@ -317,7 +332,7 @@ function teardown() {
     docker exec ${syscont} sh -c "mount --bind ${m} $target"
     [ "$status" -eq 0 ]
 
-    # Verify the bind-mount continues to be read-write
+    # Verify the bind-mount continues to be read-write.
     docker exec ${syscont} sh -c "touch $target"
     [ "$status" -eq 0 ]
 
@@ -326,16 +341,20 @@ function teardown() {
     docker exec ${syscont} sh -c "mount -o remount,bind,ro $target"
     [ "$status" -eq 0 ]
 
-    # Verify the bind-mount is now read-only
+    # Verify the bind-mount is now read-only.
     docker exec ${syscont} sh -c "touch $target"
     [ "$status" -ne 0 ]
 
-    # Verify the bind-mount source continues to be read-write
+    # Verify the bind-mount source continues to be read-write.
     docker exec ${syscont} sh -c "touch ${m}"
     [ "$status" -eq 0 ]
 
-    # This rw remount should also pass
+    # This rw remount should also pass.
     docker exec ${syscont} sh -c "mount -o remount,bind,rw $target"
+    [ "$status" -eq 0 ]
+
+    # Verify the bind-mount is read-write.
+    docker exec ${syscont} sh -c "touch $target"
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "umount $target"
@@ -353,12 +372,10 @@ function teardown() {
 # Ensure that a read-only immutable mount *can* be masked by a new read-write
 # mount on top of it.
 @test "rw mount on top of immutable ro mount" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   for m in $immutable_ro_mounts; do
@@ -400,12 +417,10 @@ function teardown() {
 # Ensure that a read-write immutable mount *can* be masked by a new read-only
 # mount on top of it.
 @test "ro mount on top of immutable rw mount" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_dir_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
   echo ${immutable_rw_mounts} > /work_list
 
@@ -445,12 +460,10 @@ function teardown() {
 
 # Testcase #10.
 @test "don't confuse inner priv container mount with immutable mount" {
-  if [[ $skipTest -eq 1 ]]; then
-     skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   
   local linux_libmod_mount=$(echo $immutable_ro_mounts |  tr ' ' '\n' | grep "lib/modules")
@@ -480,7 +493,15 @@ function teardown() {
   docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,ro $linux_libmod_mount\""
   [ "$status" -eq 0 ]
 
+  # Verify mountpoint is now read-only.
+  docker exec ${syscont} sh -c "docker exec inner sh -c \"touch $linux_libmod_mount\""
+  [ "$status" -ne 0 ]
+
   docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,rw $linux_libmod_mount\""
+  [ "$status" -eq 0 ]
+
+  # Verify mountpoint is now read-write.
+  docker exec ${syscont} sh -c "docker exec inner sh -c \"touch $linux_libmod_mount\""
   [ "$status" -eq 0 ]
 
   docker exec ${syscont} sh -c "docker exec inner sh -c \"umount $linux_libmod_mount\""
@@ -493,13 +514,14 @@ function teardown() {
 }
 
 # Testcase #11.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by regular files mountpoints.
 @test "unmount chain of file bind-mounts" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_file_mounts=$(list_container_file_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_file_mounts}
+  run is_list_empty ${immutable_file_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -556,13 +578,14 @@ function teardown() {
 }
 
 # Testcase #12.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by character-file mountpoints.
 @test "unmount chain of char bind-mounts" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_char_mounts=$(list_container_char_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_char_mounts}
+  run is_list_empty ${immutable_char_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
@@ -621,13 +644,14 @@ function teardown() {
 }
 
 # Testcase #13.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by directory mountpoints.
 @test "unmount chain of dir bind-mounts" {
-  # if [[ $skipTest -eq 1 ]]; then
-  #   skip
-  # fi
+
   local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_dir_mounts=$(list_container_dir_mounts ${syscont} "0" "/")
-  run empty_list ${immutable_dir_mounts}
+  run is_list_empty ${immutable_dir_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
