@@ -26,7 +26,9 @@ function teardown() {
 # Testcase #1.
 #
 # Ensure immutable mounts can't be unmounted from inside an inner mount
-# namespace.
+# namespace if, and only if, sysbox-fs is running with
+# 'allow-immutable-unmounts' option disabled. Alternatively, verify that
+# unmounts are always allowed.
 @test "immutable mount can't be unmounted -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -44,22 +46,40 @@ function teardown() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in $immutable_mounts; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
     if [[ ${m} =~ "/proc" ]] || [[ ${m} =~ "/proc/*" ]] ||
-        [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]]; then
+        [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]] ||
+        [[ ${m} =~ "/dev" ]] || [[ ${m} =~ "/dev/*" ]]; then
         continue
     fi
 
     printf "\ntesting unmount of immutable mount ${m}\n"
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   local immutable_mounts_after=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_mounts == $immutable_mounts_after ]]
+  if [[ ${unmounts_allowed} -eq 0 ]]; then
+    [[ ${immutable_mounts} != ${immutable_mounts_after} ]]
+  else
+    [[ ${immutable_mounts} == ${immutable_mounts_after} ]]
+  fi
 
   docker_stop ${syscont}
 }
@@ -67,13 +87,15 @@ function teardown() {
 # Testcase #2.
 #
 # Ensure that a read-only immutable mount can't be remounted as read-write
-# inside an inner mount namespace.
+# inside an inner mount namespace if, and only if, sysbox-fs is running with
+# 'allow-immutable-remounts' option disabled. Alternatively, verify that
+# remounts are allowed.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -85,15 +107,32 @@ function teardown() {
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
+
   for m in ${immutable_ro_mounts}; do
     printf "\ntesting rw remount of immutable ro mount ${m}\n"
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,rw ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  if [[ ${remounts_allowed} -eq 0 ]]; then
+    [[ ${immutable_ro_mounts} != ${immutable_ro_mounts_after} ]]
+  else
+    [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
+  fi
 
   docker_stop ${syscont}
 }
@@ -169,7 +208,7 @@ function teardown() {
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
 
   docker_stop ${syscont}
 }
@@ -203,7 +242,7 @@ function teardown() {
   done
 
   local immutable_rw_mounts_after=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_rw_mounts == $immutable_rw_mounts_after ]]
+  [[ ${immutable_rw_mounts} == ${immutable_rw_mounts_after} ]]
 
   docker_stop ${syscont}
 }
@@ -211,7 +250,9 @@ function teardown() {
 # Testcase #6.
 #
 # Within an inner mount namespace, ensure that a read-only immutable mount can't
-# be bind-mounted to a new mountpoint then re-mounted read-write.
+# be bind-mounted to a new mountpoint then re-mounted read-write if, and only if,
+# sysbox-fs is running with 'allow-immutable-remounts' knob disabled.
+# Alternatively, allow remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -229,6 +270,15 @@ function teardown() {
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   local target=/root/target
+
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
 
   for m in ${immutable_ro_mounts}; do
 
@@ -252,10 +302,15 @@ function teardown() {
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${target}"
     [ "$status" -ne 0 ]
 
-    # This rw remount should fail
+    # This rw remount should fail if 'allow-immutable-remounts' knob is disabled
+    # (default behavior).
     printf "\ntesting rw remount of immutable ro bind-mount ${target}\n"
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,rw ${target}"
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
     # This ro remount should pass (it's not needed but just to double-check)
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,ro ${target}"
@@ -274,7 +329,7 @@ function teardown() {
 # Testcase #7.
 #
 # Within an inner mount namespace, ensure that a read-write immutable mount can
-# be bind-mounted to a new mountpoint then re-mounted read-only.
+# be bind-mounted to a new mountpoint, then re-mounted read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -485,6 +540,15 @@ function teardown() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in ${immutable_file_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
@@ -493,24 +557,23 @@ function teardown() {
       continue
     fi
 
-    # Skip directory mountpoints.
+    # Skip non-file mountpoints.
     docker exec ${syscont} sh -c \
-      "nsenter -a -t ${inner_pid} bash -c \"[[ -d ${m} ]]\""
+      "nsenter -a -t ${inner_pid} bash -c \"[[ ! -f ${m} ]]\""
     if [ "$status" -eq 0 ]; then
       continue
     fi
 
-    #
+    # Create mount-stack and verify that the last element can be always
+    # unmounted.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o bind /dev/null ${m}"
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
     [ "$status" -eq 0 ]
 
-    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
-
-    #
+    # Create bind-mount chain and verify the proper behavior of the unmount
+    # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${m}2"
     [ "$status" -eq 0 ]
 
@@ -521,7 +584,11 @@ function teardown() {
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
   done
 
@@ -529,7 +596,7 @@ function teardown() {
 }
 
 # Testcase #11.
-@test "umount of immutable bind-mounts char immutables -- unshare(mnt)" {
+@test "umount chain of char bind-mounts -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
@@ -546,6 +613,15 @@ function teardown() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in ${immutable_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
@@ -554,24 +630,23 @@ function teardown() {
       continue
     fi
 
-    # Skip file mountpoints.
+    # Skip non-char mountpoints.
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} bash -c \"[[ ! -c ${m} ]]\""
     if [ "$status" -eq 0 ]; then
       continue
     fi
   
-    #
+    # Create mount-stack and verify that last element can be always
+    # unmounted.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o bind /dev/null ${m}"
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
     [ "$status" -eq 0 ]
 
-    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
-
-    #
+    # Create  bind-mount chain and verify the proper behavior of the unmount
+    # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${m}2"
     [ "$status" -eq 0 ]
 
@@ -582,7 +657,11 @@ function teardown() {
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
   done
 
@@ -590,7 +669,7 @@ function teardown() {
 }
 
 # Testcase #12.
-@test "immutable tmpfs mount in inner mnt ns" {
+@test "unmount chain of dir bind-mounts" {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
@@ -607,22 +686,33 @@ function teardown() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in ${immutable_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
     if [[ ${m} =~ "/proc" ]] || [[ ${m} =~ "/proc/*" ]] ||
-        [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]]; then
+        [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]] ||
+        [[ ${m} =~ "/dev" ]] || [[ ${m} =~ "/dev/*" ]]; then
       continue
     fi
 
-    # Skip file mountpoints.
+    # Skip non-dir mountpoints.
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} bash -c \"[[ ! -d ${m} ]]\""
     if [ "$status" -eq 0 ]; then
       continue
     fi
 
-    # Create bind-mount and verify that only the first unmount is allowed.
+    # Create mount-stack and verify that last two elements can be always
+    # unmounted.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -t tmpfs -o ro,size=100M tmpfs ${m}"
     [ "$status" -eq 0 ]
 
@@ -635,11 +725,8 @@ function teardown() {
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
     [ "$status" -eq 0 ]
 
-    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
-
-    # Create chained bind-mounts and verify that only the first two unmounts
-    # are allowed.
+    # Create bind-mount chain and verify the proper behavior of the unmount
+    # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mkdir ${m}2 ${m}3"
     [ "$status" -eq 0 ]
     
@@ -656,7 +743,11 @@ function teardown() {
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   docker_stop ${syscont}
