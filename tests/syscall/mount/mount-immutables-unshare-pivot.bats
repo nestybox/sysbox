@@ -67,7 +67,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]
   # Reverse-sort immutable-list to avoid dependency issues (e.g. "/dev/" can't be
   # unmounted before "/dev/mqueue").
@@ -117,7 +117,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -175,7 +175,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -225,7 +225,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   for m in ${immutable_ro_mounts}; do
@@ -265,7 +265,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -283,11 +283,11 @@ function local_rootfs_prepare() {
 
 # Testcase #6.
 #
-# Ensure that inner-container mountpoints associated to read-write immutable
-# mountpoints in a sys-container, can't be bind-mounted to a new mountpoint
-# then re-mounted read-write if, and only if, sysbox-fs is running with
-# 'allow-immutable-remounts' knob disabled. Alternatively, allow remounts to
-# succeed.
+# Ensure that inner-container mountpoints associated to read-only immutable
+# mountpoints in a sys-container, can be bind-mounted to a new mountpoint, but
+# not re-mounted read-write at the new mountpoint if, and only if, sysbox-fs is
+# running with 'allow-immutable-remounts' knob disabled. Alternatively, allow
+# remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -308,7 +308,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   local target="/root/target"
 
@@ -323,7 +323,7 @@ function local_rootfs_prepare() {
 
   for m in ${immutable_ro_mounts}; do
 
-    printf "\ntesting bind-mount of immutable ro bind-mount ${m} -> ${target}\n"
+    printf "\ntesting bind-mount of immutable ro mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
@@ -392,7 +392,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
   local target="/root/target"
 
@@ -406,7 +406,7 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    printf "\ntesting bind-mount of immutable rw bind-mount ${m} -> ${target}\n"
+    printf "\ntesting bind-mount of immutable rw mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
@@ -478,7 +478,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_ro_mounts}; do
@@ -546,7 +546,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -590,6 +590,9 @@ function local_rootfs_prepare() {
 }
 
 # Testcase #10.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by regular files mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -610,7 +613,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_mounts}; do
@@ -666,6 +669,9 @@ function local_rootfs_prepare() {
 }
 
 # Testcase #11.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by directory mountpoints.
 @test "unmount chain of dir bind-mounts -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -686,7 +692,7 @@ function local_rootfs_prepare() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]
 
   for m in ${immutable_mounts}; do

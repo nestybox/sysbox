@@ -9,10 +9,9 @@
 
 . $(dirname ${BASH_SOURCE[0]})/run.bash
 
-function empty_list() {
+function is_list_empty() {
   local list=$1
 
-  #[ $(echo ${list} | tr " " "\n" | wc -l) -eq 0 ]
   if [ -z ${list} ]; then
     return 0
   fi

@@ -43,7 +43,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -104,7 +104,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
@@ -140,7 +140,7 @@ function teardown() {
 # Testcase #3.
 #
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# an inner mount namespace, and then back to read-only.
+# an inner mount namespace, and then back to read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -155,7 +155,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -197,7 +197,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_ro_mounts}; do
@@ -215,8 +215,8 @@ function teardown() {
 
 # Testcase #5.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-write or
-# read-only inside an inner mount namespace.
+# Ensure that a read-write immutable mount *can* be remounted as read-write
+# inside an inner mount namespace.
 @test "immutable rw mount can be remounted rw -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -231,13 +231,13 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
     printf "\ntesting rw remount of immutable rw mount ${m}\n"
 
-    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,rw ${m}"    
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o remount,bind,rw ${m}"
     [ "$status" -eq 0 ]
   done
 
@@ -249,10 +249,10 @@ function teardown() {
 
 # Testcase #6.
 #
-# Within an inner mount namespace, ensure that a read-only immutable mount can't
-# be bind-mounted to a new mountpoint then re-mounted read-write if, and only if,
-# sysbox-fs is running with 'allow-immutable-remounts' knob disabled.
-# Alternatively, allow remounts to succeed.
+# Within an inner mount namespace, ensure that a read-only immutable mount can
+# be bind-mounted to a new mountpoint, but not re-mounted read-write at the new
+# mountpoint if, and only if, sysbox-fs is running with 'allow-immutable-remounts'
+# knob disabled. Otherwise, allow remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -267,7 +267,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   local target=/root/target
 
@@ -282,7 +282,7 @@ function teardown() {
 
   for m in ${immutable_ro_mounts}; do
 
-    printf "\ntesting bind-mount of immutable ro bind-mount ${m} -> ${target}\n"
+    printf "\ntesting bind-mount of immutable ro mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
@@ -344,7 +344,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]
   local target=/root/target
 
@@ -358,7 +358,7 @@ function teardown() {
       continue
     fi
 
-    printf "\ntesting bind-mount of immutable rw bind-mount ${m} -> ${target}\n"
+    printf "\ntesting bind-mount of immutable rw mount ${m}\n"
 
     # Create bind-mount target (dir or file, depending on bind-mount source type)
     docker exec ${syscont} bash -c "[[ -d ${m} ]]"
@@ -423,7 +423,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_ro_mounts}
+  run is_list_empty ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_ro_mounts}; do
@@ -478,7 +478,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_rw_mounts}
+  run is_list_empty ${immutable_rw_mounts}
   [ "$status" -ne 0 ]  
 
   for m in ${immutable_rw_mounts}; do
@@ -523,6 +523,9 @@ function teardown() {
 }
 
 # Testcase #10.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by regular files mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -537,7 +540,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
@@ -596,6 +599,9 @@ function teardown() {
 }
 
 # Testcase #11.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by character-file mountpoints.
 @test "umount chain of char bind-mounts -- unshare(mnt)" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -610,7 +616,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
@@ -669,6 +675,9 @@ function teardown() {
 }
 
 # Testcase #12.
+#
+# Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
+# formed by directory mountpoints.
 @test "unmount chain of dir bind-mounts" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -683,7 +692,7 @@ function teardown() {
   local inner_pid=$output
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
-  run empty_list ${immutable_mounts}
+  run is_list_empty ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
   # Determine the mode in which to operate.
