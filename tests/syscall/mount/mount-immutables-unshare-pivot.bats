@@ -11,7 +11,6 @@ load ../../helpers/environment
 load ../../helpers/mounts
 load ../../helpers/sysbox-health
 
-skipTest=0
 
 function teardown() {
   sysbox_log_check
@@ -48,9 +47,7 @@ function local_rootfs_prepare() {
 # a sys-container, *can* always be unmounted regardless of the sysbox-fs'
 # allow-immutable-remounts settings.
 @test "immutable mount *can* be unmounted -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -98,9 +95,7 @@ function local_rootfs_prepare() {
 # mountpoints in a sys-container, can't be remounted as read-write if, and only
 # if, sysbox-fs is running with 'allow-immutable-remounts' option disabled.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -156,9 +151,7 @@ function local_rootfs_prepare() {
 # mountpoints in a sys-container, *can* be remounted as read-only, and then
 # back to read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -206,9 +199,7 @@ function local_rootfs_prepare() {
 # Ensure that inner-container mountpoints associated to read-only immutable
 # mountpoints in a sys-container, *can* always be remounted as read-only.
 @test "immutable ro mount can be remounted ro -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -246,9 +237,7 @@ function local_rootfs_prepare() {
 # Ensure that inner-container mountpoints associated to read-write immutable
 # mountpoints in a sys-container, *can* always be remounted as read-write.
 @test "immutable rw mount can be remounted rw -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -289,9 +278,7 @@ function local_rootfs_prepare() {
 # running with 'allow-immutable-remounts' knob disabled. Alternatively, allow
 # remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -373,9 +360,7 @@ function local_rootfs_prepare() {
 # mountpoints in a sys-container, can be bind-mounted to a new mountpoint, and
 # then remounted read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -459,9 +444,7 @@ function local_rootfs_prepare() {
 # mountpoints in a sys-container, can be masked by a new read-write mount on
 # top of it.
 @test "rw mount on top of immutable ro mount -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -527,9 +510,7 @@ function local_rootfs_prepare() {
 # mountpoints in a sys-container, can be masked by a new read-only mount on
 # top of it.
 @test "ro mount on top of immutable rw mount -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -594,9 +575,7 @@ function local_rootfs_prepare() {
 # Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
 # formed by regular files mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
@@ -673,9 +652,7 @@ function local_rootfs_prepare() {
 # Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
 # formed by directory mountpoints.
 @test "unmount chain of dir bind-mounts -- unshare(mnt) + pivot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
