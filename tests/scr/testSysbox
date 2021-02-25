@@ -24,8 +24,6 @@ else
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
 	bats --tap tests/sysfs
-	printf "\nExecuting syscall tests ... \n"
-	bats --tap tests/syscall
 	printf "\nExecuting docker tests ... \n"
 	bats --tap tests/docker
 	printf "\nExecuting cgroup tests ... \n"
@@ -38,6 +36,9 @@ else
 	bats --tap tests/apps/l1
 	printf "\nExecuting app tests (l2) ... \n"
 	bats --tap tests/apps/l2
+
+	# Launch syscall interception test-suite.
+	./tests/syscall/syscall.sh
 
 	# the kind tests need plenty storage (otherwise kubelet fails);
 	# remove all docker images from prior tests to make room, and
