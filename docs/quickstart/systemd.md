@@ -6,7 +6,7 @@ systemd inside.
 The [User Guide](../user-guide/systemd.md) describes this functionality in
 deeper detail.
 
-## Deploy a System Container with Systemd inside [ +v0.1.2 ]
+## Deploy a System Container with Systemd inside \[ +v0.1.2 ]
 
 Deploying systemd inside a system container is useful when you plan to
 run multiple services inside the system container, or when you want to
@@ -17,7 +17,7 @@ inside. It's called `nestybox/ubuntu-bionic-systemd` and it's in the
 Nestybox DockerHub repo. The Dockerfile is
 [here](https://github.com/nestybox/dockerfiles/blob/main/ubuntu-bionic-systemd/Dockerfile).
 
-1) Start the system container:
+1.  Start the system container:
 
 ```console
 $ docker run --runtime=sysbox-runc --rm -it --hostname=syscont nestybox/ubuntu-bionic-systemd
@@ -49,7 +49,7 @@ Ubuntu 18.04.3 LTS syscont console
 syscont login:
 ```
 
-2) Login to the container:
+2.  Login to the container:
 
 In the system container image we are using, we've configured the
 default console login and password to be `admin/admin` (you can always
@@ -81,7 +81,7 @@ See "man sudo_root" for details.
 admin@syscont:~$
 ```
 
-3) Verify systemd is running correctly:
+3.  Verify systemd is running correctly:
 
 ```console
 admin@syscont:~$ ps -fu root
@@ -116,11 +116,11 @@ SUB    = The low-level unit activation state, values depend on unit type.
 To show all installed unit files use 'systemctl list-unit-files'.
 ```
 
-4) To exit the system container, you can break from it (by pressing `ctrl-p
-   ctrl-q`). You can then stop the system container by using the `docker stop`
-   command from the host.
+4.  To exit the system container, you can break from it (by pressing `ctrl-p
+    ctrl-q`). You can then stop the system container by using the `docker stop`
+    command from the host.
 
-5) Alternatively, from another shell type:
+5.  Alternatively, from another shell type:
 
 ```console
 $ docker ps

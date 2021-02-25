@@ -77,9 +77,9 @@ root@syscont:/# cat /proc/self/gid_map
          0  268994208      65536
 ```
 
-This means that user-IDs in the range [0:65535] inside the container are mapped
+This means that user-IDs in the range \[0:65535] inside the container are mapped
 to a range of unprivileged user-IDs on the host (chosen by Sysbox). In this
-example they map to the host user-ID range [268994208 : 268994208+65535].
+example they map to the host user-ID range \[268994208 : 268994208+65535].
 
 Now, let's check the capabilities of a process created by the root user inside
 the system container:
@@ -102,17 +102,17 @@ container has a reduced set of capabilities (typically `CapEff:
 00000000a80425fb`) and does not use the Linux user namespace. This has
 two drawbacks:
 
-1) The container's root process is limited in what it can do within the container.
+1.  The container's root process is limited in what it can do within the container.
 
-2) The container's root process has those same capabilities on the host, which
-   poses a higher security risk should the process escape the container's chroot
-   jail.
+2.  The container's root process has those same capabilities on the host, which
+    poses a higher security risk should the process escape the container's chroot
+    jail.
 
 System containers overcome both of these drawbacks.
 
-### Immutable Mountpoints [ +v0.3.0 ]
+### Immutable Mountpoints \[ +v0.3.0 ]
 
-Filesystem mounts that make up the [system container's rootfs jail](#root-filesystem-jail)
+Filesystem mounts that make up the [system container's rootfs jail](../user-guide/security.md#root-filesystem-jail)
 (i.e., mounts setup at container creation time) are considered special, meaning
 that Sysbox places restrictions on the operations that may be done on them from
 within the container.
@@ -127,15 +127,15 @@ We call these "immutable mounts". The
 full description of this feature. Here we just show an example of what this
 feature does.
 
-1) Deploy a system container with a read-only mount of host volume `myvol`:
+1.  Deploy a system container with a read-only mount of host volume `myvol`:
 
 ```console
 $ docker run --runtime=sysbox-runc -it --rm --hostname=syscont -v myvol:/mnt/myvol:ro ubuntu
 root@syscont:/#
 ```
 
-2) List the containers mounts; these are all considered immutable because they
-   are setup at container creation time.
+2.  List the containers mounts; these are all considered immutable because they
+    are setup at container creation time.
 
 ```console
 root@syscont:/# findmnt
@@ -198,7 +198,7 @@ TARGET                                                       SOURCE             
 `-/usr/lib/modules/5.4.0-65-generic                          /lib/modules/5.4.0-65-generic                                                                             shiftfs  ro,relatime
 ```
 
-3) Let's try to remount one of those immutable read-only mounts to read-write:
+3.  Let's try to remount one of those immutable read-only mounts to read-write:
 
 ```console
 root@syscont:/# mount -o remount,rw,bind /mnt/myvol
@@ -215,9 +215,9 @@ container, as otherwise this would weaken container isolation.
 Under the covers, Sysbox does this by trapping the mount system call and vetting
 the action.
 
-4) On the other hand, initial read-write mounts can be remounted read-only.
-This is allowed because such a remount places a stronger restriction on
-the immutable mount, rather than a weaker one:
+4.  On the other hand, initial read-write mounts can be remounted read-only.
+    This is allowed because such a remount places a stronger restriction on
+    the immutable mount, rather than a weaker one:
 
 ```console
 root@syscont:/# mount -o remount,ro,bind /etc/resolv.conf
@@ -226,8 +226,8 @@ root@syscont:/# findmnt | grep resolv.conf
 |-/etc/resolv.conf                                           /var/lib/docker/containers/080fb5dbe347a947accf7ba27a545ce11d937f02f02ec0059535cfc065d04ea0[/resolv.conf] shiftfs  ro,relatime
 ```
 
-5) The mount restrictions also apply to bind-mounts source from initial
-mounts inside the container. For example:
+5.  The mount restrictions also apply to bind-mounts source from initial
+    mounts inside the container. For example:
 
 ```console
 root@syscont:/# mkdir /root/headers
@@ -241,8 +241,8 @@ mount: /root/headers: permission denied.
 This fails because the source of the bind mount (`/usr/src/linux-headers-5.4.0-65`)
 is an initial read-only mount of the container, so it's considered immutable.
 
-6) Finally, mount the restrictions do not apply to new mounts created inside the
-container. Those are not initial mounts, so no restrictions are placed on them:
+6.  Finally, mount the restrictions do not apply to new mounts created inside the
+    container. Those are not initial mounts, so no restrictions are placed on them:
 
 ```console
 root@syscont:/# mkdir /root/tmp
