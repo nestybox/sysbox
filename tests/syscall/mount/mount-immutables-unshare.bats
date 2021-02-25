@@ -11,7 +11,6 @@ load ../../helpers/environment
 load ../../helpers/mounts
 load ../../helpers/sysbox-health
 
-skipTest=0
 
 function teardown() {
   sysbox_log_check
@@ -30,9 +29,7 @@ function teardown() {
 # 'allow-immutable-unmounts' option disabled. Alternatively, verify that
 # unmounts are always allowed.
 @test "immutable mount can't be unmounted -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -91,9 +88,7 @@ function teardown() {
 # 'allow-immutable-remounts' option disabled. Alternatively, verify that
 # remounts are allowed.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -142,9 +137,7 @@ function teardown() {
 # Ensure that a read-write immutable mount *can* be remounted as read-only inside
 # an inner mount namespace, and then back to read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -184,9 +177,7 @@ function teardown() {
 # Ensure that a read-only immutable mount *can* be remounted as read-only inside
 # an inner mount namespace.
 @test "immutable ro mount can be remounted ro -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -218,9 +209,7 @@ function teardown() {
 # Ensure that a read-write immutable mount *can* be remounted as read-write
 # inside an inner mount namespace.
 @test "immutable rw mount can be remounted rw -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -254,9 +243,7 @@ function teardown() {
 # mountpoint if, and only if, sysbox-fs is running with 'allow-immutable-remounts'
 # knob disabled. Otherwise, allow remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -331,9 +318,7 @@ function teardown() {
 # Within an inner mount namespace, ensure that a read-write immutable mount can
 # be bind-mounted to a new mountpoint, then re-mounted read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -410,9 +395,7 @@ function teardown() {
 # Within an inner mount namespace, ensure that a read-only immutable mount
 # *can* be masked by a new read-write mount on top of it.
 @test "rw mount on top of immutable ro mount -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -465,9 +448,7 @@ function teardown() {
 # Within an inner mount namespace, ensure that a read-write immutable mount
 # *can* be masked by a new read-only mount on top of it.
 @test "ro mount on top of immutable rw mount -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -527,9 +508,7 @@ function teardown() {
 # Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
 # formed by regular files mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -603,9 +582,7 @@ function teardown() {
 # Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
 # formed by character-file mountpoints.
 @test "umount chain of char bind-mounts -- unshare(mnt)" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
@@ -679,9 +656,7 @@ function teardown() {
 # Ensure proper execution of unmount ops over mount-stacks and bind-mount chains
 # formed by directory mountpoints.
 @test "unmount chain of dir bind-mounts" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""

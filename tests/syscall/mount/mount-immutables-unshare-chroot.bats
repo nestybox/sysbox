@@ -11,7 +11,6 @@ load ../../helpers/environment
 load ../../helpers/mounts
 load ../../helpers/sysbox-health
 
-skipTest=0
 
 function teardown() {
   sysbox_log_check
@@ -50,9 +49,7 @@ function local_rootfs_prepare() {
 # 'allow-immutable-unmounts' option disabled. Alternatively, verify that
 # unmounts are always allowed.
 @test "immutable mount can't be unmounted -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -114,9 +111,7 @@ function local_rootfs_prepare() {
 # is running with 'allow-immutable-remounts' option disabled. Alternatively,
 # verify that remounts are allowed.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -171,9 +166,7 @@ function local_rootfs_prepare() {
 # immutable mount *can* be remounted as read-only, and then back to
 # read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -219,9 +212,7 @@ function local_rootfs_prepare() {
 # Within an inner mount namespace + chroot jail, ensure that a read-only
 # immutable mount *can* be remounted as read-only.
 @test "immutable ro mount can be remounted ro -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -258,9 +249,7 @@ function local_rootfs_prepare() {
 # Within an inner mount namespace + chroot jail, ensure that a read-write
 # immutable mount *can* be remounted as read-write.
 @test "immutable rw mount can be remounted rw -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -300,9 +289,7 @@ function local_rootfs_prepare() {
 # 'allow-immutable-remounts' knob disabled. Otherwise, allow remounts to
 # succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -357,7 +344,8 @@ function local_rootfs_prepare() {
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} touch ${target}"
     [ "$status" -ne 0 ]
 
-    # This rw remount should fail
+    # This rw remount should fail if 'allow-immutable-remounts' knob is disabled
+    # (default behavior).    
     printf "\ntesting rw remount of immutable ro bind-mount ${target}\n"
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -o remount,bind,rw $target"
@@ -390,9 +378,7 @@ function local_rootfs_prepare() {
 # immutable mount can be bind-mounted to a new mountpoint then re-mounted
 # read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -484,9 +470,7 @@ function local_rootfs_prepare() {
 # Within an inner mount namespace + chroot jail, ensure that a read-only
 # immutable mount *can* be masked by a new read-write mount on top of it.
 @test "rw mount on top of immutable ro mount -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -555,9 +539,7 @@ function local_rootfs_prepare() {
 # Within an inner mount namespace + chroot jail, ensure that a read-write
 # immutable mount *can* be masked by a new read-only mount on top of it.
 @test "ro mount on top of immutable rw mount -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -627,9 +609,7 @@ function local_rootfs_prepare() {
 # unmount ops over mount-stacks and bind-mount chains formed by regular files
 # mountpoints.
 @test "unmount chain of file bind-mounts -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
@@ -704,9 +684,7 @@ function local_rootfs_prepare() {
 # unmount ops over mount-stacks and bind-mount chains formed by directory
 # mountpoints.
 @test "unmount chain of dir bind-mounts -- unshare(mnt) + chroot()" {
-  if [[ $skipTest -eq 1 ]]; then
-    skip
-  fi
+
   local_rootfs_prepare
 
   local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
