@@ -238,3 +238,56 @@ function dockerd_stop() {
     if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
   fi
 }
+
+# Obtain sysbox daemons' runtime parameters.
+function sysbox_extract_running_options() {
+	local daemon=$1
+	local -n optionsArray=$2
+
+	if [[ ${daemon} == "sysbox-fs" ]]; then
+		run pgrep "sysbox-fs"
+		if [ "$status" -ne 0 ]; then
+			return
+		fi
+	elif [[ ${daemon} == "sysbox-mgr" ]]; then
+		if [ "${status}" -ne 0 ]; then
+			return
+		fi
+	fi
+	local pid=${output}
+
+	# Obtain the runtime parameters and dump them into an array to be returned
+	# to callee.
+	optionsStr=$(ps -p ${pid} -o args | tail -1 | cut -d' ' -f2-)
+	read -a optionsArray <<< ${optionsStr}
+}
+
+function allow_immutable_remounts() {
+	local options
+
+	sysbox_extract_running_options "sysbox-fs" options
+
+	for param in "${options[@]}"; do
+		if [[ ${param} == "--allow-immutable-remounts=true" ]] ||
+			[[ ${param} == "--allow-immutable-remounts=\"true\"" ]]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+function allow_immutable_unmounts() {
+	local options
+
+	sysbox_extract_running_options "sysbox-fs" options
+
+	for param in "${options[@]}"; do
+		if [[ ${param} == "--allow-immutable-unmounts=false" ]] ||
+			[[ ${param} == "--allow-immutable-unmounts=\"false\"" ]]; then
+			return 1
+		fi
+	done
+
+	return 0
+}

@@ -44,7 +44,9 @@ function local_rootfs_prepare() {
 
 # Testcase #1.
 #
-# Ensure immutable mounts can't be unmounted from inside the container
+# Ensure that inner-container mountpoints associated to immutable mountpoints in
+# a sys-container, *can* always be unmounted regardless of the sysbox-fs'
+# allow-immutable-remounts settings.
 @test "immutable mount *can* be unmounted -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -92,8 +94,9 @@ function local_rootfs_prepare() {
 
 # Testcase #2.
 #
-# Ensure that a read-only immutable mount can't be remounted as read-write
-# inside the container.
+# Ensure that inner-container mountpoints associated to read-only immutable
+# mountpoints in a sys-container, can't be remounted as read-write if, and only
+# if, sysbox-fs is running with 'allow-immutable-remounts' option disabled.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -117,23 +120,41 @@ function local_rootfs_prepare() {
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]
 
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
+
   for m in ${immutable_ro_mounts}; do
     printf "\ntesting rw remount of immutable ro mount ${m}\n"
 
     docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,rw ${m}\""
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  if [[ ${remounts_allowed} -eq 0 ]]; then
+    [[ ${immutable_ro_mounts} != ${immutable_ro_mounts_after} ]]
+  else
+    [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
+  fi
 
   docker_stop ${syscont}
 }
 
 # Testcase #3.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-only inside
-# the container, and then back to read-only.
+# Ensure that inner-container mountpoints associated to read-write immutable
+# mountpoints in a sys-container, *can* be remounted as read-only, and then
+# back to read-write.
 @test "immutable rw mount can be remounted ro -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -182,8 +203,8 @@ function local_rootfs_prepare() {
 
 # Testcase #4.
 #
-# Ensure that a read-only immutable mount *can* be remounted as read-only inside
-# the container.
+# Ensure that inner-container mountpoints associated to read-only immutable
+# mountpoints in a sys-container, *can* always be remounted as read-only.
 @test "immutable ro mount can be remounted ro -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -215,15 +236,15 @@ function local_rootfs_prepare() {
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
 
   docker_stop ${syscont}
 }
 
 # Testcase #5.
 #
-# Ensure that a read-write immutable mount *can* be remounted as read-write or
-# read-only inside the container.
+# Ensure that inner-container mountpoints associated to read-write immutable
+# mountpoints in a sys-container, *can* always be remounted as read-write.
 @test "immutable rw mount can be remounted rw -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -255,15 +276,18 @@ function local_rootfs_prepare() {
   done
 
   local immutable_rw_mounts_after=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
-  [[ $immutable_rw_mounts == $immutable_rw_mounts_after ]]
+  [[ ${immutable_rw_mounts} == ${immutable_rw_mounts_after} ]]
 
   docker_stop ${syscont}
 }
 
 # Testcase #6.
 #
-# Ensure that a read-only immutable mount can't be bind-mounted
-# to a new mountpoint then re-mounted read-write
+# Ensure that inner-container mountpoints associated to read-write immutable
+# mountpoints in a sys-container, can't be bind-mounted to a new mountpoint
+# then re-mounted read-write if, and only if, sysbox-fs is running with
+# 'allow-immutable-remounts' knob disabled. Alternatively, allow remounts to
+# succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -288,6 +312,15 @@ function local_rootfs_prepare() {
   [ "$status" -ne 0 ]  
   local target="/root/target"
 
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
+
   for m in ${immutable_ro_mounts}; do
 
     printf "\ntesting bind-mount of immutable ro bind-mount ${m} -> ${target}\n"
@@ -310,10 +343,15 @@ function local_rootfs_prepare() {
     docker exec ${syscont} sh -c "docker exec inner sh -c \"touch ${target}\""
     [ "$status" -ne 0 ]
 
-    # This rw remount should fail
+    # This rw remount should fail if 'allow-immutable-remounts' knob is disabled
+    # (default behavior).
     printf "\ntesting rw remount of immutable ro bind-mount ${target}\n"
     docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,rw ${target}\""
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
     # This ro remount should pass (it's not needed but just to double-check)
     docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o remount,bind,ro ${target}\""
@@ -331,8 +369,9 @@ function local_rootfs_prepare() {
 
 # Testcase #7.
 #
-# Ensure that a read-write immutable mount can be bind-mounted
-# to a new mountpoint then re-mounted read-only.
+# Ensure that inner-container mountpoints associated to read-write immutable
+# mountpoints in a sys-container, can be bind-mounted to a new mountpoint, and
+# then remounted read-only.
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -416,8 +455,9 @@ function local_rootfs_prepare() {
 
 # Testcase #8.
 #
-# Ensure that a read-only immutable mount *can* be masked by
-# a new read-write mount on top of it.
+# Ensure that inner-container mountpoints associated to read-only immutable
+# mountpoints in a sys-container, can be masked by a new read-write mount on
+# top of it.
 @test "rw mount on top of immutable ro mount -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -483,8 +523,9 @@ function local_rootfs_prepare() {
 
 # Testcase #9.
 #
-# Ensure that a read-write immutable mount *can* be masked by
-# a new read-only mount on top of it.
+# Ensure that inner-container mountpoints associated to read-write immutable
+# mountpoints in a sys-container, can be masked by a new read-only mount on
+# top of it.
 @test "ro mount on top of immutable rw mount -- unshare(mnt) + pivot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -581,13 +622,14 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    # Skip directory mountpoints.
-    docker exec ${syscont} sh -c "docker exec inner bash -c \"[[ -d ${m} ]]\""
+    # Skip non-file mountpoints.
+    docker exec ${syscont} sh -c "docker exec inner bash -c \"[[ ! -f ${m} ]]\""
     if [ "$status" -eq 0 ]; then
       continue
     fi
 
-    # Create bind-mount chain and verify that all the unmounts are allowed.
+    # Create mount-stack and verify that the last two element can be always
+    # unmounted.
     docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o bind /dev/null ${m}\""
     [ "$status" -eq 0 ]
 
@@ -656,7 +698,7 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    # Skip file mountpoints.
+    # Skip non-dir mountpoints.
     docker exec ${syscont} sh -c "docker exec inner bash -c \"[[ ! -d ${m} ]]\""
     if [ "$status" -eq 0 ]; then
       continue

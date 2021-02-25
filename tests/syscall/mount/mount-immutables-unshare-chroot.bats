@@ -46,7 +46,9 @@ function local_rootfs_prepare() {
 # Testcase #1.
 #
 # Ensure immutable mounts can't be unmounted from inside an inner mount
-# namespace.
+# namespace if, and only if, sysbox-fs is running with
+# 'allow-immutable-unmounts' option disabled. Alternatively, verify that
+# unmounts are always allowed.
 @test "immutable mount can't be unmounted -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -64,6 +66,15 @@ function local_rootfs_prepare() {
 
   chroot_prepare_nsenter ${syscont} ${inner_pid} ${chrootpath}
   
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} ${chrootpath})
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]
@@ -79,11 +90,19 @@ function local_rootfs_prepare() {
     printf "\ntesting unmount of immutable mount ${m}\n"
 
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} chroot ${chrootpath} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   local immutable_mounts_after=$(list_container_mounts ${syscont} ${inner_pid} ${chrootpath})
-  [[ $immutable_mounts == $immutable_mounts_after ]]
+  if [[ ${unmounts_allowed} -eq 0 ]]; then
+    [[ ${immutable_mounts} != ${immutable_mounts_after} ]]
+  else
+    [[ ${immutable_mounts} == ${immutable_mounts_after} ]]
+  fi
 
   docker_stop ${syscont}
 }
@@ -91,7 +110,9 @@ function local_rootfs_prepare() {
 # Testcase #2.
 #
 # Ensure that a read-only immutable mount can't be remounted as read-write
-# inside an inner mount namespace.
+# inside an inner mount namespace if, and only if, sysbox-fs is running with
+# 'allow-immutable-remounts' option disabled. Alternatively, verify that
+# remounts are allowed.
 @test "immutable ro mount can't be remounted rw -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -113,16 +134,33 @@ function local_rootfs_prepare() {
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
+
   for m in $immutable_ro_mounts; do
     printf "\ntesting rw remount of immutable ro mount ${m}\n"
 
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -o remount,bind,rw ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  if [[ ${remounts_allowed} -eq 0 ]]; then
+    [[ ${immutable_ro_mounts} != ${immutable_ro_mounts_after} ]]
+  else
+    [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
+  fi
 
   docker_stop ${syscont}
 }
@@ -209,7 +247,7 @@ function local_rootfs_prepare() {
   done
 
   local immutable_ro_mounts_after=$(list_container_ro_mounts ${syscont} ${inner_pid} ${chrootpath})
-  [[ $immutable_ro_mounts == $immutable_ro_mounts_after ]]
+  [[ ${immutable_ro_mounts} == ${immutable_ro_mounts_after} ]]
 
   docker_stop ${syscont}
 }
@@ -248,7 +286,7 @@ function local_rootfs_prepare() {
   done
 
   local immutable_rw_mounts_after=$(list_container_rw_mounts ${syscont} ${inner_pid} ${chrootpath})
-  [[ $immutable_rw_mounts == $immutable_rw_mounts_after ]]
+  [[ ${immutable_rw_mounts} == ${immutable_rw_mounts_after} ]]
 
   docker_stop ${syscont}
 }
@@ -256,7 +294,9 @@ function local_rootfs_prepare() {
 # Testcase #6.
 #
 # Within an inner mount namespace, ensure that a read-only immutable mount can't
-# be bind-mounted to a new mountpoint then re-mounted read-write.
+# be bind-mounted to a new mountpoint then re-mounted read-write if, and only if,
+# sysbox-fs is running with 'allow-immutable-remounts' knob disabled.
+# Alternatively, allow remounts to succeed.
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt) + chroot()" {
   if [[ $skipTest -eq 1 ]]; then
     skip
@@ -278,6 +318,15 @@ function local_rootfs_prepare() {
   run empty_list ${immutable_ro_mounts}
   [ "$status" -ne 0 ]  
   local target="target"
+
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
 
   for m in ${immutable_ro_mounts}; do
 
@@ -310,7 +359,11 @@ function local_rootfs_prepare() {
     printf "\ntesting rw remount of immutable ro bind-mount ${target}\n"
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -o remount,bind,rw $target"
-    [ "$status" -ne 0 ]
+    if [[ ${remounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
     # This ro remount should pass (it's not needed but just to double-check)
     docker exec ${syscont} sh -c \
@@ -587,6 +640,15 @@ function local_rootfs_prepare() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in ${immutable_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
@@ -602,7 +664,8 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    #
+    # Create bind-mount chain and verify the proper behavior of the unmount
+    # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} touch ${m}2"
     [ "$status" -eq 0 ]
@@ -617,7 +680,11 @@ function local_rootfs_prepare() {
 
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
 
   done
 
@@ -646,6 +713,15 @@ function local_rootfs_prepare() {
   run empty_list ${immutable_mounts}
   [ "$status" -ne 0 ]  
 
+  # Determine the mode in which to operate.
+  local unmounts_allowed
+  run allow_immutable_unmounts
+  if [ "${status}" -eq 0 ]; then
+    unmounts_allowed=0
+  else
+    unmounts_allowed=1
+  fi
+
   for m in ${immutable_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
     # tests that cover unmounting ops).
@@ -661,7 +737,8 @@ function local_rootfs_prepare() {
       continue
     fi
 
-    # Create bind-mount and verify that only the first unmount is allowed.
+    # Create mount-stack and verify that last two elements can be always
+    # unmounted.
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} mount -t tmpfs -o ro,size=100M tmpfs ${m}"
     [ "$status" -eq 0 ]
@@ -678,12 +755,8 @@ function local_rootfs_prepare() {
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} umount ${m}"
     [ "$status" -eq 0 ]
 
-    docker exec ${syscont} sh -c \
-      "nsenter -a -t ${inner_pid} chroot ${chrootpath} umount ${m}"
-    [ "$status" -ne 0 ]
-
-    # Create chained bind-mounts and verify that only the first two unmounts
-    # are allowed.
+    # Create bind-mount chain and verify the proper behavior of the unmount
+    # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} mkdir -p ${m}2 ${m}3"
     [ "$status" -eq 0 ]
@@ -706,7 +779,11 @@ function local_rootfs_prepare() {
 
     docker exec ${syscont} sh -c \
       "nsenter -a -t ${inner_pid} chroot ${chrootpath} umount ${m}"
-    [ "$status" -ne 0 ]
+    if [[ ${unmounts_allowed} -eq 0 ]]; then
+      [ "$status" -eq 0 ]
+    else
+      [ "$status" -ne 0 ]
+    fi
   done
 
   docker_stop ${syscont}
