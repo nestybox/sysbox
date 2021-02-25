@@ -488,11 +488,11 @@ bind mount from the immutable read-only mount `/usr/src/linux-headers-5.4.0-65` 
 `/root/headers`, and attempt a remount on the latter:
 
 ```console
-root@12d5d3c70965:/# mkdir /root/headers
+root@syscont:/# mkdir /root/headers
 
-root@12d5d3c70965:/# mount --bind /usr/src/linux-headers-5.4.0-65 /root/headers
+root@syscont:/# mount --bind /usr/src/linux-headers-5.4.0-65 /root/headers
 
-root@12d5d3c70965:/# mount -o remount,bind,rw /root/headers
+root@syscont:/# mount -o remount,bind,rw /root/headers
 mount: /root/headers: permission denied.
 ```
 
@@ -504,7 +504,7 @@ no restriction on this since this simply removes the bind mount without
 having any effect on the immutable mount.
 
 ```console
-root@12d5d3c70965:/# umount /root/headers
+root@syscont:/# umount /root/headers
 ```
 
 ### Other Mounts, Remounts, Unmounts are Allowed
