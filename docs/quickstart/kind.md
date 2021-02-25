@@ -1,6 +1,6 @@
 # Sysbox Quick Start Guide: Kubernetes-in-Docker
 
-Sysbox has [preliminary support](../user-guide/kind.md#preliminary-support--known-limitations)
+Since release v0.2.0, Sysbox has [preliminary support](../user-guide/kind.md#preliminary-support--known-limitations)
 for running Kubernetes (K8s) inside system containers. This is known as
 "Kubernetes-in-Docker".
 

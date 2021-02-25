@@ -16,7 +16,7 @@ There are two ways to do this:
 
 The following sections show examples of each.
 
-## Building A System Container That Includes Inner Container Images
+## Building A System Container That Includes Inner Container Images [ +v0.1.2 ]
 
 **Check out this [video](https://asciinema.org/a/tYLbk5rQNOQtVgr236kErv7Gn?speed=2).**
 
