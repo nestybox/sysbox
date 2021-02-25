@@ -12,6 +12,9 @@
         "maximum-line-length": 90,
         "table-pipe-alignment": true,
         "table-cell-padding": false
+      },
+      "remark-stringify": {
+        "bullet": "-"
       }
     }
 }
