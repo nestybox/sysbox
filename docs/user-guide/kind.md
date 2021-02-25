@@ -12,8 +12,9 @@
 
 <p align="center"><img alt="sysbox" src="../figures/k8s-in-docker.png" width="800x" /></p>
 
-Sysbox has preliminary support for running Kubernetes (K8s) inside system
-containers. This is known as **Kubernetes-in-Docker** or **"KinD"**.
+Starting with release v0.2.0, Sysbox has preliminary support for running Kubernetes
+(K8s) inside system containers. This is known as **Kubernetes-in-Docker** or
+**"KinD"**.
 
 There are several [use-cases](#use-cases) for running Kubernetes-in-Docker.
 

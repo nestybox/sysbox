@@ -11,10 +11,10 @@ This document describes security aspects of Sysbox system containers.
 -   [Sysfs Virtualization](#sysfs-virtualization)
 -   [Process Capabilities](#process-capabilities)
 -   [System Calls](#system-calls)
--   [System Call Interception](#system-call-interception)
+-   [System Call Interception \[ +v0.2.0 \]](#system-call-interception--v020-)
 -   [Devices](#devices)
 -   [Resource Limiting & Cgroups](#resource-limiting--cgroups)
--   [Initial Mount Immutability](#initial-mount-immutability)
+-   [Initial Mount Immutability \[ +v0.3.0 \]](#initial-mount-immutability--v030-)
 -   [No-New-Privileges Flag](#no-new-privileges-flag)
 -   [Support for Linux Security Modules (LSMs)](#support-for-linux-security-modules-lsms)
 -   [Out-of-Memory Score Adjustment](#out-of-memory-score-adjustment)
@@ -29,7 +29,7 @@ This is known as the container's root filesystem jail (aka "rootfs jail").
 
 ## Linux Namespaces
 
-System containers deployed with Sysbox always use _all_ Linux
+System containers deployed with Sysbox always use *all* Linux
 namespaces.
 
 That is, when you deploy a system container with Sysbox, (e.g., `docker run
@@ -247,7 +247,7 @@ It's currently not possible to reduce the set of syscalls allowed within
 a system container (i.e., the Docker `--security-opt seccomp=<profile>` option
 is not supported).
 
-## System Call Interception
+## System Call Interception \[ +v0.2.0 ]
 
 Sysbox performs selective system call interception on a few "control-path"
 system calls, such as `mount` and `umount2`.
@@ -295,7 +295,7 @@ For example, when using Docker to deploy system containers, the
 `docker run --cpu*`, `--memory*`, `--blkio*`, etc., settings can be
 used for this purpose.
 
-## Initial Mount Immutability
+## Initial Mount Immutability \[ +v0.3.0 ]
 
 Filesystem mounts that make up the [system container's rootfs jail](#root-filesystem-jail)
 (i.e., mounts setup at container creation time) are considered special, meaning
@@ -312,7 +312,7 @@ We call these "immutable mounts".
 For example, assume we launch a system container with a read-only mount of a host
 Docker volume called `myvol`:
 
-```
+```console
 $ docker run --runtime=sysbox-runc -it --rm --hostname=syscont -v myvol:/mnt/myvol:ro ubuntu
 root@syscont:/#
 ```
@@ -320,7 +320,7 @@ root@syscont:/#
 Inside the container, you'll see that the root filesystem is made up
 of several mounts setup implicitly by Sysbox, as well as the `myvol` mount:
 
-```
+```console
 root@syscont:/# findmnt
 TARGET                                                       SOURCE                                                                                                    FSTYPE   OPTIONS
 /                                                            .                                                                                                         shiftfs  rw,relatime
@@ -393,52 +393,52 @@ The restrictions are:
 
 Remounts:
 
-* A read-only immutable mount can't be modified (i.e., remounted) as a
-  read-write mount.
+-   A read-only immutable mount can't be modified (i.e., remounted) as a
+    read-write mount.
 
-  - This ensures read-only mounts setup at container creation time remain as
-    such.
+    -   This ensures read-only mounts setup at container creation time remain as
+        such.
 
-  - This behavior can be changed by setting the sysbox-fs config option
-    `allow-immutable-remounts=true`.
+    -   This behavior can be changed by setting the sysbox-fs config option
+        `allow-immutable-remounts=true`.
 
-  - Note that the opposite does not apply: a read-write immutable mount **can** be
-    modified to a read-only mount, since this creates a stronger restriction on
-    the mount.
+    -   Note that the opposite does not apply: a read-write immutable mount **can** be
+        modified to a read-only mount, since this creates a stronger restriction on
+        the mount.
 
-* Other attributes of immutable mounts can't be changed via a remount
-  (e.g., nosuid, noexec, relatime, etc.)
+-   Other attributes of immutable mounts can't be changed via a remount
+    (e.g., nosuid, noexec, relatime, etc.)
 
 Unmounts:
 
-* The immutable mount at "/" can't be unmounted.
+-   The immutable mount at "/" can't be unmounted.
 
-* The immutable mounts at /proc and /sys (as well as any submounts underneath
-  them) can't be unmounted.
+-   The immutable mounts at /proc and /sys (as well as any submounts underneath
+    them) can't be unmounted.
 
-* Other immutable mounts *can* be unmounted. Doing so exposes the contents
-  of the container's immutable image below it.
+-   Other immutable mounts *can* be unmounted. Doing so exposes the contents
+    of the container's immutable image below it.
 
-  - While it may surprise you that Sysbox allows these unmounts, this is
-    necessary because system container images often have a process manager
-    inside, and some process managers (in particular systemd) unmount all
-    mountpoints inside the container during container stop. If Sysbox where to
-    restrict these unmounts, the process manager will report errors during
-    container stop.
+    -   While it may surprise you that Sysbox allows these unmounts, this is
+        necessary because system container images often have a process manager
+        inside, and some process managers (in particular systemd) unmount all
+        mountpoints inside the container during container stop. If Sysbox where to
+        restrict these unmounts, the process manager will report errors during
+        container stop.
 
-  - Allowing these unmounts is typically not a security issue, because the
-    systemd container's rootfs image will likely not have sensitive data that is
-    masked by the mounts.
+    -   Allowing these unmounts is typically not a security issue, because the
+        systemd container's rootfs image will likely not have sensitive data that is
+        masked by the mounts.
 
-  - Having said this, this behavior can be changed by setting the sysbox-fs
-    config option `allow-immutable-unmounts=false`. When this option is set,
-    Sysbox does restrict unmounts on all immutable mounts.
+    -   Having said this, this behavior can be changed by setting the sysbox-fs
+        config option `allow-immutable-unmounts=false`. When this option is set,
+        Sysbox does restrict unmounts on all immutable mounts.
 
 Restricted mount operations typically fail with "EPERM". For example,
 continuing with the prior example, let's try to remount as read-write
 the `myvol` mount:
 
-```
+```console
 root@syscont:/# mount -o remount,rw,bind /mnt/myvol
 mount: /mnt/myvol: permission denied.
 ```
@@ -446,7 +446,7 @@ mount: /mnt/myvol: permission denied.
 The same behavior occurs with the immutable read-only mount of the host's linux
 headers, setup implicitly by Sysbox into the container:
 
-```
+```console
 root@syscont# mount -o remount,rw,bind /root/linux-headers-5.4.0-6
 mount: /root/linux-headers-5.4.0-6: permission denied.
 ```
@@ -470,24 +470,24 @@ The restrictions for bind mounts whose source is an immutable mount are:
 
 Remount:
 
-* A bind mount whose source is a read-only immutable mount can't be modified
-  (i.e., remounted) as a read-write mount.
+-   A bind mount whose source is a read-only immutable mount can't be modified
+    (i.e., remounted) as a read-write mount.
 
-  - This ensures read-only mounts setup at container creation time remain as
-    such.
+    -   This ensures read-only mounts setup at container creation time remain as
+        such.
 
-  - This behavior can be changed by setting the sysbox-fs config option
-    `allow-immutable-remounts=true`.
+    -   This behavior can be changed by setting the sysbox-fs config option
+        `allow-immutable-remounts=true`.
 
 Unmount:
 
-* No restrictions.
+-   No restrictions.
 
 Continuing with the prior example, inside the system container let's create a
 bind mount from the immutable read-only mount `/usr/src/linux-headers-5.4.0-65` to
 `/root/headers`, and attempt a remount on the latter:
 
-```
+```console
 root@12d5d3c70965:/# mkdir /root/headers
 
 root@12d5d3c70965:/# mount --bind /usr/src/linux-headers-5.4.0-65 /root/headers
@@ -503,7 +503,7 @@ Note that the new bind-mount can be unmounted without problem. Sysbox places
 no restriction on this since this simply removes the bind mount without
 having any effect on the immutable mount.
 
-```
+```console
 root@12d5d3c70965:/# umount /root/headers
 ```
 
@@ -533,13 +533,13 @@ For example, let's launch a system container that comes with Docker inside. We
 will mount as "read-only" a host volume `myvol` into the system container's
 `/mnt/myvol` directory:
 
-```
+```console
 $ docker run --runtime=sysbox-runc -it --rm --hostname=syscont -v myvol:/mnt/myvol:ro nestybox/alpine-docker
 ```
 
 Inside the system container, let's start Docker:
 
-```
+```console
 / # dockerd > /var/log/dockerd.log 2>&1 &
 ```
 
@@ -547,14 +547,14 @@ Now let's launch an inner privileged container, and mount the system container's
 `/mnt/myvol` mount (which is immutable since it was setup at system container
 creation time) into the inner container:
 
-```
+```console
 / # docker run -it --rm --privileged --hostname=inner -v /mnt/myvol:/mnt/myvol ubuntu
 ```
 
 Inside the inner privileged container, we can use the mount command. Let's try
 to remount `/mnt/myvol` to read-write:
 
-```
+```console
 root@inner:/# mount -o remount,rw,bind /mnt/myvol
 mount: /mnt/myvol: permission denied.
 ```
@@ -563,7 +563,6 @@ As expected, this failed because the inner container's `/mnt/myvol` is
 technically a bind-mount of `/mnt/myvol` in the system container, and the latter
 is an immutable read-only mount of the system container, so it can't be
 remounted read-write.
-
 
 For the reasons described above, initial mount immutability is a key security
 feature of Sysbox. It enables system container processes to be properly
@@ -650,7 +649,7 @@ system is running low on memory.
 The decision on which process to kill is done based on an
 out-of-memory (OOM) score assigned to all processes.
 
-The score is in the range [-1000:1000], where higher values means higher
+The score is in the range \[-1000:1000], where higher values means higher
 probability of the process being killed when the host reaches an out-of-memory
 scenario.
 
@@ -666,7 +665,7 @@ $ docker run --runtime=sysbox-runc --oom-score-adj=-100 -it alpine:latest
 
 In addition, Sysbox ensures that system container processes are
 allowed to modify their out-of-memory (OOM) score adjustment to any
-value in the range [-999:1000], via `/proc/[pid]/oom_score_adj`.
+value in the range \[-999:1000], via `/proc/[pid]/oom_score_adj`.
 
 This is necessary in order to allow system software that requires such
 adjustment range (e.g., Kubernetes) to operate correctly within the system

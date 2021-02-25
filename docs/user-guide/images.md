@@ -4,7 +4,7 @@
 
 -   [Intro](#intro)
 -   [Nestybox Dockerhub Repo](#nestybox-dockerhub-repo)
--   [Preloading Inner Container Images into a System Container](#preloading-inner-container-images-into-a-system-container)
+-   [Preloading Inner Container Images into a System Container \[ +v0.1.2 \]](#preloading-inner-container-images-into-a-system-container--v012-)
 -   [Preloading Inner Container Images with Docker Build](#preloading-inner-container-images-with-docker-build)
 -   [Preloading Inner Container Images with Docker Commit](#preloading-inner-container-images-with-docker-commit)
 
@@ -26,7 +26,7 @@ software in the image runs correctly inside the container.
 
 Since system container images often include Docker in them, it is useful
 to preload inner container images inside the system container. Sysbox makes this
-very easy. See [below](#preloading-inner-container-images-into-a-system-container) for info on
+very easy. See [below](#preloading-inner-container-images-into-a-system-container--v012-) for info on
 how to do this.
 
 ## Nestybox Dockerhub Repo
@@ -41,7 +41,7 @@ your needs.
 
 If you see an error on them or think they can be improved, please file a [GitHub issue](../../CONTRIBUTING.md).
 
-## Preloading Inner Container Images into a System Container
+## Preloading Inner Container Images into a System Container \[ +v0.1.2 ]
 
 Sysbox allows you to easily preload inner container images into a system container image.
 

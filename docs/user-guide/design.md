@@ -286,8 +286,8 @@ file, with a few exceptions such as:
 
 -   Mounts over /proc and some of it's sub-directories.
 
-In addition, Sysbox creates some mounts of its own within the system container.
-For example:
+In addition, Sysbox creates some mounts of its own (i.e., implicitly) within the
+system container. For example:
 
 -   Read-only bind mount of the host's `/lib/modules/<kernel-release>`
     into a corresponding path within the system container.

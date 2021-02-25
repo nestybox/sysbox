@@ -9,7 +9,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Reconfiguration Procedure](#reconfiguration-procedure)
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
 -   [Sysbox Log Configuration](#sysbox-log-configuration)
--   [Sysbox Data Store Configuration](#sysbox-data-store-configuration)
+-   [Sysbox Data Store Configuration \[ +v0.3.0 \]](#sysbox-data-store-configuration--v030-)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Reconfiguration Procedure
@@ -29,11 +29,11 @@ passing the `--log-level debug` to the sysbox-fs or sysbox-mgr daemons.
 
 In order to reconfigure Sysbox, do the following:
 
-1) Stop all system containers (there is a sample script for this [here](../../scr/rm_all_syscont)).
+1.  Stop all system containers (there is a sample script for this [here](../../scr/rm_all_syscont)).
 
-2) Modify the desired Systemd service initialization command.
+2.  Modify the desired Systemd service initialization command.
 
-   For example, if you wish to change the log-level, do the following:
+    For example, if you wish to change the log-level, do the following:
 
 ```console
 $ sudo sed -i --follow-symlinks '/^ExecStart/ s/$/ --log-level debug/' /lib/systemd/system/sysbox-fs.service
@@ -42,19 +42,19 @@ $ egrep "ExecStart" /lib/systemd/system/sysbox-fs.service
 ExecStart=/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug
 ```
 
-3) Reload Systemd to digest the previous change:
+3.  Reload Systemd to digest the previous change:
 
 ```console
 $ sudo systemctl daemon-reload
 ```
 
-4) Restart the sysbox service:
+4.  Restart the sysbox service:
 
 ```console
 $ sudo systemctl restart sysbox
 ```
 
-5) Verify the sysbox service is running:
+5.  Verify the sysbox service is running:
 
 ```console
 $ sudo systemctl status sysbox.service
@@ -97,7 +97,7 @@ config option in both the sysbox-mgr and sysbox-fs daemons.
 Finally, the log-level (info, debug, etc) can be changed via the
 `--log-level` option. This is useful for debugging.
 
-## Sysbox Data Store Configuration
+## Sysbox Data Store Configuration \[ +v0.3.0 ]
 
 As part of its operation, Sysbox uses a host directory as a data
 store. By default, Sysbox uses `/var/lib/sysbox`, but this can be
@@ -128,9 +128,7 @@ You can change the location of the Sysbox data store by passing the
 `--data-root` option to the Sysbox Manager daemon via its associated
 systemd service:
 
-```
-ExecStart=/usr/local/sbin/sysbox-mgr --data-root /some/other/dir
-```
+    ExecStart=/usr/local/sbin/sysbox-mgr --data-root /some/other/dir
 
 Once reconfigured, restart the Sysbox systemd service as described in
 [Reconfiguration Procedure](#reconfiguration-procedure) above.
@@ -140,7 +138,7 @@ volume (or a host directory) into the container's `/var/lib/docker`
 directory, then the inner Docker images are stored in that Docker
 volume rather than in the Sysbox data store. This also means
 that the data can persist across the container's life-cycle
-(i.e., it won't be deleted when the container is removed). See [this section in the quickstart guide](../quickstart/dind.md##persistence-of-inner-container-images-using-docker-volumes)
+(i.e., it won't be deleted when the container is removed). See [this section in the quickstart guide](../quickstart/dind.md#persistence-of-inner-container-images-using-docker-volumes)
 for an example of how to do this.
 
 ## Sysbox Kernel Parameter Configurations
@@ -153,7 +151,7 @@ The Sysbox installer performs these changes automatically.
 
 Below is the list of kernel parameters configured by Sysbox (via `sysctl`):
 
-```
+```console
 fs.inotify.max_queued_events = 1048576
 fs.inotify.max_user_watches = 1048576
 fs.inotify.max_user_instances = 1048576

@@ -19,10 +19,10 @@ file ownership issues.
     are implicitly met by them.
 
 The rule is simple: the host file or directory that is bind-mounted into the container
-should be owned by a user-ID that makes sense within the container.
+should be owned by a host user-ID that makes sense within the container.
 
-But what user-ID is that? Well, that depends on the user-ID range that Sysbox assigns to
-the container.
+But what host user-ID is that? Well, that depends on the user-ID range that
+Sysbox assigns to the container.
 
 As described [here](security.md#user-namespace-id-mapping), either:
 
