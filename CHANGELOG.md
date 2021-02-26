@@ -11,9 +11,12 @@ All notable changes to this project will be documented in this file.
   * Synced-up sysbox-runc to include the latest changes from the OCI runc.
   * Added ground-work to support Sysbox on RedHat, Fedora, and CentOS (next step is creating a package manager for these).
   * Added config option to configure the Sysbox work directory (defaults to /var/lib/sysbox).
+  * Added support and required automation for Sysbox-in-Docker deployments.
   * Fixed sysbox-mgr file descriptor leak (sysbox issue #195).
   * Fixed problem with "docker --restart" on Sysbox containers (sysbox issue #184).
   * Fixed race condition in sysbox-fs procfs & sysfs emulation.
+  * Fixed problem preventing kernel-headers from being properly imported within sys containers.
+  * Fixed inappropriate handling of mount instructions in chroot jail environments.
 ### Removed
   * None.
 

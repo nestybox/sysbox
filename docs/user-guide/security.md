@@ -389,7 +389,7 @@ In order to ensure proper isolation between the container and the host, Sysbox
 places restrictions on what mount, remount, and unmount operations the processes
 inside the container can do with these immutable mounts.
 
-The restrictions are:
+The default restrictions are:
 
 Remounts:
 
@@ -411,7 +411,7 @@ Remounts:
 
 Unmounts:
 
--   The immutable mount at "/" can't be unmounted.
+-   The filesystem root "/" can't be unmounted.
 
 -   The immutable mounts at /proc and /sys (as well as any submounts underneath
     them) can't be unmounted.
