@@ -205,19 +205,19 @@ root@syscont:/# mount -o remount,rw,bind /mnt/myvol
 mount: /mnt/myvol: permission denied.
 ```
 
-This fails, even though the process doing the remount is root inside the
-container with all capabilities enabled, the operation.
+This operation fails, even though the process doing the remount is root inside
+the container with all capabilities enabled, the operation.
 
-That's because Sysbox detects this is an initial read-only mount (it was setup
-at container creation time) so it can't be remounted read-write from inside the
-container, as otherwise this would weaken container isolation.
+That's because Sysbox detects this is an initial / immutable read-only mount (it
+was setup at container creation time) so it can't be remounted read-write from
+inside the container, as otherwise this would weaken container isolation.
 
 Under the covers, Sysbox does this by trapping the mount system call and vetting
 the action.
 
-4.  On the other hand, initial read-write mounts can be remounted read-only.
-    This is allowed because such a remount places a stronger restriction on
-    the immutable mount, rather than a weaker one:
+4.  On the other hand, initial / immutable read-write mounts can be remounted
+    read-only. This is allowed because such a remount places a stronger
+    restriction on the immutable mount, rather than a weaker one:
 
 ```console
 root@syscont:/# mount -o remount,ro,bind /etc/resolv.conf
@@ -226,7 +226,7 @@ root@syscont:/# findmnt | grep resolv.conf
 |-/etc/resolv.conf                                           /var/lib/docker/containers/080fb5dbe347a947accf7ba27a545ce11d937f02f02ec0059535cfc065d04ea0[/resolv.conf] shiftfs  ro,relatime
 ```
 
-5.  The mount restrictions also apply to bind-mounts source from initial
+5.  The mount restrictions also apply to bind-mounts sourced from initial
     mounts inside the container. For example:
 
 ```console
@@ -241,7 +241,7 @@ mount: /root/headers: permission denied.
 This fails because the source of the bind mount (`/usr/src/linux-headers-5.4.0-65`)
 is an initial read-only mount of the container, so it's considered immutable.
 
-6.  Finally, mount the restrictions do not apply to new mounts created inside the
+6.  Finally, the mount restrictions do not apply to new mounts created inside the
     container. Those are not initial mounts, so no restrictions are placed on them:
 
 ```console
