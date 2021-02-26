@@ -113,9 +113,9 @@ System containers overcome both of these drawbacks.
 ### Immutable Mountpoints \[ +v0.3.0 ]
 
 Filesystem mounts that make up the [system container's rootfs jail](../user-guide/security.md#root-filesystem-jail)
-(i.e., mounts setup at container creation time) are considered special, meaning
-that Sysbox places restrictions on the operations that may be done on them from
-within the container.
+(i.e., mounts setup at container creation time into the container's root
+filesystem) are considered special, meaning that Sysbox places restrictions on
+the operations that may be done on them from within the container.
 
 This ensures processes inside the container can't modify those mounts in a way
 that would weaken or break container isolation, even though these processes may
@@ -134,8 +134,8 @@ $ docker run --runtime=sysbox-runc -it --rm --hostname=syscont -v myvol:/mnt/myv
 root@syscont:/#
 ```
 
-2.  List the containers mounts; these are all considered immutable because they
-    are setup at container creation time.
+2.  List the container's initial mounts; these are all considered immutable
+    because they are setup at container creation time by Sysbox.
 
 ```console
 root@syscont:/# findmnt
@@ -206,16 +206,24 @@ mount: /mnt/myvol: permission denied.
 ```
 
 This operation fails, even though the process doing the remount is root inside
-the container with all capabilities enabled, the operation.
+the container with all capabilities enabled:
 
-That's because Sysbox detects this is an initial / immutable read-only mount (it
-was setup at container creation time) so it can't be remounted read-write from
-inside the container, as otherwise this would weaken container isolation.
+```console
+root@syscont:/# cat /proc/self/status | egrep "Uid|Gid|CapEff"
+Uid:    0       0       0       0
+Gid:    0       0       0       0
+CapEff: 0000003fffffffff
+```
+
+The reason the operation fails is that Sysbox detects the remount operation
+occurs over an immutable read-only mount. Thus, it can't be remounted read-write
+from inside the container (as doing so would essentially break container
+isolation).
 
 Under the covers, Sysbox does this by trapping the mount system call and vetting
 the action.
 
-4.  On the other hand, initial / immutable read-write mounts can be remounted
+4.  On the other hand, immutable read-write mounts **can** be remounted
     read-only. This is allowed because such a remount places a stronger
     restriction on the immutable mount, rather than a weaker one:
 
@@ -239,7 +247,9 @@ mount: /root/headers: permission denied.
 ```
 
 This fails because the source of the bind mount (`/usr/src/linux-headers-5.4.0-65`)
-is an initial read-only mount of the container, so it's considered immutable.
+is an initial read-only mount of the container. Since the bind mount simply
+makes that initial read-only mount show up somewhere else in the container's
+filesystem, the bind mount is also considered immutable.
 
 6.  Finally, the mount restrictions do not apply to new mounts created inside the
     container. Those are not initial mounts, so no restrictions are placed on them:
@@ -251,9 +261,60 @@ root@syscont:/# mount -o remount,rw,bind /root/tmp
 ```
 
 This works without problem because the mount at `/root/tmp` is a new mount
-(it was not setup by Sysbox at container creation time).
+(i.e., it was not setup by Sysbox at container creation time). Thus it's
+not considered immutable.
 
-Unmounts of initial mounts are not restricted by default in the same way that
-remount operations are. However, Sysbox can be configured to restrict unmount
-operations too. The [user-guide](../user-guide/security.md#initial-mount-immutability--v030-) has
-the info on this.
+In the prior example with only looked at remount operations. But how about
+unmounts?
+
+By default, unmounts of initial mounts are **not** restricted in the same way
+that remount operations are. The reason for this is that system container images
+often have a process manager inside, and some process managers (in particular
+systemd) unmount all mountpoints inside the container during container stop. If
+Sysbox where to restrict these unmounts, the process manager will report errors
+during container stop such as:
+
+```console
+[FAILED] Failed unmounting /etc/hostname.
+[FAILED] Failed unmounting /etc/hosts.
+[FAILED] Failed unmounting /etc/resolv.conf.
+[FAILED] Failed unmounting /usr/lib/modules/5.4.0-62-generic.
+[FAILED] Failed unmounting /usr/src/linux-headers-5.4.0-62.
+[FAILED] Failed unmounting /usr/src/linux-headers-5.4.0-62-generic.
+```
+
+Note that allowing unmounts of immutable mounts is typically not a security
+concern, because the unmount normally exposes the underlying contents of the
+system container's image, and this image will likely not have sensitive
+data that is masked by the mounts. For example:
+
+```console
+root@syscont:/# grep nameserver /etc/resolv.conf
+nameserver 75.75.75.75
+nameserver 75.75.76.76
+
+root@syscont:/# umount /etc/resolv.conf
+
+root@syscont:/# grep nameserver /etc/resolv.conf
+(empty)
+```
+
+Having said this, this behavior can be changed by setting the sysbox-fs config
+option `allow-immutable-unmounts=false`. When this option is set, Sysbox does
+restrict unmounts on all immutable mounts:
+
+```console
+root@syscont:/# umount /etc/resolv.conf
+umount: /etc/resolv.conf: must be superuser to unmount.
+```
+
+Of course, mounts that are not immutable are not affected by this restriction:
+
+```console
+root@syscont:/# mkdir /root/tmp
+root@syscont:/# mount -t tmpfs -o ro,size=10M tmpfs /root/tmp
+root@syscont:/# umount /root/tmp
+```
+
+The [user-guide](../user-guide/security.md#initial-mount-immutability--v030-)
+has more info on this.

@@ -424,15 +424,19 @@ Unmounts:
         inside, and some process managers (in particular systemd) unmount all
         mountpoints inside the container during container stop. If Sysbox where to
         restrict these unmounts, the process manager will report errors during
-        container stop.
+        container stop
 
-    -   Allowing these unmounts is typically not a security issue, because the
-        systemd container's rootfs image will likely not have sensitive data that is
-        masked by the mounts.
+    -   Allowing unmounts of immutable mounts is typically not a security
+        concern, because the unmount normally exposes the underlying contents of
+        the system container's image, and this image will likely not have
+        sensitive data that is masked by the mounts.
 
     -   Having said this, this behavior can be changed by setting the sysbox-fs
         config option `allow-immutable-unmounts=false`. When this option is set,
         Sysbox does restrict unmounts on all immutable mounts.
+
+    -   See the [quickstart guide](../quickstart/security.md#immutable-mountpoints--v030-)
+        for an example.
 
 Restricted mount operations typically fail with "EPERM". For example,
 continuing with the prior example, let's try to remount as read-write
@@ -574,8 +578,8 @@ completely (by blocking the `mount` and `umount` system calls via the Linux
 seccomp mechanism) which prevents several system-level programs from working
 properly inside the container, or alternatively allow all mount, remount, and
 unmount operations inside the container (e.g., as in Docker privileged
-containers), creating a security weakness that can used to break container
-isolation.
+containers), creating a security weakness that can be easily used to break
+container isolation.
 
 In contrast, Sysbox offers a more nuanced approach, in which the `mount` and
 `umount` system calls are allowed inside the container, but are restricted
