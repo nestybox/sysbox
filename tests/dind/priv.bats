@@ -131,9 +131,9 @@ function teardown() {
   docker_stop "$syscont_name"
 }
 
-@test "dind privileged ubuntu-bionic" {
+@test "dind privileged ubuntu-focal" {
 
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
