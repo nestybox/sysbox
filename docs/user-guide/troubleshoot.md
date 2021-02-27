@@ -312,6 +312,21 @@ $ sudo systemctl restart sysbox
 Normally Systemd ensures these services are running and restarts them automatically if
 for some reason they stop.
 
+## Failed to interact with sysbox-fs or sysbox-mgr
+
+The following error may be reported within a system container or any of its
+inner (child) containers:
+
+```
+# ls /proc/sys
+ls: cannot access '/proc/sys': Transport endpoint is not connected
+```
+
+This error usually indicates that sysbox-fs daemon (and potentially sysbox-mgr
+too) has been restarted after the affected system container was initiated. In
+this scenario user is expected to recreate (stop and start) all the
+active Sysbox containers.
+
 ## Docker reports failure setting up ptmx
 
 When creating a system container with Docker + Sysbox, if Docker reports an error such as:
