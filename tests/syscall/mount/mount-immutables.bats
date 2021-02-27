@@ -95,6 +95,13 @@ function teardown() {
   fi
 
   for m in ${immutable_ro_mounts}; do
+    # Skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover remounting ops).
+    if [[ ${m} =~ "/proc" ]] || [[ ${m} =~ "/proc/*" ]] ||
+        [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]]; then
+        continue
+    fi
+
     printf "\ntesting rw remount of immutable ro mount ${m}\n"
 
     docker exec ${syscont} sh -c "mount -o remount,bind,rw ${m}"
@@ -243,7 +250,13 @@ function teardown() {
     remounts_allowed=1
   fi
 
-  for m in $immutable_ro_mounts; do
+  for m in ${immutable_ro_mounts}; do
+    # Skip /proc and /sys since these are special mounts (we have dedicated
+    # tests that cover bind-mounting ops).
+    if [[ ${m} =~ "/proc" ]] || [[ ${m} =~ "/proc/*" ]] ||
+       [[ ${m} =~ "/sys" ]] || [[ ${m} =~ "/sys/*" ]]; then
+       continue
+    fi
 
     printf "\ntesting bind-mount of immutable ro mount ${m}\n"
 
@@ -717,6 +730,53 @@ function teardown() {
       [ "$status" -ne 0 ]
     fi
   done
+
+  docker_stop ${syscont}
+}
+
+# Testcase #14.
+#
+# Ensure that root mountpoint ('/') cannot be altered by remount instruction
+# if this one is initially mounted as 'read-only' (e.g docker's --read-only
+# rootfs knob). As it's the case with regular mountpoints, user can bypass this
+# restriction by setting sysbox-fs' 'allow-immutable-remounts=true' knob.
+@test "remount rootfs on read-only sys container" {
+
+  local syscont=$(docker_run --rm --read-only ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+
+  # Determine the mode in which to operate.
+  local remounts_allowed
+  run allow_immutable_remounts
+  if [ "${status}" -eq 0 ]; then
+    remounts_allowed=0
+  else
+    remounts_allowed=1
+  fi
+
+  # Verify '/' mountpoint is indeed read-only.
+  docker exec ${syscont} sh -c "touch /"
+  [ "$status" -ne 0 ]
+
+  printf "\ntesting RO remount of '/' on read-only sys container\n"
+
+  # Always expected to pass.
+  docker exec ${syscont} sh -c "mount -o remount,bind,ro /"
+  [ "$status" -eq 0 ]
+
+  printf "\ntesting RW remount of '/' on read-only sys container\n"
+
+  docker exec ${syscont} sh -c "mount -o remount,bind,rw /"
+  if [[ ${remounts_allowed} -eq 0 ]]; then
+    [ "$status" -eq 0 ]
+    # Verify mountpoint is now read-write.
+    docker exec ${syscont} sh -c "touch /"
+    [ "$status" -eq 0 ]
+  else
+    [ "$status" -ne 0 ]
+    # Verify mountpoint continues to be read-only.
+    docker exec ${syscont} sh -c "touch /"
+    [ "$status" -ne 0 ]
+  fi
 
   docker_stop ${syscont}
 }
