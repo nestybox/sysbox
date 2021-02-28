@@ -197,6 +197,7 @@ function chroot_prepare() {
     mkdir -p ${rootfs}/lib; \
     mkdir -p ${rootfs}/lib64; \
 
+    \# Copy required binaries into the chroot path.
     cp /bin/awk ${rootfs}/bin; \
     cp /bin/bash ${rootfs}/bin; \
     cp /bin/cat ${rootfs}/bin; \
@@ -204,17 +205,20 @@ function chroot_prepare() {
     cp /bin/mount ${rootfs}/bin; \
     cp /bin/umount ${rootfs}/bin; \
     cp /bin/rm ${rootfs}/bin; \
-    cp /bin/touch ${rootfs}/bin;
+    cp /bin/touch ${rootfs}/bin; \
 
-    awk_deps=\"$(ldd /bin/awk | egrep -o \'/lib.*\.[0-9]\')\"; \
-    bash_deps=\"$(ldd /bin/bash | egrep -o \'/lib.*\.[0-9]\')\"; \
-    cat_deps=\"$(ldd /bin/cat | egrep -o \'/lib.*\.[0-9]\')\"; \
-    mkdir_deps=\"$(ldd /bin/mkdir | egrep -o '/lib.*\.[0-9]')\"; \
-    mount_deps=\"$(ldd /bin/mount | egrep -o '/lib.*\.[0-9]')\"; \
-    umount_deps=\"$(ldd /bin/umount | egrep -o '/lib.*\.[0-9]')\"; \
-    rm_deps=\"$(ldd /bin/rm | egrep -o '/lib.*\.[0-9]')\"; \
-    touch_deps=\"$(ldd /bin/touch | egrep -o '/lib.*\.[0-9]')\"; \
+    \# Obtain the dependency list of each of the required binaries.
+    awk_deps=\$(ldd /bin/awk | egrep -o '/lib.*\.[0-9]'); \
+    awk_deps=\$(ldd /bin/awk | egrep -o '/lib.*\.[0-9]'); \
+    bash_deps=\$(ldd /bin/bash | egrep -o '/lib.*\.[0-9]'); \
+    cat_deps=\$(ldd /bin/cat | egrep -o '/lib.*\.[0-9]'); \
+    mkdir_deps=\$(ldd /bin/mkdir | egrep -o '/lib.*\.[0-9]'); \
+    mount_deps=\$(ldd /bin/mount | egrep -o '/lib.*\.[0-9]'); \
+    umount_deps=\$(ldd /bin/umount | egrep -o '/lib.*\.[0-9]'); \
+    rm_deps=\$(ldd /bin/rm | egrep -o '/lib.*\.[0-9]'); \
+    touch_deps=\$(ldd /bin/touch | egrep -o '/lib.*\.[0-9]'); \
 
+    \# Copy each binary dependency to the chroot path.
     for i in \${awk_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${bash_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${cat_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
@@ -223,9 +227,8 @@ function chroot_prepare() {
     for i in \${umount_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${rm_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${touch_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
-    cp --parents /lib/x86_64-linux-gnu/libm.so.6 \"${rootfs}\"; \
-    cp --parents /lib/x86_64-linux-gnu/libtinfo.so.6 \"${rootfs}\"; \
 
+    \# Launch chroot jail.
     chroot \"${rootfs}\" /bin/bash -c \"mkdir -p /proc && mount -t proc proc /proc\""
 }
 
@@ -239,6 +242,7 @@ function chroot_prepare_nsenter() {
     mkdir -p ${rootfs}/lib; \
     mkdir -p ${rootfs}/lib64; \
 
+    \# Copy required binaries into the chroot path.
     cp /bin/awk ${rootfs}/bin; \
     cp /bin/bash ${rootfs}/bin; \
     cp /bin/cat ${rootfs}/bin; \
@@ -246,17 +250,20 @@ function chroot_prepare_nsenter() {
     cp /bin/mount ${rootfs}/bin; \
     cp /bin/umount ${rootfs}/bin; \
     cp /bin/rm ${rootfs}/bin; \
-    cp /bin/touch ${rootfs}/bin;
+    cp /bin/touch ${rootfs}/bin; \
 
-    awk_deps=\"$(ldd /bin/awk | egrep -o \'/lib.*\.[0-9]\')\"; \
-    bash_deps=\"$(ldd /bin/bash | egrep -o \'/lib.*\.[0-9]\')\"; \
-    cat_deps=\"$(ldd /bin/cat | egrep -o \'/lib.*\.[0-9]\')\"; \
-    mkdir_deps=\"$(ldd /bin/mkdir | egrep -o '/lib.*\.[0-9]')\"; \
-    mount_deps=\"$(ldd /bin/mount | egrep -o '/lib.*\.[0-9]')\"; \
-    umount_deps=\"$(ldd /bin/umount | egrep -o '/lib.*\.[0-9]')\"; \
-    rm_deps=\"$(ldd /bin/rm | egrep -o '/lib.*\.[0-9]')\"; \
-    touch_deps=\"$(ldd /bin/touch | egrep -o '/lib.*\.[0-9]')\"; \
+    \# Obtain the dependency list of each of the required binaries.
+    awk_deps=\$(ldd /bin/awk | egrep -o '/lib.*\.[0-9]'); \
+    awk_deps=\$(ldd /bin/awk | egrep -o '/lib.*\.[0-9]'); \
+    bash_deps=\$(ldd /bin/bash | egrep -o '/lib.*\.[0-9]'); \
+    cat_deps=\$(ldd /bin/cat | egrep -o '/lib.*\.[0-9]'); \
+    mkdir_deps=\$(ldd /bin/mkdir | egrep -o '/lib.*\.[0-9]'); \
+    mount_deps=\$(ldd /bin/mount | egrep -o '/lib.*\.[0-9]'); \
+    umount_deps=\$(ldd /bin/umount | egrep -o '/lib.*\.[0-9]'); \
+    rm_deps=\$(ldd /bin/rm | egrep -o '/lib.*\.[0-9]'); \
+    touch_deps=\$(ldd /bin/touch | egrep -o '/lib.*\.[0-9]'); \
 
+    \# Copy each binary dependency to the chroot path.
     for i in \${awk_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${bash_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${cat_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
@@ -265,8 +272,7 @@ function chroot_prepare_nsenter() {
     for i in \${umount_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${rm_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
     for i in \${touch_deps}; do cp --parents \${i} \"${rootfs}\"; done; \
-    cp --parents /lib/x86_64-linux-gnu/libm.so.6 \"${rootfs}\"; \
-    cp --parents /lib/x86_64-linux-gnu/libtinfo.so.6 \"${rootfs}\"; \
 
+    \# Launch chroot jail.
     chroot \"${rootfs}\" /bin/bash -c \"mkdir -p /proc && mount -t proc proc /proc\""
 }
