@@ -258,7 +258,6 @@ DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
 			$(KERNEL_HEADERS_MOUNTS)                      \
 			--mount type=tmpfs,destination=/run           \
 			--mount type=tmpfs,destination=/run/lock      \
-			--mount type=tmpfs,destination=/tmp           \
 			$(TEST_SYSTEMD_IMAGE)
 
 DOCKER_EXEC := docker exec -it sysbox-test
