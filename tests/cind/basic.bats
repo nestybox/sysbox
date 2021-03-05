@@ -21,14 +21,14 @@ function teardown() {
 
   wait_for_inner_containerd $syscont
 
-  docker exec "$syscont" sh -c "ctr image pull docker.io/library/hello-world:latest"
+  docker exec "$syscont" sh -c "ctr image pull ${CTR_IMG_REPO}/hello-world:latest"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ctr image ls -q"
   [ "$status" -eq 0 ]
-  [[ "$output" == "docker.io/library/hello-world:latest" ]]
+  [[ "$output" == "${CTR_IMG_REPO}/hello-world:latest" ]]
 
-  docker exec "$syscont" sh -c "ctr container create docker.io/library/hello-world:latest demo"
+  docker exec "$syscont" sh -c "ctr container create ${CTR_IMG_REPO}/hello-world:latest demo"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ctr container ls -q"
@@ -38,9 +38,9 @@ function teardown() {
   docker exec "$syscont" sh -c "ctr container delete demo"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "ctr image remove docker.io/library/hello-world:latest"
+  docker exec "$syscont" sh -c "ctr image remove ${CTR_IMG_REPO}/hello-world:latest"
   [ "$status" -eq 0 ]
-  [[ "$output" == "docker.io/library/hello-world:latest" ]]
+  [[ "$output" == "${CTR_IMG_REPO}/hello-world:latest" ]]
 
   docker_stop "$syscont"
 }
