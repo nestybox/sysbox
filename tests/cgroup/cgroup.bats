@@ -232,20 +232,35 @@ function test_cgroup_memory() {
 
 	docker exec "$syscont" sh -c "dd if=/dev/zero of=/root/tmp/test bs=1M count=20"
 
-	# ... and verify it never got across the 16M limit
-	docker exec "$syscont" sh -c "cat ${cgPathCont}/memory.usage_in_bytes"
+	# NOTE: from now on the container may not be accessible since it's cgroup mem
+	# allocation has been exceeded and therefore we can't `docker exec` into it
+	# because docker exec would place the exec process into the same cgroup,
+	# causing it to hang (and not be killed since oom-kill-disable is set for the
+	# container).
+	#
+	# Thus we use the lower-level nsenter instead to verify the cgroup limits
+	# inside the container; nsenter works because it enters the container
+	# namespaces (in particular the mount namespace where the cgroups are
+	# mounted) without placing the process in the container's mem cgroup.
+
+	# Verify the container never got across the 16M limit
+	run nsenter -a -t "$pid" cat ${cgPathCont}/memory.usage_in_bytes
 	[ "$status" -eq 0 ]
 	[ "$output" -lt "16777216" ]
 
-  	# the memory failcnt counter should be set at host level
+	# The memory failcnt counter should be set at host level
 	run cat "${cgPathHost}/memory.failcnt"
 	[ "$status" -eq 0 ]
 	[ "$output" -ge 0 ]
 
 	# ... but zero inside the sys container
-	docker exec "$syscont" sh -c "cat ${cgPathCont}/memory.failcnt"
+	run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
 	[ "$status" -eq 0 ]
 	[ "$output" -eq 0 ]
+
+	# Increase the cgroup mem limit for the container, so that "docker stop" can work properly
+	run echo 67108264 > ${cgPathHost}/memory.limit_in_bytes
+	[ "$status" -eq 0 ]
 
 	# stop the container
 	docker_stop "$syscont"
