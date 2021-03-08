@@ -312,7 +312,7 @@ with Sysbox (though we [plan to](#roadmap)).
 
 Sysbox is fast and efficient, as described in this [Nestybox blog post](https://blog.nestybox.com/2020/09/23/perf-comparison.html).
 
-The system containers created by Sysbox have have similar performance to those
+The system containers created by Sysbox have similar performance to those
 created by Docker's default runtime (the OCI runc).
 
 Even containers deployed inside the system containers have excellent
