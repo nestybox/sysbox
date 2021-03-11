@@ -144,7 +144,7 @@ function install_sysbox_pkg() {
 	# Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
 	# (need this flag inside the test container). Also, add '--log-level debug'
 	# knob to sysbox-fs/mgr if requested.
-	if [ ! -z "$DEBUG_ON" ]; then
+	if [ -n "$DEBUG_ON" ]; then
 		sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --log-level debug --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service && \
 		sed -i 's|ExecStart=/usr/local/sbin/sysbox-mgr|ExecStart=/usr/local/sbin/sysbox-mgr --log-level debug|g' \
@@ -176,7 +176,7 @@ function build_sysbox() {
 		make clean
 	fi
 
-	if [ ! -z "${DEBUG_ON}" ]; then
+	if [ -n "${DEBUG_ON}" ]; then
 		echo "Building sysbox for debugging purposes (unstripped binaries & compiler optimizations off)..."
 		make sysbox-debug-local --no-print-directory && make install
 	else
@@ -203,7 +203,7 @@ function main() {
    # Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then
 		install_sysbox_pkg
-	elif [ ! -z "$DEBUG_ON" ]; then
+	elif [ -n "$DEBUG_ON" ]; then
 		build_sysbox
 
 		echo "Starting sysbox in debug mode ..."
