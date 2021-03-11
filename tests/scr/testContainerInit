@@ -142,11 +142,21 @@ function install_sysbox_pkg() {
 	dpkg -i ${SB_INSTALLER_PKG}
 
 	# Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
-	# (need this flag inside the test container)
-	sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --ignore-handler-errors|g' \
-		 /lib/systemd/system/sysbox-fs.service && \
+	# (need this flag inside the test container). Also, add '--log-level debug'
+	# knob to sysbox-fs/mgr if requested.
+	if [ -n "$DEBUG_ON" ]; then
+		sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --log-level debug --ignore-handler-errors|g' \
+			/lib/systemd/system/sysbox-fs.service && \
+		sed -i 's|ExecStart=/usr/local/sbin/sysbox-mgr|ExecStart=/usr/local/sbin/sysbox-mgr --log-level debug|g' \
+			/lib/systemd/system/sysbox-mgr.service && \
 		systemctl daemon-reload && \
 		systemctl restart sysbox.service
+	else
+		sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --ignore-handler-errors|g' \
+			/lib/systemd/system/sysbox-fs.service && \
+		systemctl daemon-reload && \
+		systemctl restart sysbox.service
+	fi
 
 	set +e
 }
@@ -166,8 +176,13 @@ function build_sysbox() {
 		make clean
 	fi
 
-	echo "Building sysbox ..."
-	make sysbox-local --no-print-directory && make install
+	if [ -n "${DEBUG_ON}" ]; then
+		echo "Building sysbox for debugging purposes (unstripped binaries & compiler optimizations off)..."
+		make sysbox-debug-local --no-print-directory && make install
+	else
+		echo "Building sysbox ..."
+		make sysbox-local --no-print-directory && make install
+	fi
 }
 
 function main() {
@@ -188,6 +203,11 @@ function main() {
    # Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then
 		install_sysbox_pkg
+	elif [ -n "$DEBUG_ON" ]; then
+		build_sysbox
+
+		echo "Starting sysbox in debug mode ..."
+		sysbox -d
 	else
 		build_sysbox
 

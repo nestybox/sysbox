@@ -374,9 +374,24 @@ test-shell: test-img
 		make sysbox-runc-recvtty && \
 		testContainerInit && /bin/bash"
 
+test-shell-debug: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		make sysbox-runc-recvtty && \
+		export DEBUG_ON=true && testContainerInit && /bin/bash"
+
 test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
 test-shell-systemd: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU))
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
+test-shell-systemd-debug: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
@@ -395,12 +410,29 @@ test-shell-installer: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
+test-shell-installer-debug: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) \
+		-e DEBUG_ON=true)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
+
+test-shell-shiftuid-debug: test-img
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		make sysbox-runc-recvtty && \
+		export SHIFT_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
 test-shell-shiftuid-systemd: test-img-systemd
@@ -412,10 +444,30 @@ test-shell-shiftuid-systemd: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
+test-shell-shiftuid-systemd: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true -e DEBUG_ON=true)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
 test-shell-shiftuid-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
 		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
+	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
+	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
+	$(DOCKER_STOP)
+
+test-shell-shiftuid-installer-debug: test-img-systemd
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) \
+		-e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
