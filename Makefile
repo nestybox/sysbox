@@ -448,7 +448,7 @@ test-shell-shiftuid-systemd: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
-test-shell-shiftuid-systemd: test-img-systemd
+test-shell-shiftuid-systemd-debug: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true -e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
