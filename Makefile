@@ -298,7 +298,9 @@ test-sysbox-installer: test-img-systemd
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
-		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+		testContainerInit && \
+		make test-sysbox-local TESTPATH=$(TESTPATH) && \
+		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
@@ -348,7 +350,9 @@ else
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_UIDS=true SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
-		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+		testContainerInit && \
+		make test-sysbox-local TESTPATH=$(TESTPATH) && \
+		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 endif
 
@@ -502,6 +506,9 @@ test-cleanup: test-img
 
 test-sysbox-local: sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testSysbox $(TESTPATH)
+
+test-sysbox-local-installer: sysbox-runc-recvtty
+	$(TEST_DIR)/scr/testSysboxInstaller $(TESTPATH)
 
 test-sysbox-local-ci: sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testSysboxCI $(TESTPATH)

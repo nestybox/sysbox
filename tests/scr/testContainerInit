@@ -192,6 +192,18 @@ function main() {
 		wait_systemd_ready
 	fi
 
+	# If requested, install Sysbox from its installer and return here as most of
+	# the instructions in this function overlap with the installer ones.
+	if [[ "$SB_INSTALLER" == "true" ]]; then
+		echo "Removing left-over Docker containers, volumes, and networks ..."
+		cleanup_docker_env
+
+		install_sysbox_pkg
+
+		echo "Test container ready ..."
+		return
+	fi
+
 	# Temp file for jq write operations
 	tmpfile=$(mktemp /tmp/init-scr.XXXXXX)
 	trap 'rm -f "${tmpfile}"' EXIT
@@ -200,19 +212,17 @@ function main() {
 	install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
 	install -D -m0755 scr/docker-cfg /usr/local/sbin/docker-cfg
 
-   # Install sysbox
-	if [[ "$SB_INSTALLER" == "true" ]]; then
-		install_sysbox_pkg
-	elif [ -n "$DEBUG_ON" ]; then
-		build_sysbox
+	# Build and launch Sysbox.
+	if [ -n "$DEBUG_ON" ]; then
+	    build_sysbox
 
-		echo "Starting sysbox in debug mode ..."
-		sysbox -d
+	    echo "Starting sysbox in debug mode ..."
+	    sysbox -d
 	else
-		build_sysbox
+	    build_sysbox
 
-		echo "Starting sysbox in test mode ..."
-		sysbox -t
+	    echo "Starting sysbox in test mode ..."
+	    sysbox -t
 	fi
 
 	# Start docker (without systemd, we must start Docker manually)
