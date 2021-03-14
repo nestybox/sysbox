@@ -49,11 +49,13 @@ else
 INSTALL_DIR := ${DESTDIR}
 endif
 
+IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
+
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
 
 TEST_SYSTEMD_IMAGE := sysbox-systemd-test
-TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd
+TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
 
 TEST_FILES := $(shell find tests -type f | egrep "\.bats")
 TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
@@ -63,7 +65,6 @@ KERNEL_REL := $(shell uname -r)
 export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the sysbox's building and testing process.
-IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat))
 	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
