@@ -20,12 +20,14 @@ if [ $# -eq 1 ]; then
   printf "\nExecuting $1 ... \n"
   bats --tap $1
 else
-  printf "\nExecuting installer tests ... \n"
-  if lsmod | egrep -q "shiftfs"; then
-      bats --tap tests/installer/
-  else
+    if docker info 2>&1 | egrep -q "^  userns$"; then
+      printf "\nExecuting installer tests in userns-remap mode ... \n"
       bats --tap tests/installer/userns_mode.bats
+    else
+      printf "\nExecuting installer tests in shiftfs mode ... \n"
+      bats --tap tests/installer/shiftfs_mode.bats
   fi
 fi
 
 exit 0
+
