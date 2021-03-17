@@ -83,8 +83,8 @@ endif
 export KERNEL_HEADERS
 export KERNEL_HEADERS_MOUNTS
 
-IMAGE_FILE_PATH := sysbox-pkgr/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
-IMAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
+PACKAGE_FILE_PATH := sysbox-pkgr/deb/debbuild/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
+PACKAGE_FILE_NAME := sysbox_$(VERSION)-0.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)_amd64.deb
 
 # Volumes to mount into the privileged test container. These are
 # required because certain mounts inside the test container can't
@@ -302,7 +302,7 @@ test-sysbox-installer: test-img-systemd
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
+		export SB_INSTALLER=true SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
 		testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
@@ -354,7 +354,7 @@ else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true SB_INSTALLER=true SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) && \
+		export SHIFT_UIDS=true SB_INSTALLER=true SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
 		testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
@@ -411,7 +411,7 @@ test-shell-systemd-debug: test-img-systemd
 test-shell-installer: ## Get a shell in the test container that includes systemd and the sysbox installer (useful for debug)
 test-shell-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
-		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
@@ -421,7 +421,7 @@ test-shell-installer: test-img-systemd
 
 test-shell-installer-debug: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
-		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
 		-e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
@@ -465,7 +465,7 @@ test-shell-shiftuid-systemd-debug: test-img-systemd
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
 test-shell-shiftuid-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
-		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME))
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
@@ -475,7 +475,7 @@ test-shell-shiftuid-installer: test-img-systemd
 
 test-shell-shiftuid-installer-debug: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
-		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(IMAGE_FILE_PATH)/$(IMAGE_FILE_NAME) \
+		-e SB_INSTALLER=true -e SB_INSTALLER_PKG=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
 		-e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
