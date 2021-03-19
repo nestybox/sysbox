@@ -27,7 +27,7 @@ export HOSTNAME=$(shell hostname)
 endif
 
 export VERSION := $(shell cat ./VERSION)
-export PLATFORM := Community Edition (CE)
+export EDITION := Community Edition (CE)
 
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
