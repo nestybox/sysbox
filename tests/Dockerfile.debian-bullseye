@@ -109,6 +109,10 @@ RUN mkdir -p ~/bin/protoc \
     && go install github.com/golang/protobuf/protoc-gen-go
 
 # install Docker (used by most sysbox tests to launch sys containers)
+#
+# TODO: Docker package isn't available for Bullseye yet, so we are using Buster
+# image for now. Remember to fix this later on once that a Bullseye package is
+# provided.
 RUN  apt-get update \
     && apt-get install -y \
     apt-transport-https \
@@ -120,7 +124,7 @@ RUN  apt-get update \
     && apt-key fingerprint 0EBFCD88 \
     && add-apt-repository \
     "deb [arch=amd64] https://download.docker.com/linux/debian \
-    $(lsb_release -cs) \
+    buster \
     stable" \
     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
