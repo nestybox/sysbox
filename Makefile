@@ -113,6 +113,9 @@ LIBSECCOMP_DIR := sysbox-libs/libseccomp
 LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
 LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 
+# Ensure that a gitconfig file is always present.
+$(shell touch $(HOME)/.gitconfig)
+
 #
 # build targets
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
