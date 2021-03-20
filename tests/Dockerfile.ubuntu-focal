@@ -21,7 +21,16 @@
 
 FROM ubuntu:focal
 
+# K8s version for k8s-in-docker (i.e., this is the version of K8s running inside
+# the k8s-in-docker container).
 ARG k8s_version=v1.18.2
+
+# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
+# introduces rootless pod support (via the Linux user-ns)
+ARG crio_version=1.20
+ARG crio_os=xUbuntu_20.04
+ARG crictl_version=v1.20.0
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
@@ -125,9 +134,15 @@ RUN  apt-get update \
     && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
-# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# Go Dlv for debugging
+RUN go get github.com/go-delve/delve/cmd/dlv
+
+# shellcheck for lint of shell scripts
+RUN apt-get update && apt-get install -y shellcheck
+
+# Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
-# deployed in K8s (L2) nodes.
+# deployed in the K8s-in-docker nodes (L2).
 #
 # TODO: Define a mechanism in our testing-framework to allow K8s version to be
 # configured in a centralized location, so that the installed K8s components
@@ -140,11 +155,28 @@ RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Go Dlv for debugging
-RUN go get github.com/go-delve/delve/cmd/dlv
+# CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
+RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
+    && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
+    && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | apt-key add - \
+    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | apt-key add - \
+    && apt-get update && apt-get install -y --no-install-recommends conntrack cri-o cri-o-runc \
+    && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-amd64.tar.gz \
+    && sudo tar zxvf crictl-${crictl_version}-linux-amd64.tar.gz -C /usr/local/bin \
+    && rm -f crictl-${crictl_version}-linux-amd64.tar.gz
 
-# shellcheck for lint of shell scripts
-RUN apt-get update && apt-get install -y shellcheck
+# Container CNIs (needed by CRI-O)
+RUN cd /root \
+    && git clone https://github.com/containernetworking/plugins \
+    && cd plugins \
+    && git checkout -b v0.9.1 v0.9.1 \
+    && ./build_linux.sh \
+    && mkdir -p /opt/cni/bin \
+    && cp bin/* /opt/cni/bin/
+
+# Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
+RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_amd64 | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_amd64 dasel && chmod +x dasel \
+    && mv ./dasel /usr/local/bin/dasel
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #

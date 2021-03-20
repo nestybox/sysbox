@@ -106,6 +106,74 @@ function cleanup_docker_env() {
 	fi
 }
 
+function crio_config() {
+
+	# Add Sysbox to CRI-O's list of runtimes
+	ret=$(dasel put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
+			"runtime_path=/usr/local/sbin/sysbox-runc" "runtime_type=oci")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure CRI-O: $ret"
+		exit 1
+	fi
+
+	ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.runtimes.sysbox-runc.allowed_annotations.[0]" \
+					"io.kubernetes.cri-o.userns-mode")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure CRI-O: $ret"
+		exit 1
+	fi
+
+	# If we are not using systemd, configure CRI-O with the cgroupfs driver
+	if ! systemd_env; then
+		ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.cgroup_manager" "cgroupfs")
+		if [[ $? -ne 0 ]]; then
+			echo "Failed to configure CRI-O: $ret"
+			exit 1
+		fi
+
+		ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.conmon_cgroup" "pod")
+		if [[ $? -ne 0 ]]; then
+			echo "Failed to configure CRI-O: $ret"
+			exit 1
+		fi
+	fi
+
+	# Configure crictl to use CRI-O
+	ret=$(dasel put string -f /etc/crictl.yaml -p yaml -m '.runtime-endpoint' "unix:///var/run/crio/crio.sock")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure crictl: $ret"
+		exit 1
+	fi
+
+	ret=$(dasel put string -f /etc/crictl.yaml -p yaml -m '.image-endpoint' "unix:///var/run/crio/crio.sock")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure crictl: $ret"
+		exit 1
+	fi
+
+	# Add user "containers" to /etc/sub[u,g]id (needed by the containers/storage
+	# lib used by CRI-O) Note: range was chosen manually to not conflict with
+	# sysbox's range and allow for up to 32 containers of 65536 IDs each.
+	grep "containers" /etc/subuid
+	if [ $? -eq 1 ]; then
+		echo "containers:2147483648:2097152" >> /etc/subuid
+	fi
+	grep "containers" /etc/subgid
+	if [ $? -eq 1 ]; then
+		echo "containers:2147483648:2097152" >> /etc/subgid
+	fi
+
+	ret=$(dasel put string -f /etc/containers/storage.conf -p toml -m '.storage.options.overlay.mountopt' "metacopy=on")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure /etc/containers/storage.conf: $ret"
+		exit 1
+	fi
+
+	# Disable ipv6 (to avoid "failed to set bridge addr: could not add IP address to "cni0": permission denied")
+	ret=$(sysctl net.ipv6.conf.default.disable_ipv6=0)
+	ret=$(sysctl net.ipv6.conf.all.disable_ipv6=0)
+}
+
 function systemd_env() {
 	ret=$(readlink /proc/1/exe)
 	if [[ "$ret" =~ "/lib/systemd/systemd" ]]; then
@@ -249,6 +317,15 @@ function main() {
 
 	echo "Removing left-over Docker containers, volumes, and networks ..."
 	cleanup_docker_env
+
+	# Configure CRI-O
+	crio_config
+
+	# Start CRI-O (without systemd, we must start CRI-O manually)
+	if ! systemd_env; then
+		crio > /var/log/crio.log 2>&1 &
+	fi
+
 
 	echo "Test container ready ..."
 }
