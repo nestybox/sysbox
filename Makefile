@@ -136,7 +136,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			--name sysbox-build                           \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
-			-v $(HOME)/.gitconfig:/root/.gitconfig:ro     \
+			-v $(HOME)/.gitconfig:/root/.gitconfig        \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
@@ -233,7 +233,7 @@ DOCKER_RUN := docker run --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v $(HOME)/.gitconfig:/root/.gitconfig:ro     \
+			-v $(HOME)/.gitconfig:/root/.gitconfig        \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -247,7 +247,7 @@ DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
-			-v $(HOME)/.gitconfig:/root/.gitconfig:ro     \
+			-v $(HOME)/.gitconfig:/root/.gitconfig        \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -263,7 +263,7 @@ DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules:/lib/modules:ro               \
-			-v $(HOME)/.gitconfig:/root/.gitconfig:ro     \
+			-v $(HOME)/.gitconfig:/root/.gitconfig        \
 			$(KERNEL_HEADERS_MOUNTS)                      \
 			--mount type=tmpfs,destination=/run           \
 			--mount type=tmpfs,destination=/run/lock      \
