@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "alpine-docker"
+  },
+  "image":{
+      "image": "ghcr.io/nestybox/alpine-docker"
+  },
+  "command": [
+      "tail", "-f", "/dev/null"
+  ],
+  "log_path":"container.log",
+  "linux": {
+  }
+}

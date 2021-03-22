@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "alpine2"
+  },
+  "image":{
+      "image": "alpine"
+  },
+  "command": [
+      "tail", "-f", "/dev/null"
+  ],
+  "log_path":"alpine2.log",
+  "linux": {
+  }
+}

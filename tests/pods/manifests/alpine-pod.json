@@ -1,0 +1,16 @@
+{
+    "metadata": {
+        "name": "alpine-sandbox",
+        "namespace": "default",
+        "attempt": 1,
+        "uid": "alpine-pod"
+    },
+    "annotations": {
+        "io.kubernetes.cri-o.userns-mode": "auto:size=65536"
+    },
+    "log_directory": "/tmp",
+    "dns_config": {
+    },
+    "linux": {
+    }
+}
