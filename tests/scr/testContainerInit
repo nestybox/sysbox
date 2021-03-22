@@ -123,6 +123,19 @@ function crio_config() {
 		exit 1
 	fi
 
+	# Configure CRI-O storage driver (overlayfs)
+	ret=$(dasel put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_driver' "overlay")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure CRI-O: $ret"
+		exit 1
+	fi
+
+	ret=$(dasel put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_option.[]' "overlay.mountopt=metacopy=on")
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to configure CRI-O: $ret"
+		exit 1
+	fi
+
 	# If we are not using systemd, configure CRI-O with the cgroupfs driver
 	if ! systemd_env; then
 		ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.cgroup_manager" "cgroupfs")
@@ -161,12 +174,6 @@ function crio_config() {
 	grep "containers" /etc/subgid
 	if [ $? -eq 1 ]; then
 		echo "containers:2147483648:2097152" >> /etc/subgid
-	fi
-
-	ret=$(dasel put string -f /etc/containers/storage.conf -p toml -m '.storage.options.overlay.mountopt' "metacopy=on")
-	if [[ $? -ne 0 ]]; then
-		echo "Failed to configure /etc/containers/storage.conf: $ret"
-		exit 1
 	fi
 
 	# Disable ipv6 (to avoid "failed to set bridge addr: could not add IP address to "cni0": permission denied")

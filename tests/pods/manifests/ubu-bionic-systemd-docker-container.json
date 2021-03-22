@@ -1,0 +1,19 @@
+{
+  "metadata": {
+      "name": "ubu-bionic-systemd-docker"
+  },
+  "image":{
+      "image": "ghcr.io/nestybox/ubuntu-bionic-systemd-docker"
+  },
+  "command": [
+      "/sbin/init"
+  ],
+  "log_path":"container.log",
+   "linux": {
+       "security_context": {
+           "namespace_options": {
+               "pid": 1
+           }
+       }
+   }
+}

@@ -83,6 +83,20 @@ function docker_stop() {
   docker stop -t0 "$id"
 }
 
+# Executes crictl run pod (runp) command with sysbox-runc; returns the pod id
+function crictl_runp() {
+	run crictl runp --runtime=sysbox-runc "$@"
+	[ "$status" -eq 0 ]
+  echo "$output"
+}
+
+# Executes crictl run with sysbox-runc; returns the container id (not the pod id)
+function crictl_run() {
+	run crictl run --timeout=20s --runtime=sysbox-runc "$@"
+	[ "$status" -eq 0 ]
+  echo "$output"
+}
+
 # Run a background process under bats
 function bats_bg() {
   # To prevent background processes from hanging bats, we need to

@@ -1,0 +1,19 @@
+{
+  "metadata": {
+      "name": "k8s-node"
+  },
+  "image":{
+      "image": "ghcr.io/nestybox/k8s-node:v1.18.2"
+  },
+  "command": [
+      "/sbin/init"
+  ],
+  "log_path":"container.log",
+   "linux": {
+       "security_context": {
+           "namespace_options": {
+               "pid": 1
+           }
+       }
+   }
+}
