@@ -21,8 +21,12 @@ function teardown() {
   local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   docker_stop "$syscont_name"
 
+  sleep 1
+
   post=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
+  echo "pre = ${pre}"
+  echo "post = ${post}"
   [ $pre -eq $post ]
 }
 
@@ -37,7 +41,11 @@ function teardown() {
   docker exec "$syscont_name" echo
   docker_stop "$syscont_name"
 
+  sleep 1
+
   post=$(lsof -p $sysfs_pid | grep "seccomp notify" | wc -l)
 
+  echo "pre = ${pre}"
+  echo "post = ${post}"
   [ $pre -eq $post ]
 }
