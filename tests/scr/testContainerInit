@@ -129,8 +129,8 @@ function wait_docker_ready() {
 
 function install_sysbox_pkg() {
 
-	if [ ! -f ${SB_INSTALLER_PKG} ]; then
-		echo "Did not find sysbox installer: file ${SB_INSTALLER_PKG} does not exist"
+	if [ ! -f ${SB_PACKAGE_FILE} ]; then
+		echo "Did not find sysbox installer: file ${SB_PACKAGE_FILE} does not exist"
 		exit 1
 	fi
 
@@ -138,8 +138,8 @@ function install_sysbox_pkg() {
 
 	rm -rf /usr/sbin/policy-rc.d
 
-	echo "Installing Sysbox package at ${SB_INSTALLER_PKG}"
-	dpkg -i ${SB_INSTALLER_PKG}
+	echo "Installing ${SB_PACKAGE} package at ${SB_PACKAGE_FILE}"
+	dpkg -i ${SB_PACKAGE_FILE}
 
 	# Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
 	# (need this flag inside the test container). Also, add '--log-level debug'
