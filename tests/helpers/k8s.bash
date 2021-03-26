@@ -46,15 +46,13 @@ function k8s_check_sufficient_storage() {
 
 function k8s_node_ready() {
   local node=$1
-  local i
 
-  run kubectl get node $node
-  if [ "$status" -eq 0 ]; then
-    res=$(echo ${lines[1]} | awk '{print $2}' | grep -qw Ready)
-    echo $?
-  else
-    echo 1
+  ret=$(kubectl get node $node | tail -n 1)
+  if [ $? -ne 0 ]; then
+	  return 1
   fi
+
+  echo $ret | awk '{print $2}' | grep -qw Ready
 }
 
 function k8s_node_ip() {
