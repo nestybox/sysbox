@@ -10,10 +10,10 @@ export test_image="busybox"
 export test_container="$test_image"
 
 export VERSION=$(egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
-export IMAGE_BASE_DISTRO=$(lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
-export IMAGE_BASE_RELEASE=$(lsb_release -cs)
-export IMAGE_FILE_PATH="image/deb/debbuild/${IMAGE_BASE_DISTRO}-${IMAGE_BASE_RELEASE}"
-export IMAGE_FILE_NAME="sysbox_${VERSION}-0.${IMAGE_BASE_DISTRO}-${IMAGE_BASE_RELEASE}_amd64.deb"
+export PACKAGE_BASE_DISTRO=$(lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
+export PACKAGE_BASE_RELEASE=$(lsb_release -cs)
+export PACKAGE_FILE_PATH="sysbox-pkgr/deb/debbuild/${PACKAGE_BASE_DISTRO}-${PACKAGE_BASE_RELEASE}"
+export PACKAGE_FILE_NAME="sysbox_${VERSION}-0.${PACKAGE_BASE_DISTRO}-${PACKAGE_BASE_RELEASE}_amd64.deb"
 
 # Installation / Uninstallation output string.
 export installation_output=""
@@ -91,9 +91,11 @@ function kernel_headers_uninstall() {
 
 function install_sysbox() {
 
-  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${IMAGE_FILE_PATH}/${IMAGE_FILE_NAME}
+  local expected_result=$1
+
+  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${PACKAGE_FILE_PATH}/${PACKAGE_FILE_NAME}
   installation_output="${output}"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq "$expected_result" ]
 
   # Some wiggle-room for processes to initialize.
   sleep 3
@@ -157,6 +159,13 @@ function uninstall_verify() {
 
   run command -v sysbox-runc
   [ "$status" -ne 0 ]
+}
+
+function partial_install_verify() {
+
+  run command dpkg -s sysbox
+  [[ "$output" =~ "install ok half-configured" ]]
+  [ "$status" -eq 0 ]
 }
 
 function verify_docker_config_sysbox_runtime_presence() {
