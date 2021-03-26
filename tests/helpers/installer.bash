@@ -116,7 +116,7 @@ function install_sysbox() {
 
   local expected_result=$1
 
-  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${SB_INSTALLER_PKG}
+  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${SB_PACKAGE_FILE}
   echo "${outputt}"
   [ "$status" -eq "$expected_result" ]
 
@@ -131,14 +131,14 @@ function uninstall_sysbox() {
     purge="--purge"
   fi
 
-  run sudo DEBIAN_FRONTEND=noninteractive dpkg ${purge} sysbox
+  run sudo DEBIAN_FRONTEND=noninteractive dpkg ${purge} ${SB_PACKAGE}
   uninstallation_output="${output}"
   [ "$status" -eq 0 ]
 }
 
 function install_verify() {
 
-  run sudo dpkg -s sysbox
+  run sudo dpkg -s ${SB_PACKAGE}
   [ "$status" -eq 0 ]
 
   run sh -c "sudo systemctl status sysbox | egrep -q \"active \(running\)\""
@@ -162,7 +162,7 @@ function install_verify() {
 
 function uninstall_verify() {
 
-  run sudo dpkg -s sysbox
+  run sudo dpkg -s ${SB_PACKAGE}
   [ "$status" -ne 0 ]
 
   run sh -c "sudo systemctl status sysbox | egrep -q \"active \(running\)\""
@@ -186,7 +186,7 @@ function uninstall_verify() {
 
 function partial_install_verify() {
 
-  run command dpkg -s sysbox
+  run command dpkg -s ${SB_PACKAGE}
   [[ "$output" =~ "install ok half-configured" ]]
   [ "$status" -eq 0 ]
 }
