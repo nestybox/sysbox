@@ -44,7 +44,11 @@ function install_init() {
   run rm -rf "$test_dir/*"
   [ "$status" -eq 0 ]
 
+  wait_for_dockerd
+
   # Wipe all pre-existing containers and restart dockerd from a clean slate.
+  run rm -rf ${dockerCfgFile}
+  [ "$status" -eq 0 ]
   run sh -c "docker stop \$(docker ps -a -q) || true"
   [ "$status" -eq 0 ]
   run sh -c "docker container prune -f"
@@ -65,7 +69,14 @@ EOF
 
 function docker_return_defaults() {
 
-  run sh -c "rm -rf ${dockerCfgFile} && systemctl restart docker"
+  if [ ! -f "${dockerCfgFile}" ]; then
+    return
+  fi
+
+  run rm -rf ${dockerCfgFile}
+  [ "$status" -eq 0 ]
+
+  run systemctl restart docker
   [ "$status" -eq 0 ]
 }
 
@@ -194,13 +205,6 @@ function verify_userns_mode() {
   # Docker's userns mode.
   run sh -c "docker info 2>&1 | egrep -q \"^  userns$\""
   [ "$status" -eq 0 ]
-
-
-  # Only one 'userns' entry can exist at any given point.
-  #
-  # Example:     "userns-remap": "sysbox",
-  #run sh -c "egrep ' +\"userns-remap\": \".*\"' ${dockerCfgFile} | wc -l | egrep -q 1"
-  #[ "$status" -eq 0 ]
 }
 
 function config_automatic_restart() {
