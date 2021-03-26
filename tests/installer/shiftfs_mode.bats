@@ -22,7 +22,7 @@ function teardown() {
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
 #
-@test "no pre-existing dockerd config" {
+@test "[shiftfs] no pre-existing dockerd config" {
 
   install_init
 
@@ -86,7 +86,7 @@ function teardown() {
 #
 # Testcase #2.
 #
-@test "pre-existing & unprocessed dockerd config (sysbox runtime)" {
+@test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox runtime)" {
 
   docker_return_defaults
 
@@ -156,7 +156,7 @@ EOF
 #
 # Testcase #3.
 #
-@test "pre-existing & processed dockerd config (sysbox runtime)" {
+@test "[shiftfs] pre-existing & processed dockerd config (sysbox runtime)" {
 
   docker_return_defaults
 
@@ -230,7 +230,7 @@ EOF
 #
 # Testcase #4.
 #
-@test "pre-existing & unprocessed dockerd config (non-sysbox runtime)" {
+@test "[shiftfs] pre-existing & unprocessed dockerd config (non-sysbox runtime)" {
 
   docker_return_defaults
 
@@ -308,7 +308,7 @@ EOF
 #
 # Testcase #5.
 #
-@test "pre-existing & processed dockerd config (non-sysbox runtime)" {
+@test "[shiftfs] pre-existing & processed dockerd config (non-sysbox runtime)" {
 
   docker_return_defaults
 
@@ -394,7 +394,7 @@ EOF
 # that has *not* been digested by dockerd, will not force the installer to change
 # to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode.
 #
-@test "pre-existing & unprocessed dockerd config (sysbox userns)" {
+@test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns)" {
 
   docker_return_defaults
 
@@ -463,7 +463,7 @@ EOF
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry, that
 # has already been digested by dockerd, will *not* force the installer to change to
 # 'shiftfs' mode. IOW, dockerd will continue operatin in the same mode.
-@test "pre-existing & processed dockerd config (sysbox userns)" {
+@test "[shiftfs] pre-existing & processed dockerd config (sysbox userns)" {
 
   docker_return_defaults
 
@@ -536,7 +536,7 @@ EOF
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
-@test "pre-existing & unprocessed dockerd config (sysbox userns) -- existing container" {
+@test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns) -- existing container" {
 
   docker_return_defaults
 
@@ -623,7 +623,7 @@ EOF
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
-@test "pre-existing & processed dockerd config (sysbox userns) -- existing container" {
+@test "[shiftfs] pre-existing & processed dockerd config (sysbox userns) -- existing container" {
 
   docker_return_defaults
 
@@ -714,7 +714,7 @@ EOF
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
-@test "pre-existing & unprocessed dockerd config (sysbox userns) -- manual config" {
+@test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns) -- manual config" {
 
   docker_return_defaults
 
@@ -788,7 +788,7 @@ EOF
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
-@test "pre-existing & processed dockerd config (sysbox userns) -- manual restart" {
+@test "[shiftfs] pre-existing & processed dockerd config (sysbox userns) -- manual restart" {
 
   docker_return_defaults
 
@@ -866,7 +866,7 @@ EOF
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite. See "Case 2)" in sysbox.config.
 #
-@test "pre-existing dockerd config with all required elems" {
+@test "[shiftfs] pre-existing dockerd config with all required elems" {
 
   docker_return_defaults
 
