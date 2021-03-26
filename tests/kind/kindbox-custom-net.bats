@@ -114,6 +114,8 @@ function remove_test_dir() {
 
   local svc_ip=$(k8s_svc_ip $cluster1 $controller1 default nginx)
 
+  sleep 3
+
   docker exec $controller1 sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
