@@ -10,6 +10,8 @@ load ../helpers/sysbox-health
 load ../helpers/installer
 
 
+# Ensure that this testcase always execute as this one initializes the testing
+# environment for this test-suite.
 @test "no pre-existing dockerd config -- automatic restart" {
 
   install_init
@@ -294,7 +296,7 @@ EOF
 
   config_automatic_restart true
 
-sudo cat > /etc/docker/daemon.json <<EOF
+  sudo cat > /etc/docker/daemon.json <<EOF
 {
     "runtimes": {
 	      "dummy-runc": {
@@ -1227,4 +1229,159 @@ EOF
   verify_userns_mode
 
   uninstall_verify
+}
+
+@test "pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- manual restart" {
+
+  docker_return_defaults
+
+  disable_shiftfs
+
+  config_automatic_restart false
+
+  sudo cat > /etc/docker/daemon.json <<EOF
+{
+    "userns-remap": "sysbox"
+}
+EOF
+
+  # Initialize a regular container.
+  run docker run -d --name alpine alpine
+  [ "$status" -eq 0 ]
+
+  local dockerPid1=$(pidof dockerd)
+
+  install_sysbox
+
+  install_verify
+
+  # Check installation output. A docker-restart warning is *not* expected as we are
+  # operating in 'manual' restart mode.
+  run sh -c 'echo "${installation_output}" | egrep -q "Docker service was not restarted"'
+  echo "installation_output = ${installation_output}"
+  [ "$status" -ne 0 ]
+
+  # Check dockerd did not restart due to 'manual' mode.
+  local dockerPid2=$(pidof dockerd)
+  [ "${dockerPid2}" == "${dockerPid1}" ]
+
+  # Verify that a 'userns-remap' entry is present in docker config.
+  run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
+             jq --exit-status '.\"userns-remap\"' ${dockerCfgFile} | egrep -q \"sysbox\""
+  [ "$status" -eq 0 ]
+
+  verify_docker_config_sysbox_runtime_presence
+
+  verify_docker_sysbox_runtime_presence
+
+  # We are still in 'shiftfs' mode.
+  verify_shiftfs_mode
+
+  # Let's manually restart docker now.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
+
+  # Dockerd should be in 'userns-mode' mode now.
+  verify_userns_mode
+
+  # Obtain the new dockerd pid.
+  local dockerPid2=$(pidof dockerd)
+
+  uninstall_sysbox purge
+
+  # Check installation output. A docker-restart warning is *not* expected as we are
+  # operating in 'manual' restart mode.
+  run sh -c 'echo "${uninstallation_output}" | egrep -q "Docker service was not restarted"'
+  echo "uninstallation_output = ${uninstallation_output}"
+  [ "$status" -ne 0 ]
+
+  # Check dockerd did not restart due to existing container.
+  local dockerPid3=$(pidof dockerd)
+  [ "${dockerPid3}" == "${dockerPid2}" ]
+
+  verify_docker_config_sysbox_runtime_absence
+
+  verify_docker_sysbox_runtime_absence
+
+  verify_userns_mode
+
+  uninstall_verify
+
+  # Remove container.
+  run docker rm alpine
+  [ "$status" -eq 0 ]
+}
+
+@test "pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual restart" {
+
+  docker_return_defaults
+
+  disable_shiftfs
+
+  config_automatic_restart false
+
+  sudo cat > /etc/docker/daemon.json <<EOF
+{
+    "userns-remap": "sysbox"
+}
+EOF
+
+  # Cold-boot dockerd to process above config.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
+
+  # Initialize a regular container.
+  run docker run -d --name alpine alpine
+  [ "$status" -eq 0 ]
+
+  local dockerPid1=$(pidof dockerd)
+
+  install_sysbox
+
+  install_verify
+
+  # Check installation output. No docker-restart warning expected as docker is
+  # already operating in 'userns' mode.
+  run sh -c 'echo "${installation_output}" | egrep -q "Docker service was not restarted"'
+  echo "installation_output = ${installation_output}"
+  [ "$status" -eq 1 ]
+
+  # Check dockerd did not restart as docker is already operating in 'userns' mode.
+  local dockerPid2=$(pidof dockerd)
+  [ "${dockerPid2}" == "${dockerPid1}" ]
+
+  # Verify that a 'userns-remap' entry is present in docker config.
+  run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
+             jq --exit-status '.\"userns-remap\"' ${dockerCfgFile} | egrep -q \"sysbox\""
+  [ "$status" -eq 0 ]
+
+  verify_docker_config_sysbox_runtime_presence
+
+  verify_docker_sysbox_runtime_presence
+
+  verify_userns_mode
+
+  uninstall_sysbox purge
+
+  # Check installation output. A docker-restart warning is *not* expected as we are
+  # operating in 'manual' restart mode.
+  run sh -c 'echo "${uninstallation_output}" | egrep -q "Docker service was not restarted"'
+  echo "uninstallation_output = ${uninstallation_output}"
+  [ "$status" -ne 0 ]
+
+  # Check dockerd did not restart due to existing container.
+  local dockerPid3=$(pidof dockerd)
+  [ "${dockerPid3}" == "${dockerPid2}" ]
+
+  verify_docker_config_sysbox_runtime_absence
+
+  verify_docker_sysbox_runtime_absence
+
+  verify_userns_mode
+
+  uninstall_verify
+
+  # Remove container.
+  run docker rm alpine
+  [ "$status" -eq 0 ]
 }
