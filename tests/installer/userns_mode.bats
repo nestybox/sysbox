@@ -1533,23 +1533,145 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Testcase #20.
+#
+# Ensure that this testcase always execute as this one initializes the testing
+# environment for this test-suite. See "Case 1)" in sysbox.config.
+#
+@test "[userns] pre-existing dockerd config with all required elems -- automatic config" {
 
+  docker_return_defaults
 
-  # Check installation output. (Un)installer is expected to generate a warning and
-  # avoid restarting docker due to the presence of a container.
-  #run sh -c 'echo "${installation_output}" | egrep -q "Docker service was not restarted"'
-  #[ "$status" -eq 0 ]
+  config_automatic_userns_remap true
 
-  # Check installation output. A docker-restart warning is expected as docker is
-  # attempting to switch from 'shiftfs' to 'userns' mode, but there is an existing
-  # container.
-  #run sh -c 'echo "${installation_output}" | egrep -q "Docker service was not restarted"'
-  #echo "installation_output = ${installation_output}"
-  #[ "$status" -eq 0 ]
+  sudo cat > /etc/docker/daemon.json <<EOF
+{
+    "userns-remap": "sysbox",
+    "bip": "172.20.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.25.0.0/16",
+            "size": 24
+        }
+    ]
+}
+EOF
 
+  # Cold-boot dockerd to process above config.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
 
-  # Check installation output. (Un)installer is expected to generate a warning and
-  # avoid restarting docker due to the presence of a container.
-  #run sh -c 'echo "${uninstallation_output}" | egrep -q "Docker service was not restarted"'
-  #echo "uninstallation_output = ${uninstallation_output}"
-  #[ "$status" -eq 0 ]
+  local dockerPid1=$(pidof dockerd)
+
+  install_sysbox 0
+
+  install_verify
+
+  # Check dockerd did **not** restart as docker's config already incorporates all
+  # the attributes that are 'disruptive' and, thereby, require docker restart.
+  local dockerPid2=$(pidof dockerd)
+  [ "${dockerPid2}" == "${dockerPid1}" ]
+
+  verify_docker_config_sysbox_runtime_presence
+
+  verify_docker_sysbox_runtime_presence
+
+  verify_userns_mode
+
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
+  uninstall_sysbox purge
+
+  # Check dockerd did restart as we are in 'automatic' docker-config mode, and
+  # as such, sysbox uninstaller eliminates 'userns' docker entry if no existing
+  # containers are found.
+  local dockerPid3=$(pidof dockerd)
+  [ "${dockerPid3}" != "${dockerPid2}" ]
+
+  verify_docker_config_sysbox_runtime_absence
+
+  verify_docker_sysbox_runtime_absence
+
+  verify_shiftfs_mode
+
+  uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+}
+
+#
+# Testcase #21.
+#
+# Ensure that this testcase always execute as this one initializes the testing
+# environment for this test-suite. See "Case 1)" in sysbox.config.
+#
+@test "[userns] pre-existing dockerd config with all required elems -- manual config" {
+
+  docker_return_defaults
+
+  config_automatic_userns_remap false
+
+  sudo cat > /etc/docker/daemon.json <<EOF
+{
+    "userns-remap": "sysbox",
+    "bip": "172.20.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.25.0.0/16",
+            "size": 24
+        }
+    ]
+}
+EOF
+
+  # Cold-boot dockerd to process above config.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
+
+  local dockerPid1=$(pidof dockerd)
+
+  install_sysbox 0
+
+  install_verify
+
+  # Check dockerd did **not** restart as docker's config already incorporates all
+  # the attributes that are 'disruptive' and, thereby, require docker restart.
+  local dockerPid2=$(pidof dockerd)
+  [ "${dockerPid2}" == "${dockerPid1}" ]
+
+  verify_docker_config_sysbox_runtime_presence
+
+  verify_docker_sysbox_runtime_presence
+
+  verify_userns_mode
+
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
+  uninstall_sysbox purge
+
+  # Check dockerd did **not** restart as we are in 'manual' docker-config mode, and
+  # as such, sysbox uninstaller leaves 'userns' config untouched.
+  local dockerPid3=$(pidof dockerd)
+  [ "${dockerPid3}" == "${dockerPid2}" ]
+
+  verify_docker_config_sysbox_runtime_absence
+
+  verify_docker_sysbox_runtime_absence
+
+  verify_userns_mode
+
+  uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+}

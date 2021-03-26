@@ -201,6 +201,34 @@ function verify_docker_sysbox_runtime_absence() {
   [ "$status" -ne 0 ]
 }
 
+function verify_docker_bip_presence() {
+
+  run sh -c "jq --exit-status 'has(\"bip\")' ${dockerCfgFile} &&
+             jq --exit-status '.bip' ${dockerCfgFile} | egrep -q \"172.20.0.1/16\""
+  [ "$status" -eq 0 ]
+}
+
+function verify_docker_bip_absence() {
+
+  run sh -c "jq --exit-status 'has(\"bip\")' ${dockerCfgFile} ||
+             jq --exit-status '.bip ${dockerCfgFile} | egrep -q \"172.20.0.1/16\""
+  [ "$status" -ne 0 ]
+}
+
+function verify_docker_address_pool_presence() {
+
+  run sh -c "jq --exit-status 'has(\"default-address-pools\")' ${dockerCfgFile} &&
+              jq --exit-status '.\"default-address-pools\"[] | select(.\"base\" == \"172.25.0.0/16\")' ${dockerCfgFile}"
+  [ "$status" -eq 0 ]
+}
+
+function verify_docker_address_pool_absence() {
+
+  run sh -c "jq --exit-status 'has(\"default-address-pools\")' ${dockerCfgFile} ||
+              jq --exit-status '.\"default-address-pools\"[] | select(.\"base\" == \"172.25.0.0/16\")' ${dockerCfgFile}"
+  [ "$status" -ne 0 ]
+}
+
 function verify_shiftfs_mode() {
 
   run sh -c "docker info 2>&1 | egrep -q \"^  userns$\""
