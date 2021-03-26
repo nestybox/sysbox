@@ -28,13 +28,13 @@ function teardown() {
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -89,8 +89,6 @@ function teardown() {
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -106,6 +104,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -160,8 +160,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -181,6 +179,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -235,8 +235,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -255,6 +253,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -314,8 +314,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -338,6 +336,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -395,13 +395,13 @@ EOF
 #
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry,
 # that has *not* been digested by dockerd, will not force the installer to change
-# to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode.
+# to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode
+# and discard this transient configuration. The transition to 'userns' mode will
+# need to be manually made by docker_config_userns_mode() instruction.
 #
 @test "[userns] pre-existing & unprocessed dockerd config (sysbox userns) -- automatic config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap true
 
@@ -414,6 +414,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -466,8 +468,6 @@ EOF
 @test "[userns] pre-existing & processed dockerd config (sysbox userns) -- automatic config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap true
 
@@ -537,8 +537,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -553,6 +551,10 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  # Restart docker to force transient config changes to be processed.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
 
   install_verify
 
@@ -612,8 +614,6 @@ EOF
 @test "[userns] pre-existing & processed dockerd config (non-sysbox userns) -- automatic config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap true
 
@@ -693,8 +693,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   # Initialize a regular container.
@@ -714,6 +712,8 @@ EOF
   [ "$status" -eq 0 ]
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -756,8 +756,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap true
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -783,6 +781,8 @@ EOF
   [ "$status" -eq 0 ]
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -928,8 +928,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap false
 
   local dockerPid1=$(pidof dockerd)
@@ -1010,8 +1008,6 @@ EOF
 @test "[userns] pre-existing & unprocessed dockerd config (sysbox runtime) -- manual config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap false
 
@@ -1101,8 +1097,6 @@ EOF
 @test "[userns] pre-existing & processed dockerd config (sysbox runtime) -- manual config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap false
 
@@ -1196,8 +1190,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap false
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -1209,6 +1201,8 @@ EOF
   local dockerPid1=$(pidof dockerd)
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -1272,8 +1266,6 @@ EOF
 @test "[userns] pre-existing & processed dockerd config (sysbox userns) -- manual config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap false
 
@@ -1349,8 +1341,6 @@ EOF
 
   docker_return_defaults
 
-  disable_shiftfs
-
   config_automatic_userns_remap false
 
   sudo cat > /etc/docker/daemon.json <<EOF
@@ -1376,6 +1366,8 @@ EOF
   [ "$status" -eq 0 ]
 
   install_sysbox 0
+
+  docker_config_userns_mode
 
   install_verify
 
@@ -1442,8 +1434,6 @@ EOF
 @test "[userns] pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual config" {
 
   docker_return_defaults
-
-  disable_shiftfs
 
   config_automatic_userns_remap false
 

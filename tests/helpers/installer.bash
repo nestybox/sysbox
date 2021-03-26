@@ -5,7 +5,7 @@
 # (for tests using bats)
 #
 
-export test_dir="/tmp/installer/"
+export test_dir="/tmp/installer"
 export test_image="busybox"
 export test_container="$test_image"
 
@@ -29,6 +29,9 @@ export manual_docker_userns_remap="${test_dir}/manual_docker_userns_remap.debcon
 
 # Default MTU value associated to egress-interface.
 export default_mtu=1500
+
+# Temp file for jq write operations.
+tmpfile="${test_dir}/installer-scr"
 
 
 function install_init() {
@@ -77,6 +80,29 @@ function docker_return_defaults() {
   [ "$status" -eq 0 ]
 }
 
+function docker_config_userns_mode() {
+
+  if [ ! -f "${dockerCfgFile}" ]; then
+    return
+  fi
+
+  # If no 'userns-remap' key-entry is present, or if its associated value
+  # is empty, create a key and set its value to 'sysbox' user.
+  if [ $(jq 'has("userns-remap")' ${dockerCfgFile}) = "false" ] ||
+     [ $(jq '."userns-remap"' ${dockerCfgFile}) = "\"\"" ]; then
+
+    jq --indent 4 '. + {"userns-remap": "sysbox"}' \
+      ${dockerCfgFile} > ${tmpfile} && cp ${tmpfile} ${dockerCfgFile}
+    [ "$status" -eq 0 ]
+
+    systemctl restart docker
+    [ "$status" -eq 0 ]
+
+    systemctl restart sysbox
+    [ "$status" -eq 0 ]
+  fi
+}
+
 function kernel_headers_install() {
 
   run sh -c "sudo apt-get update && sudo apt-get install -y linux-headers-$(uname -r)"
@@ -94,8 +120,7 @@ function install_sysbox() {
   local expected_result=$1
 
   run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${PACKAGE_FILE_PATH}/${PACKAGE_FILE_NAME}
-  installation_output="${output}"
-  echo "rodny ${installation_output}"
+  echo "${outputt}"
   [ "$status" -eq "$expected_result" ]
 
   # Some wiggle-room for processes to initialize.
