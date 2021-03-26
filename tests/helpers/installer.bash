@@ -9,12 +9,6 @@ export test_dir="/tmp/installer"
 export test_image="busybox"
 export test_container="$test_image"
 
-export VERSION=$(egrep -m 1 "\[|\]" CHANGELOG.md | cut -d"[" -f2 | cut -d"]" -f1)
-export PACKAGE_BASE_DISTRO=$(lsb_release -ds | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')
-export PACKAGE_BASE_RELEASE=$(lsb_release -cs)
-export PACKAGE_FILE_PATH="sysbox-pkgr/deb/debbuild/${PACKAGE_BASE_DISTRO}-${PACKAGE_BASE_RELEASE}"
-export PACKAGE_FILE_NAME="sysbox_${VERSION}-0.${PACKAGE_BASE_DISTRO}-${PACKAGE_BASE_RELEASE}_amd64.deb"
-
 # Installation / Uninstallation output string.
 export installation_output=""
 export uninstallation_output=""
@@ -43,6 +37,9 @@ function install_init() {
   [ "$status" -eq 0 ]
 
   wait_for_dockerd
+
+  # Uninstall sysbox if present.
+  uninstall_sysbox purge
 
   # Wipe all pre-existing containers and restart dockerd from a clean slate.
   run rm -rf ${dockerCfgFile}
@@ -119,7 +116,7 @@ function install_sysbox() {
 
   local expected_result=$1
 
-  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${PACKAGE_FILE_PATH}/${PACKAGE_FILE_NAME}
+  run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${SB_INSTALLER_PKG}
   echo "${outputt}"
   [ "$status" -eq "$expected_result" ]
 
