@@ -24,8 +24,8 @@ export dockerCfgDir="/etc/docker"
 export dockerCfgFile="${dockerCfgDir}/daemon.json"
 
 # Debconf files to hold desired pkg configuration.
-export auto_dockerd_restart="${test_dir}/auto_dockerd_restart.debconf"
-export manual_dockerd_restart="${test_dir}/manual_dockerd_restart.debconf"
+export auto_docker_userns_remap="${test_dir}/auto_docker_userns_remap.debconf"
+export manual_docker_userns_remap="${test_dir}/manual_docker_userns_remap.debconf"
 
 # Default MTU value associated to egress-interface.
 export default_mtu=1500
@@ -53,14 +53,14 @@ function install_init() {
 
   sleep 3
 
-  # Create debconf file to set "dockerd-autorestart" mode.
-  cat > "${auto_dockerd_restart}" <<EOF
-sysbox	sysbox/docker_autorestart	boolean	true
+  # Create debconf file to set automatic "docker_userns_remap" mode.
+  cat > "${auto_docker_userns_remap}" <<EOF
+sysbox	sysbox/docker_userns_remap_autoconfig	boolean	true
 EOF
 
-  # Create debconf file to set "manual_dockerd_restart" mode.
-  cat > "${manual_dockerd_restart}" <<EOF
-sysbox	sysbox/docker_autorestart	boolean	false
+  # Create debconf file to set "manual_docker_userns_remap" mode.
+  cat > "${manual_docker_userns_remap}" <<EOF
+sysbox	sysbox/docker_userns_remap_autoconfig	boolean	false
 EOF
 }
 
@@ -95,6 +95,7 @@ function install_sysbox() {
 
   run sudo DEBIAN_FRONTEND=noninteractive dpkg -i ${PACKAGE_FILE_PATH}/${PACKAGE_FILE_NAME}
   installation_output="${output}"
+  echo "rodny ${installation_output}"
   [ "$status" -eq "$expected_result" ]
 
   # Some wiggle-room for processes to initialize.
@@ -213,15 +214,15 @@ function verify_userns_mode() {
   [ "$status" -eq 0 ]
 }
 
-function config_automatic_restart() {
+function config_automatic_userns_remap() {
   local on=$1
 
   if [ ${on} = "false" ]; then
-    sudo debconf-set-selections "${manual_dockerd_restart}"
+    sudo debconf-set-selections "${manual_docker_userns_remap}"
     return
   fi
 
-  sudo debconf-set-selections "${auto_dockerd_restart}"
+  sudo debconf-set-selections "${auto_docker_userns_remap}"
 }
 
 function enable_shiftfs() {

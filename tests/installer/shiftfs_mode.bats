@@ -17,7 +17,7 @@ function teardown() {
 }
 
 #
-# Tescase #1.
+# Testcase #1.
 #
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
@@ -75,7 +75,7 @@ function teardown() {
 }
 
 #
-# Tescase #2.
+# Testcase #2.
 #
 @test "pre-existing & unprocessed dockerd config (sysbox runtime)" {
 
@@ -134,7 +134,7 @@ EOF
 }
 
 #
-# Tescase #3.
+# Testcase #3.
 #
 @test "pre-existing & processed dockerd config (sysbox runtime)" {
 
@@ -197,7 +197,7 @@ EOF
 }
 
 #
-# Tescase #4.
+# Testcase #4.
 #
 @test "pre-existing & unprocessed dockerd config (non-sysbox runtime)" {
 
@@ -264,7 +264,7 @@ EOF
 }
 
 #
-# Tescase #5.
+# Testcase #5.
 #
 @test "pre-existing & processed dockerd config (non-sysbox runtime)" {
 
@@ -335,7 +335,7 @@ EOF
 }
 
 #
-# Tescase #6.
+# Testcase #6.
 #
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry,
 # that has *not* been digested by dockerd, will not force the installer to change
@@ -394,7 +394,7 @@ EOF
 }
 
 #
-# Tescase #7.
+# Testcase #7.
 #
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry, that
 # has already been digested by dockerd, will *not* force the installer to change to
@@ -456,7 +456,7 @@ EOF
 }
 
 #
-# Tescase #8.
+# Testcase #8.
 #
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
@@ -532,7 +532,7 @@ EOF
 }
 
 #
-# Tescase #9.
+# Testcase #9.
 #
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
@@ -612,7 +612,7 @@ EOF
 }
 
 #
-# Tescase #10.
+# Testcase #10.
 #
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
@@ -672,7 +672,7 @@ EOF
 }
 
 #
-# Tescase #11.
+# Testcase #11.
 #
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
