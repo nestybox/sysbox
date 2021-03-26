@@ -1,0 +1,19 @@
+{
+  "metadata": {
+      "name": "k8s-worker"
+  },
+  "image":{
+      "image": "nestybox/k8s-node-test:v1.18.2"
+  },
+  "command": [
+      "/sbin/init"
+  ],
+  "log_path":"container.log",
+   "linux": {
+       "security_context": {
+           "namespace_options": {
+               "pid": 1
+           }
+       }
+   }
+}

@@ -1,0 +1,14 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: "v1.18.2"
+networking:
+  podSubnet: "10.245.0.0/16"
+  serviceSubnet: "10.97.0.0/12"
+apiServer:
+  certSANs:
+  - "10.97.0.1"
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+clusterDNS:
+- 10.97.0.10

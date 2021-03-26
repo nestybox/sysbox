@@ -1,10 +1,11 @@
 {
     "metadata": {
-        "name": "k8s-node-pod",
+        "name": "k8s-master-pod",
         "namespace": "default",
         "attempt": 1,
-        "uid": "k8s-node-pod"
+        "uid": "k8s-master-pod"
     },
+    "hostname": "k8s-master",
     "annotations": {
         "io.kubernetes.cri-o.userns-mode": "auto:size=65536"
     },

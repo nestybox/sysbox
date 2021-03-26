@@ -1,9 +1,9 @@
 {
   "metadata": {
-      "name": "k8s-node"
+      "name": "k8s-master"
   },
   "image":{
-      "image": "ghcr.io/nestybox/k8s-node:v1.18.2"
+      "image": "nestybox/k8s-node-test:v1.18.2"
   },
   "command": [
       "/sbin/init"
