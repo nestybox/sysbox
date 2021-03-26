@@ -507,9 +507,8 @@ function kind_all_nodes_ready() {
         worker="${cluster}"-worker$i
       fi
 
-      worker_ready=$(k8s_node_ready $worker)
-
-      if [ $worker_ready -ne 0 ]; then
+		run k8s_node_ready $worker
+      if [ "$status" -ne 0 ]; then
         all_ok="false"
         break
       fi
@@ -551,9 +550,8 @@ function kindbox_all_nodes_ready() {
       master=${cluster_name}-master
       worker=${cluster_name}-worker-${i}
 
-      worker_ready=$(k8s_node_ready $worker)
-
-      if [ $worker_ready -ne 0 ]; then
+		run k8s_node_ready $worker
+      if [ "$status" -ne 0 ]; then
         all_ok="false"
         break
       fi
