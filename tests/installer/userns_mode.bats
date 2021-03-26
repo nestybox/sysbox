@@ -16,8 +16,12 @@ function teardown() {
   sysbox_log_check
 }
 
+#
+# Tescase #1.
+#
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
+#
 @test "no pre-existing dockerd config -- automatic restart" {
 
   install_init
@@ -30,7 +34,7 @@ function teardown() {
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -40,8 +44,8 @@ function teardown() {
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd did restart when switching from 'shiftfs' to 'userns' mode, as
-  # that's what we do by default if no cntr is around.
+  # Check dockerd did restart when switching from 'shiftfs' to 'userns' mode. Also, we
+  # would restart anyways to process network configuration change.
   local dockerPid2=$(pidof dockerd)
   [ "${dockerPid2}" != "${dockerPid1}" ]
 
@@ -78,6 +82,9 @@ function teardown() {
   uninstall_verify
 }
 
+#
+# Tescase #2.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox runtime) -- automatic restart" {
 
   docker_return_defaults
@@ -98,7 +105,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -146,6 +153,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #3.
+#
 @test "pre-existing & processed dockerd config (sysbox runtime) -- automatic restart" {
 
   docker_return_defaults
@@ -170,7 +180,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -218,6 +228,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #4.
+#
 @test "pre-existing & unprocessed dockerd config (non-sysbox runtime) -- automatic restart" {
 
   docker_return_defaults
@@ -241,7 +254,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -294,6 +307,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #5.
+#
 @test "pre-existing & processed dockerd config (non-sysbox runtime) -- automatic restart" {
 
   docker_return_defaults
@@ -321,7 +337,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -374,9 +390,13 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #6.
+#
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry,
 # that has *not* been digested by dockerd, will not force the installer to change
 # to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox userns) -- automatic restart" {
 
   docker_return_defaults
@@ -393,7 +413,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -440,6 +460,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #7.
+#
 @test "pre-existing & processed dockerd config (sysbox userns) -- automatic restart" {
 
   docker_return_defaults
@@ -460,7 +483,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -506,6 +529,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #8.
+#
 @test "pre-existing & unprocessed dockerd config (non-sysbox userns) -- automatic restart" {
 
   docker_return_defaults
@@ -525,7 +551,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -578,6 +604,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #9.
+#
 @test "pre-existing & processed dockerd config (non-sysbox userns) -- automatic restart" {
 
   docker_return_defaults
@@ -601,7 +630,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -654,6 +683,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #10.
+#
 @test "no pre-existing dockerd config & existing cntrs -- automatic restart" {
 
   docker_return_defaults
@@ -668,7 +700,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -714,6 +746,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #11.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- automatic restart" {
 
   docker_return_defaults
@@ -734,7 +769,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -786,6 +821,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #12.
+#
 @test "pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- automatic restart" {
 
   docker_return_defaults
@@ -810,7 +848,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -860,6 +898,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #13.
+#
 @test "no pre-existing dockerd config -- manual docker restart" {
 
   docker_return_defaults
@@ -870,7 +911,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -940,6 +981,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #14.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox runtime) -- manual restart" {
 
   docker_return_defaults
@@ -960,7 +1004,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -1017,6 +1061,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #15.
+#
 @test "pre-existing & processed dockerd config (sysbox runtime) -- manual restart" {
 
   docker_return_defaults
@@ -1041,7 +1088,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -1098,6 +1145,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #16.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart" {
 
   docker_return_defaults
@@ -1114,7 +1164,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -1171,6 +1221,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #17.
+#
 @test "pre-existing & processed dockerd config (sysbox userns) -- manual restart" {
 
   docker_return_defaults
@@ -1191,7 +1244,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -1237,6 +1290,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #18.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox userns) & existing cntrs -- manual restart" {
 
   docker_return_defaults
@@ -1257,7 +1313,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -1318,6 +1374,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #19.
+#
 @test "pre-existing & processed dockerd config (sysbox userns) & existing cntrs -- manual restart" {
 
   docker_return_defaults
@@ -1342,7 +1401,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 

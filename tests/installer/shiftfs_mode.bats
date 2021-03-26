@@ -16,8 +16,12 @@ function teardown() {
   sysbox_log_check
 }
 
+#
+# Tescase #1.
+#
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
+#
 @test "no pre-existing dockerd config" {
 
   install_init
@@ -26,7 +30,7 @@ function teardown() {
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -35,9 +39,9 @@ function teardown() {
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that no 'userns-remap' entry has been added to docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -70,6 +74,9 @@ function teardown() {
   uninstall_verify
 }
 
+#
+# Tescase #2.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox runtime)" {
 
   docker_return_defaults
@@ -86,7 +93,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -95,9 +102,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that no 'userns-remap' entry has been added to docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -126,6 +133,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #3.
+#
 @test "pre-existing & processed dockerd config (sysbox runtime)" {
 
   docker_return_defaults
@@ -146,7 +156,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -155,9 +165,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that no 'userns-remap' entry has been added to docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -186,6 +196,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #4.
+#
 @test "pre-existing & unprocessed dockerd config (non-sysbox runtime)" {
 
   docker_return_defaults
@@ -205,7 +218,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -214,9 +227,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that no 'userns-remap' entry has been added to docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -250,6 +263,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #5.
+#
 @test "pre-existing & processed dockerd config (non-sysbox runtime)" {
 
   docker_return_defaults
@@ -273,7 +289,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -282,9 +298,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that no 'userns-remap' entry has been added to docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -318,9 +334,13 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #6.
+#
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry,
 # that has *not* been digested by dockerd, will not force the installer to change
 # to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode.
+#
 @test "pre-existing & unprocessed dockerd config (sysbox userns)" {
 
   docker_return_defaults
@@ -333,7 +353,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -342,9 +362,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -373,6 +393,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #7.
+#
 # In 'shiftfs' nodes, verify that procesing a docker config with a userns entry, that
 # has already been digested by dockerd, will *not* force the installer to change to
 # 'shiftfs' mode. IOW, dockerd will continue operatin in the same mode.
@@ -392,7 +415,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -401,9 +424,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.  
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -432,6 +455,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #8.
+#
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
@@ -451,7 +477,17 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  # Expect installation to fail.
+  install_sysbox 1
+
+  # Verify installation was just partially completed.
+  partial_install_verify
+
+  # Let's stop/remove the existing containers and launch installation again.
+  run docker rm alpine
+  [ "$status" -eq 0 ]
+
+  install_sysbox 0
 
   install_verify
 
@@ -460,9 +496,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -495,6 +531,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #9.
+#
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
@@ -518,7 +557,17 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  # Expect installation to fail.
+  install_sysbox 1
+
+  # Verify installation was just partially completed.
+  partial_install_verify
+
+  # Let's stop/remove the existing containers and launch installation again.
+  run docker rm alpine
+  [ "$status" -eq 0 ]
+
+  install_sysbox 0
 
   install_verify
 
@@ -527,9 +576,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -562,6 +611,9 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+#
+# Tescase #10.
+#
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
@@ -579,7 +631,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -588,9 +640,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
@@ -619,6 +671,9 @@ EOF
   uninstall_verify
 }
 
+#
+# Tescase #11.
+#
 # Repeat testcase #7 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
@@ -640,7 +695,7 @@ EOF
 
   local dockerPid1=$(pidof dockerd)
 
-  install_sysbox
+  install_sysbox 0
 
   install_verify
 
@@ -649,9 +704,9 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd did restart to process network configuration change.
   local dockerPid2=$(pidof dockerd)
-  [ "${dockerPid2}" == "${dockerPid1}" ]
+  [ "${dockerPid2}" != "${dockerPid1}" ]
 
   # Verify that a 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
