@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
-# Basic tests for ...
+#
+# Sysbox installer integration-tests for scenarios where 'shiftfs' kernel
+# module is not available, and Docker must operat in 'userns-remap' mode.
 #
 
 load ../helpers/run
@@ -9,6 +11,10 @@ load ../helpers/fs
 load ../helpers/sysbox-health
 load ../helpers/installer
 
+
+function teardown() {
+  sysbox_log_check
+}
 
 # Ensure that this testcase always execute as this one initializes the testing
 # environment for this test-suite.
