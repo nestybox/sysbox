@@ -171,6 +171,8 @@ EOF
 
   local svc_ip=$(k8s_svc_ip $cluster $controller default nginx)
 
+  sleep 3
+
   docker exec $controller sh -c "curl -s $svc_ip | grep -q \"Welcome to nginx\""
   [ "$status" -eq 0 ]
 
