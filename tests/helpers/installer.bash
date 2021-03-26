@@ -32,6 +32,9 @@ export dockerCfgFile="${dockerCfgDir}/daemon.json"
 export auto_dockerd_restart="${test_dir}/auto_dockerd_restart.debconf"
 export manual_dockerd_restart="${test_dir}/manual_dockerd_restart.debconf"
 
+# Default MTU value associated to egress-interface.
+export default_mtu=1500
+
 #
 # Auxiliary routines.
 #
@@ -237,4 +240,17 @@ function disable_shiftfs() {
   [ "$status" -eq 1 ]
 }
 
+function egress_iface_mtu() {
 
+  if jq --exit-status 'has("mtu")' ${dockerCfgFile} >/dev/null; then
+    local mtu=$(jq --exit-status '."mtu"' ${dockerCfgFile} 2>&1)
+
+    if [ ! -z "$mtu" ] && [ "$mtu" -lt 1500 ]; then
+      echo $mtu
+    else
+      echo $default_mtu
+    fi
+  else
+    echo $default_mtu
+  fi
+}
