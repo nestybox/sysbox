@@ -54,6 +54,10 @@ function teardown() {
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -72,6 +76,11 @@ function teardown() {
   verify_shiftfs_mode
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -117,6 +126,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -133,6 +146,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -182,6 +200,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -198,6 +220,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -246,6 +273,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -267,6 +298,11 @@ EOF
   [ "$status" -eq 0 ]
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -319,6 +355,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -340,6 +380,11 @@ EOF
   [ "$status" -eq 0 ]
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -385,6 +430,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -401,6 +450,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -448,7 +502,11 @@ EOF
   verify_docker_sysbox_runtime_presence
 
   verify_userns_mode
-  
+
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -465,6 +523,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -523,6 +586,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -539,6 +606,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 
   # Remove container.
   run docker rm alpine
@@ -605,6 +677,10 @@ EOF
 
   verify_userns_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -621,6 +697,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 
   # Remove container.
   run docker rm alpine
@@ -673,6 +754,10 @@ EOF
 
   verify_shiftfs_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -690,6 +775,11 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
 
 #
@@ -741,6 +831,10 @@ EOF
 
   verify_userns_mode
 
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -759,4 +853,77 @@ EOF
   verify_docker_sysbox_runtime_absence
 
   uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+}
+
+#
+# Testcase #12.
+#
+# Ensure that this testcase always execute as this one initializes the testing
+# environment for this test-suite. See "Case 2)" in sysbox.config.
+#
+@test "pre-existing dockerd config with all required elems" {
+
+  docker_return_defaults
+
+  sudo cat > /etc/docker/daemon.json <<EOF
+{
+    "bip": "172.20.0.1/16",
+    "default-address-pools": [
+        {
+            "base": "172.25.0.0/16",
+            "size": 24
+        }
+    ]
+}
+EOF
+
+  # Cold-boot dockerd to process above config.
+  run systemctl restart docker
+  [ "$status" -eq 0 ]
+
+  local dockerPid1=$(pidof dockerd)
+
+  install_sysbox 0
+
+  install_verify
+
+  # Check dockerd did **not** restart as docker's config already incorporates all
+  # the attributes that are 'disruptive' and, thereby, require docker restart.
+  local dockerPid2=$(pidof dockerd)
+  [ "${dockerPid2}" == "${dockerPid1}" ]
+
+  verify_docker_config_sysbox_runtime_presence
+
+  verify_docker_sysbox_runtime_presence
+
+  verify_shiftfs_mode
+
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
+
+  uninstall_sysbox purge
+
+  # Check dockerd didn't restart as there are no disruptive changes to process
+  # (i.e. network-config is untouched after restart).
+  local dockerPid3=$(pidof dockerd)
+  [ "${dockerPid3}" == "${dockerPid2}" ]
+
+  verify_docker_config_sysbox_runtime_absence
+
+  verify_docker_sysbox_runtime_absence
+
+  verify_shiftfs_mode
+
+  uninstall_verify
+
+  # Both 'bip' and 'address-pool' attributes are left untouched in docker config.
+  verify_docker_bip_presence
+
+  verify_docker_address_pool_presence
 }
