@@ -115,6 +115,8 @@ EOF
 
   verify_docker_sysbox_runtime_presence
 
+  verify_shiftfs_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -178,6 +180,8 @@ EOF
 
   verify_docker_sysbox_runtime_presence
 
+  verify_shiftfs_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -239,6 +243,8 @@ EOF
   verify_docker_config_sysbox_runtime_presence
 
   verify_docker_sysbox_runtime_presence
+
+  verify_shiftfs_mode
 
   uninstall_sysbox purge
 
@@ -311,6 +317,8 @@ EOF
 
   verify_docker_sysbox_runtime_presence
 
+  verify_shiftfs_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd related msg expected in shiftfs mode.
@@ -366,14 +374,16 @@ EOF
   local dockerPid2=$(pidof dockerd)
   [ "${dockerPid2}" != "${dockerPid1}" ]
 
-  # Verify that a 'userns-remap' entry is present in docker config.
+  # Verify that the 'userns-remap' entry is eliminated from docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
              jq --exit-status '.\"userns-remap\"' ${dockerCfgFile} | egrep -q \"sysbox\""
-  [ "$status" -eq 0 ]
+  [ "$status" -ne 0 ]
 
   verify_docker_config_sysbox_runtime_presence
 
   verify_docker_sysbox_runtime_presence
+
+  verify_shiftfs_mode
 
   uninstall_sysbox purge
 
@@ -436,6 +446,8 @@ EOF
   verify_docker_config_sysbox_runtime_presence
 
   verify_docker_sysbox_runtime_presence
+
+  verify_userns_mode
   
   uninstall_sysbox purge
 
@@ -500,14 +512,16 @@ EOF
   local dockerPid2=$(pidof dockerd)
   [ "${dockerPid2}" != "${dockerPid1}" ]
 
-  # Verify that a 'userns-remap' entry is present in docker config.
+  # Verify that the 'userns-remap' entry is eliminated from docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
              jq --exit-status '.\"userns-remap\"' ${dockerCfgFile} | egrep -q \"sysbox\""
-  [ "$status" -eq 0 ]
+  [ "$status" -ne 0 ]
 
   verify_docker_config_sysbox_runtime_presence
 
   verify_docker_sysbox_runtime_presence
+
+  verify_shiftfs_mode
 
   uninstall_sysbox purge
 
@@ -589,6 +603,8 @@ EOF
 
   verify_docker_sysbox_runtime_presence
 
+  verify_userns_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -617,11 +633,11 @@ EOF
 # Repeat testcase #6 with 'manual' docker-restart, which should not differ from
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
-@test "pre-existing & unprocessed dockerd config (sysbox userns) -- manual restart" {
+@test "pre-existing & unprocessed dockerd config (sysbox userns) -- manual config" {
 
   docker_return_defaults
 
-  config_automatic_restart false
+  config_automatic_userns_remap false
 
   sudo cat > /etc/docker/daemon.json <<EOF
 {
@@ -640,18 +656,22 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd did restart to process network configuration change.
+  # Dockerd must restart to process the network config changes. No changes are expected
+  # in regards to 'userns-remap' mode coz existing 'userns' changes are just superficial
+  # and also, 'shiftfs' module is present.
   local dockerPid2=$(pidof dockerd)
   [ "${dockerPid2}" != "${dockerPid1}" ]
 
-  # Verify that a 'userns-remap' entry is present in docker config.
+  # Verify that no 'userns-remap' entry is present in docker config.
   run sh -c "jq --exit-status 'has(\"userns-remap\")' ${dockerCfgFile} &&
              jq --exit-status '.\"userns-remap\"' ${dockerCfgFile} | egrep -q \"sysbox\""
-  [ "$status" -eq 0 ]
+  [ "$status" -ne 0 ]
 
   verify_docker_config_sysbox_runtime_presence
 
   verify_docker_sysbox_runtime_presence
+
+  verify_shiftfs_mode
 
   uninstall_sysbox purge
 
@@ -660,7 +680,8 @@ EOF
   echo "uninstallation_output = ${uninstallation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd didn't restart. No dockerd restart expected in shiftfs mode.
+  # Check dockerd didn't restart. No dockerd restart expected while operating in 'shiftfs'
+  # mode.
   local dockerPid3=$(pidof dockerd)
   [ "${dockerPid3}" == "${dockerPid2}" ]
 
@@ -681,7 +702,7 @@ EOF
 
   docker_return_defaults
 
-  config_automatic_restart false
+  config_automatic_userns_remap false
 
   sudo cat > /etc/docker/daemon.json <<EOF
 {
@@ -704,7 +725,8 @@ EOF
   echo "installation_output = ${installation_output}"
   [ "$status" -eq 1 ]
 
-  # Check dockerd did restart to process network configuration change.
+  # Dockerd must restart to process the network config changes. Docker is already operating
+  # in 'userns-remap' mode, so no config changes are expected in this front.
   local dockerPid2=$(pidof dockerd)
   [ "${dockerPid2}" != "${dockerPid1}" ]
 
@@ -717,6 +739,8 @@ EOF
 
   verify_docker_sysbox_runtime_presence
 
+  verify_userns_mode
+
   uninstall_sysbox purge
 
   # Check uninstallation output. No dockerd restart warning expected.
@@ -725,6 +749,8 @@ EOF
   [ "$status" -eq 1 ]
 
   # Check dockerd didn't restart. No dockerd restart expected in 'shiftfs' mode.
+  # No docker restart when operating in 'userns' mode and 'manual' configuration. Also
+  # docker's network-config is left untouched, so no need to restart on that front either.
   local dockerPid3=$(pidof dockerd)
   [ "${dockerPid3}" == "${dockerPid2}" ]
 
