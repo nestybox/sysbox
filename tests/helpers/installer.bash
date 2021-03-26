@@ -52,14 +52,14 @@ function install_init() {
   run sh -c "systemctl restart docker"
   [ "$status" -eq 0 ]
 
-  # Create debconf file to set "automatic_dockerd_restart" mode.
+  # Create debconf file to set "dockerd-autorestart" mode.
   cat > "${auto_dockerd_restart}" <<EOF
-sysbox	sysbox/docker_userns_autoconfig	boolean	true
+sysbox	sysbox/docker_autorestart	boolean	true
 EOF
 
   # Create debconf file to set "manual_dockerd_restart" mode.
   cat > "${manual_dockerd_restart}" <<EOF
-sysbox	sysbox/docker_userns_autoconfig	boolean	false
+sysbox	sysbox/docker_autorestart	boolean	false
 EOF
 }
 
@@ -220,9 +220,6 @@ function enable_shiftfs() {
 }
 
 function disable_shiftfs() {
-
-  # run sh -c "lsmod | egrep -q \"shiftfs\""
-  # [ "$status" -eq 0 ]
 
   run modprobe -r shiftfs
   [ "$status" -eq 0 ]
