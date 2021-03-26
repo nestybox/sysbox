@@ -144,7 +144,7 @@ function install_verify() {
   run sudo dpkg -s sysbox
   [ "$status" -eq 0 ]
 
-  run sh -c "sudo systemctl status sysbox | egrep -q \"active \(exited\)\""
+  run sh -c "sudo systemctl status sysbox | egrep -q \"active \(running\)\""
   [ "$status" -eq 0 ]
 
   run sh -c "sudo systemctl status sysbox-mgr | egrep -q \"active \(running\)\""
@@ -168,7 +168,7 @@ function uninstall_verify() {
   run sudo dpkg -s sysbox
   [ "$status" -ne 0 ]
 
-  run sh -c "sudo systemctl status sysbox | egrep -q \"active \(exited\)\""
+  run sh -c "sudo systemctl status sysbox | egrep -q \"active \(running\)\""
   [ "$status" -ne 0 ]
 
   run sh -c "sudo systemctl status sysbox-mgr | egrep -q \"active \(running\)\""
