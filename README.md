@@ -21,7 +21,7 @@ allows you to use containers in new ways, and provides a
 to virtual machines in many scenarios.
 
 Prior to Sysbox, running such software in a container required you to create
-complex images, custom entrypoints, special volume mounts, and use very unsecure
+complex images, custom entrypoints, special volume mounts, and use very insecure
 privileged containers. With Sysbox, this is as simple as:
 
 ```
@@ -33,7 +33,7 @@ you would on a physical host or virtual machine. You can launch inner containers
 (and even inner privileged containers), knowing that the outer container is
 strongly isolated from the underlying host (via the Linux user-namespace as well
 as other features setup by Sysbox). No more complex docker images or docker run
-commands, and no need for unsecure privileged containers.
+commands, and no need for insecure privileged containers.
 
 In order to do this, Sysbox uses many OS-virtualization features of the Linux
 kernel and complements these with OS-virtualization techniques implemented in
@@ -260,7 +260,7 @@ Sysbox.
 
 ### Docker-in-Docker
 
--   Run Docker inside a container easily and without unsecure privileged containers.
+-   Run Docker inside a container easily and without insecure privileged containers.
 
 -   Full isolation between the Docker inside the container and the Docker on the host.
 

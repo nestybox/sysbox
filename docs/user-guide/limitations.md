@@ -18,7 +18,7 @@ Sysbox.
 
 Sysbox system containers are incompatible with the Docker `--privileged` flag.
 
-The raison d'être for Sysbox is to avoid the use of (very unsecure) privileged
+The raison d'être for Sysbox is to avoid the use of (very insecure) privileged
 containers yet enable users to run any type of software inside the container.
 
 Using the Docker `--privileged` + Sysbox will fail:
