@@ -27,7 +27,7 @@ run K8s seamlessly, using simple Docker images, no special configurations, and
 strongly isolated containers (i.e,. using the Linux user-namespace).
 
 Other approaches at creating K8s-in-Docker clusters (e.g., K8s.io KinD) are good
-but use very unsecure privileged containers and require customized images. With
+but use very insecure privileged containers and require customized images. With
 Sysbox, you get well isolated containers and there are no special image
 requirements (i.e., you fully control the container image).
 

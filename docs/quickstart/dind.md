@@ -69,7 +69,7 @@ As shown, Docker runs normally inside the secure system container and we
 can deploy an inner container (busybox) without problem.
 
 The Sysbox runtime allows you to do this easily and securely (no complex
-Docker run commands, no unsecure Docker privileged containers!).
+Docker run commands, no insecure Docker privileged containers!).
 
 ## Deploy a System Container with Systemd, sshd, and Docker inside
 
