@@ -47,13 +47,13 @@ expected. Refer to [Fedora's kernel-upgrade](#Fedora-kernel-upgrade) procedure f
 
 ## Sysbox Package
 
-We currently only offer the [Sysbox package](../releases) for Ubuntu. This means that for
-other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
+We are currently offering the [Sysbox packages](../releases) for Ubuntu and Debian
+distributions. This means that for other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
 It's pretty easy though, since the Sysbox Makefile has targets that automate this process.
 The build occurs entirely inside a container, so it won't mess up your host.
 
-We are working on creating packaged versions for other Linux distros now, and
-expect to have them very soon (ETA spring 2021).
+We are working on creating packaged versions for the other supported distros, and
+expect to have them soon (ETA summer 2021).
 
 ## Sysbox Operational Modes
 
