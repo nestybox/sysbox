@@ -33,8 +33,8 @@ instructions below.
    expected/published one. For example:
 
 ```console
-$ sha256sum sysbox_0.2.1-0.ubuntu-focal_amd64.deb
-126e4963755cdca440579d81409b3f4a6d6ef4c6c2d4cf435052a13468e2c250  sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+$ shasum sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
+4850d18ed2af73f2819820cd8993f9cdc647cc79  sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
 ```
 
 3) Stop and eliminate all running Docker containers. Refer to the
@@ -50,21 +50,47 @@ $ docker rm $(docker ps -a -q) -f
 4) Install the Sysbox package and follow the installer instructions:
 
 ```console
-$ sudo apt-get install ./sysbox_0.2.1-0.ubuntu-focal_amd64.deb -y
+$ sudo apt-get install ./sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb -y
 ```
 
 5) Verify that Sysbox's Systemd units have been properly installed, and
    associated daemons are properly running:
 
 ```console
-$ systemctl list-units -t service --all | grep sysbox
-sysbox-fs.service                   loaded    active   running sysbox-fs component
-sysbox-mgr.service                  loaded    active   running sysbox-mgr component
-sysbox.service                     loaded    active   exited  Sysbox General Service
-```
+$ sudo systemctl status sysbox -n20
+● sysbox.service - Sysbox container runtime
+     Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sat 2021-03-27 00:15:36 EDT; 20s ago
+       Docs: https://github.com/nestybox/sysbox
+   Main PID: 2305016 (sh)
+      Tasks: 2 (limit: 9487)
+     Memory: 792.0K
+     CGroup: /system.slice/sysbox.service
+             ├─2305016 /bin/sh -c /usr/local/sbin/sysbox-runc --version && /usr/local/sbin/sysbox-mgr --version && /usr/local/sbin/sysbox-fs --version && /bin/sleep infinity
+             └─2305039 /bin/sleep infinity
 
-Note: the sysbox.service is ephemeral (it exits once it launches the other sysbox services; that's why
-you see `sysbox.service   loaded  active  exited` above).
+Mar 27 00:15:36 dev-vm1 systemd[1]: Started Sysbox container runtime.
+Mar 27 00:15:36 dev-vm1 sh[2305018]: sysbox-runc
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         edition:         Community Edition (CE)
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         version:         0.3.0
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         commit:          df952e5276cb6e705e0be331e9a9fe88f372eab8
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         built at:         Sat Mar 27 01:34:12 UTC 2021
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         built by:         Rodny Molina
+Mar 27 00:15:36 dev-vm1 sh[2305018]:         oci-specs:         1.0.2-dev
+Mar 27 00:15:36 dev-vm1 sh[2305024]: sysbox-mgr
+Mar 27 00:15:36 dev-vm1 sh[2305024]:         edition:         Community Edition (CE)
+Mar 27 00:15:36 dev-vm1 sh[2305024]:         version:         0.3.0
+Mar 27 00:15:36 dev-vm1 sh[2305024]:         commit:          6ae5668e797ee1bb88fd5f5ae663873a87541ecb
+Mar 27 00:15:36 dev-vm1 sh[2305024]:         built at:         Sat Mar 27 01:34:41 UTC 2021
+Mar 27 00:15:36 dev-vm1 sh[2305024]:         built by:         Rodny Molina
+Mar 27 00:15:36 dev-vm1 sh[2305031]: sysbox-fs
+Mar 27 00:15:36 dev-vm1 sh[2305031]:         edition:         Community Edition (CE)
+Mar 27 00:15:36 dev-vm1 sh[2305031]:         version:         0.3.0
+Mar 27 00:15:36 dev-vm1 sh[2305031]:         commit:          bb001b7fe2a0a234fe86ab20045677470239e248
+Mar 27 00:15:36 dev-vm1 sh[2305031]:         built at:         Sat Mar 27 01:34:30 UTC 2021
+Mar 27 00:15:36 dev-vm1 sh[2305031]:         built by:         Rodny Molina
+$
+```
 
 After you've installed Sysbox, you can now use it to deploy containers that can
 run systemd, Docker, and Kubernetes inside of them seamlessly. See the

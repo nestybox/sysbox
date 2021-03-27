@@ -138,15 +138,15 @@ We plan to add support for more distros in the near future.
 [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```console
-$ wget https://github.com/nestybox/sysbox/releases/download/v0.2.1/sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+$ wget https://github.com/nestybox/sysbox/releases/download/v0.3.0/sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
 ```
 
 2) Verify that the checksum of the downloaded file fully matches the expected/published one.
    For example:
 
 ```console
-$ sha256sum sysbox_0.2.1-0.ubuntu-focal_amd64.deb
-126e4963755cdca440579d81409b3f4a6d6ef4c6c2d4cf435052a13468e2c250  sysbox_0.2.1-0.ubuntu-focal_amd64.deb
+$ shasum sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
+4850d18ed2af73f2819820cd8993f9cdc647cc79  sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
 ```
 
 3) Stop and eliminate all running Docker containers. Refer to the
@@ -162,7 +162,7 @@ $ docker rm $(docker ps -a -q) -f
 4) Install the Sysbox package and follow the installer instructions:
 
 ```console
-$ sudo apt-get install ./sysbox_0.2.1-0.ubuntu-focal_amd64.deb -y
+$ sudo apt-get install ./sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb -y
 ```
 
 More information on the installation process can be found [here](docs/user-guide/install.md). If you
