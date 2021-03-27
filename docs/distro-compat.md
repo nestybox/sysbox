@@ -30,17 +30,28 @@ recent releases have been installed (i.e. 18.04.4+). If that's not the
 case, user will need to upgrade the kernel. Refer to [Ubuntu's kernel-upgrade](#Ubuntu-Kernel-Upgrade)
 procedure for details.
 
-* Note 2: Fedora 31 requires no kernel upgrade assuming that user is running a recent
-installation (i.e. kernel 5.5+ is deployed). Otherwise, a kernel-upgrade will be
-expected. Refer to [Fedora's kernel-upgrade](#Fedora-kernel-upgrade) procedure for details.
+* Note 2: Debian Bullseye (11) requires that the Linux kernel be booted with cgroups
+v1, as Sysbox does not yet support cgroups v2 (the latter is the default in latest
+Debian kernels). We will be adding support for cgroups v2 in Sysbox very soon.
+To boot the Debian kernel with cgroups v1, set kernel parameter
+`systemd.unified_cgroup_hierarchy=0` as follows and reboot the kernel.
 
-* Note 3: Fedora >= 31 requires that the Linux kernel be booted with cgroups v1,
-  as Sysbox does not yet support cgroups v2 (the latter is the default in recent
-  Fedora kernels). We will be adding support for cgroups v2 in Sysbox very
-  soon. To boot the Fedora kernel with cgroups v1, set kernel parameter
-  `systemd.unified_cgroup_hierarchy=0` as follows and reboot the kernel.
-
+  ```console
+  $ sudo sh -c 'echo GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=0" >> /etc/default/grub'
+  $ sudo update-grub
   ```
+
+* Note 3: Fedora 31 requires no kernel upgrade assuming that user is running a recent
+installation (i.e. kernel 5.5+ is deployed). Otherwise, a kernel-upgrade will be
+expected. Refer to [Fedora's kernel-upgrade](#Fedora-kernel-upgrade) procedure for
+details.
+
+* Note 4: Same as Debian Bullseye's case, Fedora >= 31 also requires that the Linux
+kernel be booted with cgroups v1. To boot the Fedora kernel with cgroups v1, set
+kernel parameter `systemd.unified_cgroup_hierarchy=0` as follows and reboot the
+kernel.
+
+  ```console
   sudo dnf install grubby
   sudo grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
   ```
