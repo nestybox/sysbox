@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.3.0] - unreleased
+## [0.3.0] - 2021-03-26
 ### Added
   * Secured system container initial mounts (mount/remount/unmounts on these from within the container are now restricted). See [here](docs/user-guide/security.md#initial-mount-immutability) for details.
   * Improved Sysbox systemd service unit files (dependencies, open-file limits).
