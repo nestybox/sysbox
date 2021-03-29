@@ -17,7 +17,7 @@ function teardown() {
 	[ "$status" -ne 0 ]
 }
 
-@test "docker --net=<container>" {
+@test "docker --net=container:<id>" {
 	local sc1=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 	local sc2=$(docker_run --net=container:$sc1 ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
