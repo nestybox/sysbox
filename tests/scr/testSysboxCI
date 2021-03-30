@@ -54,6 +54,12 @@ else
 	bats --tap tests/kind/kindbox-custom-net.bats
 	docker system prune -a -f
 
+	# sysbox-pods tests
+	docker system prune -a -f
+	printf "\nExecuting sysbox-pod tests ... \n"
+	bats --tap tests/pods
+	crictl rmi --all
+
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
 
