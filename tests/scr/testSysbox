@@ -52,10 +52,14 @@ else
 	printf "\nExecuting perf tests ... \n"
 	bats --tap tests/perf
 
+	# sysbox-pods tests
+	docker system prune -a -f
+	printf "\nExecuting sysbox-pod tests ... \n"
+	bats --tap tests/pods
+	crictl rmi --all
+
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
-
-	docker system prune -a -f
 fi
 
 exit 0
