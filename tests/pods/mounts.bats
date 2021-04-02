@@ -8,6 +8,7 @@ load ../helpers/crio
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -71,11 +72,9 @@ function teardown() {
 
 @test "pod hostPath vol (uid-shift)" {
 
-	# TODO: fix this ...
-
-	# if [ -z $UID_SHIFTING_SUPPORTED  ]; then
-	# 	skip "needs uid shifting support"
-	# fi
+	if ! host_supports_uid_shifting; then
+		skip "needs host uid shifting support"
+	fi
 
 	# Create a dir on the host with root ownership
 	local host_path=$(mktemp -d "${WORK_DIR}/tmp-vol.XXXXXX")
