@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -30,7 +31,7 @@ function teardown() {
   # shiftfs manager detects and skips mounting shiftfs on this directory
 
   local premount="false"
-  if [ -n "$SHIFT_UIDS" ]; then
+  if host_supports_uid_shifting; then
     if [[ $((RANDOM % 2)) == "0" ]]; then
       mount -t shiftfs -o mark /lib/modules/$(uname -r) /lib/modules/$(uname -r)
       premount="true"

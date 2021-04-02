@@ -6,7 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
-
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -28,7 +28,7 @@ function teardown() {
   sysbox_stop
 
   # verify sysbox-mgr has cleaned up it's state on the host correctly
-  if [ -n "$SHIFT_UIDS" ]; then
+  if host_supports_uid_shifting; then
     run sh -c 'mount | grep -q shiftfs'
     [ "$status" -ne 0 ]
   fi

@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/fs
 load ../helpers/docker
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 # verify sys container has a mount for /lib/modules/<kernel>
@@ -18,7 +19,7 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if [ -n "$SHIFT_UIDS" ]; then
+  if host_supports_uid_shifting; then
     [[ "$output" =~ "/lib/modules/${kernel_rel} on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
@@ -70,7 +71,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-      if [ -n "$SHIFT_UIDS" ]; then
+		if host_supports_uid_shifting; then
          [[ "${lines[0]}" =~ "/usr/src/kernels/${kernel_rel} on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
@@ -85,7 +86,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-      if [ -n "$SHIFT_UIDS" ]; then
+		if host_supports_uid_shifting; then
          [[ "${lines[0]}" =~ "/usr/src/linux-headers-${kernel_rel} on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
@@ -118,7 +119,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-      if [ -n "$SHIFT_UIDS" ]; then
+		if host_supports_uid_shifting; then
         [[ "${lines[0]}" =~ "/usr/src/kernels/${kernel_rel} on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
@@ -134,7 +135,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-      if [ -n "$SHIFT_UIDS" ]; then
+		if host_supports_uid_shifting; then
          [[ "${lines[0]}" =~ "/usr/src/linux-headers-${kernel_rel} on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
@@ -150,10 +151,6 @@ load ../helpers/sysbox-health
 }
 
 @test "uid-shift bind mount special dir" {
-
-  if [ -z "$SHIFT_UIDS" ]; then
-    skip "needs UID shifting"
-  fi
 
   local syscont
   local uid
@@ -358,10 +355,6 @@ load ../helpers/sysbox-health
 }
 
 @test "skip chown bind mount special dir" {
-
-  if [ -z "$SHIFT_UIDS" ]; then
-    skip "needs UID shifting"
-  fi
 
   local syscont
   local uid
