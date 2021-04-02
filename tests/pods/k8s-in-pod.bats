@@ -1,12 +1,11 @@
 #!/usr/bin/env bats
 
 #
-# Tests for running K8s in side a sysbox pods (i.e., pods deployed with crictl +
-# CRI-O + Sysbox)
+# Tests for running K8s in side a sysbox pods.
 #
 # TODO:
 #
-# - Add storage check before k8s-in-pod test
+# - Add check for sufficient host storage check before k8s-in-pod test
 # - Cleanup all crictl images after tests
 # - Refactor kindbox.bats tests so we can use all those same tests when running k8s-in-pod
 
