@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -24,6 +25,8 @@ function teardown() {
   docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
+  # when docker runs in user-ns remap mode, docker volume ownership matches that
+  # of the container, so sysbox does not need to mount shiftfs over the volume.
   if [ -n "$SHIFT_UIDS" ]; then
     [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type shiftfs" ]]
   else
@@ -48,9 +51,9 @@ function teardown() {
   testDir="/testVol"
   mkdir -p ${testDir}
 
-  # without docker userns-remap, the bind source must be accessible by
+  # without uid shifting, the bind source must be accessible by
   # the container's user ID.
-  if [ -z "$SHIFT_UIDS" ]; then
+  if ! host_supports_uid_shifting; then
     subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
     chown -R $subid:$subid ${testDir}
   fi
@@ -62,7 +65,7 @@ function teardown() {
   docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
-  if [ -n "$SHIFT_UIDS" ]; then
+  if host_supports_uid_shifting; then
     [[ "$output" =~ "${testDir} on /mnt/testVol type shiftfs" ]]
   else
     # overlay because we are running in the test container
@@ -149,17 +152,12 @@ function teardown() {
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
-  if [ -n "$SHIFT_UIDS" ]; then
-    orig_tuid=$(stat -c %u "$testDir")
-    orig_tgid=$(stat -c %g "$testDir")
-  fi
-
-  # In docker userns-remap mode, we are required to change the mount
-  # source ownership to match the docker userns-remap config
-  if [ -z "$SHIFT_UIDS" ]; then
-    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
-    chown -R $subid:$subid ${testDir}
-  fi
+  # Sysbox will modify the ownership of testDir to match the container's uid:gid
+  # (because it's mounted over special dir /var/lib/docker). When the container
+  # stops, Sysbox will revert the chown. Here we remember the testDir uid:gid so
+  # we can later check if Sysbox reverted the ownership.
+  orig_tuid=$(stat -c %u "$testDir")
+  orig_tgid=$(stat -c %g "$testDir")
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -173,20 +171,16 @@ function teardown() {
   [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
 
-  # When using uid-shifting, sysbox changes the permissions on the
-  # mount source; verify this.
-  if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$uid" -eq "$tuid" ]
-    [ "$gid" -eq "$tgid" ]
-  fi
+  # Verify sysbox changed the permissions on the mount source.
+  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$uid" -eq "$tuid" ]
+  [ "$gid" -eq "$tgid" ]
 
   # Let's run an inner container to verify the docker inside the sys container
   # can work with /var/lib/docker without problems
-
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
@@ -205,26 +199,21 @@ function teardown() {
 
   docker_stop "$syscont"
 
-  # After the container stops, sysbox should revert the ownership on
-  # the mount source; verify this.
-  if [ -n "$SHIFT_UIDS" ]; then
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$orig_tuid" -eq "$tuid" ]
-    [ "$orig_tgid" -eq "$tgid" ]
-  fi
+  # Verify Sysbox revert the ownership on the mount source.
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$orig_tuid" -eq "$tuid" ]
+  [ "$orig_tgid" -eq "$tgid" ]
 
   # Let's start a new container with the same bind-mount, and verify the mount looks good
   syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$uid" -eq "$tuid" ]
-    [ "$gid" -eq "$tgid" ]
-  fi
+  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$uid" -eq "$tuid" ]
+  [ "$gid" -eq "$tgid" ]
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -240,12 +229,10 @@ function teardown() {
 
   docker_stop "$syscont"
 
-  if [ -n "$SHIFT_UIDS" ]; then
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$orig_tuid" -eq "$tuid" ]
-    [ "$orig_tgid" -eq "$tgid" ]
-  fi
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$orig_tuid" -eq "$tuid" ]
+  [ "$orig_tgid" -eq "$tgid" ]
 
   # cleanup
   rm -r ${testDir}
@@ -256,11 +243,6 @@ function teardown() {
   testDir="/root/var-lib-docker"
   rm -rf ${testdir}
   mkdir -p ${testDir}
-
-  if [ -z "$SHIFT_UIDS" ]; then
-    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
-    chown -R $subid:$subid ${testDir}
-  fi
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -295,42 +277,31 @@ function teardown() {
     rm -rf "${testDir[$i]}"
     mkdir -p "${testDir[$i]}"
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      orig_tuid[$i]=$(stat -c %u "${testDir[$i]}")
-      orig_tgid[$i]=$(stat -c %g "${testDir[$i]}")
-    fi
-
-    if [ -z "$SHIFT_UIDS" ]; then
-      chown -R $subid:$subid "${testDir[$i]}"
-    fi
+    orig_tuid[$i]=$(stat -c %u "${testDir[$i]}")
+    orig_tgid[$i]=$(stat -c %g "${testDir[$i]}")
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-      gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-      tuid=$(stat -c %u "${testDir[$i]}")
-      tgid=$(stat -c %g "${testDir[$i]}")
-      [ "$uid" -eq "$tuid" ]
-      [ "$gid" -eq "$tgid" ]
-    fi
+    uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+    gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+    tuid=$(stat -c %u "${testDir[$i]}")
+    tgid=$(stat -c %g "${testDir[$i]}")
+    [ "$uid" -eq "$tuid" ]
+    [ "$gid" -eq "$tgid" ]
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     docker_stop "${syscont_name[$i]}"
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      tuid=$(stat -c %u "${testDir[$i]}")
-      tgid=$(stat -c %g "${testDir[$i]}")
-      [ "${orig_tuid[$i]}" -eq "$tuid" ]
-      [ "${orig_tgid[$i]}" -eq "$tgid" ]
-    fi
+    tuid=$(stat -c %u "${testDir[$i]}")
+    tgid=$(stat -c %g "${testDir[$i]}")
+    [ "${orig_tuid[$i]}" -eq "$tuid" ]
+    [ "${orig_tgid[$i]}" -eq "$tgid" ]
 
     rm -r "${testDir[$i]}"
   done
-
 }
 
 @test "bind mount on /var/lib/kubelet" {
@@ -340,17 +311,8 @@ function teardown() {
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
-  if [ -n "$SHIFT_UIDS" ]; then
-    orig_tuid=$(stat -c %u "$testDir")
-    orig_tgid=$(stat -c %g "$testDir")
-  fi
-
-  # In docker userns-remap mode, we are required to change the mount
-  # source ownership to match the docker userns-remap config
-  if [ -z "$SHIFT_UIDS" ]; then
-    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
-    chown -R $subid:$subid ${testDir}
-  fi
+  orig_tuid=$(stat -c %u "$testDir")
+  orig_tgid=$(stat -c %g "$testDir")
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -364,27 +326,21 @@ function teardown() {
   [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
 
-  # When using uid-shifting, sysbox changes the permissions on the
-  # mount source; verify this.
-  if [ -n "$SHIFT_UIDS" ]; then
-    uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$uid" -eq "$tuid" ]
-    [ "$gid" -eq "$tgid" ]
-  fi
+  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$uid" -eq "$tuid" ]
+  [ "$gid" -eq "$tgid" ]
 
   # After the container stops, sysbox should revert the ownership on
   # the mount source; verify this.
   docker_stop "$syscont"
 
-  if [ -n "$SHIFT_UIDS" ]; then
-    tuid=$(stat -c %u "$testDir")
-    tgid=$(stat -c %g "$testDir")
-    [ "$orig_tuid" -eq "$tuid" ]
-    [ "$orig_tgid" -eq "$tgid" ]
-  fi
+  tuid=$(stat -c %u "$testDir")
+  tgid=$(stat -c %g "$testDir")
+  [ "$orig_tuid" -eq "$tuid" ]
+  [ "$orig_tgid" -eq "$tgid" ]
 
   # cleanup
   rm -r ${testDir}
@@ -395,11 +351,6 @@ function teardown() {
   testDir="/root/var-lib-kubelet"
   rm -rf ${testdir}
   mkdir -p ${testDir}
-
-  if [ -z "$SHIFT_UIDS" ]; then
-    subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
-    chown -R $subid:$subid ${testDir}
-  fi
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -434,38 +385,28 @@ function teardown() {
     rm -rf "${testDir[$i]}"
     mkdir -p "${testDir[$i]}"
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      orig_tuid[$i]=$(stat -c %u "${testDir[$i]}")
-      orig_tgid[$i]=$(stat -c %g "${testDir[$i]}")
-    fi
-
-    if [ -z "$SHIFT_UIDS" ]; then
-      chown -R $subid:$subid "${testDir[$i]}"
-    fi
+    orig_tuid[$i]=$(stat -c %u "${testDir[$i]}")
+    orig_tgid[$i]=$(stat -c %g "${testDir[$i]}")
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-      gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-      tuid=$(stat -c %u "${testDir[$i]}")
-      tgid=$(stat -c %g "${testDir[$i]}")
-      [ "$uid" -eq "$tuid" ]
-      [ "$gid" -eq "$tgid" ]
-    fi
+    uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+    gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+    tuid=$(stat -c %u "${testDir[$i]}")
+    tgid=$(stat -c %g "${testDir[$i]}")
+    [ "$uid" -eq "$tuid" ]
+    [ "$gid" -eq "$tgid" ]
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     docker_stop "${syscont_name[$i]}"
 
-    if [ -n "$SHIFT_UIDS" ]; then
-      tuid=$(stat -c %u "${testDir[$i]}")
-      tgid=$(stat -c %g "${testDir[$i]}")
-      [ "${orig_tuid[$i]}" -eq "$tuid" ]
-      [ "${orig_tgid[$i]}" -eq "$tgid" ]
-    fi
+    tuid=$(stat -c %u "${testDir[$i]}")
+    tgid=$(stat -c %g "${testDir[$i]}")
+    [ "${orig_tuid[$i]}" -eq "$tuid" ]
+    [ "${orig_tgid[$i]}" -eq "$tgid" ]
 
     rm -r "${testDir[$i]}"
   done
@@ -489,18 +430,18 @@ function teardown() {
 	# If the mount is on a special dir, and the source of that mount is a child
 	# dir of another bind-mount source that requires uid-shifting, sysbox-runc
 	# will disallow it. Verify this.
-	docker run --runtime=sysbox-runc --rm \
-          -v /mnt/scratch:/mnt/scratch \
-          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-          ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-          echo hello
-
-	[ "$status" -ne 0 ]
+	if host_supports_uid_shifting; then
+		docker run --runtime=sysbox-runc --rm \
+				 -v /mnt/scratch:/mnt/scratch \
+				 -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+				 ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+				 echo hello
+		[ "$status" -ne 0 ]
+	fi
 
 	# If the mount is on a special dir, and the source of that mount is a child
 	# dir of another bind-mount source that **does not** require uid-shifting,
 	# sysbox-runc will allow it. Verify this.
-
 	orig_uid=$(stat -c '%U' /mnt/scratch)
 	orig_gid=$(stat -c '%U' /mnt/scratch)
 
@@ -520,30 +461,30 @@ function teardown() {
 
 @test "shiftfs blacklist" {
 
-  if [ -z "$SHIFT_UIDS" ]; then
-    skip "needs uid shifting"
-  fi
+	if ! host_supports_uid_shifting; then
+		skip "needs uid shifting"
+	fi
 
-  # this list must match the sysbox-run shiftfs blacklist
-  declare -a blacklist=("/bin" "/sbin" "/usr/bin" "/usr/sbin" "/usr/local/bin" "/usr/loca/sbin" "/dev" "/run" "/var/run")
-  local syscont
+	# this list must match the sysbox-run shiftfs blacklist
+	declare -a blacklist=("/bin" "/sbin" "/usr/bin" "/usr/sbin" "/usr/local/bin" "/usr/loca/sbin" "/dev" "/run" "/var/run")
+	local syscont
 
-  for bind_src in ${blacklist[@]}; do
+	for bind_src in ${blacklist[@]}; do
 
-    run stat $blacklist
-    if [ "$output" -ne 0 ]; then
-      continue
-    fi
+		run stat $blacklist
+		if [ "$output" -ne 0 ]; then
+			continue
+		fi
 
-    syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist ${CTR_IMG_REPO}/busybox tail -f /dev/null)
+		syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist ${CTR_IMG_REPO}/busybox tail -f /dev/null)
 
-    # verify that shiftfs is not mounted on the source or destination of the mount
-    run sh -c "mount | grep \"shiftfs\" | grep \"$blacklist\""
-    [ "$status" -eq 1 ]
+		# verify that shiftfs is not mounted on the source or destination of the mount
+		run sh -c "mount | grep \"shiftfs\" | grep \"$blacklist\""
+		[ "$status" -eq 1 ]
 
-    docker exec "$syscont" sh -c "mount | grep \"shiftfs\" | grep \"/mnt/$blacklist\""
-    [ "$status" -eq 1 ]
+		docker exec "$syscont" sh -c "mount | grep \"shiftfs\" | grep \"/mnt/$blacklist\""
+		[ "$status" -eq 1 ]
 
-    docker_stop "$syscont"
-  done
+		docker_stop "$syscont"
+	done
 }
