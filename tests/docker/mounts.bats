@@ -474,40 +474,48 @@ function teardown() {
 
 @test "nested mount sources" {
 
-  docker run --runtime=sysbox-runc --rm \
-         -v /mnt/a:/mnt/a \
-         -v /mnt/scratch/a:/mnt/scratch/a \
-         -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-         ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-         echo hello
+	docker run --runtime=sysbox-runc --rm \
+          -v /mnt/a:/mnt/a \
+          -v /mnt/scratch/a:/mnt/scratch/a \
+          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+          ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+          echo hello
 
-  [ "$status" -eq 0 ]
+	[ "$status" -eq 0 ]
 
-  if [ -n "$SHIFT_UIDS" ]; then
+	rmdir /mnt/a
+	rmdir /mnt/scratch/a
 
-    # When using uid shifting, if the mount is on a special dir, and the
-    # source of that mount is a child dir of another bind-mount source,
-    # sysbox-runc will disallow it. Verify this.
+	# If the mount is on a special dir, and the source of that mount is a child
+	# dir of another bind-mount source that requires uid-shifting, sysbox-runc
+	# will disallow it. Verify this.
+	docker run --runtime=sysbox-runc --rm \
+          -v /mnt/scratch:/mnt/scratch \
+          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+          ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+          echo hello
 
-    docker run --runtime=sysbox-runc --rm \
-           -v /mnt/scratch:/mnt/scratch \
-           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-           echo hello
+	[ "$status" -ne 0 ]
 
-    [ "$status" -ne 0 ]
+	# If the mount is on a special dir, and the source of that mount is a child
+	# dir of another bind-mount source that **does not** require uid-shifting,
+	# sysbox-runc will allow it. Verify this.
 
-  else
-    # Without uid shifting, the restriction above does not apply.
+	orig_uid=$(stat -c '%U' /mnt/scratch)
+	orig_gid=$(stat -c '%U' /mnt/scratch)
 
-    docker run --runtime=sysbox-runc --rm \
-           -v /mnt/scratch:/mnt/scratch \
-           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-           echo hello
+	subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+   chown $subid:$subid /mnt/scratch
 
-    [ "$status" -eq 0 ]
-  fi
+	docker run --runtime=sysbox-runc --rm \
+          -v /mnt/scratch:/mnt/scratch \
+          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+          ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+          echo hello
+
+	[ "$status" -eq 0 ]
+
+   chown $orig_uid:$orig_gid /mnt/scratch
 }
 
 @test "shiftfs blacklist" {
