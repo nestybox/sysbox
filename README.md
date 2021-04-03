@@ -132,6 +132,16 @@ the supported Linux distributions and the required kernel releases.
 
 We plan to add support for more distros in the near future.
 
+## Host Requirements
+
+The Sysbox host must meet the following requirements:
+
+* It must be running of the supported Linux distros.
+
+* We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
+  of RAM. Though this is not a hard requirement, smaller configurations may
+  slow down Sysbox.
+
 ## Installing Sysbox
 
 1) Download the latest Sysbox community-edition package from the
