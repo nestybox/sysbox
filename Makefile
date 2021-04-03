@@ -2,22 +2,26 @@
 # Sysbox Makefile
 #
 
-.PHONY: sysbox sysbox-static \
+.PHONY: sysbox sysbox-debug sysbox-static \
+	sysbox-local sysbox-debug-local sysbox-static-local \
 	sysbox-runc sysbox-runc-static sysbox-runc-debug \
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
 	sysbox-ipc \
 	install uninstall \
 	test \
-	test-sysbox test-sysbox-ci test-sysbox-shiftuid test-sysbox-shiftuid-ci test-sysbox-local \
+	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer \
+	test-sysbox-shiftuid test-sysbox-shiftuid-ci test-sysbox-shiftuid-systemd test-sysbox-shiftuid-installer \
 	test-runc test-fs test-mgr \
-	test-shell test-shell-shiftuid \
-	test-fs-local test-mgr-local \
-	test-img test-cleanup \
-	listRuncPkgs listFsPkgs listMgrPkgs \
+	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
+	test-shell-shiftuid test-shell-shiftuid-debug test-shell-shiftuid-systemd test-shell-shiftuid-systemd-debug test-shell-shiftuid-installer test-shell-shiftuid-installer-debug \
+	test-img test-img-systemd test-cleanup \
+	test-sysbox-local test-sysbox-local-installer test-sysbox-local-ci test-fs-local test-mgr-local \
 	sysbox-in-docker sysbox-in-docker-local \
-	test-sind-shell \
-	lint lint-local lint-sysbox-local lint-tests-local shfmt
+	test-sind test-sind-local test-sind-shell \
+	lint lint-local lint-sysbox-local lint-tests-local shfmt \
+	sysbox-runc-recvtty \
+	listRuncPkgs listFsPkgs listMgrPkgs \
 	clean
 
 export SHELL=bash
@@ -108,8 +112,11 @@ export TEST_VOL4
 EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
 EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
 
-# Find out if 'shiftfs' module is present.
-SHIFTUID_ON := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
+# Find out if the host supports uid shifting.
+#
+# NOTE: for now uid shifting necessarily means the presence of the shiftfs kernel module.
+# In the near future, we expect this will be replaced with kernel ID-mapped mounts.
+HOST_SUPPORTS_UID_SHIFT := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
 
 # libseccomp (used by Sysbox components)
 LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
@@ -320,7 +327,7 @@ test-sysbox-installer: test-img-systemd
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
 test-sysbox-shiftuid: test-img
-ifeq ($(SHIFTUID_ON), )
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
@@ -332,7 +339,7 @@ endif
 
 test-sysbox-shiftuid-ci: ## Run sysbox integration tests with uid-shifting (shiftfs) (continuous integration)
 test-sysbox-shiftuid-ci: test-img test-fs test-mgr
-ifeq ($(SHIFTUID_ON), )
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
@@ -344,7 +351,7 @@ endif
 
 test-sysbox-shiftuid-systemd: ## Run sysbox integration tests with uid-shifting (shiftfs) and systemd
 test-sysbox-shiftuid-systemd: test-img-systemd
-ifeq ($(SHIFTUID_ON), )
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting and systemd) **\n\n"
@@ -357,7 +364,7 @@ endif
 
 test-sysbox-shiftuid-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
 test-sysbox-shiftuid-installer: test-img-systemd
-ifeq ($(SHIFTUID_ON), )
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting + systemd + the sysbox installer) **\n\n"
@@ -444,19 +451,30 @@ test-shell-installer-debug: test-img-systemd
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
 test-shell-shiftuid: test-img
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
+endif
 
 test-shell-shiftuid-debug: test-img
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export SHIFT_ROOTFS_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
+endif
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
 test-shell-shiftuid-systemd: test-img-systemd
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
@@ -464,8 +482,12 @@ test-shell-shiftuid-systemd: test-img-systemd
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
+endif
 
 test-shell-shiftuid-systemd-debug: test-img-systemd
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true -e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
@@ -473,9 +495,13 @@ test-shell-shiftuid-systemd-debug: test-img-systemd
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
+endif
 
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
 test-shell-shiftuid-installer: test-img-systemd
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE-$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
@@ -485,8 +511,12 @@ test-shell-shiftuid-installer: test-img-systemd
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
+endif
 
 test-shell-shiftuid-installer-debug: test-img-systemd
+ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
+	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
@@ -497,6 +527,7 @@ test-shell-shiftuid-installer-debug: test-img-systemd
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
+endif
 
 test-img: ## Build test container image
 test-img:
