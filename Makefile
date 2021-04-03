@@ -326,7 +326,7 @@ else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true && testContainerInit && \
+		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
 endif
 
@@ -338,7 +338,7 @@ else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true && testContainerInit && \
+		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
 		make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
 endif
 
@@ -351,7 +351,7 @@ else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
+		export SHIFT_ROOTFS_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 endif
 
@@ -364,7 +364,7 @@ else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_UIDS=true SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
+		export SHIFT_ROOTFS_UIDS=true SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
 		testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
@@ -447,17 +447,17 @@ test-shell-shiftuid: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
-		export SHIFT_UIDS=true && testContainerInit && /bin/bash"
+		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
 
 test-shell-shiftuid-debug: test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
-		export SHIFT_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
+		export SHIFT_ROOTFS_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
 test-shell-shiftuid-systemd: test-img-systemd
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true)
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
@@ -466,7 +466,7 @@ test-shell-shiftuid-systemd: test-img-systemd
 	$(DOCKER_STOP)
 
 test-shell-shiftuid-systemd-debug: test-img-systemd
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true -e DEBUG_ON=true)
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true -e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
@@ -476,7 +476,7 @@ test-shell-shiftuid-systemd-debug: test-img-systemd
 
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
 test-shell-shiftuid-installer: test-img-systemd
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE-$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
@@ -487,7 +487,7 @@ test-shell-shiftuid-installer: test-img-systemd
 	$(DOCKER_STOP)
 
 test-shell-shiftuid-installer-debug: test-img-systemd
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_UIDS=true \
+	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
 		-e DEBUG_ON=true)

@@ -8,7 +8,7 @@ load ../helpers/run
 load ../helpers/sysbox-health
 
 function setup() {
-  if [ -z "$SHIFT_UIDS" ]; then
+  if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
     skip "needs UID shifting"
   fi
 }
