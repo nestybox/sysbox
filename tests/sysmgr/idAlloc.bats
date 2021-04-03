@@ -13,7 +13,7 @@ function teardown() {
 
 @test "uid alloc basic" {
 
-  if [ -z "$SHIFT_UIDS" ]; then
+  if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
     skip "uid shifting disabled"
   fi
 

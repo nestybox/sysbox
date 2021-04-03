@@ -61,3 +61,7 @@ function docker_cont_pid() {
 	local pid=$(__docker inspect -f '{{.State.Pid}}' $cont)
 	echo $pid
 }
+
+function docker_userns_remap() {
+  __docker info -f '{{json .SecurityOptions}}' | grep -q "name=userns";
+}

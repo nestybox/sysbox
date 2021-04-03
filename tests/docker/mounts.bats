@@ -26,11 +26,12 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # when docker runs in user-ns remap mode, docker volume ownership matches that
-  # of the container, so sysbox does not need to mount shiftfs over the volume.
-  if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type shiftfs" ]]
-  else
+  # of the container, so sysbox does not need to mount shiftfs over the volume;
+  # otherwise sysbox must mount shiftfs over the volume.
+  if docker_userns_remap; then
     [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
+  else
+    [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type shiftfs" ]]
   fi
 
   # verify the container can write and read from the volume
