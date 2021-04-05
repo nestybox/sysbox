@@ -50,6 +50,7 @@ function teardown() {
 @test "docker bind mount" {
 
   testDir="/testVol"
+  rm -rf ${testDir}
   mkdir -p ${testDir}
 
   # without uid shifting, the bind source must be accessible by
