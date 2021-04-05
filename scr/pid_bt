@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Given a pid, returns a list consisting of the process itself and its descendants.
+# Borrowed from: https://unix.stackexchange.com/questions/415307/how-to-use-lsof-to-list-all-files-open-by-the-parent-process-and-its-children
+function descendants() {
+	ps -Ao pid= -o ppid= | PID=$1 perl -lae '
+   push @{$children{$F[1]}}, $F[0];
+   sub tree {
+      my @pids=($_[0]);
+      push @pids, tree($_) for @{$children{$_[0]}};
+      return @pids;
+   }
+   END{print for tree $ENV{PID}}'
+}
+
+function usage() {
+	printf "\n"
+	printf "Usage: pid_bt <pid>\n"
+	printf "\n"
+	printf "Lists the kernel stack trace for the given pid, its threads, and all it's \n"
+	printf "child processes and threads. Useful to see if any processes inside a sys container\n"
+	printf "are stuck waiting waiting on a syscall or procfs accesss intercepted by Sysbox.\n"
+	printf "\n"
+	printf "E.g.,\n"
+	printf '   pid_bt <pid-of-first-process-in-sys-container>\n'
+	printf "\n"
+	exit 1
+}
+
+TARGET_PID=$1
+
+if [ -z "$TARGET_PID" ]; then
+	usage
+fi
+
+if [ "$EUID" -ne 0 ]; then
+	echo "Please run as root."
+	exit 1
+fi
+
+pids=$(descendants "$TARGET_PID")
+
+for p in $pids; do
+	# Get the threads for that pid
+	tids=$(ps -T -p $p -o spid=)
+	for t in $tids; do
+		printf "\n --- PID $p TID $t ---\n"
+		cat /proc/${t}/stack
+	done
+done
