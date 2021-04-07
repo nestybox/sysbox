@@ -263,6 +263,14 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
     (dlv) config max-string-len 1000
     ```
 
+- For unit tests, use `dlv test <package> -test.run <test-name>`:
+
+```
+dlv test github.com/nestybox/sysbox-runc/libcontainer/integration -test.run TestSysctl
+```
+
+  Then set a breakpoint at the desired test line and press `c` (continue).
+
 ## Debugging CGO code
 
 To debug cgo code, you must use gdb (delve does not work).
