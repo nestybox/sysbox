@@ -263,6 +263,12 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
     (dlv) config max-string-len 1000
     ```
 
+- Configure max array size:
+
+   ```console
+   (dlv) config max-array-values 600
+   ```
+
 - For unit tests, use `dlv test <package> -test.run <test-name>`:
 
 ```
