@@ -207,7 +207,7 @@ function main() {
 		build_sysbox
 
 		echo "Starting sysbox in debug mode ..."
-		sysbox -d
+		sysbox -d -t
 	else
 		build_sysbox
 
