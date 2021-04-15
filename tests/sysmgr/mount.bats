@@ -123,7 +123,7 @@ load ../helpers/sysbox-health
   docker_stop "$syscont"
 }
 
-@test "chown bind mount special dir" {
+@test "chown-shift bind mount special dir" {
 
   if [ -z "$SHIFT_UIDS" ]; then
     skip "needs UID shifting"
@@ -146,7 +146,7 @@ load ../helpers/sysbox-health
   orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
   orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
 
-  # verify chown is applied when container starts
+  # verify chown-based shifting is applied when container starts
   syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   uid=$(docker_root_uid_map $syscont)
@@ -155,22 +155,136 @@ load ../helpers/sysbox-health
   mnt_src_uid=$(stat -c "%u" $mnt_src)
   mnt_src_gid=$(stat -c "%g" $mnt_src)
 
-  echo "uid=$uid"
-  echo "gid=$gid"
-  echo "mnt_src_uid=$mnt_src_uid"
-  echo "mnt_src_gid=$mnt_src_gid"
-
   [ "$uid" -eq "$mnt_src_uid" ]
   [ "$gid" -eq "$mnt_src_gid" ]
 
-  # verify chown is reverted when container stops
+  #
+  # Have the container create some files on the special dir, with varying ownerships and types.
+  #
+  # The /var/lib/docker dir inside the container will have these files:
+  #
+  # -rw-r--r--    1 root     root             0 Apr 15 00:29 root-file
+  # lrwxrwxrwx    1 root     root            25 Apr 15 00:29 root-file-symlink -> /var/lib/docker/root-file
+  # lrwxrwxrwx    1 root     root            23 Apr 15 00:29 root-file-symlink-bad -> /var/lib/docker/no-file
+  # -rw-r--r--    2 1000     1000             0 Apr 15 00:29 user-file
+  # -rw-r--r--    2 1000     1000             0 Apr 15 00:29 user-file-hardlink
+  # lrwxrwxrwx    1 1000     1000            25 Apr 15 00:29 user-file-symlink -> /var/lib/docker/user-file
+  #
+  # Later we will check if these get chowned correctly when the container is stopped and re-started.
+
+  # root-owned file
+  docker exec "$syscont" sh -c "touch $mnt_dst/root-file"
+  [ "$status" -eq 0 ]
+
+  # symlink to root-owned file
+  docker exec "$syscont" sh -c "ln -s $mnt_dst/root-file $mnt_dst/root-file-symlink"
+  [ "$status" -eq 0 ]
+
+  # dangling symlink
+  docker exec "$syscont" sh -c "ln -s $mnt_dst/no-file $mnt_dst/root-file-symlink-bad"
+  [ "$status" -eq 0 ]
+
+  # user-owned file
+  docker exec "$syscont" sh -c "touch $mnt_dst/user-file && chown 1000:1000 $mnt_dst/user-file"
+  [ "$status" -eq 0 ]
+
+  # symlink to user-owned file
+  docker exec "$syscont" sh -c "ln -s $mnt_dst/user-file $mnt_dst/user-file-symlink && chown -h 1000:1000 $mnt_dst/user-file-symlink"
+  [ "$status" -eq 0 ]
+
+  # hardlink to user-owned file
+  docker exec "$syscont" sh -c "ln $mnt_dst/user-file $mnt_dst/user-file-hardlink"
+  [ "$status" -eq 0 ]
+
+  #
+  # verify chown-based shifting is reverted when container stops
+  #
   docker_stop "$syscont"
 
+  # mount dir
   mnt_src_uid=$(stat -c "%u" $mnt_src)
   mnt_src_gid=$(stat -c "%g" $mnt_src)
-
   [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
   [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
+
+  # root-owned file
+  file_uid=$(stat -c "%u" $mnt_src/root-file)
+  file_gid=$(stat -c "%g" $mnt_src/root-file)
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # symlink to root-owned file
+  file_uid=$(stat -c "%u" $mnt_src/root-file-symlink)
+  file_gid=$(stat -c "%g" $mnt_src/root-file-symlink)
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # dangling symlink
+  file_uid=$(stat -c "%u" $mnt_src/root-file-symlink-bad)
+  file_gid=$(stat -c "%g" $mnt_src/root-file-symlink-bad)
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # user-owned file
+  file_uid=$(stat -c "%u" $mnt_src/user-file)
+  file_gid=$(stat -c "%g" $mnt_src/user-file)
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  # symlink to user-owned file
+  file_uid=$(stat -c "%u" $mnt_src/user-file-symlink)
+  file_gid=$(stat -c "%g" $mnt_src/user-file-symlink)
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  # hardlink to user-owned file
+  file_uid=$(stat -c "%u" $mnt_src/user-file-hardlink)
+  file_gid=$(stat -c "%g" $mnt_src/user-file-hardlink)
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  #
+  # Restart the container with the same mount and verify ownership looks good
+  #
+  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  # root-owned file
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/root-file")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/root-file")
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # symlink to root-owned file
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/root-file-symlink")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/root-file-symlink")
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # dangling symlink
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/root-file-symlink-bad")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/root-file-symlink-bad")
+  [ "$file_uid" -eq 0 ]
+  [ "$file_gid" -eq 0 ]
+
+  # user-owned file
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/user-file")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/user-file")
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  # symlink to user-owned file
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/user-file-symlink")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/user-file-symlink")
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  # hardlink to user-owned file
+  file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/user-file-hardlink")
+  file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/user-file-hardlink")
+  [ "$file_uid" -eq 1000 ]
+  [ "$file_gid" -eq 1000 ]
+
+  docker_stop "$syscont"
 
   rm -rf $mnt_src
 }
