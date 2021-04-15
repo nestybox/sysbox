@@ -5,6 +5,7 @@
 #
 
 load ../helpers/run
+load ../helpers/docker
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -138,36 +139,73 @@ function teardown() {
 
 @test "dockerVolMgr sync-out" {
 
-  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
+	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
 
-  docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/docker/dummyFile"
-  [ "$status" -eq 0 ]
+	if [ -n "$SHIFT_UIDS" ]; then
+		rootfs_uid=0
+		rootfs_gid=0
+	else
+		rootfs_uid=$(docker_root_uid_map $syscont)
+		rootfs_gid=$(docker_root_gid_map $syscont)
+	fi
 
-  docker_stop "$SYSCONT_NAME"
-  [ "$status" -eq 0 ]
+	docker exec "$syscont" sh -c "touch /var/lib/docker/root-file"
+	[ "$status" -eq 0 ]
 
-  # verify that dummy file was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/docker"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "dummyFile" ]]
+	docker exec "$syscont" sh -c "touch /var/lib/docker/user-file"
+	[ "$status" -eq 0 ]
 
-  docker start "$SYSCONT_NAME"
-  [ "$status" -eq 0 ]
+	docker exec "$syscont" sh -c "chown 1000:1000 /var/lib/docker/user-file"
+	[ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "rm /var/lib/docker/dummyFile"
-  [ "$status" -eq 0 ]
+	# stop the container and verify that the files were sync'd to the sys
+	# container's rootfs (with the correct ownership)
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
 
-  docker_stop "$SYSCONT_NAME"
-  [ "$status" -eq 0 ]
+	file_uid=$(stat -c "%u" $rootfs/var/lib/docker/root-file)
+	file_gid=$(stat -c "%g" $rootfs/var/lib/docker/root-file)
+	[ "$file_uid" -eq $rootfs_uid ]
+	[ "$file_gid" -eq $rootfs_gid ]
 
-  # verify that dummy file removal was sync'd to the sys container's rootfs
-  run ls "$rootfs/var/lib/docker"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "" ]]
+	file_uid=$(stat -c "%u" $rootfs/var/lib/docker/user-file)
+	file_gid=$(stat -c "%g" $rootfs/var/lib/docker/user-file)
+	[ "$file_uid" -eq $((rootfs_uid+1000)) ]
+	[ "$file_gid" -eq $((rootfs_gid+1000)) ]
 
-  docker_stop "$SYSCONT_NAME"
-  docker rm "$SYSCONT_NAME"
+	# re-start the container and verify that the files are at the expected
+	# location (and with the correct ownership)
+	docker start "$syscont"
+	[ "$status" -eq 0 ]
+
+	file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/root-file")
+	file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/root-file")
+	[ "$file_uid" -eq 0 ]
+	[ "$file_gid" -eq 0 ]
+
+	file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/user-file")
+	file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/user-file")
+	[ "$file_uid" -eq 1000 ]
+	[ "$file_gid" -eq 1000 ]
+
+	# Remove the files inside the container
+	docker exec "$syscont" sh -c "rm /var/lib/docker/root-file"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "rm /var/lib/docker/user-file"
+	[ "$status" -eq 0 ]
+
+	# Stop the container and verify that file removal was sync'd to the sys container's rootfs
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
+
+	run ls "$rootfs/var/lib/docker"
+	[ "$status" -eq 0 ]
+	[[ "$output" == "" ]]
+
+	docker_stop "$syscont"
+	docker rm "$syscont"
 }
 
 #@test "dockerVolMgr sync-in" {
