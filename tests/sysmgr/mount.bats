@@ -123,7 +123,7 @@ load ../helpers/sysbox-health
   docker_stop "$syscont"
 }
 
-@test "chown-shift bind mount special dir" {
+@test "uid-shift bind mount special dir" {
 
   if [ -z "$SHIFT_UIDS" ]; then
     skip "needs UID shifting"
@@ -133,9 +133,9 @@ load ../helpers/sysbox-health
   local uid
   local gid
 
-  # verify that sysbox-mgr chown's the ownership of a host dir mounted
+  # Verify that sysbox-mgr "shifts" the ownership of a host dir mounted
   # into /var/lib/docker, to match the host uid:gid of the container's
-  # root user.
+  # root user. The shifting is done via chown.
 
   local mnt_src="/mnt/scratch/docker"
   local mnt_dst="/var/lib/docker"
@@ -146,7 +146,7 @@ load ../helpers/sysbox-health
   orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
   orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
 
-  # verify chown-based shifting is applied when container starts
+  # Verify chown-based shifting is applied when container starts
   syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   uid=$(docker_root_uid_map $syscont)
@@ -180,6 +180,13 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "ln -s $mnt_dst/root-file $mnt_dst/root-file-symlink"
   [ "$status" -eq 0 ]
 
+  # ACL on root-owned file
+  docker exec "$syscont" sh -c "apk add acl"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "setfacl -m u:1000:rw,g:1001:r $mnt_dst/root-file"
+  [ "$status" -eq 0 ]
+
   # dangling symlink
   docker exec "$syscont" sh -c "ln -s $mnt_dst/no-file $mnt_dst/root-file-symlink-bad"
   [ "$status" -eq 0 ]
@@ -197,7 +204,7 @@ load ../helpers/sysbox-health
   [ "$status" -eq 0 ]
 
   #
-  # verify chown-based shifting is reverted when container stops
+  # verify the uid shifting is performed when container stops
   #
   docker_stop "$syscont"
 
@@ -218,6 +225,12 @@ load ../helpers/sysbox-health
   file_gid=$(stat -c "%g" $mnt_src/root-file-symlink)
   [ "$file_uid" -eq 0 ]
   [ "$file_gid" -eq 0 ]
+
+  # ACL on root-owned file
+  run sh -c "getfacl -n --omit-header $mnt_src/root-file | grep 'user:1000:rw-'"
+  [ "$status" -eq 0 ]
+  run sh -c "getfacl -n --omit-header $mnt_src/root-file | grep 'group:1001:r--'"
+  [ "$status" -eq 0 ]
 
   # dangling symlink
   file_uid=$(stat -c "%u" $mnt_src/root-file-symlink-bad)
@@ -244,7 +257,7 @@ load ../helpers/sysbox-health
   [ "$file_gid" -eq 1000 ]
 
   #
-  # Restart the container with the same mount and verify ownership looks good
+  # Create a new container with the same mount and verify ownership looks good
   #
   syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
@@ -259,6 +272,14 @@ load ../helpers/sysbox-health
   file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst/root-file-symlink")
   [ "$file_uid" -eq 0 ]
   [ "$file_gid" -eq 0 ]
+
+  # ACL on root-owned file
+  docker exec "$syscont" sh -c "apk add acl"
+  [ "$status" -eq 0 ]
+  docker exec "$syscont" sh -c "getfacl -n --omit-header $mnt_dst/root-file | grep 'user:1000:rw-'"
+  [ "$status" -eq 0 ]
+  docker exec "$syscont" sh -c "getfacl -n --omit-header $mnt_dst/root-file | grep 'group:1001:r--'"
+  [ "$status" -eq 0 ]
 
   # dangling symlink
   file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst/root-file-symlink-bad")
