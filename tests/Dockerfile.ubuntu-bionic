@@ -25,6 +25,7 @@ ARG k8s_version=v1.18.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
+    acl \
     build-essential \
     automake \
     autoconf \

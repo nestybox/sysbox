@@ -24,6 +24,7 @@ FROM fedora:31
 ARG k8s_version=v1.18.2
 
 RUN dnf update -y && dnf install -y \
+    acl \
     yum-utils \
     automake \
     autoconf \
