@@ -104,7 +104,7 @@ The `/etc/docker/daemon.json` file should have an entry for `sysbox-runc` as fol
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     }
 }
@@ -126,7 +126,7 @@ When creating a system container, Docker may report the following error:
 ```
 # docker run --runtime=sysbox-runc -it --rm nestybox/alpine-docker
 33a50b33f0e23f7ce9c2e42b9c6521d91ab1f833b9b8cd5884d8f32c60dfd144
-docker: Error response from daemon: OCI runtime create failed: unable to retrieve OCI runtime error (open /run/containerd/io.containerd.runtime.v1.linux/moby/33a50b33f0e23f7ce9c2e42b9c6521d91ab1f833b9b8cd5884d8f32c60dfd144/log.json: no such file or directory): /usr/local/sbin/sysbox-runc did not terminate successfully: unknown.
+docker: Error response from daemon: OCI runtime create failed: unable to retrieve OCI runtime error (open /run/containerd/io.containerd.runtime.v1.linux/moby/33a50b33f0e23f7ce9c2e42b9c6521d91ab1f833b9b8cd5884d8f32c60dfd144/log.json: no such file or directory): /usr/bin/sysbox-runc did not terminate successfully: unknown.
 ```
 
 This can occur is distros such as Fedora and CentOS where `shiftfs` is not
@@ -143,7 +143,7 @@ To solve it, please configure Docker with userns-remap as follows:
    "userns-remap": "sysbox",
    "runtimes": {
       "sysbox-runc": {
-         "path": "/usr/local/sbin/sysbox-runc"
+         "path": "/usr/bin/sysbox-runc"
       }
    }
 }
@@ -190,7 +190,7 @@ follows:
    "userns-remap": "sysbox",
    "runtimes": {
       "sysbox-runc": {
-         "path": "/usr/local/sbin/sysbox-runc"
+         "path": "/usr/bin/sysbox-runc"
       }
    }
 }

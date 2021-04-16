@@ -95,7 +95,7 @@ function teardown() {
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     }
 }
@@ -166,7 +166,7 @@ EOF
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     }
 }
@@ -241,10 +241,10 @@ EOF
 {
     "runtimes": {
 	      "dummy-runc": {
-		        "path": "/usr/local/sbin/dummy-runc"
+		        "path": "/usr/bin/dummy-runc"
 	      },
 	      "sysbox-runc": {
-		        "path": "/usr/local/sbin/sysbox-runc"
+		        "path": "/usr/bin/sysbox-runc"
 	      }
     }
 }
@@ -320,10 +320,10 @@ EOF
 {
     "runtimes": {
 	      "dummy-runc": {
-		        "path": "/usr/local/sbin/dummy-runc"
+		        "path": "/usr/bin/dummy-runc"
 	      },
 	      "sysbox-runc": {
-		        "path": "/usr/local/sbin/sysbox-runc"
+		        "path": "/usr/bin/sysbox-runc"
 	      }
     }
 }
@@ -1015,7 +1015,7 @@ EOF
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     }
 }
@@ -1104,7 +1104,7 @@ EOF
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     }
 }

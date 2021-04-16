@@ -145,14 +145,14 @@ function install_sysbox_pkg() {
 	# (need this flag inside the test container). Also, add '--log-level debug'
 	# knob to sysbox-fs/mgr if requested.
 	if [ -n "$DEBUG_ON" ]; then
-		sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --log-level debug --ignore-handler-errors|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log-level debug --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service && \
-		sed -i 's|ExecStart=/usr/local/sbin/sysbox-mgr|ExecStart=/usr/local/sbin/sysbox-mgr --log-level debug|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log-level debug|g' \
 			/lib/systemd/system/sysbox-mgr.service && \
 		systemctl daemon-reload && \
 		systemctl restart sysbox.service
 	else
-		sed -i 's|ExecStart=/usr/local/sbin/sysbox-fs|ExecStart=/usr/local/sbin/sysbox-fs --ignore-handler-errors|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service && \
 		systemctl daemon-reload && \
 		systemctl restart sysbox.service
@@ -197,8 +197,8 @@ function main() {
 	trap 'rm -f "${tmpfile}"' EXIT
 
 	# Install helper scripts
-	install -D -m0755 scr/sysbox /usr/local/sbin/sysbox
-	install -D -m0755 scr/docker-cfg /usr/local/sbin/docker-cfg
+	install -D -m0755 scr/sysbox /usr/bin/sysbox
+	install -D -m0755 scr/docker-cfg /usr/bin/docker-cfg
 
    # Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then

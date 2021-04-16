@@ -664,7 +664,7 @@ K8s.io KinD + Sysbox).
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     },
     "default-runtime": "sysbox-runc"

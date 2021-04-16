@@ -191,7 +191,7 @@ function docker_setup() {
     "userns-remap": "sysbox",
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     },
     "bip": "172.25.0.1/16",
@@ -210,7 +210,7 @@ EOF
     "userns-remap": "",
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc",
+            "path": "/usr/bin/sysbox-runc",
             "runtimeArgs": [
                 "--no-kernel-check"
             ]

@@ -240,14 +240,14 @@ function docker_config_network() {
 
 		 # If no 'runtimes' key-entry is present, proceed to add one.
 		 if [ $(jq 'has("runtimes")' ${tmpCfgFile}) = "false" ]; then
-			 jq --indent 4 '. + {"runtimes": {"sysbox-runc": {"path": "/usr/local/sbin/sysbox-runc"}}}' \
+			 jq --indent 4 '. + {"runtimes": {"sysbox-runc": {"path": "/usr/bin/sysbox-runc"}}}' \
              ${tmpCfgFile} > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
 
 			 docker_runtime_config_changed="true"
 
 			 # If no 'sysbox-runc' runtime entry is present, proceed to add it.
 		 elif [ $(jq '.runtimes | has("sysbox-runc")' ${tmpCfgFile}) = "false" ]; then
-			 jq --indent 4 '.runtimes |= . + {"sysbox-runc": {"path": "/usr/local/sbin/sysbox-runc"}}' \
+			 jq --indent 4 '.runtimes |= . + {"sysbox-runc": {"path": "/usr/bin/sysbox-runc"}}' \
              ${tmpCfgFile} > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
 
 			 docker_runtime_config_changed="true"

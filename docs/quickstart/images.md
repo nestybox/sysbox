@@ -30,7 +30,7 @@ Below are the steps:
 {
     "runtimes": {
         "sysbox-runc": {
-            "path": "/usr/local/sbin/sysbox-runc"
+            "path": "/usr/bin/sysbox-runc"
         }
     },
     "default-runtime": "sysbox-runc"
