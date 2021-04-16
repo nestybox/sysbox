@@ -104,7 +104,7 @@ $ sudo make install
 ```
 
 This last target simply copies the Sysbox binaries to your machine's
-`/usr/local/sbin` directory; we don't have a package installer for Sysbox
+`/usr/bin` directory; we don't have a package installer for Sysbox
 (unlike the Sysbox version distributed by Nestybox).
 
 ## Starting Sysbox
@@ -141,7 +141,7 @@ This will add the sysbox-runtime in the `/etc/docker/daemon.json` as follows:
 {
    "runtimes": {
        "sysbox-runc": {
-          "path": "/usr/local/sbin/sysbox-runc"
+          "path": "/usr/bin/sysbox-runc"
        }
    }
 }

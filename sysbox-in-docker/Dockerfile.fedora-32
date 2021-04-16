@@ -64,8 +64,8 @@ COPY s6-services /etc/services.d/
 COPY sysbox /etc/cont-init.d/
 
 # Copy Sysbox artifacts.
-COPY sysbox-mgr /usr/local/sbin/sysbox-mgr
-COPY sysbox-fs /usr/local/sbin/sysbox-fs
-COPY sysbox-runc /usr/local/sbin/sysbox-runc
+COPY sysbox-mgr /usr/bin/sysbox-mgr
+COPY sysbox-fs /usr/bin/sysbox-fs
+COPY sysbox-runc /usr/bin/sysbox-runc
 
 ENTRYPOINT ["/init"]

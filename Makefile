@@ -46,7 +46,7 @@ PROJECT := /root/nestybox/sysbox
 
 # Sysbox binary targets destination.
 ifeq ($(DESTDIR),)
-INSTALL_DIR := /usr/local/sbin
+INSTALL_DIR := /usr/bin
 else
 INSTALL_DIR := ${DESTDIR}
 endif

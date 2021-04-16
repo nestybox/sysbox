@@ -39,7 +39,7 @@ In order to reconfigure Sysbox, do the following:
 $ sudo sed -i --follow-symlinks '/^ExecStart/ s/$/ --log-level debug/' /lib/systemd/system/sysbox-fs.service
 $
 $ egrep "ExecStart" /lib/systemd/system/sysbox-fs.service
-ExecStart=/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug
+ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug
 ```
 
 3.  Reload Systemd to digest the previous change:
@@ -128,7 +128,7 @@ You can change the location of the Sysbox data store by passing the
 `--data-root` option to the Sysbox Manager daemon via its associated
 systemd service:
 
-    ExecStart=/usr/local/sbin/sysbox-mgr --data-root /some/other/dir
+    ExecStart=/usr/bin/sysbox-mgr --data-root /some/other/dir
 
 Once reconfigured, restart the Sysbox systemd service as described in
 [Reconfiguration Procedure](#reconfiguration-procedure) above.

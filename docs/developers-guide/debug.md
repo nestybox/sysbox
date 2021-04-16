@@ -318,10 +318,10 @@ Instructions:
 4) Point gdb to the sysbox-runc binary so it can load the symbols:
 
 ```console
-    (gdb) file /usr/local/sbin/sysbox-runc
+    (gdb) file /usr/bin/sysbox-runc
     A program is being debugged already.
     Are you sure you want to change the file? (y or n) y
-    Reading symbols from /usr/local/sbin/sysbox-runc...
+    Reading symbols from /usr/bin/sysbox-runc...
     Loading Go Runtime support.
 
     (gdb) bt
@@ -380,4 +380,4 @@ Instructions:
 Tip: if you are running sysbox-runc inside the test container, run gdb at host level,
 use pstree to figure out the pid of sysbox-runc nsenter child process inside the test container,
 and point gdb to the sysbox-runc binary inside the test container (e.g.,
-`file /var/lib/docker/overlay2/860f62b3bd74c36be6754c8ed8e3f77a63744a2c6b16bef058b22ba0185e2877/merged/usr/local/sbin/sysbox-runc`).
+`file /var/lib/docker/overlay2/860f62b3bd74c36be6754c8ed8e3f77a63744a2c6b16bef058b22ba0185e2877/merged/usr/bin/sysbox-runc`).

@@ -102,7 +102,7 @@ function systemd_env() {
 function sysbox_mgr_start() {
 
 	# Note: here we assume sysbox-mgr is started with this command
-	cmd="/usr/local/sbin/sysbox-mgr --log /var/log/sysbox-mgr.log"
+	cmd="/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log"
 
 	if [ -n "$SB_INSTALLER" ]; then
 		systemd_unit="/lib/systemd/system/sysbox-mgr.service"
@@ -143,7 +143,7 @@ function sysbox_mgr_stopped() {
 function sysbox_fs_start() {
 
 	# Note: here we assume sysbox-fs is started with this command
-	cmd="/usr/local/sbin/sysbox-fs --log /var/log/sysbox-fs.log"
+	cmd="/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log"
 
 	if [ -n "$SB_INSTALLER" ]; then
 		systemd_unit="/lib/systemd/system/sysbox-fs.service"

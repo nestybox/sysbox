@@ -66,7 +66,7 @@ $ sudo systemctl status sysbox -n20
       Tasks: 2 (limit: 9487)
      Memory: 792.0K
      CGroup: /system.slice/sysbox.service
-             ├─2305016 /bin/sh -c /usr/local/sbin/sysbox-runc --version && /usr/local/sbin/sysbox-mgr --version && /usr/local/sbin/sysbox-fs --version && /bin/sleep infinity
+             ├─2305016 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
              └─2305039 /bin/sleep infinity
 
 Mar 27 00:15:36 dev-vm1 systemd[1]: Started Sysbox container runtime.
@@ -110,7 +110,7 @@ configuration to `/etc/docker/daemon.json` and sending a signal (SIGHUP) to Dock
 {
    "runtimes": {
       "sysbox-runc": {
-         "path": "/usr/local/sbin/sysbox-runc"
+         "path": "/usr/bin/sysbox-runc"
       }
    }
 }
@@ -158,7 +158,7 @@ will need to make these changes manually and restart Docker service afterwards (
    "userns-remap": "sysbox",
    "runtimes": {
        "sysbox-runc": {
-          "path": "/usr/local/sbin/sysbox-runc"
+          "path": "/usr/bin/sysbox-runc"
        }
    }
 }
