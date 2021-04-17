@@ -165,7 +165,7 @@ function verify_syscont_overlay_umnt() {
   local syscont=$1
   local mnt_path=$2
 
-  docker exec "$syscont" bash -c "mount | grep \"overlay on $mnt_path type overlay"
+  docker exec "$syscont" bash -c "mount | grep \"overlay on $mnt_path type overlay\""
   [ "$status" -eq 1 ]
 
   true
