@@ -31,9 +31,25 @@ SYSFS_PROC="/proc/uptime \
 SYSFS_PROC_SYS="/proc/sys/net/netfilter/nf_conntrack_max \
                 /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_close_wait \
                 /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established \
-					 /proc/sys/net/netfilter/nf_conntrack_generic_timeout \
-					 /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal \
-					 /proc/sys/net/core/somaxconn \
+                /proc/sys/net/netfilter/nf_conntrack_generic_timeout \
+                /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal \
+                /proc/sys/net/core/somaxconn \
+                /proc/sys/net/ipv4/neigh/lo/anycast_delay \
+                /proc/sys/net/ipv4/neigh/lo/app_solicit \
+                /proc/sys/net/ipv4/neigh/lo/base_reachable_time \
+                /proc/sys/net/ipv4/neigh/lo/base_reachable_time_ms \
+                /proc/sys/net/ipv4/neigh/lo/delay_first_probe_time \
+                /proc/sys/net/ipv4/neigh/lo/gc_stale_time \
+                /proc/sys/net/ipv4/neigh/lo/locktime \
+                /proc/sys/net/ipv4/neigh/lo/mcast_resolicit \
+                /proc/sys/net/ipv4/neigh/lo/mcast_solicit \
+                /proc/sys/net/ipv4/neigh/lo/proxy_delay \
+                /proc/sys/net/ipv4/neigh/lo/proxy_qlen \
+                /proc/sys/net/ipv4/neigh/lo/retrans_time \
+                /proc/sys/net/ipv4/neigh/lo/retrans_time_ms \
+                /proc/sys/net/ipv4/neigh/lo/ucast_solicit \
+                /proc/sys/net/ipv4/neigh/lo/unres_qlen \
+                /proc/sys/net/ipv4/neigh/lo/unres_qlen_bytes \
                 /proc/sys/net/ipv4/vs/expire_nodest_conn \
                 /proc/sys/net/ipv4/vs/expire_quiescent_template \
                 /proc/sys/net/ipv4/vs/conn_reuse_mode \
