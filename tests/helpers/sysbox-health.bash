@@ -9,7 +9,7 @@
 
 SYSBOX_MGR_NAME=sysbox-mgr
 SYSBOX_MGR_LOG=/var/log/sysbox-mgr.log
-SYSBOX_MGR_MAX_FDS=30
+SYSBOX_MGR_MAX_FDS=40
 
 SYSBOX_FS_NAME=sysbox-fs
 SYSBOX_FS_LOG=/var/log/sysbox-fs.log
