@@ -140,6 +140,14 @@ function sysbox_mgr_stopped() {
 	fi
 }
 
+function sysbox_mgr_started() {
+	tail -f /var/log/sysbox-mgr.log | grep -q Ready
+}
+
+function sysbox_fs_started() {
+	tail -f /var/log/sysbox-fs.log | grep -q Ready
+}
+
 function sysbox_fs_start() {
 
 	# Note: here we assume sysbox-fs is started with this command
@@ -159,8 +167,8 @@ function sysbox_fs_start() {
 		bats_bg ${cmd} $@
 	fi
 
-	# TODO: find a better way to know when sysbox-fs is ready
 	sleep 2
+	retry_run 10 1 grep -q "Ready" /var/log/sysbox-fs.log
 }
 
 function sysbox_fs_stop() {
@@ -194,7 +202,10 @@ function sysbox_start() {
 		bats_bg sysbox -t
 	fi
 
-	sleep 2
+  retry_run 10 1 sysbox_fs_started
+  retry_run 10 1 sysbox_mgr_started
+
+  sleep 2
 }
 
 function sysbox_stop() {
