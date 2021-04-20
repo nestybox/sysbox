@@ -223,7 +223,7 @@ function sysbox_fs_start() {
 	sysbox-fs ${fs_options[@]} &
 
 	sleep 1
-	res=$(retry 10 1 grep -q Initiating /var/log/sysbox-fs.log)
+	res=$(retry 10 1 grep -q Ready /var/log/sysbox-fs.log)
 	if [ $? -ne 0 ]; then
 		printf "\nsysbox-fs failed to start. Here is the log file:\n"
 		cat /var/log/sysbox-fs.log
