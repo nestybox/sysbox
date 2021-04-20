@@ -86,7 +86,7 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
     Then start the debugger and attach it to the sysbox-runc process via the PID:
 
     ```console
-    rodny@vm-1:~/wsp/sysbox/sysbox$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" /home/rodny/go/bin/dlv attach 26558
+    rodny@vm-1:~/wsp/sysbox/sysbox$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) attach $(pidof sysbox-runc)
     ```
 
     Notice that to allow Golang runtime to operate as we expect, we must
