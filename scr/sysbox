@@ -180,6 +180,8 @@ function sysbox_stop() {
 		[[ $VERBOSE ]] && printf "Stopping sysbox-fs\n"
 		kill $pid
 	done
+
+	sleep 2
 }
 
 function sysbox_mgr_start() {
