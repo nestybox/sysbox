@@ -14,6 +14,7 @@
 -   [Sysbox Logs](#sysbox-logs)
 -   [The `/var/lib/sysbox` is not empty even though there are no containers](#the-varlibsysbox-is-not-empty-even-though-there-are-no-containers)
 -   [Kubernetes-in-Docker fails to create pods](#kubernetes-in-docker-fails-to-create-pods)
+-   [Core-Dump generation](#core-dump-generation)
 
 ## Sysbox Installation Problems
 
@@ -471,3 +472,56 @@ this case you'll see messages like these ones in the kubelet log:
 
 To overcome this, make some more storage room in your host and redeploy the
 pods.
+
+
+## Core-Dump generation
+
+If problem cannot be explained by any of the previous bullets, then it may be
+helpful to obtain core-dumps for both of the Sysbox daemons (i.e. `sysbox-fs` and
+`sysbox-mgr`). As an example, find below the instructions to generate a core-dump
+for `sysbox-fs` process.
+
+- Enable core-dump creation by making use of the `ulimit` command:
+
+    ```console
+    $ ulimit -c unlimited
+    ```
+
+- We make use of the `gcore` tool to create core-dumps, which is usually included
+as part of the `gdb` package in most of the Linux distros. Install `gdb` if not
+already present in the system:
+
+    For Debian / Ubuntu distros:
+
+    ```console
+    $ sudo apt-get install gdb
+    ```
+
+    For Fedora / CentOS / Redhat / rpm-based distros:
+
+    ```console
+    $ sudo yum install gdb
+    ```
+
+- Create core-dump file. Notice that Sysbox containers will continue to operate as
+usual during (and after) the execution of this instruction, so no service impact
+is expected.
+
+    ```console
+    $ sudo gcore `pidof sysbox-fs`
+    ...
+    Saved corefile core.195835
+    ...
+    ```
+
+- Compress created core file:
+
+    ```console
+    $ sudo tar -zcvf core.195835.tar.gz core.195835
+
+    $ ls -lrth core.195835.tar.gz
+    -rw-r--r-- 1 root root 8.4M Apr 20 15:36 core.195835.tar.gz
+    ```
+
+- Create a Sysbox [issue](https://github.com/nestybox/sysbox/issues) and provide
+a link to the generated core-dump.
