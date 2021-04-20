@@ -142,7 +142,7 @@ function teardown() {
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 	local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
 
-	if [ -n "$SHIFT_UIDS" ]; then
+	if [ -n "$SHIFT_ROOTFS_UIDS" ]; then
 		rootfs_uid=0
 		rootfs_gid=0
 	else
