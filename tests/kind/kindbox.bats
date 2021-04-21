@@ -242,12 +242,15 @@ EOF
 
   # verify the service is exposed on all nodes of the cluster
   node_ip=$(k8s_node_ip $controller)
-  curl -s $node_ip:$svc_port | grep "Welcome to nginx"
+
+  run sh -c "curl -s $node_ip:$svc_port | grep \"Welcome to nginx\""
+  [ "$status" -eq 0 ]
 
   for i in `seq 0 $(( $num_workers - 1 ))`; do
-    local worker=${cluster}-worker-$i
-    node_ip=$(k8s_node_ip $worker)
-    curl -s $node_ip:$svc_port | grep -q "Welcome to nginx"
+	  local worker=${cluster}-worker-$i
+	  node_ip=$(k8s_node_ip $worker)
+	  run sh -c "curl -s $node_ip:$svc_port | grep -q \"Welcome to nginx\""
+	  [ "$status" -eq 0 ]
   done
 
   # verify we can access the service from within a pod in the cluster
