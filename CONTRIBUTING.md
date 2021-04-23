@@ -47,6 +47,9 @@ been reported (and we want to avoid multiple bugs for the same issue).
 
 * Include information about the host's Linux version (e.g., `lsb_release`, `uname -a`).
 
+* If appropriate, consider generating a core-dump of the Sysbox daemon that is
+not operating as expected. Refer to this [link](docs/user-guide/troubleshoot.md#core-dump-generation) for the details.
+
 ### Feature requests
 
 * Create a GitHub issue with the label "Enhancement"
