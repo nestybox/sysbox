@@ -6,7 +6,7 @@ This document provides tips on how to debug Sysbox.
 
 -   [Debug Makefile Targets](#debug-makefile-targets)
 -   [Debugger instructions](#debugger-instructions)
--   [Useful Debugger Options](#useful-debugger-options)
+-   [Core-dump debugging](#core-dump-debugging)
 -   [Debugging CGO code](#debugging-cgo-code)
 
 ## Debug Makefile Targets
@@ -271,11 +271,69 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
 - For unit tests, use `dlv test <package> -test.run <test-name>`:
 
-```
-dlv test github.com/nestybox/sysbox-runc/libcontainer/integration -test.run TestSysctl
-```
+    ```console
+    dlv test github.com/nestybox/sysbox-runc/libcontainer/integration -test.run TestSysctl
+    ```
 
   Then set a breakpoint at the desired test line and press `c` (continue).
+
+## Core-dump Debugging
+
+### Core-dump creation
+
+As it's usually the case, core-dumps can be generated either through the `gcore`
+tool (provided as part of the `gdb` package), or within the `dlv` debugger itself.
+Refer to this [link](docs/user-guide/troubleshoot.md#core-dump-generation) for
+details about the former procedure. For the later, proceed as below.
+
+Let's pick sysbox-fs as an example ...
+
+    ```console
+    dev-vm1:~/wsp/sysbox$ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) attach `pidof sysbox-fs`
+    Type 'help' for list of commands.
+
+    # Generate core-dump
+
+    (dlv) dump core.sysbox-fs.1
+    Dumping memory 203239424 / 203239424...
+
+    # Exit delve without killing the process to avoid any service disruption.
+
+    (dlv) quit
+    Would you like to kill the process? [Y/n] n
+
+    dev-vm1:~/wsp/04-14-2021/sysbox$ ls -lh core.sysbox-fs.1
+    -rw-r--r-- 1 root root 194M Apr 24 00:04 core.sysbox-fs.1
+
+    # Compress the obtained core-dump file.
+
+    dev-vm1:~/wsp/sysbox$ sudo tar -zcvf core.sysbox-fs.1.tar.gz core.sysbox-fs.1
+    core.sysbox-fs.1
+
+    dev-vm1:~/wsp/sysbox$ ls -lh core.sysbox-fs.1.tar.gz
+    -rw-r--r-- 1 root root 7.2M Apr 24 00:05 core.sysbox-fs.1.tar.gz
+    ```
+
+### Core-dump inspection
+
+To load and debug a previously generated core-dump do the following.
+
+* If debugging from your host:
+
+    ```console
+    $ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) core sysbox-fs/sysbox-fs ./core.sysbos-fs.1
+    ```
+
+* If debugging from Sysbox's dev/test container:
+
+    ```console
+    $ dlv core sysbox-fs/sysbox-fs ./core.sysbox-fs.1
+    ```
+
+In both cases above, `sysbox-fs/sysbox-fs` refers to the path where to find the
+binary being debugged. Obviously, this binary should fully match the one utilized
+to generate the original core-dump.
+
 
 ## Debugging CGO code
 
