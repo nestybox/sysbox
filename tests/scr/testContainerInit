@@ -110,7 +110,7 @@ function crio_config() {
 
 	# Add Sysbox to CRI-O's list of runtimes
 	ret=$(dasel put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
-			"runtime_path=/usr/local/sbin/sysbox-runc" "runtime_type=oci")
+			"runtime_path=/usr/bin/sysbox-runc" "runtime_type=oci")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
