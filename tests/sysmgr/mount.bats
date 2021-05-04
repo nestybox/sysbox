@@ -173,7 +173,7 @@ load ../helpers/sysbox-health
   orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
 
   # Verify chown-based shifting is applied when container starts
-  syscont=$(docker_run --rm -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+  syscont=$(docker_run -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
   uid=$(docker_root_uid_map $syscont)
   gid=$(docker_root_gid_map $syscont)
@@ -281,6 +281,27 @@ load ../helpers/sysbox-health
   file_gid=$(stat -c "%g" $mnt_src/user-file-hardlink)
   [ "$file_uid" -eq 1000 ]
   [ "$file_gid" -eq 1000 ]
+
+  #
+  # verify uid shifting applied again when the container is restarted
+  #
+  docker start "$syscont"
+  [ "$status" -eq 0 ]
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+  [ "$uid" -eq "$mnt_src_uid" ]
+  [ "$gid" -eq "$mnt_src_gid" ]
+
+  docker_stop "$syscont"
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+  [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
+  [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
+
+  docker rm "$syscont"
+  [ "$status" -eq 0 ]
 
   #
   # Create a new container with the same mount and verify ownership looks good
