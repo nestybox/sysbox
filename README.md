@@ -56,7 +56,7 @@ The complete list of features is [here](#sysbox-features).
 ***
 
 **NOTE: We are working on enabling Kubernetes to deploy pods with Sysbox (aka "Sysbox Pods").
-This way you can use K8s to orchestrate rootless "VM-like" containers, capable
+This way you can use K8s to orchestrate secure "VM-like" containers, capable
 of running systemd, Docker, and even K8s itself. If you are interested in this, there
 is a preview that you can try [here](https://github.com/nestybox/sysbox-pods-preview).**
 
@@ -326,8 +326,8 @@ Please see our [Roadmap](#roadmap) for a list of features we are working on.
 Though Sysbox is OCI-based (and thus compatible with OCI container managers),
 it's currently only tested with Docker / containerd.
 
-In particular, we don't yet support using Kubernetes to deploy system containers
-with Sysbox (though we [plan to](#roadmap)).
+In particular, we don't yet officially support using Kubernetes to deploy system containers
+with Sysbox (though there is a preview version of this feature [here](https://github.com/nestybox/sysbox-pods-preview)).
 
 ## Performance
 
@@ -416,7 +416,7 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 -   Support for more Linux distros.
 
--   Support for deploying system containers with Kubernetes.
+-   Support for deploying system containers with Kubernetes (almost ready, see [here](https://github.com/nestybox/sysbox-pods-preview) for a preview).
 
 -   More improvements to procfs and sysfs virtualization.
 
