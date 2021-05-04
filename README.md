@@ -53,6 +53,17 @@ learn new tools.
 
 The complete list of features is [here](#sysbox-features).
 
+***
+
+**NOTE: We are working on enabling Kubernetes to deploy pods with Sysbox (aka "Sysbox Pods").
+This way you can use K8s to orchestrate rootless "VM-like" containers, capable
+of running systemd, Docker, and even K8s itself. If you are interested in this, there
+is a preview that you can try [here](https://github.com/nestybox/sysbox-pods-preview).**
+
+**We expect to merge this feature into this repo in the coming weeks.**
+
+***
+
 ## Contents
 
 -   [License](#license)
