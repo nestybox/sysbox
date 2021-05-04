@@ -27,6 +27,32 @@ load ../helpers/sysbox-health
   docker_stop "$syscont"
 }
 
+# verify sys container mount for /lib/modules/<kernel> is still there after a container restart
+@test "kernel lib-module mount survives restart" {
+
+  local kernel_rel=$(uname -r)
+  local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+  docker_stop "$syscont"
+
+  docker start "$syscont"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
+  [ "$status" -eq 0 ]
+
+  if [ -n "$SHIFT_UIDS" ]; then
+    [[ "$output" =~ "/lib/modules/${kernel_rel} on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+  else
+    [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
+  fi
+
+  docker_stop "$syscont"
+
+  docker rm "$syscont"
+  [ "$status" -eq 0 ]
+}
+
 # Verify that Ubuntu sys container has kernel-headers in the expected path.
 @test "kernel headers mounts (ubuntu)" {
 
