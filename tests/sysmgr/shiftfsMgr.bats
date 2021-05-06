@@ -5,6 +5,7 @@
 #
 
 load ../helpers/run
+load ../helpers/fs
 load ../helpers/sysbox-health
 
 function setup() {
@@ -17,7 +18,6 @@ function teardown() {
   sysbox_log_check
 }
 
-
 @test "shiftfsMgr basic" {
 
   local kernel_rel=$(uname -r)
@@ -25,40 +25,42 @@ function teardown() {
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
 
+  # verify that /var/lib/sysbox/shiftfs has root-only access (for security)
+  verify_perm_owner "drwx------" "root" "root" $(ls -l /var/lib/sysbox | grep shiftfs)
+
   SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   # verify things look good inside the sys container
-
   docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep \"^/\""
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/ ".+"shiftfs rw,relatime" ]]
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/etc\""
   [ "$status" -eq 0 ]
-  [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
-  [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs rw,relatime" ]]
+  [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
+  [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
+  [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs ro,relatime" ]]
+  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs ro,relatime" ]]
+  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
   # verify things look good on the host
   run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
+  [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"/lib/modules/${kernel_rel}".+"shiftfs" ]]
 
   run sh -c "findmnt | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
+  [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
 
   run sh -c "findmnt | grep shiftfs | grep \"/var/lib/docker/containers\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs" ]]
+  [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs" ]]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers"'
   [ "$status" -eq 0 ]
@@ -94,30 +96,32 @@ function teardown() {
 
     docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/etc\""
     [ "$status" -eq 0 ]
-    [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
-    [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/docker/containers/${syscont_name[$i]}".+"shiftfs rw,relatime" ]]
+	 [[ "${lines[0]}" =~ "/etc/resolv.conf".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
+	 [[ "${lines[1]}" =~ "/etc/hostname".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
+	 [[ "${lines[2]}" =~ "/etc/hosts".+"/var/lib/sysbox/shiftfs/".+"shiftfs rw,relatime" ]]
 
     docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/lib/modules/${kernel_rel}\""
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs ro,relatime" ]]
+	 [[ "$output" =~ "/lib/modules/${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
     docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs ro,relatime" ]]
+	 [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
   done
 
-  # verify mounts on host look good; there should only be one shiftfs mount on lib-modules and kernel-headers
-  run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\" | wc -l"
+  # verify mounts on host look good; there should only be one shiftfs mount on
+  # lib-modules and kernel-headers (it's shared among all containers)
+  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"/lib/modules/${kernel_rel}\" | wc -l"
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
-  run sh -c "mount | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\" | wc -l"
+  run sh -c "mount | grep \"/var/lib/sysbox/shiftfs\" | grep \"/usr/src/linux-headers-${kernel_rel}\" | wc -l"
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
-  # and there should be a per-container mount on /var/lib/docker/...
-  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
+  # and there should be a per-container shiftfs mount on /var/lib/docker/containers
+  run sh -c 'findmnt | grep "/var/lib/sysbox/shiftfs" | grep "/var/lib/docker/containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq "$num_syscont" ]
 
+  # and a per-container shiftfs mount on the container's rootfs
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq "$num_syscont" ]
 
@@ -126,15 +130,15 @@ function teardown() {
     docker_stop "${syscont_name[$i]}"
   done
 
-  run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\""
+  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c "findmnt | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"/usr/src/linux-headers-${kernel_rel}\""
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | wc -l'
+  run sh -c 'findmnt | grep "/var/lib/sysbox/shiftfs" | grep "/var/lib/docker/containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
 
   run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker" | grep -v "containers" | wc -l'
@@ -175,6 +179,10 @@ function teardown() {
   run sh -c "findmnt | grep shiftfs | grep $bind_src | wc -l"
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
 
+  # sysbox should not have allocated a shiftfs mount for $bind_src under /var/lib/sysbox/shiftfs
+  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep $bind_src"
+  [ "$status" -ne 0 ]
+
   # stop sys container and verify that shiftfs mount on the bind-mount directory remains
   docker_stop "$SYSCONT_NAME"
   run sh -c "findmnt | grep shiftfs | grep $bind_src | wc -l"
@@ -213,6 +221,9 @@ function teardown() {
   docker_stop "$SYSCONT_NAME"
   run sh -c 'findmnt | grep shiftfs'
   [ "$status" -eq 1 ]
+
+  run rm -rf "$bind_src"
+  [ "$status" -eq 0 ]
 }
 
 @test "shiftfsMgr shiftfs no-exec on host" {
@@ -252,7 +263,7 @@ function teardown() {
   # (as recommended for extra security in the Sysbox usage guide).
   #
 
-  # Create a tmp directory to serve as a bind-mount into a sys container
+  # Create a tmp dir that we will bind-mount into the container
   bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
 
   # Remount the bind source as no-exec
@@ -269,7 +280,7 @@ function teardown() {
   docker exec "$SYSCONT_NAME" sh -c 'findmnt | grep shiftfs | grep "/mnt/target" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
 
-  # Create an exec file on the bind mount dir
+  # Have the container create an exec file on the bind mount dir
   docker exec "$SYSCONT_NAME" sh -c 'touch /mnt/target/testFile && chmod +x /mnt/target/testFile'
   [ "$status" -eq 0 ]
 
