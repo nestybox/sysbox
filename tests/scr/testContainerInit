@@ -108,6 +108,8 @@ function cleanup_docker_env() {
 
 function crio_config() {
 
+	cp /etc/crio/crio.conf /etc/crio/crio.conf.orig
+
 	# Add Sysbox to CRI-O's list of runtimes
 	ret=$(dasel put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
 			"runtime_path=/usr/bin/sysbox-runc" "runtime_type=oci")
