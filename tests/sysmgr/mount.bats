@@ -20,7 +20,7 @@ load ../helpers/sysbox-health
   [ "$status" -eq 0 ]
 
   if host_supports_uid_shifting; then
-    [[ "$output" =~ "/lib/modules/${kernel_rel} on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+    [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
   fi
@@ -43,7 +43,7 @@ load ../helpers/sysbox-health
   [ "$status" -eq 0 ]
 
   if [ -n "$SHIFT_UIDS" ]; then
-    [[ "$output" =~ "/lib/modules/${kernel_rel} on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+    [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
   fi
@@ -72,9 +72,9 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if host_supports_uid_shifting; then
-         [[ "${lines[0]}" =~ "/usr/src/kernels/${kernel_rel} on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
-        [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
+			[[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
       fi
 
       # Verify that /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
@@ -87,7 +87,7 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if host_supports_uid_shifting; then
-         [[ "${lines[0]}" =~ "/usr/src/linux-headers-${kernel_rel} on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -120,7 +120,7 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if host_supports_uid_shifting; then
-        [[ "${lines[0]}" =~ "/usr/src/kernels/${kernel_rel} on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+        [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -136,9 +136,9 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if host_supports_uid_shifting; then
-         [[ "${lines[0]}" =~ "/usr/src/linux-headers-${kernel_rel} on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
       else
-        [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
+			[[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
       fi
 
       # Verify that /usr/src/kernels/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
@@ -150,7 +150,7 @@ load ../helpers/sysbox-health
   docker_stop "$syscont"
 }
 
-@test "uid-shift bind mount special dir" {
+@test "uid-shift bind mount over special dir" {
 
   local syscont
   local uid
@@ -354,7 +354,7 @@ load ../helpers/sysbox-health
   rm -rf $mnt_src
 }
 
-@test "skip chown bind mount special dir" {
+@test "skip chown bind mount over special dir" {
 
   local syscont
   local uid
