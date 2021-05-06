@@ -213,7 +213,11 @@ function sysbox_start() {
 	if [ -n "$SB_INSTALLER" ]; then
 		systemctl start sysbox
 	else
-		bats_bg sysbox -t
+		if [ -n "$DEBUG_ON" ]; then
+			bats_bg sysbox -t -d
+		else
+			bats_bg sysbox -t
+		fi
 	fi
 
   retry_run 10 1 sysbox_fs_started
