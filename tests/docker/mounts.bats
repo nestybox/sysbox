@@ -31,7 +31,7 @@ function teardown() {
   if docker_userns_remap; then
     [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
   else
-    [[ "$output" =~ "/var/lib/docker/volumes/testVol/_data on /mnt/testVol type shiftfs" ]]
+    [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
   fi
 
   # verify the container can write and read from the volume
@@ -68,7 +68,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   if host_supports_uid_shifting; then
-    [[ "$output" =~ "${testDir} on /mnt/testVol type shiftfs" ]]
+    [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
   else
     # overlay because we are running in the test container
     [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
@@ -466,32 +466,12 @@ function teardown() {
    rm -rf /mnt/scratch/subdir
 }
 
-@test "shiftfs blacklist" {
+@test "bind mount above container rootfs" {
 
-	if ! host_supports_uid_shifting; then
-		skip "needs uid shifting"
-	fi
+  docker run --runtime=sysbox-runc --rm \
+         -v /var/lib:/mnt/var/lib \
+         ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+         echo hello
 
-	# this list must match the sysbox-run shiftfs blacklist
-	declare -a blacklist=("/bin" "/sbin" "/usr/bin" "/usr/sbin" "/usr/local/bin" "/usr/loca/sbin" "/dev" "/run" "/var/run")
-	local syscont
-
-	for bind_src in ${blacklist[@]}; do
-
-		run stat $blacklist
-		if [ "$output" -ne 0 ]; then
-			continue
-		fi
-
-		syscont=$(docker_run --rm --mount type=bind,source=$blacklist,target=/mnt/$blacklist ${CTR_IMG_REPO}/busybox tail -f /dev/null)
-
-		# verify that shiftfs is not mounted on the source or destination of the mount
-		run sh -c "mount | grep \"shiftfs\" | grep \"$blacklist\""
-		[ "$status" -eq 1 ]
-
-		docker exec "$syscont" sh -c "mount | grep \"shiftfs\" | grep \"/mnt/$blacklist\""
-		[ "$status" -eq 1 ]
-
-		docker_stop "$syscont"
-	done
+  [ "$status" -eq 0 ]
 }
