@@ -58,7 +58,7 @@ kernel.
 
 ## Sysbox Package
 
-We are currently offering the [Sysbox packages](../releases) for Ubuntu and Debian
+We are currently offering the [Sysbox packages](../../../releases) for Ubuntu and Debian
 distributions. This means that for other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
 It's pretty easy though, since the Sysbox Makefile has targets that automate this process.
 The build occurs entirely inside a container, so it won't mess up your host.
