@@ -29,9 +29,11 @@ set +e
 VERSION=v0.1
 
 CLUSTER_NAME=k8s-cluster
+CLUSTER_CNI=flannel
 NUM_WORKERS=1
-IMAGE=ghcr.io/nestybox/k8s-node:v1.18.2
-K8S_VERSION=v1.18.2
+IMAGE=ghcr.io/nestybox/k8s-node:v1.20.2
+K8S_VERSION=v1.20.2
+CLUSTER_RETAIN=true
 
 VERBOSE=1
 PUBLISH=0
@@ -160,6 +162,36 @@ function flannel_config() {
   fi
 }
 
+function weave_config() {
+  local node=$1
+  local output
+
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=${K8S_VERSION}\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+}
+
+function calico_config() {
+  local node=$1
+  local output
+
+  # Install the Tigera Calico operator.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+
+  # Install Calico CRDs.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi  
+}
+
 function docker_pull_image() {
 
   # If the image is present, no action
@@ -221,7 +253,8 @@ function k8s_master_init() {
 
   [[ $VERBOSE ]] && printf "  - Running kubeadm init on $node ... (may take up to a minute)\n"
 
-  output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=v1.18.2 --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
+  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
+  output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.32.0.0/12 2>&1\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     ERR="kubadm init failed on ${node}: ${output}"
     return 1
@@ -241,20 +274,27 @@ function k8s_master_init() {
     return 1
   fi
 
-  [[ $VERBOSE ]] && printf "  - Initializing networking (flannel) on $node ...\n"
+  [[ $VERBOSE ]] && printf "  - Initializing networking (${CLUSTER_CNI} cni) on $node ...\n"
 
-  output=$(flannel_config ${node})
+  if [[ ${CLUSTER_CNI} == "flannel" ]]; then
+    output=$(flannel_config ${node})
+  elif [[ ${CLUSTER_CNI} == "weave" ]]; then
+    output=$(weave_config ${node})
+  elif [[ ${CLUSTER_CNI} == "calico" ]]; then
+    output=$(calico_config ${node})
+  fi
+
   if [[ $? -ne 0 ]]; then
-    ERR="flannel init failed on ${node}: ${output}"
-    return 1
+   ERR="cni init failed on ${node}: ${output}"
+   return 1
   fi
 
   [[ $VERBOSE ]] && printf "  - Waiting for $node to be ready ...\n"
 
   output=$(wait_for_node_ready ${node})
   if [[ $? -ne 0 ]]; then
-    ERR="${node} did not reach ready state: ${output}"
-    return 1
+   ERR="${node} did not reach ready state: ${output}"
+   return 1
   fi
 }
 
@@ -581,6 +621,7 @@ function create_cluster() {
 
     printf "$FORMAT" "Cluster name" "${CLUSTER_NAME}"
     printf "$FORMAT" "Worker nodes" "${NUM_WORKERS}"
+    printf "$FORMAT" "CNI" "${CLUSTER_CNI}"
     printf "$FORMAT" "Docker network" "${NET}"
     printf "$FORMAT" "Node image" "${IMAGE}"
     printf "$FORMAT" "K8s version" "${K8S_VERSION}"
@@ -602,8 +643,10 @@ function create_cluster() {
 
   cluster_init_nodes
   if [[ $? -ne 0 ]]; then
-    cluster_destroy_nodes
     printf "ERROR: failed to initialize nodes: $ERR\n"
+    if [[ ${CLUSTER_RETAIN} == "false" ]]; then  
+      cluster_destroy_nodes
+    fi
     exit 1
   fi
 
@@ -817,6 +860,7 @@ function show_create() {
   printf "  -h, --help                  Display usage.\n"
   printf "      --num-workers=<num>     Number of worker nodes (default = 1).\n"
   printf "      --net=<name>            Docker bridge network to connect the cluster to; if it does not exist, it will be created (default = 'CLUSTER_NAME-net').\n"
+  printf "      --cni=<cni-name>        Container Network Interface (CNI) to deploy; supported cnis: flannel (default), weave and calico.\n"
   printf "      --image=<name>          Docker image for the cluster nodes (default = ${IMAGE}).\n"
   printf "      --k8s-version=<name>    Kubernetes version; must correspond to the version of K8s embeddeded in the image.\n"
   printf "  -p, --publish=<port>        Publish the cluster's apiserver port via a host port; allows for remote control of the cluster.\n"
@@ -827,7 +871,7 @@ function show_create() {
 function parse_create_args() {
   local new_net="true"
 
-  options=$(getopt -o p:wh -l wait-all,help,num-workers::,net::,image::,k8s-version::,publish:: -- "$@")
+  options=$(getopt -o p:wh -l wait-all,help,num-workers::,net::,cni::,image::,k8s-version::,publish:: -- "$@")
 
   [ $? -eq 0 ] || {
     show_create
@@ -852,6 +896,10 @@ function parse_create_args() {
         shift;
         NET=$1
         new_net="false"
+        ;;
+      --cni)
+        shift;
+        CLUSTER_CNI=$1
         ;;
       --image)
         shift;
@@ -891,6 +939,16 @@ function parse_create_args() {
 
   if [[ $new_net == "true" ]]; then
      NET="${CLUSTER_NAME}-net"
+  fi
+
+  if [[ $CLUSTER_CNI == "" ]]; then
+    CLUSTER_CNI="flannel"
+  elif
+    [[ ${CLUSTER_CNI} != "flannel" ]] &&
+    [[ ${CLUSTER_CNI} != "weave" ]] &&
+    [[ ${CLUSTER_CNI} != "calico" ]]; then
+    printf "Unsupported CNI: \"${CLUSTER_CNI}\". Enter one of the supported CNIs: flannel, weave, calico\n"
+    exit 1
   fi
 }
 
@@ -962,7 +1020,7 @@ function show_resize() {
   printf "Options:\n"
   printf "      --num-workers=<num>     Desired number of total worker nodes in the cluster.\n"
   printf "      --image=<name>          When increasing the size of the cluster, the Docker image for the new worker nodes (default = the image used when cluster was created).\n"
-  printf "  -w, --wait-all              When increasing the size of the clsuter, wait for newly added nodes in the cluster to be ready; if not set, this command completes before the nodes may be ready).\n"
+  printf "  -w, --wait-all              When increasing the size of the cluster, wait for newly added nodes in the cluster to be ready; if not set, this command completes before the nodes may be ready).\n"
   printf "  -h, --help                  Display usage.\n"
   exit 1
 }

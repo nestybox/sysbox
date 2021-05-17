@@ -90,9 +90,7 @@ function k8s_create_pod() {
 }
 
 function k8s_del_pod() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
+  local pod=$1
 
   run kubectl delete pod $pod --grace-period=0
   [ "$status" -eq 0 ]
@@ -589,10 +587,15 @@ function kindbox_cluster_setup() {
   local num_workers=$2
   local net=$3
   local node_image=$4
+  local cni=$5
 
   local pod_net_cidr=10.244.0.0/16
 
-  run tests/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
+  if [[ ${cni} == "" ]]; then
+    run tests/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
+  else
+    run tests/scr/kindbox create --num=$num_workers --image=$node_image --net=$net --cni=$cni $cluster
+  fi
   [ "$status" -eq 0 ]
 
   local join_timeout=$(( $num_workers * 30 ))
