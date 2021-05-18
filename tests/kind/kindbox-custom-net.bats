@@ -153,7 +153,7 @@ EOF
   iptables -L | grep -qv KUBE
 
   # cleanup
-  k8s_del_pod $cluster $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -220,7 +220,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod $cluster $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -307,7 +307,7 @@ EOF
 
   # cleanup
 
-  k8s_del_pod $cluster $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]

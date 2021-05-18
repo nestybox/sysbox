@@ -20,7 +20,7 @@ export test_dir="/tmp/k8s-test/"
 export manifest_dir="tests/kind/manifests/"
 
 # Cluster definition.
-export cluster=cluster1
+export cluster=cluster-1
 export controller="${cluster}"-master
 export num_workers=2
 export net=bridge
@@ -82,7 +82,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod $cluster $controller nginx
+  k8s_del_pod nginx
   rm "$test_dir/basic-pod.yaml"
 }
 
@@ -121,7 +121,7 @@ EOF
   [ "$alpine1_ns" == "$alpine2_ns" ]
 
   # cleanup
-  k8s_del_pod $cluster $controller multi-cont
+  k8s_del_pod multi-cont
   rm "$test_dir/multi-cont-pod.yaml"
 }
 
@@ -211,7 +211,7 @@ EOF
   iptables -L | grep -qv KUBE
 
   # cleanup
-  k8s_del_pod $cluster $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -278,7 +278,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # cleanup
-  k8s_del_pod k8s $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -367,7 +367,7 @@ EOF
 
   # cleanup
 
-  k8s_del_pod $cluster $controller alpine-sleep
+  k8s_del_pod alpine-sleep
 
   run kubectl delete svc nginx
   [ "$status" -eq 0 ]
@@ -532,8 +532,8 @@ EOF
   [ "$status" -eq 0 ]
   verify_perm_owner "drwxrwxrwt" "root" "root" "$output"
 
-  #cleanup
-  k8s_del_pod $cluster $controller multi-cont
+  # cleanup
+  k8s_del_pod multi-cont
   rm "$test_dir/pod.yaml"
 }
 
@@ -614,7 +614,7 @@ EOF
   verify_perm_owner "-rw-r--r--" "root" "root" "$output"
 
   #cleanup
-  k8s_del_pod $cluster $controller hp-test
+  k8s_del_pod hp-test
 
   docker exec "${cluster}"-worker-0 sh -c "rm -rf /root/hpdir && rm /root/hpfile"
   [ "$status" -eq 0 ]
@@ -720,7 +720,7 @@ EOF
   [ "$output" == "pod" ]
 
   # delete the pod
-  k8s_del_pod $cluster $controller pvol-test
+  k8s_del_pod pvol-test
 
   # create another instance of the pod
   k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
@@ -732,7 +732,7 @@ EOF
   [ "$output" == "pod" ]
 
   # cleanup
-  k8s_del_pod $cluster $controller pvol-test
+  k8s_del_pod pvol-test
 
   run sh -c "kubectl delete persistentvolumeclaims pvol-claim"
   [ "$status" -eq 0 ]
