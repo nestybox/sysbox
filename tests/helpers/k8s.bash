@@ -91,8 +91,13 @@ function k8s_create_pod() {
 
 function k8s_del_pod() {
   local pod=$1
+  local ns
 
-  run kubectl delete pod $pod --grace-period=0
+  if [ $# -eq 2 ]; then
+    ns="-n $2"
+  fi
+
+  run kubectl delete pod $pod $ns --grace-period=0
   [ "$status" -eq 0 ]
 }
 
