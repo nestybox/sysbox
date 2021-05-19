@@ -162,11 +162,35 @@ function flannel_config() {
   fi
 }
 
+function flannel_unconfig() {
+  local node=$1
+  local output
+
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl delete -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+}
+
 function weave_config() {
   local node=$1
   local output
 
-  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=${K8S_VERSION}\"" 2>&1)
+  # Fetch and apply Weave's manifest. Make sure the CIDR block matches the one
+  # utilized by the cluster for the pod-network range.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')\&env.IPALLOC_RANGE=10.244.0.0/16\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+}
+
+function weave_unconfig() {
+  local node=$1
+  local output
+
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl delete -f https://cloud.weave.works/k8s/net?k8s-version=${K8S_VERSION}\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     echo "$output"
     return 1
@@ -253,8 +277,9 @@ function k8s_master_init() {
 
   [[ $VERBOSE ]] && printf "  - Running kubeadm init on $node ... (may take up to a minute)\n"
 
-  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
-  output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.32.0.0/12 2>&1\"" 2>&1)
+  output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
+  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.32.0.0/12 2>&1\"" 2>&1)
+  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=192.168.0.0/16 2>&1\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     ERR="kubadm init failed on ${node}: ${output}"
     return 1
