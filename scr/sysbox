@@ -68,27 +68,31 @@ function setup_sysbox_user() {
    fi
 }
 
+function check_distro() {
+	local distro=$1
+
+	if [[ "${distro}" != "ubuntu" ]] &&
+			[[ "${distro}" != "debian" ]] &&
+			[[ "${distro}" != "centos" ]] &&
+			[[ "${distro}" != "fedora" ]]; then
+      echo "Unsupported Linux distribution: $distro. Sysbox may not operate as expected."
+	fi
+}
+
 # Ensures unprivileged user-ns's are allowed.
 function setup_userns() {
-
 	local distro=$1
 
 	if [[ "${distro}" == "ubuntu" ]] ||
 			[[ "${distro}" == "debian" ]]; then
       echo "1" > /proc/sys/kernel/unprivileged_userns_clone
-
-	elif [[ "${distro}" == "centos" ]] ||
-			  [[ "${distro}" == "fedora" ]]; then
-
-      # Setting user-ns max value.
-      max_user_ns=$(</proc/sys/user/max_user_namespaces)
-      if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $SYSBOX_MAX_USER_NS ]]; then
-			echo $SYSBOX_MAX_USER_NS > /proc/sys/user/max_user_namespaces
-      fi
-
-	else
-      echo "Unsupported Linux distribution: $distro. Sysbox may not opperate as expected."
 	fi
+
+   # Setting user-ns max value.
+   max_user_ns=$(</proc/sys/user/max_user_namespaces)
+   if [[ $max_user_ns =~ ^[0-9]+$ ]] && [[ $max_user_ns -lt $SYSBOX_MAX_USER_NS ]]; then
+		echo $SYSBOX_MAX_USER_NS > /proc/sys/user/max_user_namespaces
+   fi
 }
 
 # Identifies kernel-header's expected path based on distro.
@@ -155,13 +159,15 @@ function sysbox_setup() {
 
 	local distro=$(get_host_distro)
 
+	check_distro "$distro"
+
 	if ! load_required_modules; then
       exit 1
 	fi
 
 	setup_sysbox_user
-	setup_userns $distro
-	setup_kernel_config $distro
+	setup_userns "$distro"
+	setup_kernel_config "$distro"
 	setup_maxs
 }
 
