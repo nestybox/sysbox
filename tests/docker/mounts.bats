@@ -434,21 +434,16 @@ function teardown() {
 
    mkdir -p /mnt/scratch/subdir/var-lib-docker-cache
 
-   # If the mount is on a special dir, and the source of that mount is a child
-   # dir of another bind-mount source that requires uid-shifting, sysbox-runc
-   # will disallow it. Verify this.
-   if host_supports_uid_shifting; then
-      docker run --runtime=sysbox-runc --rm \
-             -v /mnt/scratch/subdir:/mnt/scratch/subdir \
-             -v /mnt/scratch/subdir/var-lib-docker-cache:/var/lib/docker \
-             ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-             echo hello
-      [ "$status" -ne 0 ]
-   fi
+	# Nested mount sources
+   docker run --runtime=sysbox-runc --rm \
+          -v /mnt/scratch/subdir:/mnt/scratch/subdir \
+          -v /mnt/scratch/subdir/var-lib-docker-cache:/var/lib/docker \
+          ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+          echo hello
 
-   # If the mount is on a special dir, and the source of that mount is a child
-   # dir of another bind-mount source that **does not** require uid-shifting,
-   # sysbox-runc will allow it. Verify this.
+   [ "$status" -eq 0 ]
+
+	# Nested mount sources (without uid shifting)
    orig_uid=$(stat -c '%U' /mnt/scratch/subdir)
    orig_gid=$(stat -c '%U' /mnt/scratch/subdir)
 
