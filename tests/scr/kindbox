@@ -208,12 +208,39 @@ function calico_config() {
     return 1
   fi
 
-  # Install Calico CRDs.
-  output=$(sh -c "docker exec ${node} sh -c \"kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml\"" 2>&1)
+  # Fetch Calico's CRD manifest and adjust its CIDR block to match the one
+  # utilized by the cluster for the pod-network range.
+  output=$(sh -c "docker exec ${node} sh -c \"curl https://docs.projectcalico.org/manifests/custom-resources.yaml --output calico-crd.yaml; sed -i 's/cidr: 192.168.0.0\/16/cidr: 10.244.0.0\/16/' calico-crd.yaml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+
+  # Deploy Calico's CRD.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl create -f calico-crd.yaml\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     echo "$output"
     return 1
   fi  
+}
+
+function calico_unconfig() {
+  local node=$1
+  local output
+
+  # Install Calico CRDs.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl delete -f calico-crd.yaml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+
+  # Install the Tigera Calico operator.
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl delete -f https://docs.projectcalico.org/manifests/tigera-operator.yaml\"" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
 }
 
 function docker_pull_image() {
