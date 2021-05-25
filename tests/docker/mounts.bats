@@ -417,48 +417,53 @@ function teardown() {
 
 @test "nested mount sources" {
 
-	docker run --runtime=sysbox-runc --rm \
-          -v /mnt/a:/mnt/a \
-          -v /mnt/scratch/a:/mnt/scratch/a \
+   rm -rf /mnt/subdir
+   rm -rf /mnt/scratch/subdir
+
+   docker run --runtime=sysbox-runc --rm \
+          -v /mnt/subdir:/mnt/subdir \
+          -v /mnt/scratch/subdir:/mnt/scratch/subdir \
           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
           echo hello
 
-	[ "$status" -eq 0 ]
+   [ "$status" -eq 0 ]
 
-	rmdir /mnt/a
-	rmdir /mnt/scratch/a
+   rm -rf /mnt/subdir
+   rm -rf /mnt/scratch/subdir
 
-	# If the mount is on a special dir, and the source of that mount is a child
-	# dir of another bind-mount source that requires uid-shifting, sysbox-runc
-	# will disallow it. Verify this.
-	if host_supports_uid_shifting; then
-		docker run --runtime=sysbox-runc --rm \
-				 -v /mnt/scratch:/mnt/scratch \
-				 -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
-				 ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
-				 echo hello
-		[ "$status" -ne 0 ]
-	fi
+   mkdir -p /mnt/scratch/subdir/var-lib-docker-cache
 
-	# If the mount is on a special dir, and the source of that mount is a child
-	# dir of another bind-mount source that **does not** require uid-shifting,
-	# sysbox-runc will allow it. Verify this.
-	orig_uid=$(stat -c '%U' /mnt/scratch)
-	orig_gid=$(stat -c '%U' /mnt/scratch)
+   # If the mount is on a special dir, and the source of that mount is a child
+   # dir of another bind-mount source that requires uid-shifting, sysbox-runc
+   # will disallow it. Verify this.
+   if host_supports_uid_shifting; then
+      docker run --runtime=sysbox-runc --rm \
+             -v /mnt/scratch/subdir:/mnt/scratch/subdir \
+             -v /mnt/scratch/subdir/var-lib-docker-cache:/var/lib/docker \
+             ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
+             echo hello
+      [ "$status" -ne 0 ]
+   fi
 
-	subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
-   chown $subid:$subid /mnt/scratch
+   # If the mount is on a special dir, and the source of that mount is a child
+   # dir of another bind-mount source that **does not** require uid-shifting,
+   # sysbox-runc will allow it. Verify this.
+   orig_uid=$(stat -c '%U' /mnt/scratch/subdir)
+   orig_gid=$(stat -c '%U' /mnt/scratch/subdir)
 
-	docker run --runtime=sysbox-runc --rm \
-          -v /mnt/scratch:/mnt/scratch \
-          -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
+   subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+   chown $subid:$subid /mnt/scratch/subdir
+
+   docker run --runtime=sysbox-runc --rm \
+          -v /mnt/scratch/subdir:/mnt/scratch/subdir \
+          -v /mnt/scratch/subdir/var-lib-docker-cache:/var/lib/docker \
           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
           echo hello
 
-	[ "$status" -eq 0 ]
+   [ "$status" -eq 0 ]
 
-   chown $orig_uid:$orig_gid /mnt/scratch
+   rm -rf /mnt/scratch/subdir
 }
 
 @test "shiftfs blacklist" {
