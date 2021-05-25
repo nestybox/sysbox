@@ -5,7 +5,6 @@
 #
 # TODO:
 #
-# - Add check for sufficient host storage check before k8s-in-pod test
 # - Cleanup all crictl images after tests
 # - Refactor kindbox.bats tests so we can use all those same tests when running k8s-in-pod
 
@@ -21,6 +20,8 @@ function teardown() {
 
 # Verify K8s works correctly inside a sysbox pod
 @test "k8s-in-pod" {
+
+	k8s_check_sufficient_storage
 
 	# Create the k8s master and worker nodes
 	local k8s_master_syscont=$(crictl_run ${POD_MANIFEST_DIR}/k8s-master-container.json ${POD_MANIFEST_DIR}/k8s-master-pod.json)
