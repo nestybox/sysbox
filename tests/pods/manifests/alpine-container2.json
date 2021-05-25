@@ -3,7 +3,7 @@
       "name": "alpine2"
   },
   "image":{
-      "image": "alpine"
+      "image": "ghcr.io/nestybox/alpine"
   },
   "command": [
       "tail", "-f", "/dev/null"
