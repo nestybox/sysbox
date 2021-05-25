@@ -102,10 +102,13 @@ TEST_VOL1 := /var/tmp/sysbox-test-var-lib-docker
 TEST_VOL2 := /var/tmp/sysbox-test-var-lib-sysbox
 TEST_VOL3 := /var/tmp/sysbox-test-scratch
 TEST_VOL4 := /var/tmp/sysbox-test-var-lib-containers
+TEST_VOL5 := /var/tmp/sysbox-test-var-run
+
 export TEST_VOL1
 export TEST_VOL2
 export TEST_VOL3
 export TEST_VOL4
+export TEST_VOL5
 
 # In scenarios where the egress-interface's mtu is lower than expected (1500 bytes),
 # we must explicitly configure dockerd with such a value.
@@ -242,6 +245,7 @@ DOCKER_RUN := docker run --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(TEST_VOL4):/var/lib/containers           \
+			-v $(TEST_VOL5):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -257,6 +261,7 @@ DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(TEST_VOL4):/var/lib/containers           \
+			-v $(TEST_VOL5):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -274,6 +279,7 @@ DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
 			-v $(TEST_VOL2):/var/lib/sysbox               \
 			-v $(TEST_VOL3):/mnt/scratch                  \
 			-v $(TEST_VOL4):/var/lib/containers           \
+			-v $(TEST_VOL5):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v /lib/modules:/lib/modules:ro               \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -293,21 +299,21 @@ test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid test-sysbox-sy
 test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-img
 	@printf "\n** Running sysbox integration tests **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-ci: ## Run sysbox integration tests (continuous integration)
 test-sysbox-ci: test-img test-fs test-mgr
 	@printf "\n** Running sysbox integration tests **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
 
 test-sysbox-systemd: ## Run sysbox integration tests in a test container with systemd
 test-sysbox-systemd: test-img-systemd
 	@printf "\n** Running sysbox integration tests (with systemd) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
@@ -316,7 +322,7 @@ test-sysbox-systemd: test-img-systemd
 test-sysbox-installer: ## Run sysbox integration tests in a test container with systemd and the sysbox installer
 test-sysbox-installer: test-img-systemd
 	@printf "\n** Running sysbox integration tests (with systemd + the sysbox installer) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
@@ -331,7 +337,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH)"
@@ -343,7 +349,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
 		make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
@@ -355,7 +361,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting and systemd) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
@@ -368,7 +374,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting + systemd + the sysbox installer) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SHIFT_ROOTFS_UIDS=true SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
@@ -395,13 +401,13 @@ test-mgr: test-img
 
 test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		testContainerInit && /bin/bash"
 
 test-shell-debug: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export DEBUG_ON=true && testContainerInit && /bin/bash"
@@ -409,7 +415,7 @@ test-shell-debug: test-img
 test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
 test-shell-systemd: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU))
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -418,7 +424,7 @@ test-shell-systemd: test-img-systemd
 
 test-shell-systemd-debug: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -430,7 +436,7 @@ test-shell-installer: test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -442,7 +448,7 @@ test-shell-installer-debug: test-img-systemd
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
 		-e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -454,7 +460,7 @@ test-shell-shiftuid: test-img
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
@@ -464,7 +470,7 @@ test-shell-shiftuid-debug: test-img
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export SHIFT_ROOTFS_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
@@ -476,7 +482,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -489,7 +495,7 @@ ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true -e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -505,7 +511,7 @@ else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE-$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -521,7 +527,7 @@ else
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
 		-e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
@@ -545,7 +551,7 @@ test-cleanup: ## Clean up sysbox integration tests (requires root privileges)
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysbox integration tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "testContainerCleanup"
-	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPost $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 
 #
 # Local test targets (these are invoked from within the test container
@@ -589,7 +595,7 @@ sysbox-in-docker-local: sysbox-local
 
 test-sind: ## Run the sysbox-in-docker integration tests
 test-sind: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		sindTestContainerInit && make test-sind-local"
 
@@ -598,7 +604,7 @@ test-sind-local:
 
 test-sind-shell: ## Get a shell in the test container for sysbox-in-docker (useful for debug)
 test-sind-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4)
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3) $(TEST_VOL4) $(TEST_VOL5)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		sindTestContainerInit && /bin/bash"
 
