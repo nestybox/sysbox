@@ -48,15 +48,15 @@ function teardown() {
   [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs ro,relatime" ]]
 
   # verify things look good on the host
-  run sh -c 'findmnt | grep shiftfs | grep "/lib/modules/${kernel_rel}" | awk "{ print \$3\":\"\$4 }"'
+  run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\" | awk '{ print \$3\":\"\$4 }'"
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c 'findmnt | grep shiftfs | grep "/usr/src/linux-headers-${kernel_rel}" | awk "{ print \$3\":\"\$4 }"'
+  run sh -c "findmnt | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\" | awk '{ print \$3\":\"\$4 }'"
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c 'findmnt | grep shiftfs | grep "/var/lib/docker/containers" | awk "{ print \$3\":\"\$4 }"'
+  run sh -c "findmnt | grep shiftfs | grep \"/var/lib/docker/containers\" | awk '{ print \$3\":\"\$4 }'"
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/var/lib/docker/containers/$SYSCONT_NAME".+"shiftfs" ]]
 
