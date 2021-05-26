@@ -65,7 +65,7 @@ function basic_test {
    done
 
    # deploy a service
-   docker exec $mgr sh -c "docker service create --replicas 4 --name helloworld alpine ping docker.com"
+   docker exec $mgr sh -c "docker service create --replicas 4 --name helloworld ${CTR_IMG_REPO}/alpine ping docker.com"
    [ "$status" -eq 0 ]
 
    # verify the service is up
