@@ -41,6 +41,11 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${lines[1]}" =~ "State: running" ]]
 
+	# The crictl based k8s nodes have bare-bones networking and don't have an
+	# /etc/hosts file. We need to manually add one for kubeadm init to work.
+	crictl exec $k8s_master_syscont sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+	crictl exec $k8s_worker_syscont sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+
 	# Initialize the K8s master pod
 	crictl exec $k8s_master_syscont sh -c "kubeadm init --kubernetes-version=v1.18.2 --pod-network-cidr=10.244.0.0/16"
 
