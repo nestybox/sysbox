@@ -28,6 +28,5 @@ before_install:
 
 script:
   - make sysbox
-  - make test-sysbox-ci
   - sudo make test-cleanup
   - make test-sysbox-shiftuid-ci
