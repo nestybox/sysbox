@@ -22,7 +22,7 @@ function teardown() {
 
   local kernel_rel=$(uname -r)
 
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   # verify that /var/lib/sysbox/shiftfs has root-only access (for security)
@@ -69,7 +69,7 @@ function teardown() {
   docker_stop "$SYSCONT_NAME"
 
   # verify shiftfs mounts for container were removed
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 }
 
@@ -77,7 +77,7 @@ function teardown() {
 
   local kernel_rel=$(uname -r)
 
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   # num_syscont must be >= 2
@@ -147,7 +147,7 @@ function teardown() {
   # stop last sys cont and verify shiftfs mounts on host are gone
   docker_stop "${syscont_name[0]}"
 
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 }
 
@@ -158,7 +158,7 @@ function teardown() {
   # directory that is already marked with shiftfs
   #
 
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   # Create a tmp directory to serve as a bind-mount into a sys container
@@ -202,7 +202,7 @@ function teardown() {
   # Test scenario where sys container is launched with a bind mount of a file (not a directory)
   #
 
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
@@ -219,7 +219,7 @@ function teardown() {
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
 
   docker_stop "$SYSCONT_NAME"
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   run rm -rf "$bind_src"
@@ -291,7 +291,7 @@ function teardown() {
 
   # stop sys container
   docker_stop "$SYSCONT_NAME"
-  run sh -c 'findmnt | grep shiftfs'
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
   # Try executing the test file from the host and verify it still is no-exec
