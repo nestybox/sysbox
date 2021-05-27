@@ -29,8 +29,8 @@ function teardown() {
 
   # verify sysbox-mgr has cleaned up it's state on the host correctly
   if host_supports_uid_shifting; then
-    run sh -c 'mount | grep -q shiftfs'
-    [ "$status" -ne 0 ]
+	  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
+     [ "$status" -ne 0 ]
   fi
 
   run sh -c 'mount | egrep -q "overlay on /var/lib/sysbox/docker"'
