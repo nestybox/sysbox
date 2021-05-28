@@ -33,7 +33,6 @@ CLUSTER_CNI=flannel
 NUM_WORKERS=1
 IMAGE=ghcr.io/nestybox/k8s-node:v1.18.2
 K8S_VERSION=v1.18.2
-CLUSTER_RETAIN=true
 
 VERBOSE=1
 PUBLISH=0
@@ -696,9 +695,7 @@ function create_cluster() {
   cluster_init_nodes
   if [[ $? -ne 0 ]]; then
     printf "ERROR: failed to initialize nodes: $ERR\n"
-    if [[ ${CLUSTER_RETAIN} == "false" ]]; then  
-      cluster_destroy_nodes
-    fi
+    [[ $CLUSTER_RETAIN ]] || cluster_destroy_nodes
     exit 1
   fi
 
@@ -917,13 +914,14 @@ function show_create() {
   printf "      --k8s-version=<name>    Kubernetes version; must correspond to the version of K8s embeddeded in the image.\n"
   printf "  -p, --publish=<port>        Publish the cluster's apiserver port via a host port; allows for remote control of the cluster.\n"
   printf "  -w, --wait-all              Wait for all nodes in the cluster to be ready; if not set, this command completes once the master node is ready (worker nodes may not be ready).\n"
+  printf "  -r, --retain                Avoid destroying all the nodes if cluster-creation process fails at a late stage -- useful for debugging purposes (unset by default).\n"
   exit 1
 }
 
 function parse_create_args() {
   local new_net="true"
 
-  options=$(getopt -o p:wh -l wait-all,help,num-workers::,net::,cni::,image::,k8s-version::,publish:: -- "$@")
+  options=$(getopt -o p:whr -l wait-all,retain,help,num-workers::,net::,cni::,image::,k8s-version::,publish:: -- "$@")
 
   [ $? -eq 0 ] || {
     show_create
@@ -963,6 +961,9 @@ function parse_create_args() {
         ;;
       -w | --wait-all)
         WAIT_READY=1
+        ;;
+      -r | --retain)
+        CLUSTER_RETAIN=1
         ;;
       -p | --publish)
         PUBLISH=1
