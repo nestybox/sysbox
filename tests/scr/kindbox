@@ -178,7 +178,7 @@ function weave_config() {
 
   # Fetch and apply Weave's manifest. Make sure the CIDR block matches the one
   # utilized by the cluster for the pod-network range.
-  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')\&env.IPALLOC_RANGE=10.244.0.0/16\"" 2>&1)
+  output=$(docker exec ${node} sh -c "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=\$(kubectl version | base64 | tr -d '\n')\&env.IPALLOC_RANGE=10.244.0.0/16" 2>&1)
   if [[ $? -ne 0 ]]; then
     echo "$output"
     return 1
