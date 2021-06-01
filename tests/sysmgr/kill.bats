@@ -54,12 +54,4 @@ function teardown() {
   docker_stop "$syscont1"
 
   sysbox_start
-
-  # create a new container and verify all is well
-  syscont0=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img:latest tail -f /dev/null)
-
-  docker exec "$syscont0" sh -c "touch /var/lib/docker/testfile"
-  [ "$status" -eq 0 ]
-
-  docker_stop "$syscont0"
 }
