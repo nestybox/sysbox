@@ -42,7 +42,7 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if host_supports_uid_shifting; then
+  if [ -n "$SHIFT_UIDS" ]; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
