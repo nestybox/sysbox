@@ -51,7 +51,7 @@ function remove_test_dir() {
 
 # Testcase #1.
 #
-#
+# Bring k8s cluster up.
 @test "k8s cluster up (weave)" {
 
   k8s_check_sufficient_storage
@@ -66,7 +66,7 @@ function remove_test_dir() {
 
 # Testcase #2.
 #
-#
+# Verify that a basic pod can be created and traffic forwarded accordingly.
 @test "k8s pod (weave)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
@@ -95,7 +95,8 @@ EOF
 
 # Testcase #3.
 #
-#
+# Verify that a multi-container pod can be created and traffic forwarded
+# accordingly.
 @test "k8s pod multi-container (weave)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
@@ -137,7 +138,8 @@ EOF
 
 # Testcase #4.
 #
-#
+# Verify that deployment rollouts and scale up/down instructions work
+# as expected.
 @test "k8s deployment (weave)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
@@ -170,7 +172,8 @@ EOF
 
 # Testcase #5.
 #
-#
+# Verify that a clusterip service can properly expose a deployment and forward
+# its traffic accordingly.
 @test "k8s service clusterIP (weave)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
@@ -240,7 +243,8 @@ EOF
 
 # Testcase #6.
 #
-#
+# Verify that a nodeip service can properly expose a deployment and forward
+# its traffic accordingly across all the cluster nodes.
 @test "k8s service nodePort (weave)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
@@ -310,9 +314,10 @@ EOF
 
 # Testcase #7.
 #
-#
+# Verify that a policy can prevent all traffic from reaching any given pod.
 @test "k8s deny all traffic (weave)" {
 
+  # Policy will drop all traffic to pods of the 'web' application.
   cat > "$test_dir/web-deny-all.yaml" <<EOF
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -374,9 +379,11 @@ EOF
 
 # Testcase #8.
 #
-#
+# Verify that a network policy can dictate the level of exposure of a pod within
+# a given namespace.
 @test "k8s limit app traffic (weave)" {
 
+  # Policy allows traffic from only certain pods.
   cat > "$test_dir/api-allow.yaml" <<EOF
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -437,21 +444,18 @@ EOF
   [ "$status" -eq 0 ]
   run kubectl delete networkpolicy api-allow
   [ "$status" -eq 0 ]
-
-  # Identify the node where the api-server node is running and check that traffic
-  # is dropped in that particular  weave-net pod.
-  # kubectl logs pod/weave-net-x8x8b -n kube-system weave-npc | egrep "TCP connection from"
-  #WARN: 2021/05/12 02:47:10.232988 TCP connection from 10.32.0.3:33702 to 10.40.0.1:80 blocked by Weave NPC.
-  #WARN: 2021/05/12 02:47:10.233008 TCP connection from 10.32.0.3:33702 to 10.40.0.1:80 blocked by Weave NPC.
-  #WARN: 2021/05/12 02:47:11.255958 TCP connection from 10.32.0.3:33702 to 10.40.0.1:80 blocked by Weave NPC.
-  #WARN: 2021/05/12 02:47:11.255980 TCP connection from 10.32.0.3:33702 to 10.40.0.1:80 blocked by Weave NPC.
 }
 
 # Testcase #9.
 #
-#
+# Verify the expected results are obtained when overlapping policies are applied. In
+# this case we apply a 'deny-all' policy which blocks all non-whitelisted traffic to the
+# application, and yet, this policy is voided the moment that we apply an 'allow-all'
+# policy.
 @test "k8s allow all traffic (weave)" {
 
+  # Policy makes any other policies restricting the traffic to the pod void, and
+  # allow all traffic to it from its namespace and other namespaces.
   cat > "$test_dir/web-allow-all.yaml" <<EOF
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -508,37 +512,14 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-# @test "k8s weave-cni deny all traffic within a namespace (do we really need this testcase -- subcase of the next one?)"
-
-#   cat > "$test_dir/default-deny-all.yaml" <<EOF
-# kind: NetworkPolicy
-# apiVersion: networking.k8s.io/v1
-# metadata:
-#   name: default-deny-all
-#   namespace: default
-# spec:
-#   podSelector: {}
-#   ingress: []
-# EOF
-
-# kubectl apply -f web-allow-all.yaml
-
-# # Ensure that enforcing a 'deny-all' policy has no effect -- 'allow-all' prevails.
-# kubectl apply -f web-deny-all.yaml
-
-# kubectl run --generator=run-pod/v1 test-$RANDOM --rm -i -t --image=alpine -- sh
-# wget -qO- --timeout=2 http://web
-
-#   # Clean up
-# kubectl delete pod,service web
-# kubectl delete networkpolicy web-allow-all web-deny-all
-# }
-
 # Testcase #10.
 #
-#
+# Verify that apps in a given namespace can be properly isolated from other
+# namespaces.
 @test "k8s deny traffic from other namespaces (weave)" {
 
+  # Policy to deny all the traffic from other namespaces while allowing all the
+  # traffic coming from the same namespace the pod deployed to.
   cat > "$test_dir/deny-from-other-namespaces.yaml" <<EOF
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -576,7 +557,7 @@ EOF
 
   retry_run 10 3 "k8s_pod_ready client-1 foo"
 
-  run kubectl exec pod/client-1  -- sh -c "wget -qO- --timeout=2 http://web.default"
+  run kubectl exec pod/client-1 -n foo -- sh -c "wget -qO- --timeout=3 http://web.default"
   [ "$status" -eq 1 ]
 
   # Try again but this time from a pod in 'default' namespace. Traffic should
@@ -588,7 +569,9 @@ EOF
 
   retry_run 10 3 "k8s_pod_ready client-2"
 
-  run kubectl exec pod/client-2  -- sh -c "wget -qO- --timeout=2 http://web.default"
+  sleep 10
+
+  run kubectl exec pod/client-2  -- sh -c "wget -qO- --timeout=3 http://web.default"
   [ "$status" -eq 0 ]
 
   # Clean up
@@ -605,9 +588,12 @@ EOF
 
 # Testcase #11.
 #
-#
+# Verify that traffic can reach a centralized app regardless of the namespaces in
+# which the source pods are hosted.
 @test "k8s allow traffic from all namespaces (weave)" {
 
+  # Policy to allow traffic to reach a particular app from all the pods in all
+  # the namespaces.
   cat > "$test_dir/web-allow-all-namespaces.yaml" <<EOF
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -664,10 +650,9 @@ EOF
 #
 # Verify that policies that combine multiple clauses and namespaces can be
 # properly enforced.
-#
 @test "k8s allow traffic from some pods in other namespaces (weave)" {
 
-  # Create policy that combines 'podselector' and 'namespace' selector clauses
+  # Create a policy that combines 'podselector' and 'namespace' selector clauses
   # to restrict traffic to pods with label 'type=monitoring' and that are part
   # of a namespace labeled as 'team=operations'.
   cat > "$test_dir/web-allow-all-ns-monitoring.yaml" <<EOF
@@ -766,7 +751,6 @@ EOF
 # Testcase #13.
 #
 # Verify that policies allowing specific (tcp/udp) ports work as expected.
-#
 @test "k8s allow traffic to only one port app (weave)" {
 
   # Policy to allow traffic on port 5000 from pods with label role=monitoring
@@ -842,7 +826,6 @@ EOF
 # Testcase #14.
 #
 # Verify that network policies with multiple selectors can be enforced.
-#
 @test "k8s allow traffic using multiple selectors (weave)" {
 
   # Policy to allow traffic originated at pods belonging to specific
