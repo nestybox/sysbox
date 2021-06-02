@@ -52,7 +52,7 @@ function remove_test_dir() {
 # Testcase #1.
 #
 #
-@test "kindbox cluster up (weave)" {
+@test "k8s cluster up (weave)" {
 
   k8s_check_sufficient_storage
 
@@ -67,7 +67,7 @@ function remove_test_dir() {
 # Testcase #2.
 #
 #
-@test "kindbox pod (weave)" {
+@test "k8s pod (weave)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
 apiVersion: v1
@@ -96,7 +96,7 @@ EOF
 # Testcase #3.
 #
 #
-@test "kindbox pod multi-container (weave)" {
+@test "k8s pod multi-container (weave)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
 apiVersion: v1
@@ -138,7 +138,7 @@ EOF
 # Testcase #4.
 #
 #
-@test "kindbox deployment (weave)" {
+@test "k8s deployment (weave)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
@@ -171,7 +171,7 @@ EOF
 # Testcase #5.
 #
 #
-@test "kindbox service clusterIP (weave)" {
+@test "k8s service clusterIP (weave)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -241,7 +241,7 @@ EOF
 # Testcase #6.
 #
 #
-@test "kindbox service nodePort (weave)" {
+@test "k8s service nodePort (weave)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
@@ -311,7 +311,7 @@ EOF
 # Testcase #7.
 #
 #
-@test "kindbox deny all traffic (weave)" {
+@test "k8s deny all traffic (weave)" {
 
   cat > "$test_dir/web-deny-all.yaml" <<EOF
 kind: NetworkPolicy
@@ -375,7 +375,7 @@ EOF
 # Testcase #8.
 #
 #
-@test "kindbox limit app traffic (weave)" {
+@test "k8s limit app traffic (weave)" {
 
   cat > "$test_dir/api-allow.yaml" <<EOF
 kind: NetworkPolicy
@@ -450,7 +450,7 @@ EOF
 # Testcase #9.
 #
 #
-@test "kindbox allow all traffic (weave)" {
+@test "k8s allow all traffic (weave)" {
 
   cat > "$test_dir/web-allow-all.yaml" <<EOF
 kind: NetworkPolicy
@@ -508,7 +508,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-# @test "kindbox weave-cni deny all traffic within a namespace (do we really need this testcase -- subcase of the next one?)"
+# @test "k8s weave-cni deny all traffic within a namespace (do we really need this testcase -- subcase of the next one?)"
 
 #   cat > "$test_dir/default-deny-all.yaml" <<EOF
 # kind: NetworkPolicy
@@ -537,7 +537,7 @@ EOF
 # Testcase #10.
 #
 #
-@test "kindbox deny traffic from other namespaces (weave)" {
+@test "k8s deny traffic from other namespaces (weave)" {
 
   cat > "$test_dir/deny-from-other-namespaces.yaml" <<EOF
 kind: NetworkPolicy
@@ -606,7 +606,7 @@ EOF
 # Testcase #11.
 #
 #
-@test "kindbox allow traffic from all namespaces (weave)" {
+@test "k8s allow traffic from all namespaces (weave)" {
 
   cat > "$test_dir/web-allow-all-namespaces.yaml" <<EOF
 kind: NetworkPolicy
@@ -665,7 +665,7 @@ EOF
 # Verify that policies that combine multiple clauses and namespaces can be
 # properly enforced.
 #
-@test "kindbox allow traffic from some pods in other namespaces (weave)" {
+@test "k8s allow traffic from some pods in other namespaces (weave)" {
 
   # Create policy that combines 'podselector' and 'namespace' selector clauses
   # to restrict traffic to pods with label 'type=monitoring' and that are part
@@ -767,7 +767,7 @@ EOF
 #
 # Verify that policies allowing specific (tcp/udp) ports work as expected.
 #
-@test "kindbox allow traffic to only one port app (weave)" {
+@test "k8s allow traffic to only one port app (weave)" {
 
   # Policy to allow traffic on port 5000 from pods with label role=monitoring
   # and that are part of the same namespace. All other traffic arriving at the
@@ -843,7 +843,7 @@ EOF
 #
 # Verify that network policies with multiple selectors can be enforced.
 #
-@test "kindbox allow traffic using multiple selectors (weave)" {
+@test "k8s allow traffic using multiple selectors (weave)" {
 
   # Policy to allow traffic originated at pods belonging to specific
   # microservices. All other traffic must be rejected.
@@ -915,7 +915,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox cluster down (weave)" {
+@test "k8s cluster down (weave)" {
 
   kindbox_cluster_teardown $cluster $net
   remove_test_dir

@@ -48,7 +48,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox custom net cluster up" {
+@test "k8s custom net cluster up" {
 
   k8s_check_sufficient_storage
 
@@ -64,7 +64,7 @@ function remove_test_dir() {
   echo $num_workers > "$test_dir/.${cluster}_num_workers"
 }
 
-@test "kindbox deployment" {
+@test "k8s deployment" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   echo "status = ${status}"
@@ -97,7 +97,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox service clusterIP" {
+@test "k8s service clusterIP" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -164,7 +164,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox service nodePort" {
+@test "k8s service nodePort" {
 
   local num_workers=$(cat "$test_dir/.${cluster}_num_workers")
 
@@ -231,7 +231,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox DNS clusterIP" {
+@test "k8s DNS clusterIP" {
 
   # launch a deployment with an associated service
 
@@ -318,7 +318,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox custom net cluster down" {
+@test "k8s custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/.${cluster}_num_workers")
   kindbox_cluster_teardown $cluster $net
