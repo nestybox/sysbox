@@ -915,7 +915,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox cluster down" {
+@test "kindbox cluster down (weave)" {
 
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
