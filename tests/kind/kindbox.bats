@@ -48,7 +48,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox cluster up (flannel)" {
+@test "k8s cluster up (flannel)" {
 
   k8s_check_sufficient_storage
 
@@ -60,7 +60,7 @@ function remove_test_dir() {
   echo $num_workers > "$test_dir/."${cluster}"_num_workers"
 }
 
-@test "kindbox pod (flannel)" {
+@test "k8s pod (flannel)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
 apiVersion: v1
@@ -86,7 +86,7 @@ EOF
   rm "$test_dir/basic-pod.yaml"
 }
 
-@test "kindbox pod multi-container (flannel)" {
+@test "k8s pod multi-container (flannel)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
 apiVersion: v1
@@ -125,7 +125,7 @@ EOF
   rm "$test_dir/multi-cont-pod.yaml"
 }
 
-@test "kindbox deployment (flannel)" {
+@test "k8s deployment (flannel)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
@@ -155,7 +155,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox service clusterIP (flannel)" {
+@test "k8s service clusterIP (flannel)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -222,7 +222,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox service nodePort (flannel)" {
+@test "k8s service nodePort (flannel)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
@@ -289,7 +289,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox DNS clusterIP (flannel)" {
+@test "k8s DNS clusterIP (flannel)" {
 
   # launch a deployment with an associated service
 
@@ -378,7 +378,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "kindbox ingress (flannel)" {
+@test "k8s ingress (flannel)" {
 
   # Based on:
   # https://docs.traefik.io/v1.7/user-guide/kubernetes/
@@ -466,7 +466,7 @@ EOF
   rm /etc/hosts.orig
 }
 
-@test "kindbox vol emptyDir (flannel)" {
+@test "k8s vol emptyDir (flannel)" {
 
   # pod with two alpine containers sharing a couple of emptydir
   # volumes, one on-disk and one in-mem.
@@ -537,7 +537,7 @@ EOF
   rm "$test_dir/pod.yaml"
 }
 
-@test "kindbox vol hostPath (flannel)" {
+@test "k8s vol hostPath (flannel)" {
 
   # create a directory and a file on the k8s-node; each will be
   # mounted as a hostPath vol into a pod
@@ -622,7 +622,7 @@ EOF
   rm "$test_dir/pod.yaml"
 }
 
-@test "kindbox vol local persistent (flannel)" {
+@test "k8s vol local persistent (flannel)" {
 
   # based on:
   # https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
@@ -748,7 +748,8 @@ EOF
   rm "$test_dir/pvol.yaml"
 }
 
-@test "kindbox cluster down (flannel)" {
+@test "k8s cluster down (flannel)" {
+
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
 }

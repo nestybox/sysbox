@@ -52,7 +52,7 @@ function remove_test_dir() {
 # Testcase #1.
 #
 #
-@test "kindbox cluster up (calico)" {
+@test "k8s cluster up (calico)" {
 
   k8s_check_sufficient_storage
 
@@ -67,7 +67,7 @@ function remove_test_dir() {
 # Testcase #2.
 #
 #
-@test "kindbox pod (calico)" {
+@test "k8s pod (calico)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
 apiVersion: v1
@@ -96,7 +96,7 @@ EOF
 # Testcase #3.
 #
 #
-@test "kindbox pod multi-container (calico)" {
+@test "k8s pod multi-container (calico)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
 apiVersion: v1
@@ -138,7 +138,7 @@ EOF
 # Testcase #4.
 #
 #
-@test "kindbox deployment (calico)" {
+@test "k8s deployment (calico)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
@@ -171,7 +171,7 @@ EOF
 # Testcase #5.
 #
 #
-@test "kindbox service clusterIP (calico)" {
+@test "k8s service clusterIP (calico)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -241,7 +241,7 @@ EOF
 # Testcase #6.
 #
 #
-@test "kindbox service nodePort (calico)" {
+@test "k8s service nodePort (calico)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
@@ -311,7 +311,7 @@ EOF
 # Testcase #7.
 #
 #
-@test "kindbox deny all traffic (calico)" {
+@test "k8s deny all traffic (calico)" {
 
   cat > "$test_dir/web-deny-all.yaml" <<EOF
 kind: NetworkPolicy
@@ -375,7 +375,7 @@ EOF
 # Testcase #8.
 #
 #
-@test "kindbox limit app traffic (calico)" {
+@test "k8s limit app traffic (calico)" {
 
   cat > "$test_dir/api-allow.yaml" <<EOF
 kind: NetworkPolicy
@@ -450,7 +450,7 @@ EOF
 # Testcase #9.
 #
 #
-@test "kindbox allow all traffic (calico)" {
+@test "k8s allow all traffic (calico)" {
 
   cat > "$test_dir/web-allow-all.yaml" <<EOF
 kind: NetworkPolicy
@@ -511,7 +511,7 @@ EOF
 # Testcase #10.
 #
 #
-@test "kindbox deny traffic from other namespaces (calico)" {
+@test "k8s deny traffic from other namespaces (calico)" {
 
   cat > "$test_dir/deny-from-other-namespaces.yaml" <<EOF
 kind: NetworkPolicy
@@ -580,7 +580,7 @@ EOF
 # Testcase #11.
 #
 #
-@test "kindbox allow traffic from all namespaces (calico)" {
+@test "k8s allow traffic from all namespaces (calico)" {
 
   cat > "$test_dir/web-allow-all-namespaces.yaml" <<EOF
 kind: NetworkPolicy
@@ -639,7 +639,7 @@ EOF
 # Verify that policies that combine multiple clauses and namespaces can be
 # properly enforced.
 #
-@test "kindbox allow traffic from some pods in other namespaces (calico)" {
+@test "k8s allow traffic from some pods in other namespaces (calico)" {
 
   # Create policy that combines 'podselector' and 'namespace' selector clauses
   # to restrict traffic to pods with label 'type=monitoring' and that are part
@@ -741,7 +741,7 @@ EOF
 #
 # Verify that policies allowing specific (tcp/udp) ports work as expected.
 #
-@test "kindbox allow traffic to only one port app (calico)" {
+@test "k8s allow traffic to only one port app (calico)" {
 
   # Policy to allow traffic on port 5000 from pods with label role=monitoring
   # and that are part of the same namespace. All other traffic arriving at the
@@ -817,7 +817,7 @@ EOF
 #
 # Verify that network policies with multiple selectors can be enforced.
 #
-@test "kindbox allow traffic using multiple selectors (calico)" {
+@test "k8s allow traffic using multiple selectors (calico)" {
 
   # Policy to allow traffic originated at pods belonging to specific
   # microservices. All other traffic must be rejected.
@@ -889,7 +889,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "kindbox cluster down (calico)" {
+@test "k8s cluster down (calico)" {
 
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
