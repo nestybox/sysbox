@@ -5,10 +5,10 @@ This document provides tips on mounting host storage into one or more system con
 ## Contents
 
 -   [Exposing Host Files or Directories Inside a System Container](#exposing-host-files-or-directories-inside-a-system-container)
-    -   [The Problem](#the-problem)
-    -   [The Solution](#the-solution)
-    -   [Host Supports User and Group ID Shifting (shiftfs)](#host-supports-user-and-group-id-shifting-shiftfs)
-    -   [Host does not support User and Group ID Shifting (i.e., no shiftfs)](#host-does-not-support-user-and-group-id-shifting-ie-no-shiftfs)
+-    -   [The Problem](#the-problem)
+-    -   [The Solution](#the-solution)
+-    -   [Host Supports User and Group ID Shifting (shiftfs)](#host-supports-user-and-group-id-shifting-shiftfs)
+-    -   [Host does not support User and Group ID Shifting (i.e., no shiftfs)](#host-does-not-support-user-and-group-id-shifting-ie-no-shiftfs)
 -   [Storage Sharing Among System Containers](#storage-sharing-among-system-containers)
 
 ## Exposing Host Files or Directories Inside a System Container
@@ -19,7 +19,7 @@ Sysbox system containers support all Docker storage mount types:
 However, for bind mounts there are requirements in order to deal with
 file ownership issues.
 
-    Note: these requirements apply specifically to bind-mounts. They do not
+    Note: these requirements apply specifically to bind mounts. They do not
     apply to Docker volume or tmpfs mounts, as they are implicitly met by them
     (i.e., you don't have to worry about file ownership issues for them).
     They also do not apply to the container's root filesystem, which is
@@ -33,41 +33,45 @@ a bind mount of host directory `my-host-dir` exposed in the container's `/mnt/my
 $ docker run --runtime=sysbox-runc -it --mount type=bind,source=my-host-dir,target=/mnt/my-host-dir alpine
 ```
 
-The concept is simple, but file ownership issues arise because Sysbox always
-isolates containers via the Linux user-namespace, as described below.
+Though the concept is simple, file ownership issues arise because Sysbox always
+isolates containers via the Linux user-namespace as described below.
 
 ### The Problem
 
-These file ownership issues arise from the fact that Sysbox system containers
-always use the Linux user-namespace, which means that the container's user and
-group IDs are mapped to a range of unpriviliged host IDs.
+These file ownership issues arise from the fact that Sysbox containers always
+use the Linux user-namespace, which means that the container's user and group
+IDs are mapped to a range of unprivileged host IDs.
 
-For example, a given system container's user and group IDs may be mapped as
-follows:
+For example, a given container's user and group IDs may be mapped as follows:
 
 | Container ID  | Host ID        |
 | :-----------: | :------------: |
 | 0 -> 65535    | 100000->165535 |
 
 In other words, user 0 inside the container maps to user 100000 on the host,
-user 1 maps to user 100001, and so on.
+user 1 maps to user 100001, and so on. This is good for isolation as the
+container's root user only has privileges within the container and has no
+privileges on the host.
 
-This implies that host files owned by users 100000->165535 will show up as
-owned by users 0->65535 in the container, but host files owned by other
-users will show up as owned by "nobody:nogroup" inside the container.
+However, this also implies that host files owned by users 100000->165535 will
+show up as owned by users 0->65535 in the container, but host files owned by
+other users will show up as owned by "nobody:nogroup" inside the container.
 
-But for bind mounts that's not good, because a host admin can't always know
-the Linux user-namespace mappings that will be assigned to a container,
-so he or she can't set the host level file ownership properly.
+This means that for host files or directories that are bind-mounted into
+the container, if their file ownership does not match the container's user
+and group ID mappings, those files will show up as "nobody:nogroup" inside
+the container, which is not good.
 
-The mappings are either chosen by a container manager such as Docker (e.g., when
-Docker operates in userns-remap mode) or otherwise automatically selected by
-Sysbox.
+But this is tricky, because the user launching the container can't always know
+the user-namespace mappings that will be assigned to a container. Thus, he or
+she can't always set the ownership of bind-mounted files properly.
 
-Furthermore, when the mappings are automatically selected by Sysbox, the
-mappings can be exclusive between containers (as with Sysbox Enterprise), and
-multiple containers with different mappings may want to share a given host
-directory or file.
+To further complicate things, the user and group ID mappings are either chosen
+by a container manager such as Docker (e.g., when Docker operates in
+userns-remap mode) or otherwise automatically selected by Sysbox. When the
+mappings are automatically selected by Sysbox, the mappings can be the same
+across containers (Sysbox Community Edition) or exclusive between containers
+(Sysbox Enterprise Edition).
 
 ### The Solution
 
@@ -98,7 +102,7 @@ bind mounted into the container when it deems it necessary to ensure that files
 show up inside the container with appropriate ownership.
 
 For example, if we have a host directory called `my-host-dir` where files
-are owned by users in the range [0:65536], and that directory is bind mounted
+are owned by users in the range \[0:65536], and that directory is bind mounted
 into a system container as follows:
 
 ```console
@@ -106,88 +110,20 @@ $ docker run --runtime=sysbox-runc -it --mount type=bind,source=my-host-dir,targ
 ```
 
 then Sysbox will mount shiftfs on `my-host-dir`, causing the files to show up
-with the same ownership ([0:65536]) inside the container, even though the
+with the same ownership (\[0:65536]) inside the container, even though the
 container's user-IDs and group-IDs are mapped to a completely different set of
 IDs on the host (e.g., 100000->165536).
 
 This way, a host admin need not worry about what host IDs are mapped into the
 container via the Linux user-namespace. Sysbox takes care of setting things up so
 that the bind mounted files show up with proper permissions inside the
-container. Moreover, containers with exclusive user-namespace ID mappings (as
-assigned by Sysbox-EE for extra isolation) can share the same files on the host
-without problem.
+container.
 
-This is the recommended mode of operation, though some security precautions
-and limitations apply as described below.
+Moreover, shiftfs makes it possible for containers with exclusive user-namespace
+ID mappings (as assigned by Sysbox-EE for extra isolation) to share the same
+files on the host without problem.
 
-#### Security Precautions with Shiftfs
-
-The use of shiftfs requires some security precautions:
-
-1.  The bind mounted file or directory should be in a directory that is only
-    accessible to the host's root user (i.e., 0700 permissions somewhere in its
-    path).
-
-2.  Alternatively, it should be bind-mounted read-only in the container.
-
-For example, in the following command:
-
-```console
-$ docker run --runtime=sysbox-runc --mount type=bind,source=/some/source,target=/some/target ...
-```
-
-directory `/some/source` should have 0700 on `/some` or `/some/source`. If this is not
-possible, mount it read-only:
-
-```console
-$ docker run --runtime=sysbox-runc --mount type=bind,source=/some/source,target=/some/target,readonly ...
-```
-
-The reason for these precautions is that when a root process inside the system
-container writes to the bind-mounted directories, it will be doing so
-`root:root` privileges on the host (due to the shiftfs mount). Thus, you want to
-avoid any non-root user on the host having access to those directories.
-
-The above security precautions are optional. Sysbox won't check for them (i.e.,
-if they aren't met the system container will still work).
-
-However, failure to meet one of these requirements will result in reduced host
-security as described [here](design.md#shiftfs-security-precautions).
-
-#### Limitations with Shiftfs
-
-There are some limitations that arise on host files or directories bind mounted
-into system container when Sysbox uses shiftfs.
-
-1.  Host directories bind mounted into the system container become
-    "no-executable" at host level. This is a security precaution (inherent to
-    shiftfs) to prevent files written by the container on the bind mounted
-    directory from being executed at host level (since those files may have root
-    ownership for example).
-
-2.  The bind mount should ideally be done on a directory (rather than on a single
-    file). If done on a file, it will work, but Sysbox will mount shiftfs on
-    the parent directory (due to a limitation of shiftfs), which is not ideal.
-
-3.  Some critical host directories can't be bind-mounted into the container.
-
-    These are: "/", "/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", "/dev", "/run", "/var/run".
-
-    The reason is that mounting shiftfs on these directories will render the
-    host unusable because the directories will become non-executable. Thus,
-    Sysbox will never mount shiftfs on these directories. If you bind-mount
-    these into the container, their contents will show up as "nobody:nogroup"
-    in the container. Note that even without shiftfs, such a bind mounts are
-    not wise as they break container to host isolation.
-
-4.  Host directories directly above the container's rootfs can't be bind-mounted
-    to the container. For example, when using Docker, the container's rootfs
-    lives under `/var/lib/docker/...`. Thus, it's not possible to bind mount
-    the host's "/", "/var", "/var/lib", and "/var/lib/docker" to the container.
-    It it possible to mount "/x", "/var/x", "/var/lib/x" into the container,
-    since in those cases "x" is not directly above the container's rootfs directory.
-    Note that even without shiftfs, bind mounting directories directly above
-    the container's rootfs is not advisable as it would break container isolation.
+For these reasons, using Sysbox on hosts that support shiftfs is recommended.
 
 #### Disabling shiftfs on bind-mounts
 
@@ -201,7 +137,7 @@ how to apply this setting.
 ### Host does not support User and Group ID Shifting (i.e., no shiftfs)
 
 For Linux distros that do not support the shiftfs kernel module (e.g., RHEL,
-Fedora), the solution described in the prior section does not apply
+Fedora, CentOS), the solution described in the prior section does not apply
 (unfortunately).
 
 As a result, dealing with permissions on bind mounts is harder.
@@ -332,8 +268,8 @@ sysbox:165536:65536
     the new settings in `/etc/subuid` and `/etc/subgid`.
 
 6.  After this, the bind mount source should be owned by user-ID in the range
-    [165536:231071].  Same for the group-ID. This way they will show up as
-    [0:65535] inside the container.
+    \[165536:231071].  Same for the group-ID. This way they will show up as
+    \[0:65535] inside the container.
 
 ## Storage Sharing Among System Containers
 
