@@ -7,6 +7,7 @@ This document describes security aspects of Sysbox system containers.
 -   [Root Filesystem Jail](#root-filesystem-jail)
 -   [Linux Namespaces](#linux-namespaces)
 -   [User Namespace ID Mapping](#user-namespace-id-mapping)
+-   [Common vs Exclusive Userns ID Mappings](#common-vs-exclusive-userns-id-mappings)
 -   [Procfs Virtualization](#procfs-virtualization)
 -   [Sysfs Virtualization](#sysfs-virtualization)
 -   [Process Capabilities](#process-capabilities)
@@ -114,12 +115,15 @@ There is one advantage of Directed userns ID mapping:
 
 -   Sysbox does not need the Linux kernel's [shiftfs module](design.md#ubuntu-shiftfs-module).
     This means Sysbox can run in kernels that don't carry that module (e.g.,
-    Ubuntu cloud images).
+    RHEL, Fedora, CentOS).
 
-But there is a drawback:
+But there are a couple of drawbacks:
 
 -   Configuring Docker with userns-remap places a few [functional limitations](https://docs.docker.com/engine/security/userns-remap/#user-namespace-known-limitations)
     on regular Docker containers (those launched with Docker's default runc).
+
+-   Bind-mounting host files or directories to the container requires users
+    to [manually configure file permissions](storage.md#host-does-not-support-user-and-group-id-shifting-ie-no-shiftfs).
 
 ### Auto userns ID mapping
 
@@ -130,10 +134,16 @@ the container.
 For Docker specifically, this occurs when Docker is not configured with
 userns-remap (which is normally the case).
 
-This has the advantage that no change in the configuration of the container
-manager (e.g., Docker) is required, so it can continue to launch regular
-containers (i.e., with the OCI runc) as usual while at the same time launch
-system containers with Sysbox.
+This has the advantage that both of the drawbacks listed in the prior
+section are solved:
+
+-   No change in the configuration of the container manager (e.g., Docker) is
+    required, so it can continue to launch regular containers (i.e., with the OCI
+    runc) as usual while at the same time launch system containers with Sysbox.
+
+-   Sysbox automatically deals with file permissions for the container's root
+    file system as well as any host files or directories bind-mounted into
+    the container.
 
 #### Dependence on Shiftfs
 
@@ -144,10 +154,11 @@ Sysbox will check for this. If the module is required but not present in the
 Linux kernel, Sysbox will fail to launch containers and issue an error such as
 [this one](troubleshoot.md#ubuntu-shiftfs-module-not-present).
 
-Note that shiftfs is present in Ubuntu Desktop and Server editions, but likely
-not present in Ubuntu cloud editions.
+Note that shiftfs is present in Ubuntu Desktop and Server editions, but is
+not present in RHEL, Fedora, and CentOS. Also, Ubuntu cloud editions don't
+carry shiftfs either, but given that it's a Ubuntu kernel it's fairly easy to [build shiftfs and install it](https://github.com/toby63/shiftfs-dkms).
 
-### Common vs Exclusive Userns ID Mappings
+## Common vs Exclusive Userns ID Mappings
 
 The Sysbox Community Edition (Sysbox-CE) uses a common user-ID mapping for all
 system containers. In other words, the root user in all containers is mapped to
@@ -183,8 +194,8 @@ mappings assigned to each:
     0     231072      65536
 
 Each system container gets an **exclusive range of 64K user IDs**. For syscont1,
-user IDs [0, 65536] are mapped to host user IDs [165536, 231071]. And for
-syscont2 user IDs [0, 65536] are mapped to host user IDs [231072, 65536].
+user IDs \[0, 65536] are mapped to host user IDs \[165536, 231071]. And for
+syscont2 user IDs \[0, 65536] are mapped to host user IDs \[231072, 65536].
 
 The same applies to the group IDs.
 
