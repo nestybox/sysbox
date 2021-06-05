@@ -339,3 +339,24 @@ See [here](https://docs.docker.com/engine/install/ubuntu/#uninstall-old-versions
 ```console
 $ sudo snap install docker
 ```
+
+## Docker Default Runtime Config
+
+If you wish to make Sysbox the default runtime for Docker, add the
+`default-runtime` config to `/etc/docker/daemon.json`. It should look similar to
+this:
+
+```
+{
+  "default-runtime": "sysbox-runc",
+  "runtimes": {
+     "sysbox-runc": {
+        "path": "/usr/bin/sysbox-runc"
+     }
+  }
+}
+```
+
+Then restart Docker (e.g., `sudo systemctl restart docker`). With this setup,
+you can omit the `--runtime=sysbox-runc` flag when using `docker run` to create
+containers with Sysbox.
