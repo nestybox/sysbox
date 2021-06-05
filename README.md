@@ -99,7 +99,7 @@ Sysbox solves problems such as:
     environments easily.
 
 *   Partitioning bare-metal hosts into multiple isolated compute environments
-    with 2x the density of VMs (i.e., deploy twice as many VM-like containers
+    with 2X the density of VMs (i.e., deploy twice as many VM-like containers
     as VMs on the same hardware at the same performance).
 
 *   Partitioning cloud instances (e.g., EC2, GCP, etc.) into multiple isolated
@@ -245,7 +245,7 @@ since packets emitted by inner containers go through an additional network
 inside the system container).
 
 Now, if you use Sysbox to deploy system containers that replace VMs, then the
-performance and efficiency gains are significant: you can deploy twice as many
+performance and efficiency gains are significant: you can deploy 2X as many
 system containers as VMs on the same server and get the same performance, and do
 this with a fraction of the memory and storage consumption. The blog post
 referenced above has more on this.
@@ -302,9 +302,9 @@ stopped and removed.
 
 The method of uninstallation depends on the method used to install Sysbox:
 
-*   To uninstall Sysbox on a Kubernetes cluster, follow [these instructions](docs/install-k8s.md#uninstallation).
+*   To uninstall Sysbox on a Kubernetes cluster, follow [these instructions](docs/user-guide/install-k8s.md#uninstallation).
 
-*   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/install-package.md#uninstalling-sysbox).
+*   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/user-guide/install-package.md#uninstalling-sysbox).
 
 *   If Sysbox was built and installed from source, follows [these instructions](docs/developers-guide/build.md#cleanup--uninstall).
 
