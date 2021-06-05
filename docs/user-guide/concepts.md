@@ -38,9 +38,9 @@ runtime.
 
 ## System Container
 
-A container that is capable of executing system-level software such as Docker,
-Kubernetes, Systemd, etc., with proper isolation (i.e., without privileged
-containers) and without using complex container images or entrypoints.
+We call the containers deployed by Sysbox **system containers**, to highlight the
+fact that they can run not just micro-services (as regular containers do), but
+also system software such as Docker, Kubernetes, Systemd, inner containers, etc.
 
 Traditionally, containers package a single application / micro-service. This
 makes sense for application containers, where multiple such containers form the
