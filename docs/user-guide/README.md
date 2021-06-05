@@ -13,6 +13,8 @@ functionality.
 
 [Concepts & Terminology](concepts.md)
 
+[Feature List](features.md)
+
 [Installing Sysbox](install.md)
 
 [Deploying System Containers](deploy.md)
