@@ -45,17 +45,17 @@ Sysbox binaries onto the desired K8s nodes and perform all associated config.
 
 ```console
 kubectl label nodes <node-name> crio-install=yes
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/rbac/crio-deploy-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/crio-deploy-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/crio-deploy-rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-deploy-k8s.yaml
 ```
 
 -   Install Sysbox on the same nodes:
 
 ```console
 kubectl label nodes <node-name> sysbox-install=yes
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/rbac/sysbox-deploy-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
 ```
 
 Then deploy pods with Sysbox [see next section](#deploying-pods-with-sysbox).
@@ -125,7 +125,7 @@ deployment should be very quick (few seconds).
 
 ## Kubernetes Manifests
 
-The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8s-manifests).
+The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-sysbox-k8s-manifests).
 
 ## Sysbox Container Images
 
@@ -208,20 +208,20 @@ To uninstall Sysbox:
 
 ```console
 kubectl delete runtimeclass sysbox-runc
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/rbac/sysbox-deploy-rbac.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
 ```
 
 To uninstall CRI-O:
 
 ```console
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/crio-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/crio-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-deploy-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-cleanup-k8s.yaml
 sleep 10
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/daemonset/crio-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox-pods-preview/master/k8s-manifests/rbac/crio-deploy-rbac.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/crio-deploy-rbac.yaml
 ```
 
 NOTES:
