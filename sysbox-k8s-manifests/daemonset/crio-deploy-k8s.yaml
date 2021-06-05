@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: crio-deploy-k8s
+  namespace: kube-system
+spec:
+  selector:
+      matchLabels:
+        crio-install: "yes"
+  template:
+    metadata:
+        labels:
+          crio-install: "yes"
+    spec:
+      serviceAccountName: crio-label-node
+      nodeSelector:
+        crio-install: "yes"
+      containers:
+      - name: crio-deploy-k8s
+        image: registry.nestybox.com/nestybox/crio-deploy-k8s
+        imagePullPolicy: Always
+        command: [ "bash", "-c", "/opt/crio-deploy/scripts/crio-deploy-k8s.sh install" ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-dbus
+          mountPath: /var/run/dbus
+        - name: host-run-systemd
+          mountPath: /run/systemd
+        - name: host-lib-systemd
+          mountPath: /mnt/host/lib/systemd/system
+        - name: host-usr-local-bin
+          mountPath: /mnt/host/usr/local/bin
+        - name: host-etc
+          mountPath: /mnt/host/etc
+        - name: host-run
+          mountPath: /mnt/host/run
+      volumes:
+        - name: host-dbus
+          hostPath:
+            path: /var/run/dbus
+        - name: host-run-systemd
+          hostPath:
+            path: /run/systemd
+        - name: host-lib-systemd
+          hostPath:
+            path: /lib/systemd/system
+        - name: host-usr-local-bin
+          hostPath:
+            path: /usr/local/bin/
+        - name: host-etc
+          hostPath:
+            path: /etc
+        - name: host-run
+          hostPath:
+            path: /run
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate

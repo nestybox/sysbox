@@ -16,16 +16,16 @@
 by [Nestybox](https://www.nestybox.com), that enhances containers in two
 key ways:
 
-* **Improves container isolation:** Sysbox always enables the Linux
-  user-namespace on containers (i.e., root user in the container has zero
-  privileges on the host), hides host info inside the container, locks the
-  container's initial mounts, and more.
+*   **Improves container isolation:** Sysbox always enables the Linux
+    user-namespace on containers (i.e., root user in the container has zero
+    privileges on the host), hides host info inside the container, locks the
+    container's initial mounts, and more.
 
-* **Enables containers to act as VMs**: with Sysbox, containers become capable
-  of running most workloads that run in physical hosts or VMs, including
-  systemd, Docker, Kubernetes, and more, seamlessly and with proper isolation
-  (no privileged containers, no complex images, no tricky entrypoints, no
-  special volume mounts, etc.)
+*   **Enables containers to act as VMs**: with Sysbox, containers become capable
+    of running most workloads that run in physical hosts or VMs, including
+    systemd, Docker, Kubernetes, and more, seamlessly and with proper isolation
+    (no privileged containers, no complex images, no tricky entrypoints, no
+    special volume mounts, etc.)
 
 Sysbox is an OCI-based "runc", meaning that you typically use Docker and
 Kubernetes to deploy these enhanced containers (in fact Sysbox works under the
@@ -39,14 +39,18 @@ For example, this simple Docker command creates a container with Sysbox; you get
 a well isolated container capable of seamlessly running most software that runs
 in a VM (e.g., systemd, Docker, etc):
 
-```
-$ docker run --runtime=sysbox-runc -it any_image
-```
+    $ docker run --runtime=sysbox-runc -it any_image
 
 Sysbox was forked from the excellent [OCI runc][oci-runc] in early 2019, and has
 undergone significant changes since then. It's written in Go, and it is
 currently composed of three components: sysbox-runc, sysbox-fs, and
 sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs/user-guide/design.md).
+
+## Demo Videos
+
+"VM-like" containers with Docker + Sysbox: https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo
+
+Rootless Kubernetes pods with Sysbox: https://asciinema.org/a/401488?speed=1.5
 
 ## Contents
 
@@ -74,25 +78,32 @@ sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs
 
 Sysbox solves problems such as:
 
-* Enhancing the isolation of containers deployed with Docker or Kubernetes.
+*   Enhancing the isolation of containers deployed with Docker or Kubernetes
+    (root in the container maps to an uprivileged user on the host).
 
-* Giving users a fully capable root user inside containers without compromising
-  host security.
+*   Enabling a highly capable root user inside the container without
+    compromising host security.
 
-* Securing CI/CD pipelines by enabling Docker-in-Docker or Kubernetes-in-Docker
-  without resorting to insecure privileged containers.
+*   Securing CI/CD pipelines by enabling Docker-in-Docker or
+    Kubernetes-in-Docker without resorting to insecure privileged containers.
 
-* Enabling the use of containers as VM-like environments (for development,
-  local testing, learning, etc.), including the ability to run systemd
-  and Docker in them, easily and with strong isolation from the host.
+*   Enabling the use of containers as "VM-like" environments for development,
+    local testing, learning, etc. The container can run systemd, have a highly
+    capable root user, run Docker and even Kubernetes inside, easily and with
+    strong isolation from the host.
 
-* Allowing users to run legacy apps inside containers.
+*   Running legacy apps inside containers (instead of less efficient VMs).
 
-* Replacing VMs with an easier, faster, more efficient, and more portable
-  container-based alternative.
+*   Replacing VMs with an easier, faster, more efficient, and more portable
+    container-based alternative, one that can be deployed across cloud
+    environments easily.
 
-* Allowing users to deploy "VM-like" environments on cloud instances (e.g., EC2,
-  GCP, etc.)  without resorting to nested virtualization.
+*   Partitioning bare-metal hosts into multiple isolated compute environments
+    with 2x the density of VMs (i.e., deploy twice as many VM-like containers
+    as VMs on the same hardware at the same performance).
+
+*   Partitioning cloud instances (e.g., EC2, GCP, etc.) into multiple isolated
+    compute environments without resorting to expensive nested virtualization.
 
 ## License
 
@@ -142,78 +153,60 @@ More on system containers [here](docs/user-guide/concepts.md#system-container).
 
 The Sysbox host must meet the following requirements:
 
-* It must be running of the [supported Linux distros](docs/distro-compat.md).
+*   It must be running of the [supported Linux distros](docs/distro-compat.md).
 
-* We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
-  of RAM. Though this is not a hard requirement, smaller configurations may
-  slow down Sysbox.
+*   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
+    of RAM. Though this is not a hard requirement, smaller configurations may
+    slow down Sysbox.
 
 ## Installing Sysbox
 
-TODO: break this into installation for docker hosts and for k8s hosts.
+The method of installation depends on the environment where Sysbox will be
+installed:
 
-1) Download the latest Sysbox community-edition package from the
-[release](https://github.com/nestybox/sysbox/releases) page:
+*   To install Sysbox on a Kubernetes cluster, use the [sysbox-deploy-k8s daemonset](docs/user-guide/install-k8s.md).
 
-```console
-$ wget https://github.com/nestybox/sysbox/releases/download/v0.3.0/sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
-```
+*   Otherwise, use the [Sysbox package](docs/user-guide/install-package.md) for
+    your distro.
 
-2) Verify that the checksum of the downloaded file fully matches the expected/published one.
-   For example:
-
-```console
-$ shasum sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
-4850d18ed2af73f2819820cd8993f9cdc647cc79  sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
-```
-
-3) Stop and eliminate all running Docker containers. Refer to the
-[detailed](docs/user-guide/install.md) installation process for information
-on how to avoid impacting existing containers.
-
-```console
-$ docker rm $(docker ps -a -q) -f
-```
-
-... if an error is returned, it simply indicates that no existing containers were found.
-
-4) Install the Sysbox package and follow the installer instructions:
-
-```console
-$ sudo apt-get install ./sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb -y
-```
-
-More information on the installation process can be found [here](docs/user-guide/install.md). If you
-run into problems during installation, see the [troubleshooting doc](docs/user-guide/troubleshoot.md).
-
-Alternatively, you can build Sysbox binaries yourself. It's a very simple process as
-we have a 'make' target that builds Sysbox inside a Docker container, and another
-'make' target that installs Sysbox on your host. See the
-[Sysbox developer's guide](docs/developers-guide/README.md) for more on this.
+*   Alternativley, if a package for your distro is not yet available, or if you
+    want to get the latest changes from upstream, you [build and install Sysbox from source](docs/developers-guide/README.md).
 
 ## Using Sysbox
 
-TODO: break this into usage for docker hosts and for k8s hosts.
+Once Sysbox is installed, you create a container using your container manager
+or orchestrator (e.g., Docker or Kubernetes) and an image of your choice.
 
-Once Sysbox is installed, you use it as follows:
+Docker command example:
 
 ```console
-$ docker run --runtime=sysbox-runc --rm -it --hostname my_cont debian:latest
+$ docker run --runtime=sysbox-runc --rm -it --hostname my_cont registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
 root@my_cont:/#
 ```
 
-This launches a system container. It looks very much like a regular container,
-but it's different under the hood. Within it can run application or system-level
-software (systemd, dockerd, K8s) inside just as you would in a VM. The container
-is strongly isolated via the Linux user-namespace.
+Kubernetes pod spec example:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubu-bio-systemd-docker
+  annotations:
+    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+spec:
+  runtimeClassName: sysbox-runc
+  containers:
+  - name: ubu-bio-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+    command: ["/sbin/init"]
+  restartPolicy: Never
+```
+
+You can choose whatever container image you want, Sysbox places no requirements
+on the image.
 
 The [Sysbox Quickstart Guide](docs/quickstart/README.md) has many usage examples.
 You should start there to get familiarized with the use cases enabled by Sysbox.
-
-Note that if you omit the `--runtime` option, Docker will use its default `runc`
-runtime to launch regular containers (rather than system containers). It's
-perfectly fine to run system containers launched with Docker + Sysbox alongside
-regular Docker containers; they won't conflict and can co-exist side-by-side.
 
 ## Documentation
 
@@ -222,22 +215,22 @@ We strive to provide good documentation; it's a key component of the Sysbox proj
 We have several documents to help you get started and get the best out of
 Sysbox.
 
--   [Sysbox Quick Start Guide](docs/quickstart/README.md)
+*   [Sysbox Quick Start Guide](docs/quickstart/README.md)
 
-    -   Provides many examples for using system containers. New users
+    *   Provides many examples for using system containers. New users
         should start here.
 
--   [Sysbox User Guide](docs/user-guide/README.md)
+*   [Sysbox User Guide](docs/user-guide/README.md)
 
-    -   Provides more detailed information on Sysbox features and design.
+    *   Provides more detailed information on Sysbox features and design.
 
--   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
+*   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
 
-    -   Distro compatibility requirements.
+    *   Distro compatibility requirements.
 
--   [Nestybox blog site](https://blog.nestybox.com/)
+*   [Nestybox blog site](https://blog.nestybox.com/)
 
-    -   Articles on using Sysbox to solve real-life problems.
+    *   Articles on using Sysbox to solve real-life problems.
 
 ## Performance
 
@@ -304,18 +297,16 @@ Reach us at our [slack channel][slack] for any questions.
 
 ## Uninstallation
 
-TODO: rework this.
+Prior to uninstalling Sysbox, make sure all containers deployed with it are
+stopped and removed.
 
-Prior to uninstalling Sysbox, make sure all system containers are removed.
-There is a simple shell script to do this [here](scr/rm_all_syscont).
+The method of uninstallation depends on the method used to install Sysbox:
 
-The method for uninstalling Sysbox depends on how you [installed it](#installing-sysbox).
+*   To uninstall Sysbox on a Kubernetes cluster, follow [these instructions](docs/install-k8s.md#uninstallation).
 
-1) If you used the packaged version from the Nestybox website, follow the
-   uninstallation instructions in the associated documentation.
+*   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/install-package.md#uninstalling-sysbox).
 
-2) If you built it from source and installed it manually, follow [these instructions](docs/developers-guide/build.md)
-   to uninstall it.
+*   If Sysbox was built and installed from source, follows [these instructions](docs/developers-guide/build.md#cleanup--uninstall).
 
 ## Roadmap
 
@@ -327,13 +318,13 @@ are going and can give us feedback on which of these they like best
 
 Here is a short list; the Sysbox issue tracker has many more.
 
--   Support for more Linux distros.
+*   Support for more Linux distros.
 
--   More improvements to procfs and sysfs virtualization.
+*   More improvements to procfs and sysfs virtualization.
 
--   Continued improvements to container isolation.
+*   Continued improvements to container isolation.
 
--   Exposing host devices inside system containers with proper permissions.
+*   Exposing host devices inside system containers with proper permissions.
 
 ## Relationship to Nestybox
 
@@ -376,5 +367,7 @@ find it interesting and that it helps you use containers in new and more powerfu
 ways.
 
 [slack]: https://nestybox-support.slack.com/join/shared_invite/enQtOTA0NDQwMTkzMjg2LTAxNGJjYTU2ZmJkYTZjNDMwNmM4Y2YxNzZiZGJlZDM4OTc1NGUzZDFiNTM4NzM1ZTA2NDE3NzQ1ODg1YzhmNDQ#/
+
 [perf-blog]: https://blog.nestybox.com/2020/09/23/perf-comparison.html
+
 [oci-runc]: https://github.com/opencontainers/runc
