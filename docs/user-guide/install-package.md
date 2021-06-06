@@ -5,7 +5,7 @@ This document describes how to install Sysbox using the [packaged versions](http
 If you are installing Sysbox on a Kubernetes cluster, use the
 [sysbox-deploy-k8s](install-k8s.md) daemonset instead.
 
-If you want to build and install Sysbox from source (e.g., to get the latest
+And if you need to build and install Sysbox from source (e.g., to get the latest
 upstream code or because there is no Sysbox package for your Linux distro),
 see the [Sysbox developer's guide](../developers-guide/README.md).
 
@@ -15,6 +15,15 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 -   [Installing Sysbox](#installing-sysbox)
 -   [Miscellaneous Installation Info](#miscellaneous-installation-info)
 -   [Uninstalling Sysbox](#uninstalling-sysbox)
+
+## Available Sysbox Packages
+
+We are currently offering the [Sysbox packages](https://github.com/nestybox/sysbox/releases) for Ubuntu and Debian distributions.
+
+This means that for other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
+
+We are working on creating packaged versions for the other supported distros, and
+expect to have them soon (ETA summer 2021).
 
 ## Host Requirements
 
