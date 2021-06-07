@@ -78,6 +78,8 @@ NOTES:
     can live side-by-side with non Sysbox pods and can communicate with them
     according to your K8s networking policy.
 
+-   If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
+
 ## Deploying Pods with Sysbox
 
 Deploying pods with Sysbox is easy: you only need a couple of things in the pod
@@ -232,3 +234,7 @@ NOTES:
 
 -   The sleep instruction above is to ensure that kubelet has a chance to launch
     the 'cleanup' daemonset before it is removed in the next step.
+
+## Troubleshooting
+
+If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
