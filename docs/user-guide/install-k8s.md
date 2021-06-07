@@ -127,7 +127,7 @@ deployment should be very quick (few seconds).
 
 ## Kubernetes Manifests
 
-The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-sysbox-k8s-manifests).
+The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8s-manifests).
 
 ## Sysbox Container Images
 
