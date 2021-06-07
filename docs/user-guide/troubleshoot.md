@@ -1,5 +1,10 @@
 # Sysbox User Guide: Troubleshooting
 
+This document has troubleshooting tips when installing / using Sysbox
+in Docker hosts.
+
+For troubleshooting in Kubernetes clusters, see [here](troubleshoot-k8s.md).
+
 ## Contents
 
 -   [Sysbox Installation Problems](#sysbox-installation-problems)

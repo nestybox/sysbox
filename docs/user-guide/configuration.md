@@ -71,11 +71,11 @@ Oct 27 05:18:59 disco1 systemd[1]: Starting Sysbox General Service...
 Oct 27 05:18:59 disco1 systemd[1]: Started Sysbox General Service.
 ```
 
-That's it. You can now launch system containers.
+That's it. You can now start using Sysbox.
 
-Note that even though Sysbox is comprised of various daemons and its
+**NOTE: even though Sysbox is comprised of various daemons and its
 respective services, you should only interact with its outer-most
-systemd service called "sysbox".
+systemd service called "sysbox".**
 
 ## Sysbox Configuration Options
 
