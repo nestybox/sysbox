@@ -11,11 +11,10 @@ follow [these instructions](install-package.md) instead.
 -   [Kubernetes Version Requirements](#kubernetes-version-requirements)
 -   [Kubernetes Worker Node Requirements](#kubernetes-worker-node-requirements)
 -   [Installation](#installation)
--   [Deploying Pods with Sysbox](#deploying-pods-with-sysbox)
--   [Kubernetes Manifests](#kubernetes-manifests)
--   [Sysbox Container Images](#sysbox-container-images)
--   [Host Volume Mounts](#host-volume-mounts)
+-   [Installation Manifests](#installation-manifests)
+-   [Pod Deployment](#pod-deployment)
 -   [Uninstallation](#uninstallation)
+-   [Troubleshooting](#troubleshooting)
 
 ## Kubernetes Version Requirements
 
@@ -58,7 +57,7 @@ kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
 ```
 
-Then deploy pods with Sysbox [see next section](#deploying-pods-with-sysbox).
+Then deploy pods with Sysbox [see next section](#pod-deployment).
 
 NOTES:
 
@@ -70,9 +69,10 @@ NOTES:
     according to your needs.
 
 -   Installing Sysbox on a node does not imply all pods on the node are deployed
-    with Sysbox. You can choose which pods use Sysbox via the pod's spec (see next
-    section). Pods that don't use Sysbox continue to use the default low-level
-    runtime (i.e., the OCI runc) or any other runtime you choose.
+    with Sysbox. You can choose which pods use Sysbox via the pod's spec (see
+    [Pod Deployment](#pod-deployment) below). Pods that don't use Sysbox
+    continue to use the default low-level runtime (i.e., the OCI runc) or any
+    other runtime you choose.
 
 -   Pods deployed with Sysbox are managed via K8s just like any other pods; they
     can live side-by-side with non Sysbox pods and can communicate with them
@@ -80,129 +80,14 @@ NOTES:
 
 -   If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
 
-## Deploying Pods with Sysbox
-
-Deploying pods with Sysbox is easy: you only need a couple of things in the pod
-spec.
-
-For example, here is a sample pod spec using the `ubuntu-bionic-systemd-docker`
-image. It creates a rootless pod that runs systemd as init (pid 1) and comes
-with Docker (daemon + CLI) inside:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: ubu-bio-systemd-docker
-  annotations:
-    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
-spec:
-  runtimeClassName: sysbox-runc
-  containers:
-  - name: ubu-bio-systemd-docker
-    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
-    command: ["/sbin/init"]
-  restartPolicy: Never
-```
-
-There are two key pieces of the pod's spec that tie it to Sysbox:
-
--   **"runtimeClassName":** Tells K8s to deploy the pod with Sysbox (rather than the
-    default OCI runc). The pods will be scheduled only on the nodes that support
-    Sysbox.
-
--   **"io.kubernetes.cri-o.userns-mode":** Tells CRI-O to launch this as a rootless
-    pod (i.e., root user in the pod maps to an unprivileged user on the host)
-    and to allocate a range of 65536 Linux user-namespace user and group
-    IDs. This is required for Sysbox pods.
-
-Also, for Sysbox pods you typically want to avoid sharing the process (pid)
-namespace between containers in a pod. Thus, avoid setting
-`shareProcessNamespace: true` in the pod's spec, especially if the pod carries
-systemd inside (as otherwise systemd won't be pid 1 in the pod and will fail).
-
-Depending on the size of the pod's image, it may take several seconds for the
-pod to deploy on the node. Once the image is downloaded on a node however,
-deployment should be very quick (few seconds).
-
-## Kubernetes Manifests
+## Installation Manifests
 
 The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8s-manifests).
 
-## Sysbox Container Images
+## Pod Deployment
 
-The pod in the prior example uses the
-`ubuntu-bionic-systemd-docker`, but you can use any container
-image you want. Sysbox places no requirements on the container image.
-
-Nestybox has several images which you can find in the [Nestybox Dockerhub registry](https://hub.docker.com/u/nestybox).
-Those same images are in the [Nestybox GitHub registry](https://github.com/orgs/nestybox/packages).
-
-We usually rely on `registry.nestybox.com` as an image front-end so that Docker
-image pulls are forwarded to the most suitable repository without impacting our
-users.
-
-Some of those images carry systemd only, others carry systemd + Docker, other
-carry systemd + K8s (yes, you can run K8s inside rootless pods deployed by
-Sysbox).
-
-## Host Volume Mounts
-
-To mount host volumes into a K8s pod deployed with Sysbox, the K8s worker node's
-kernel **must include** the `shiftfs` kernel module.
-
-**NOTE: shiftfs is currently only supported on Ubuntu kernels and it's installed
-automatically by the [sysbox-deploy-k8 daemonset](#installation).**
-
-The need for shiftfs arises because such Sysbox pods are rootless, meaning that
-the root user inside the pod maps to a non-root user on the host (e.g., pod user
-ID 0 maps to host user ID 296608). Without shiftfs, host directories or files
-which are typically owned by users IDs in the range 0->65535 will show up as
-`nobody:nogroup` inside the pod.
-
-The shiftfs module solves this problem, as it allows Sysbox to "shift" user
-and group IDs inside the pod, such that files owned by users 0->65536 on the
-host also show up as owned by users 0->65536 inside the pod.
-
-Once shiftfs is installed, Sysbox will detect this and use it when necessary.
-As a user you don't need to know anything about shiftfs; you just setup the pod
-with volumes as usual.
-
-For example, the following spec creates a Sysbox pod with ubuntu-bionic + systemd +
-docker and mounts host directory `/root/somedir` into the pod's `/mnt/host-dir`.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: ubu-bio-systemd-docker
-  annotations:
-    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
-spec:
-  runtimeClassName: sysbox-runc
-  containers:
-  - name: ubu-bio-systemd-docker
-    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
-    command: ["/sbin/init"]
-    volumeMounts:
-      - mountPath: /mnt/host-dir
-        name: host-vol
-  restartPolicy: Never
-  volumes:
-  - name: host-vol
-    hostPath:
-      path: /root/somedir
-      type: Directory
-```
-
-When this pod is deployed, Sysbox will automatically enable shiftfs on the pod's
-`/mnt/host-dir`. As a result that directory will show up with proper user-ID and
-group-ID ownership inside the pod.
-
-With shiftfs you can even share the same host directory across pods, even if
-the pods each get exclusive Linux user-namespace user-ID and group-ID mappings.
-Each pod will see the files with proper ownership inside the pod (e.g., owned
-by users 0->65536) inside the pod.
+Once Sysbox is installed, you can deploy pods with it easily. See
+[here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more on this.
 
 ## Uninstallation
 
