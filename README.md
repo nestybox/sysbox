@@ -78,19 +78,18 @@ Rootless Kubernetes pods with Sysbox: https://asciinema.org/a/401488?speed=1.5
 
 Sysbox solves problems such as:
 
-*   Enhancing the isolation of containers deployed with Docker or Kubernetes
+*   Enhancing the isolation of containerized microservices
     (root in the container maps to an uprivileged user on the host).
 
 *   Enabling a highly capable root user inside the container without
     compromising host security.
 
 *   Securing CI/CD pipelines by enabling Docker-in-Docker or
-    Kubernetes-in-Docker without resorting to insecure privileged containers.
+    Kubernetes-in-Docker without insecure privileged containers.
 
 *   Enabling the use of containers as "VM-like" environments for development,
-    local testing, learning, etc. The container can run systemd, have a highly
-    capable root user, run Docker and even Kubernetes inside, easily and with
-    strong isolation from the host.
+    local testing, learning, etc., with strong isolation and the ability
+    to run systemd, Docker, and even kubernetes inside the container.
 
 *   Running legacy apps inside containers (instead of less efficient VMs).
 
