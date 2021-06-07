@@ -14,7 +14,8 @@ for reference).
 ## Contents
 
 -   [Deploying containers with Docker + Sysbox](#deploying-containers-with-docker--sysbox)
--   [Deploying containers with Kubernetes + Sysbox](#deploying-containers-with-kubernetes--sysbox)
+-   [Deploying Pods with Kubernetes + Sysbox](#deploying-pods-with-kubernetes--sysbox)
+-   [Sysbox Container Images](#sysbox-container-images)
 -   [Deploying containers with sysbox-runc directly](#deploying-containers-with-sysbox-runc-directly)
 -   [Using Other Container Managers](#using-other-container-managers)
 
@@ -32,8 +33,6 @@ single microservice that you wish to run with strong isolation (via the Linux
 user-namespace), or whether it carries a full OS environment with systemd,
 Docker, etc. (as the container image in the above example does).
 
-Nestybox has several reference images in our [Dockerhub registry](https://hub.docker.com/u/nestybox).
-
 The [Sysbox Quickstart Guide](../quickstart/README.md) and [Nestybox blog](https://blog.nestybox.com)
 have several examples.
 
@@ -44,9 +43,15 @@ see [here](install-package.md#configuring-dockers-default-runtime-to-sysbox).
 **NOTE:** Almost all Docker functionality works with Sysbox, but there are a few
 exceptions. See the [Sysbox limitations doc](limitations.md) for further info.
 
-## Deploying containers with Kubernetes + Sysbox
+## Deploying Pods with Kubernetes + Sysbox
 
-To deploy a Kubernetes pod with Sysbox, use a pod spec such as this one:
+Assuming Sysbox is [installed](install-k8s.md) on the Kubernetes cluster,
+deploying pods with Sysbox is easy: you only need a couple of things in the pod
+spec.
+
+For example, here is a sample pod spec using the `ubuntu-bionic-systemd-docker`
+image. It creates a rootless pod that runs systemd as init (pid 1) and comes
+with Docker (daemon + CLI) inside:
 
 ```yaml
 apiVersion: v1
@@ -64,18 +69,95 @@ spec:
   restartPolicy: Never
 ```
 
-There are two directives in the pod spec that tie it to Sysbox:
+There are two key pieces of the pod's spec that tie it to Sysbox:
 
--   `runtimeClassName: sysbox-runc` tells Kubernetes to use the Sysbox runtime to
-    deploy the pod. This assumes the Sysbox runtime class resource has been
-    applied to the cluster as shown [here](install-k8s.md).
+-   **"runtimeClassName":** Tells K8s to deploy the pod with Sysbox (rather than the
+    default OCI runc). The pods will be scheduled only on the nodes that support
+    Sysbox.
 
--   `io.kubernetes.cri-o.userns-mode: "auto:size=65536"` tells CRI-O to
-    enable the Linux user-namespace on the pod and auto assign ID mappings
-    to it. This is necessary to run the pod with Sysbox.
+-   **"io.kubernetes.cri-o.userns-mode":** Tells CRI-O to launch this as a rootless
+    pod (i.e., root user in the pod maps to an unprivileged user on the host)
+    and to allocate a range of 65536 Linux user-namespace user and group
+    IDs. This is required for Sysbox pods.
 
-You can choose any container image of your choice; Nestybox has several
-reference images in our [Dockerhub registry](https://hub.docker.com/u/nestybox).
+Also, for Sysbox pods you typically want to avoid sharing the process (pid)
+namespace between containers in a pod. Thus, avoid setting
+`shareProcessNamespace: true` in the pod's spec, especially if the pod carries
+systemd inside (as otherwise systemd won't be pid 1 in the pod and will fail).
+
+Depending on the size of the pod's image, it may take several seconds for the
+pod to deploy on the node. Once the image is downloaded on a node however,
+deployment should be very quick (few seconds).
+
+### Mounting Host Volumes to a Sysbox Pod
+
+To mount host volumes into a K8s pod deployed with Sysbox, the K8s worker node's
+kernel **must include** the `shiftfs` kernel module.
+
+**NOTE: shiftfs is currently only supported on Ubuntu kernels and it's installed
+automatically by the sysbox-deploy-k8 daemonset.**
+
+The need for shiftfs arises because such Sysbox pods are rootless, meaning that
+the root user inside the pod maps to a non-root user on the host (e.g., pod user
+ID 0 maps to host user ID 296608). Without shiftfs, host directories or files
+which are typically owned by users IDs in the range 0->65535 will show up as
+`nobody:nogroup` inside the pod.
+
+The shiftfs module solves this problem, as it allows Sysbox to "shift" user
+and group IDs inside the pod, such that files owned by users 0->65536 on the
+host also show up as owned by users 0->65536 inside the pod.
+
+Once shiftfs is installed, Sysbox will detect this and use it when necessary.
+As a user you don't need to know anything about shiftfs; you just setup the pod
+with volumes as usual.
+
+For example, the following spec creates a Sysbox pod with ubuntu-bionic + systemd +
+docker and mounts host directory `/root/somedir` into the pod's `/mnt/host-dir`.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubu-bio-systemd-docker
+  annotations:
+    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+spec:
+  runtimeClassName: sysbox-runc
+  containers:
+  - name: ubu-bio-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+    command: ["/sbin/init"]
+    volumeMounts:
+      - mountPath: /mnt/host-dir
+        name: host-vol
+  restartPolicy: Never
+  volumes:
+  - name: host-vol
+    hostPath:
+      path: /root/somedir
+      type: Directory
+```
+
+When this pod is deployed, Sysbox will automatically enable shiftfs on the pod's
+`/mnt/host-dir`. As a result that directory will show up with proper user-ID and
+group-ID ownership inside the pod.
+
+With shiftfs you can even share the same host directory across pods, even if
+the pods each get exclusive Linux user-namespace user-ID and group-ID mappings.
+Each pod will see the files with proper ownership inside the pod (e.g., owned
+by users 0->65536) inside the pod.
+
+## Sysbox Container Images
+
+The prior examples used the `ubuntu-bionic-systemd-docker`, but you can use any
+container image you want. **Sysbox places no requirements on the container image.**
+
+Nestybox has several images which you can find in the [Nestybox Dockerhub registry](https://hub.docker.com/u/nestybox).
+Those same images are in the [Nestybox GitHub registry](https://github.com/orgs/nestybox/packages).
+
+We usually rely on `registry.nestybox.com` as an image front-end so that Docker
+image pulls are forwarded to the most suitable repository without impacting our
+users.
 
 ## Deploying containers with sysbox-runc directly
 
