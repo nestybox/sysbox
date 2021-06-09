@@ -9,7 +9,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Reconfiguration Procedure](#reconfiguration-procedure)
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
 -   [Sysbox Log Configuration](#sysbox-log-configuration)
--   [Sysbox Data Store Configuration \[ +v0.3.0 \]](#sysbox-data-store-configuration--v030-)
+-   [Sysbox Data Store Configuration \[ v0.3.0+ \]](#sysbox-data-store-configuration--v030-)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Reconfiguration Procedure
@@ -97,7 +97,7 @@ config option in both the sysbox-mgr and sysbox-fs daemons.
 Finally, the log-level (info, debug, etc) can be changed via the
 `--log-level` option. This is useful for debugging.
 
-## Sysbox Data Store Configuration \[ +v0.3.0 ]
+## Sysbox Data Store Configuration \[ v0.3.0+ ]
 
 As part of its operation, Sysbox uses a host directory as a data
 store. By default, Sysbox uses `/var/lib/sysbox`, but this can be

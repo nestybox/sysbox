@@ -16,7 +16,12 @@ There are two ways to do this:
 
 The following sections show examples of each.
 
-## Building A System Container That Includes Inner Container Images \[ +v0.1.2 ]
+## Contents
+
+-   [Building A System Container That Includes Inner Container Images \[ v0.1.2+ \]](#building-a-system-container-that-includes-inner-container-images--v012-)
+-   [Committing A System Container That Includes Inner Container Images](#committing-a-system-container-that-includes-inner-container-images)
+
+## Building A System Container That Includes Inner Container Images \[ v0.1.2+ ]
 
 **Check out this [video](https://asciinema.org/a/tYLbk5rQNOQtVgr236kErv7Gn?speed=2).**
 

@@ -12,7 +12,7 @@ Features that are specific to Sysbox-EE are tagged with **"Sysbox-EE Feature
 Highlight"**.
 
 Features that appear in a particular Sysbox release are flagged in the docs with
-the release tag (e.g., "**\[ +v0.1.2 ]**" indicates the feature appeared in
+the release tag (e.g., "**\[ v0.1.2+ ]**" indicates the feature appeared in
 Sysbox release v0.1.2 and beyond).
 
 ## Documents

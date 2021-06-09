@@ -4,7 +4,7 @@
 
 -   [Intro](#intro)
 -   [Nestybox Dockerhub Repo](#nestybox-dockerhub-repo)
--   [Preloading Inner Container Images into a System Container \[ +v0.1.2 \]](#preloading-inner-container-images-into-a-system-container--v012-)
+-   [Preloading Inner Container Images into a System Container \[ v0.1.2+ \]](#preloading-inner-container-images-into-a-system-container--v012-)
 -   [Approaches to Image Preloading](#approaches-to-image-preloading)
 -   [Preloading Inner Container Images with Docker Build](#preloading-inner-container-images-with-docker-build)
 -   [Preloading Inner Container Images with Docker Commit](#preloading-inner-container-images-with-docker-commit)
@@ -43,7 +43,7 @@ your needs.
 
 If you see an error on them or think they can be improved, please file a [GitHub issue](../../CONTRIBUTING.md).
 
-## Preloading Inner Container Images into a System Container \[ +v0.1.2 ]
+## Preloading Inner Container Images into a System Container \[ v0.1.2+ ]
 
 Sysbox allows you to easily preload inner container images into a system container image.
 
@@ -96,7 +96,7 @@ Conceptually, the process is simple: the Dockerfile for the system container
 image has an instruction that requests the container manager inside the system
 container (e.g., inner Docker) to pull the inner container images. That's it.
 
-There is a [step-by-step example](../quickstart/images.md#building-a-system-container-that-includes-inner-container-images)
+There is a [step-by-step example](../quickstart/images.md#building-a-system-container-that-includes-inner-container-images--v012-)
 in the Sysbox Quick-Start Guide.
 
 This process also works if the system container image has containerd inside
@@ -225,7 +225,7 @@ not required due to the inner Docker image sharing feature.
 
 There are a few limitations for inner Docker image sharing:
 
--   The storage savings apply only for inner container images that are [preloaded into the system container](#preloading-inner-container-images-into-a-system-container).
+-   The storage savings apply only for inner container images that are [preloaded into the system container](#preloading-inner-container-images-into-a-system-container--v012-).
     They do not apply for inner images downloaded into the system container at runtime.
 
 -   The storage savings apply only when the inner container images are Docker
