@@ -169,7 +169,7 @@ installed:
     your distro.
 
 *   Alternativley, if a package for your distro is not yet available, or if you
-    want to get the latest changes from upstream, you [build and install Sysbox from source](docs/developers-guide/README.md).
+    want to get the latest changes from upstream, you can [build and install Sysbox from source](docs/developers-guide/README.md).
 
 ## Using Sysbox
 
@@ -305,7 +305,7 @@ The method of uninstallation depends on the method used to install Sysbox:
 
 *   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/user-guide/install-package.md#uninstalling-sysbox).
 
-*   If Sysbox was built and installed from source, follows [these instructions](docs/developers-guide/build.md#cleanup--uninstall).
+*   If Sysbox was built and installed from source, follow [these instructions](docs/developers-guide/build.md#cleanup--uninstall).
 
 ## Roadmap
 
