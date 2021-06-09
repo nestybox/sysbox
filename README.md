@@ -29,11 +29,9 @@ key ways:
 
 Sysbox is an OCI-based "runc", meaning that you typically use Docker and
 Kubernetes to deploy these enhanced containers (in fact Sysbox works under the
-covers, you don't interact with it directly).
-
-Thus there is no need to learn new tools or modify your existing container
-workflows to take advantage of Sysbox. Just install it and point your container
-manager / orchestrator to it.
+covers, you don't interact with it directly). Thus there is no need to learn new
+tools or modify your existing container workflows to take advantage of
+Sysbox. Just install it and point your container manager / orchestrator to it.
 
 For example, this simple Docker command creates a container with Sysbox; you get
 a well isolated container capable of seamlessly running most software that runs
@@ -204,7 +202,9 @@ spec:
 You can choose whatever container image you want, Sysbox places no requirements
 on the image.
 
-The [Sysbox Quickstart Guide](docs/quickstart/README.md) has many usage examples.
+The [Sysbox User Guide](docs/user-guide/deploy.md) has more info on this, and
+the [Sysbox Quickstart Guide](docs/quickstart/README.md) and has many usage examples.
+
 You should start there to get familiarized with the use cases enabled by Sysbox.
 
 ## Documentation
