@@ -241,7 +241,7 @@ the OCI runc (the default runtime for Docker and Kubernetes).
 Even containers deployed inside the system containers have excellent
 performance, thought there is a slight overhead for network IO (as expected
 since packets emitted by inner containers go through an additional network
-inside the system container).
+interface / bridge inside the system container).
 
 Now, if you use Sysbox to deploy system containers that replace VMs, then the
 performance and efficiency gains are significant: you can deploy 2X as many

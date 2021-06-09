@@ -115,7 +115,7 @@ There is one advantage of Directed userns ID mapping:
 
 -   Sysbox does not need the Linux kernel's [shiftfs module](design.md#ubuntu-shiftfs-module).
     This means Sysbox can run in kernels that don't carry that module (e.g.,
-    RHEL, Fedora, CentOS).
+    Fedora, CentOS).
 
 But there are a couple of drawbacks:
 

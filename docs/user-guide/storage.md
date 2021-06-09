@@ -57,21 +57,9 @@ However, this also implies that host files owned by users 100000->165535 will
 show up as owned by users 0->65535 in the container, but host files owned by
 other users will show up as owned by "nobody:nogroup" inside the container.
 
-This means that for host files or directories that are bind-mounted into
-the container, if their file ownership does not match the container's user
-and group ID mappings, those files will show up as "nobody:nogroup" inside
-the container, which is not good.
-
-But this is tricky, because the user launching the container can't always know
-the user-namespace mappings that will be assigned to a container. Thus, he or
-she can't always set the ownership of bind-mounted files properly.
-
-To further complicate things, the user and group ID mappings are either chosen
-by a container manager such as Docker (e.g., when Docker operates in
-userns-remap mode) or otherwise automatically selected by Sysbox. When the
-mappings are automatically selected by Sysbox, the mappings can be the same
-across containers (Sysbox Community Edition) or exclusive between containers
-(Sysbox Enterprise Edition).
+For example, host files or directories that are bind-mounted into the container
+will show up as "nobody:nogroup" inside the container (since they are owned
+by users in the range 0->65536 at host level). This is not desirable.
 
 ### The Solution
 
@@ -84,7 +72,7 @@ container via the Linux user-namespace.
 Sysbox has a feature that implements this solution, but it requires that the
 Linux distro support "ID shifting" (i.e., via the `shiftfs` kernel module).
 
-    NOTE: Currently, only Ubuntu supports the shiftfs kernel module.
+    NOTE: Currently, only Ubuntu carries the shiftfs kernel module.
 
 For distros that do not support shiftfs, the host admin must configure the
 user and group ID ownership of the bind mounted volumes.
@@ -240,9 +228,9 @@ sysbox:165536:65536
 
 For Sysbox Enterprise Edition (Sysbox-EE):
 
-1.  Sysbox-EE assigns exclusive user-ID and group-ID mapping to each container.
+1.  Sysbox-EE assigns exclusive user-ID and group-ID mappings to each container.
 
-    This presents a problem for bind mount ownership in host's where shiftfs is
+    This presents a problem for bind mount ownership in hosts where shiftfs is
     not supported, because the host admin can't tell what host IDs will be
     assigned to the container (and therefore can't tell what ownership should the
     bind-mounted files have).
