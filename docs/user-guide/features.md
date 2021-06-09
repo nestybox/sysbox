@@ -7,10 +7,10 @@
 -   Currently we only support Docker/containerd, but plan to add support for
     more managers / orchestrators (e.g., K8s) soon.
 
--   Sysbox is ~90% OCI-compatible. See [here](docs/user-guide/design.md#sysbox-oci-compatibility) for
+-   Sysbox is ~90% OCI-compatible. See [here](design.md#sysbox-oci-compatibility) for
     more on this.
 
-## Systemd-in-Docker [ +v0.1.2 ]
+## Systemd-in-Docker [ v0.1.2+ ]
 
 -   Run Systemd inside a Docker container easily, without complex container configurations.
 
@@ -22,7 +22,7 @@
 
 -   Full isolation between the Docker inside the container and the Docker on the host.
 
-## Kubernetes-in-Docker [ +v0.2.0 ]
+## Kubernetes-in-Docker [ v0.2.0+ ]
 
 -   Deploy Kubernetes (K8s) inside containers with proper isolation (no
     privileged containers), using simple Docker images and Docker run commands
@@ -44,7 +44,7 @@
     inside the container, even though processes in the container can setup
     other mounts).
 
--   See the [security section](docs/user-guide/security.md) of the User Guide
+-   See the [security section](security.md) of the User Guide
     for details.
 
 ## Fast & Efficient
@@ -54,6 +54,6 @@
 ## Inner Container Image Preloading
 
 -   You can create a system container image that includes inner container
-    images using a simple Dockerfile or via Docker commit. See [here](docs/quickstart/images.md) for more.
+    images using a simple Dockerfile or via Docker commit. See [here](../quickstart/images.md) for more.
 
-Please see our [Roadmap](#roadmap) for a list of features we are working on.
+Please see our [Roadmap](../../README.md#roadmap) for a list of features we are working on.

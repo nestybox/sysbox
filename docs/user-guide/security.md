@@ -12,10 +12,10 @@ This document describes security aspects of Sysbox system containers.
 -   [Sysfs Virtualization](#sysfs-virtualization)
 -   [Process Capabilities](#process-capabilities)
 -   [System Calls](#system-calls)
--   [System Call Interception \[ +v0.2.0 \]](#system-call-interception--v020-)
+-   [System Call Interception \[ v0.2.0+ \]](#system-call-interception--v020-)
 -   [Devices](#devices)
 -   [Resource Limiting & Cgroups](#resource-limiting--cgroups)
--   [Initial Mount Immutability \[ +v0.3.0 \]](#initial-mount-immutability--v030-)
+-   [Initial Mount Immutability \[ v0.3.0+ \]](#initial-mount-immutability--v030-)
 -   [No-New-Privileges Flag](#no-new-privileges-flag)
 -   [Support for Linux Security Modules (LSMs)](#support-for-linux-security-modules-lsms)
 -   [Out-of-Memory Score Adjustment](#out-of-memory-score-adjustment)
@@ -338,7 +338,7 @@ It's currently not possible to reduce the set of syscalls allowed within
 a system container (i.e., the Docker `--security-opt seccomp=<profile>` option
 is not supported).
 
-## System Call Interception \[ +v0.2.0 ]
+## System Call Interception \[ v0.2.0+ ]
 
 Sysbox performs selective system call interception on a few "control-path"
 system calls, such as `mount` and `umount2`.
@@ -386,7 +386,7 @@ For example, when using Docker to deploy system containers, the
 `docker run --cpu*`, `--memory*`, `--blkio*`, etc., settings can be
 used for this purpose.
 
-## Initial Mount Immutability \[ +v0.3.0 ]
+## Initial Mount Immutability \[ v0.3.0+ ]
 
 Filesystem mounts that make up the [system container's rootfs jail](#root-filesystem-jail)
 (i.e., mounts setup at container creation time) are considered special, meaning
