@@ -171,7 +171,9 @@ it could be.
 The Sysbox Enterprise Edition (Sysbox-EE) improves on this by providing
 exclusive user-ID mappings to each container.
 
-#### **-------- Sysbox-EE Feature Highlight --------**
+***
+
+#### ** --- Sysbox-EE Feature Highlight --- **
 
 ### Exclusive Userns ID mapping allocation
 
@@ -239,7 +241,7 @@ The size of the reserved ID range, as well as the policy in case the range is
 exhausted, is configurable via the sysbox-mgr command line.  If you wish to
 change this, See `sudo sysbox-mgr --help` and use the [Sysbox reconfiguration procedure](configuration.md#reconfiguration-procedure).
 
-#### **----------------------------------------------------------**
+***
 
 ## Procfs Virtualization
 

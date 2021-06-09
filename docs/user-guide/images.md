@@ -67,7 +67,8 @@ This has several benefits:
     -   In environments where there is no network connection, preloading the system
         container with inner container is a must have.
 
-#### **-------- Sysbox-EE Feature Highlight --------**
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
 
 In addition, Sysbox Enterprise Edition (Sysbox-EE) has a feature called "Inner
 Docker Image Sharing" that maximizes sharing of preloaded inner container images
@@ -75,7 +76,7 @@ across system containers. This **significantly** reduces the storage overhead on
 the host. See the section on [Inner Docker Image Sharing](#inner-docker-image-sharing)
 below for more details.
 
-#### **----------------------------------------------------------**
+***
 
 ## Approaches to Image Preloading
 
@@ -128,7 +129,8 @@ This approach is helpful as a way of saving work or exporting a working system
 container for deployment in another machine (i.e., commit the system container
 image, docker push to a repo, and docker pull from another machine).
 
-#### **-------- Sysbox-EE Feature Highlight --------**
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
 
 ## Inner Docker Image Sharing
 
@@ -241,4 +243,4 @@ sysbox-mgr.
 See the [User Guide Configuration doc](configuration.md) for further info
 on how to do this.
 
-#### **----------------------------------------------------------**
+***
