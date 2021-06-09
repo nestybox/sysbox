@@ -84,21 +84,26 @@ images).
 The Sysbox Quick Start Guide has examples [here](../quickstart/dind.md#persistence-of-inner-container-images-using-docker-volumes)
 and [here](../quickstart/dind.md#persistence-of-inner-container-images-using-bind-mounts).
 
-A warning though:
+A couple of caveats though:
 
-    A given host directory mounted into a system container's `/var/lib/docker` must
-    only be mounted on a **single system container at any given time**. This is a
-    restriction imposed by the inner Docker daemon, which does not allow its image
-    cache to be shared concurrently among multiple daemon instances. Sysbox will
-    check for violations of this rule and report an appropriate error during system
-    container creation.
+1) A given host directory mounted into a system container's `/var/lib/docker` must
+   only be mounted on a single system container at any given time. This is a
+   restriction imposed by the inner Docker daemon, which does not allow its image
+   cache to be shared concurrently among multiple daemon instances. Sysbox will
+   check for violations of this rule and report an appropriate error during system
+   container creation.
+
+2) Do not mount the host's `/var/lib/docker` to a system container's `/var/lib/docker`.
+   Doing so breaks container isolation since the system container can now inspect
+   all all sibling containers on the host. Furthermore, as mentioned in bullet
+   (1) above, you can't share `/var/lib/docker` accross multiple container instances.
 
 ## Inner Docker Privileged Containers
 
 Inside a system container you _can_ deploy privileged Docker containers (e.g.,
 by issuing the following command to the inner Docker: `docker run --privileged ...`).
 
-    NOTE: due to a bug in Docker, this requires the inner Docker to be version 19.03 or newer.
+**NOTE: due to a bug in Docker, this requires the inner Docker to be version 19.03 or newer.**
 
 The ability to run privileged containers inside a system container is useful
 when deploying inner containers that require full privileges (typically
