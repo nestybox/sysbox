@@ -62,7 +62,7 @@ correct ownership (i.e., directories in the container's `/` directory will have
 `root:root` ownership rather than `nobody:nogroup`).
 
 Sysbox detects the presence of the shiftfs module and uses it when appropriate
-to ensure the container has access to it's (chroot jail) filesystem and any
+to ensure the container has access to its (chroot jail) filesystem and any
 host files or directores mounted into the container.
 
 In scenarios where the shiftfs module is required but not present in the kernel,
@@ -90,6 +90,8 @@ so as if it were the root user on the host.**
 In other words, be aware that host files or directories mounted into the
 container are **not isolated** from the container. Thus, make sure to only mount
 host files / directories into the container when it's safe to do so.
+
+Refer to the user-guide's [storage chapter](storage.md) for more info.
 
 ### Shiftfs Functional Limitations
 
