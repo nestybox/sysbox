@@ -93,10 +93,12 @@ A couple of caveats though:
    check for violations of this rule and report an appropriate error during system
    container creation.
 
-2) Do not mount the host's `/var/lib/docker` to a system container's `/var/lib/docker`.
-   Doing so breaks container isolation since the system container can now inspect
-   all all sibling containers on the host. Furthermore, as mentioned in bullet
-   (1) above, you can't share `/var/lib/docker` accross multiple container instances.
+2) Do not mount the host's `/var/lib/docker` to a system container's
+   `/var/lib/docker`.  Doing so breaks container isolation since the system
+   container can now inspect all sibling containers on the host. Furthermore, as
+   mentioned in bullet (1) above, you cannot share `/var/lib/docker` accross
+   multiple container instances, so you can't share the host's Docker cache with
+   a Docker instance running inside a sysbox container.
 
 ## Inner Docker Privileged Containers
 
