@@ -324,7 +324,8 @@ root@syscont:/# umount /root/tmp
 The [user-guide](../user-guide/security.md#initial-mount-immutability--v030-)
 has more info on this.
 
-#### **-------- Sysbox-EE Feature Highlight --------**
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
 
 ### Exclusive User-ID Mappings
 
@@ -362,4 +363,4 @@ with no permissions to access any data in other containers or on the host.
 
 More info on this can be found in the [Sysbox User Guide](../user-guide/security.md#user-namespace-id-mapping).
 
-#### **----------------------------------------------------------**
+***
