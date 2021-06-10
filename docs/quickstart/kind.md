@@ -630,7 +630,7 @@ And remember, it should be fairly easy to add functionality to Kindbox, as it's
 just a bash wrapper around Docker commands that manage the cluster.
 
 If you would like Nestybox to add more functionality, please file an
-in the [Kindbox Github repo](https://github.com/nestybox/kindbox), or [contact us](../../README.md#contact).
+issue in the [Kindbox Github repo](https://github.com/nestybox/kindbox), or [contact us](../../README.md#contact).
 
 ## Preloading Inner Pod Images into the K8s Node Image
 

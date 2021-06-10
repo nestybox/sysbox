@@ -537,7 +537,8 @@ Docker daemons pulling those images from a remote repository (e.g., Dockerhub).
 To achieve this, one may be tempted to create a single host directory or volume
 that is mounted into the `/var/lib/docker` of all the system containers that are
 running Docker. But this is not correct because each Docker instance must each
-have a dedicated `/var/lib/docker` data-store (i.e., it can't be shared).
+have a dedicated `/var/lib/docker` data-store (i.e., it can't be shared). This
+is a restriction imposed by the Docker daemon.
 
 A correct way to achieve this is to host a local image registry using the
 open-source Docker registry, and point the Docker instances running inside the

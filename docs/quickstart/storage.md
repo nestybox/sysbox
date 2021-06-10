@@ -57,6 +57,6 @@ From the first system container:
 /var/lib/docker/volumes/shared-storage/_data on /mnt/shared-storage type shiftfs (rw,relatime)
 ```
 
-In the example above we used a Docker volume as the shared storage. However,
-we can also use an arbitrary host directory as the shared storage. We need simply
-bind-mount it to the system containers.
+In the example above we used a Docker volume as the shared storage. However, we
+can also use an arbitrary host directory as the shared storage. We need to
+simply bind-mount it to the system containers.
