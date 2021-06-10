@@ -6,7 +6,7 @@ systemd inside.
 The [User Guide](../user-guide/systemd.md) describes this functionality in
 deeper detail.
 
-## Deploy a System Container with Systemd inside \[ +v0.1.2 ]
+## Deploy a System Container with Systemd inside \[ v0.1.2+ ]
 
 Deploying systemd inside a system container is useful when you plan to
 run multiple services inside the system container, or when you want to

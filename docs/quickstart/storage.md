@@ -59,5 +59,4 @@ From the first system container:
 
 In the example above we used a Docker volume as the shared storage. However,
 we can also use an arbitrary host directory as the shared storage. We need simply
-bind-mount it to the system containers, though we must follow the requirements
-for bind-mount ownership described in the [Sysbox User Guide](../user-guide/storage.md#system-container-bind-mount-requirements).
+bind-mount it to the system containers.

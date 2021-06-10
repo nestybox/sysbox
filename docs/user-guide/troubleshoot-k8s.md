@@ -27,7 +27,7 @@ This is likely because either:
 
 *   The K8s worker node is not labeled with "crio-install=yes".
 
-Make sure to follow the [CRI-O installation instructions](../README.md#cri-o-installation) to solve this.
+Make sure to follow the [CRI-O installation instructions](install-k8s.md) to solve this.
 
 ## crio-deploy-k8s fails to install CRI-O
 
@@ -79,7 +79,7 @@ This is likely because either:
 *   CRIO is not installed on the node (i.e., the node is not labeled with
     "crio-runtime=running", as set by the crio-deploy-k8s daemonset).
 
-Make sure to follow the [Sysbox installation instructions](../README.md#sysbox-installation) to solve this.
+Make sure to follow the [Sysbox installation instructions](install-k8s.md) to solve this.
 
 ## sysbox-deploy-k8s fails to install Sysbox
 
@@ -216,8 +216,8 @@ systemctl restart crio
 Note that restarting CRI-O will cause all pods on the node to be restarted
 (including the kube-proxy and CNI pods).
 
-If the sysbox runtime config is not present, then [uninstall](../README.md#uninstallation)
-and re-install\[../README.md#sysbox-installation) the sysbox daemonset.
+If the sysbox runtime config is not present, then [uninstall](install-k8s.md#uninstallation)
+and [re-install](install-k8s.md) the sysbox daemonset.
 
 ## Sysbox health status
 

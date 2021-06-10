@@ -27,7 +27,7 @@ functionality.
 
 [System Container Images](images.md)
 
-[Preloading System Containers with Inner Container Images](images.md#preloading-inner-container-images-into-a-system-container)
+[Preloading System Containers with Inner Container Images](images.md#preloading-inner-container-images-into-a-system-container--v012-)
 
 [Enhanced Container Isolation & Security](security.md)
 

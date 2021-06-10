@@ -29,7 +29,7 @@ methods supported, and any other requirements:
 
 -   "Build from source" means you can build and install Sysbox from source on that distro. It's pretty easy, see [here](developers-guide/README.md).
 
--   "Kernel upgrade" means a kernel upgrade may be required (Sysbox requires a fairly new kernel). See [below](#kernel-upgrade-procedure) for more.
+-   "Kernel upgrade" means a kernel upgrade may be required (Sysbox requires a fairly new kernel). See [below](#kernel-upgrade-procedures) for more.
 
 ## Kernel Upgrade Procedures
 

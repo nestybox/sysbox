@@ -630,12 +630,12 @@ And remember, it should be fairly easy to add functionality to Kindbox, as it's
 just a bash wrapper around Docker commands that manage the cluster.
 
 If you would like Nestybox to add more functionality, please file an
-in the [Kindbox Github repo](https://github.com/nestybox/kindbox), or [contact us](../../README.md#support).
+in the [Kindbox Github repo](https://github.com/nestybox/kindbox), or [contact us](../../README.md#contact).
 
 ## Preloading Inner Pod Images into the K8s Node Image
 
 A key feature of Sysbox is that it allows you to easily create system container
-images that come [preloaded with inner container images](../user-guide/images.md#preloading-inner-container-images-into-a-system-container).
+images that come [preloaded with inner container images](../user-guide/images.md#preloading-inner-container-images-into-a-system-container--v012-).
 
 You can use this to create K8s node images that include inner pod images.
 
