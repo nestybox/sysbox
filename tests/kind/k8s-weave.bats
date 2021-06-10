@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# Tests for deploying a K8s cluster inside system container nodes while
-# making use of KindBox tool.
+# Tests for deploying a K8s cluster inside system container nodes and have them
+# interconnected through weave-net CNI.
 #
 # The system container nodes have K8s + Docker inside (i.e., K8s uses
 # Docker to deploy pods).
