@@ -166,8 +166,11 @@ installed:
 *   Otherwise, use the [Sysbox package](docs/user-guide/install-package.md) for
     your distro.
 
-*   Alternativley, if a package for your distro is not yet available, or if you
+*   Alternatively, if a package for your distro is not yet available, or if you
     want to get the latest changes from upstream, you can [build and install Sysbox from source](docs/developers-guide/README.md).
+
+Before installing, ensure your host meets the [host requirements](#host-requirements)
+listed in the prior section.
 
 ## Using Sysbox
 
@@ -348,7 +351,7 @@ needs are reserved for the Sysbox Enterprise Edition.
 The Sysbox project maintainers will make this determination on a feature by
 feature basis, with total transparency. The goal is to create a balanced
 approach that enables the Sysbox open-source community to benefit and thrive
-while creating opportunities for Nestybbox to create a healthy viable business
+while creating opportunities for Nestybox to create a healthy viable business
 around the technology.
 
 ## Contact
