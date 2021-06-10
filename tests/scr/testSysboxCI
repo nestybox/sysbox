@@ -50,8 +50,8 @@ else
 	# remove all docker images after test too.
 	printf "\n"
 	docker system prune -a -f
-	printf "\nExecuting kind tests ... \n"
-	bats --tap tests/kind/kindbox-custom-net.bats
+	printf "\nExecuting kind basic tests ... \n"
+	bats --tap tests/kind/k8s-custom-net.bats
 	docker system prune -a -f
 
 	# sysbox-pods tests
