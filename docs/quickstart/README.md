@@ -23,6 +23,7 @@ how to use system containers.
 -   [Deploy a System Container with Supervisord and Docker inside](dind.md#deploy-a-system-container-with-supervisord-and-docker-inside)
 -   [Persistence of Inner Container Images using Docker Volumes](dind.md#persistence-of-inner-container-images-using-docker-volumes)
 -   [Persistence of Inner Container Images using Bind Mounts](dind.md#persistence-of-inner-container-images-using-bind-mounts)
+-   [Caching Docker Images among multiple Docker-in-Docker Instances](dind.md#caching-docker-images-among-multiple-docker-in-docker-instances)
 
 ### Kubernetes-in-Docker \[ +v0.2.0 ]
 
