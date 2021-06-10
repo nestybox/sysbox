@@ -99,8 +99,8 @@ This is likely due to one of the following reasons:
 For (1):
 
 At this time, Sysbox does not support Docker installations via snap.
-See [host requirements](install.md#host-requirements) for more info
-and how to overcome this.
+See [here](install-package.md#avoiding-the-docker-snap-package) for info
+on how to overcome this.
 
 For (2):
 
@@ -261,8 +261,7 @@ the system container's root user maps. Recall that Sysbox containers
 always use the Linux user namespace and thus map the root user in the
 system container to a non-root user on the host.
 
-Refer to [System Container Bind Mount Requirements](storage.md#system-container-bind-mount-requirements) for
-info on how to set the correct permissions on the bind mount.
+See [here](storage.md) for info on how to overcome this.
 
 ## Failed to Setup Docker Volume Manager Error
 

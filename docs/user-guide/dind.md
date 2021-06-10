@@ -61,7 +61,7 @@ There are two ways to do this:
 
 2) Using `docker commit`
 
-See the [User-Guide System Container Images document](images.md#preloading-inner-container-images-into-a-system-container)
+See the [User-Guide System Container Images document](images.md#preloading-inner-container-images-into-a-system-container--v012-)
 for a full explanation on how to do this.
 
 ## Persistence of Inner Docker Images

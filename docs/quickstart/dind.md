@@ -456,20 +456,8 @@ The steps to do this are the following:
 1) Create a directory on the host to serve as the persistent image cache for
    the Docker daemon inside the system container.
 
-   As described in the [Sysbox User Guide](../user-guide/storage.md#system-container-bind-mount-requirements)
-   the directory should be owned by a user in the range [0:65536] and
-   will show up with those same user-IDs within the system
-   container. In this example we choose user-ID 0 (root) so that the
-   Docker instance inside the system container will see it's
-   `/var/lib/docker` directory owned by `root:root` inside the system
-   container.
-
-   For extra security, we will also set the permission to 0700 as
-   recommended in the Sysbox Users Guide.
-
 ```console
 $ sudo mkdir /home/someuser/image-cache
-$ sudo chmod 700 /home/someuser/image-cache
 ```
 
 2) Launch the system container and bind-mount the newly created
