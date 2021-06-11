@@ -222,14 +222,14 @@ function install_sysbox_pkg() {
 	# (need this flag inside the test container). Also, add '--log-level debug'
 	# knob to sysbox-fs/mgr if requested.
 	if [ -n "$DEBUG_ON" ]; then
-		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log-level debug --ignore-handler-errors|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service && \
-		sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log-level debug|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log --log-level debug|g' \
 			/lib/systemd/system/sysbox-mgr.service && \
 		systemctl daemon-reload && \
 		systemctl restart sysbox.service
 	else
-		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --ignore-handler-errors|g' \
+		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service && \
 		systemctl daemon-reload && \
 		systemctl restart sysbox.service
