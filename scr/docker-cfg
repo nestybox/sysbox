@@ -182,7 +182,7 @@ function docker_check_network_config() {
 		fi
 	fi
 
-	if [[ "$subnet" != "" ]]; then
+	if [[ "$subnet" != "" ]] && [[ "$subnet" != "null" ]]; then
 		subnet=$(echo $subnet | tr -d '"')
 		local bip_ip=$(echo ${subnet} | cut -d'/' -f 1)
 		if dockerd_running && system_local_subnet ${bip_ip} &&
@@ -204,7 +204,7 @@ function docker_check_network_config() {
 		fi
 	fi
 
-	if [[ "$subnet" != "" ]]; then
+	if [[ "$subnet" != "" ]] && [[ "$subnet" != "null" ]]; then
 		subnet=$(echo $subnet | tr -d '"')
 		local pool_ip=$(echo ${subnet} | cut -d'/' -f 1)
 		if system_local_subnet ${pool_ip}; then
