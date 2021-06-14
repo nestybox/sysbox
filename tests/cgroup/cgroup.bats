@@ -185,6 +185,7 @@ function test_cgroup_memory() {
 	get_docker_cgroup_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
+
 	local cgPathHost=${cg_paths[memory]}
 
 	run cat "${cgPathHost}/memory.limit_in_bytes"
@@ -195,10 +196,10 @@ function test_cgroup_memory() {
 	[ "$status" -eq 0 ]
 	[[ "$output" == "" ]]
 
-	# The mem limit is not visible in the child cgroup, though it's enforced
+	# The mem limit is also visible in the child cgroup
 	run cat "${cgPathHost}/${SYSCONT_CGROUP_ROOT}/memory.limit_in_bytes"
 	[ "$status" -eq 0 ]
-	[[ "$output" == "9223372036854771712" ]]
+	[[ "$output" == "16777216" ]]
 
 	run cat "${cgPathHost}/memory.failcnt"
 	[ "$status" -eq 0 ]
@@ -215,11 +216,20 @@ function test_cgroup_memory() {
 
 	docker exec "$syscont" sh -c "cat ${cgPathCont}/memory.limit_in_bytes"
 	[ "$status" -eq 0 ]
-	[[ "$output" == "9223372036854771712" ]]
+	[[ "$output" == "16777216" ]]
 
 	docker exec "$syscont" sh -c "cat ${cgPathCont}/cgroup.procs"
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" -eq 1 ]
+
+	#
+	# Verify docker stats looks good
+	#
+	docker stats --no-stream
+	[ "$status" -eq 0 ]
+
+	local mem_limit=$(echo "${lines[1]}" | awk '{print $6}')
+	[[ "$mem_limit" == "16MiB" ]]
 
 	#
 	# Inside the sys container, use more mem than what was allocated to it
