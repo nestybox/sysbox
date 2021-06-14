@@ -69,6 +69,9 @@ function teardown() {
   run sh -c "echo \"$images\" | grep alpine"
   [ "$status" -eq 0 ]
 
+  run sh -c "echo \"$images\" | grep mknod-test"
+  [ "$status" -eq 0 ]
+
   # run an inner container using one of the embedded images
   docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -80,6 +83,16 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
+
+  # run an inner container with the mknod-test image and verify the special FIFO
+  # device is present in it.
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/mknod-test tail -f /dev/null"
+  [ "$status" -eq 0 ]
+
+  inner_cont="$output"
+
+  docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"ls -l /var/log/ulogd.pcap\""
+  [ "$status" -eq 0 ]
 
   # cleanup
   docker_stop "$syscont"
@@ -100,7 +113,10 @@ function teardown() {
 
 @test "commit with inner images" {
 
-  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  # Note: we use alpine-docker-dbg:3.11 as it comes with Docker 19.03 and helps
+  # us avoid sysbox issue #187 (lchown error when Docker v20+ pulls inner images
+  # with special devices)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:3.11 tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -116,6 +132,9 @@ function teardown() {
   docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/alpine:latest"
   [ "$status" -eq 0 ]
 
+  docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/mknod-test:latest"
+  [ "$status" -eq 0 ]
+
   # commit the sys container image
   docker image rm -f image-commit
   [ "$status" -eq 0 ]
@@ -126,11 +145,11 @@ function teardown() {
   docker image prune -f
 
   # verify the committed image has an appropriate size (slightly
-  # bigger than the base image since it includes busybox & alpine)
+  # bigger than the base image since it includes busybox, alpine, and mknod-test)
   local unique_size=$(__docker system df -v --format '{{json .}}' | jq '.Images[] | select(.Repository == "image-commit") | .UniqueSize' | tr -d '"' | grep -Eo '[[:alpha:]]+|[0-9]+')
   local num=$(echo $unique_size | awk '{print $1}')
   local unit=$(echo $unique_size | awk '{print $3}')
-  [ "$num" -lt "10" ]
+  [ "$num" -lt "15" ]
   [ "$unit" == "MB" ]
 
   # launch a sys container with the committed image
@@ -162,6 +181,9 @@ function teardown() {
   run sh -c "echo \"$images\" | grep alpine"
   [ "$status" -eq 0 ]
 
+  run sh -c "echo \"$images\" | grep mknod-test"
+  [ "$status" -eq 0 ]
+
   # run an inner container using one of the embedded images
   docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -173,6 +195,16 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
+
+  # run an inner container with the mknod-test image and verify the special FIFO
+  # device is present in it.
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/mknod-test tail -f /dev/null"
+  [ "$status" -eq 0 ]
+
+  inner_cont="$output"
+
+  docker exec "$syscont" sh -c "docker exec $inner_cont sh -c \"ls -l /var/log/ulogd.pcap\""
+  [ "$status" -eq 0 ]
 
   # cleanup
   docker_stop "$syscont"
