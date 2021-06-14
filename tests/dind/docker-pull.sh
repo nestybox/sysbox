@@ -28,6 +28,7 @@ retry 10 1 "docker ps"
 # pull inner images
 docker pull ghcr.io/nestybox/busybox:latest
 docker pull ghcr.io/nestybox/alpine:latest
+docker pull ghcr.io/nestybox/mknod-test:latest
 
 # dockerd cleanup (remove the .pid file as otherwise it prevents
 # dockerd from launching correctly inside sys container)
