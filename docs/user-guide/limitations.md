@@ -51,19 +51,6 @@ For example, when using Docker to launch system containers, the
 `docker run --pid=host` and `docker run --network=host` options
 do not work with system containers.
 
-### Docker cgroup driver restriction
-
-Docker uses the Linux cgroups feature to place resource limits on containers.
-
-Docker supports two cgroup drivers: `cgroupfs` and `systemd`.
-In the former, Docker directly manages the container resource
-limits. In the latter, Docker works with Systemd to manage the
-resource limits. The `cgroupfs` driver is the default driver.
-
-Sysbox currently requires that Docker be configured with the
-`cgroupfs` driver. Sysbox does not currently work when Docker is
-configured with the `systemd` cgroup driver.
-
 ### Support for Exposing Host Devices inside System Containers
 
 Sysbox does not currently support exposing host devices inside system
