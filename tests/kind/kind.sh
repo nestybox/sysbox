@@ -18,17 +18,17 @@ fi
 printf "\n"
 docker system prune -a -f
 
-printf "\nExecuting k8s testcases with flannel cni ... \n"
-bats --tap tests/kind/k8s-flannel.bats
+printf "\nExecuting kind testcases with flannel cni ... \n"
+bats --tap tests/kind/kind-flannel.bats
 
-printf "\nExecuting k8s testcases with weave-net cni ... \n"
-bats --tap tests/kind/k8s-weave.bats
+printf "\nExecuting kind testcases with weave-net cni ... \n"
+bats --tap tests/kind/kind-weave.bats
 
-printf "\nExecuting k8s testcases with calico cni ... \n"
-bats --tap tests/kind/k8s-calico.bats
+printf "\nExecuting kind testcases with calico cni ... \n"
+bats --tap tests/kind/kind-calico.bats
 
-printf "\nExecuting k8s testcases with custom docker networks ... \n"
-bats --tap tests/kind/k8s-custom-net.bats
+printf "\nExecuting kind testcases with custom docker networks ... \n"
+bats --tap tests/kind/kind-custom-net.bats
 
 printf "\n"
 docker system prune -a -f

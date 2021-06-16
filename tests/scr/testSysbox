@@ -49,8 +49,8 @@ else
 	bats --tap tests/kind
 	docker system prune -a -f
 
-	# Launch k8s test-suite.
-	./tests/kind/k8s.sh
+	# Launch k8s kind test-suite.
+	./tests/kind/kind.sh
 
 	printf "\nExecuting perf tests ... \n"
 	bats --tap tests/perf
