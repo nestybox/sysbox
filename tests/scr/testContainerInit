@@ -337,6 +337,10 @@ function main() {
 		crio > /var/log/crio.log 2>&1 &
 	fi
 
+	if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+		$PWD/tests/scr/testContainerCgv2Fix > /dev/null 2>&1 &
+	fi
+
 	echo "Test container ready ..."
 }
 
