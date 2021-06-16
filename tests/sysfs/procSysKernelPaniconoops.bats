@@ -31,7 +31,7 @@ function teardown() {
 }
 
 # Lookup/Getattr operation.
-@test "kernel_panic_on_oops lookup() operation" {
+@test "/proc/sys/kernel/panic_on_oops lookup() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -43,7 +43,7 @@ function teardown() {
 }
 
 # Read operation.
-@test "kernel_panic_on_oops read() operation" {
+@test "/proc/sys/kernel/panic_on_oops read() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -56,7 +56,7 @@ function teardown() {
 }
 
 # Write a valid value different from default one (0).
-@test "kernel_panic_on_oops write() operation (valid value)" {
+@test "/proc/sys/kernel/panic_on_oops write() operation (valid value)" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -78,7 +78,7 @@ function teardown() {
 }
 
 # Write an invalid/unsupported value (< 0 && > 1).
-@test "kernel_panic_on_oops write() operation (invalid value)" {
+@test "/proc/sys/kernel/panic_on_oops write() operation (invalid value)" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 

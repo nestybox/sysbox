@@ -19,7 +19,7 @@ function teardown() {
 }
 
 # Lookup/Getattr operation.
-@test "procSwaps lookup() operation" {
+@test "/proc/swaps lookup() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -30,7 +30,7 @@ function teardown() {
 }
 
 # Read operation.
-@test "procSwaps read() operation" {
+@test "/proc/swaps read() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -44,7 +44,7 @@ function teardown() {
 }
 
 # Write operation.
-@test "procSwaps write() operation" {
+@test "/proc/swaps write() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
