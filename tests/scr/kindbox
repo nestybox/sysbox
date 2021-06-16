@@ -31,8 +31,8 @@ VERSION=v0.1
 CLUSTER_NAME=k8s-cluster
 CLUSTER_CNI=flannel
 NUM_WORKERS=1
-IMAGE=ghcr.io/nestybox/k8s-node:v1.18.2
-K8S_VERSION=v1.18.2
+IMAGE=ghcr.io/nestybox/k8s-node:v1.20.2
+K8S_VERSION=v1.20.2
 
 VERBOSE=1
 PUBLISH=0
@@ -304,8 +304,6 @@ function k8s_master_init() {
   [[ $VERBOSE ]] && printf "  - Running kubeadm init on $node ... (may take up to a minute)\n"
 
   output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.244.0.0/16 2>&1\"" 2>&1)
-  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=10.32.0.0/12 2>&1\"" 2>&1)
-  #output=$(sh -c "docker exec ${node} sh -c \"kubeadm init --kubernetes-version=${K8S_VERSION} --pod-network-cidr=192.168.0.0/16 2>&1\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     ERR="kubadm init failed on ${node}: ${output}"
     return 1
