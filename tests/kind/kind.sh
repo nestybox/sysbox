@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
-# Script to run Sysbox integration testcases to validate Kubernetes support.
+# Script to run Sysbox integration testcases to validate Kubernetes-in-Docker (Kind)
+# support.
 #
 
 progName=$(basename "$0")
@@ -20,12 +21,6 @@ docker system prune -a -f
 
 printf "\nExecuting kind testcases with flannel cni ... \n"
 bats --tap tests/kind/kind-flannel.bats
-
-printf "\nExecuting kind testcases with weave-net cni ... \n"
-bats --tap tests/kind/kind-weave.bats
-
-printf "\nExecuting kind testcases with calico cni ... \n"
-bats --tap tests/kind/kind-calico.bats
 
 printf "\nExecuting kind testcases with custom docker networks ... \n"
 bats --tap tests/kind/kind-custom-net.bats
