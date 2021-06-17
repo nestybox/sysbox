@@ -31,7 +31,7 @@ function teardown() {
 }
 
 # Lookup/Getattr operation.
-@test "vm_overcommit_memory lookup() operation" {
+@test "/proc/sys/vm/overcommit_memory lookup() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -43,7 +43,7 @@ function teardown() {
 }
 
 # Read operation.
-@test "vm_overcommit_memory read() operation" {
+@test "/proc/sys/vm/overcommit_memory read() operation" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -56,7 +56,7 @@ function teardown() {
 }
 
 # Write a valid value different from default one (0).
-@test "vm_overcommit_memory write() operation (valid value)" {
+@test "/proc/sys/vm/overcommit_memory write() operation (valid value)" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -78,7 +78,7 @@ function teardown() {
 }
 
 # Write an invalid/unsupported value (< 0 && > 2).
-@test "vm_overcommit_memory write() operation (invalid value)" {
+@test "/proc/sys/vm/overcommit_memory write() operation (invalid value)" {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
