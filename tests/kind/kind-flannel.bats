@@ -51,7 +51,7 @@ function remove_test_dir() {
 # Testcase #1.
 #
 # Bring k8s cluster up.
-@test "k8s cluster up (flannel)" {
+@test "kind cluster up (flannel)" {
 
   k8s_check_sufficient_storage
 
@@ -66,7 +66,7 @@ function remove_test_dir() {
 # Testcase #2.
 #
 # Verify that a basic pod can be created and traffic forwarded accordingly.
-@test "k8s pod (flannel)" {
+@test "kind pod (flannel)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
 apiVersion: v1
@@ -96,7 +96,7 @@ EOF
 #
 # Verify that a multi-container pod can be created and traffic forwarded
 # accordingly.
-@test "k8s pod multi-container (flannel)" {
+@test "kind pod multi-container (flannel)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
 apiVersion: v1
@@ -139,7 +139,7 @@ EOF
 #
 # Verify that deployment rollouts and scale up/down instructions work
 # as expected.
-@test "k8s deployment (flannel)" {
+@test "kind deployment (flannel)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
@@ -173,7 +173,7 @@ EOF
 #
 # Verify that a clusterip service can properly expose a deployment and forward
 # its traffic accordingly.
-@test "k8s service clusterIP (flannel)" {
+@test "kind service clusterIP (flannel)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -244,7 +244,7 @@ EOF
 #
 # Verify that a nodeip service can properly expose a deployment and forward
 # its traffic accordingly across all the cluster nodes.
-@test "k8s service nodePort (flannel)" {
+@test "kind service nodePort (flannel)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
@@ -315,7 +315,7 @@ EOF
 #
 # Verify that DNS operations work as expected within a deployment/pod and
 # that queries are directed to the cluster DNS servers.
-@test "k8s DNS clusterIP (flannel)" {
+@test "kind DNS clusterIP (flannel)" {
 
   # launch a deployment with an associated service
 
@@ -407,7 +407,7 @@ EOF
 # Testcase #8.
 #
 # Verify the proper operation of an ingress controller (traffik in this case).
-@test "k8s ingress (flannel)" {
+@test "kind ingress (flannel)" {
 
   # Based on:
   # https://docs.traefik.io/v1.7/user-guide/kubernetes/
@@ -498,7 +498,7 @@ EOF
 # Testcase #9.
 #
 #
-@test "k8s vol emptyDir (flannel)" {
+@test "kind vol emptyDir (flannel)" {
 
   # pod with two alpine containers sharing a couple of emptydir
   # volumes, one on-disk and one in-mem.
@@ -572,7 +572,7 @@ EOF
 # Testcase #10.
 #
 #
-@test "k8s vol hostPath (flannel)" {
+@test "kind vol hostPath (flannel)" {
 
   # create a directory and a file on the k8s-node; each will be
   # mounted as a hostPath vol into a pod
@@ -660,7 +660,7 @@ EOF
 # Testcase #11.
 #
 #
-@test "k8s vol local persistent (flannel)" {
+@test "kind vol local persistent (flannel)" {
 
   # based on:
   # https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
@@ -786,7 +786,7 @@ EOF
   rm "$test_dir/pvol.yaml"
 }
 
-@test "k8s cluster down (flannel)" {
+@test "kind cluster down (flannel)" {
 
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
