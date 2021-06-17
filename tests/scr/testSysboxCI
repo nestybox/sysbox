@@ -45,14 +45,8 @@ else
 	printf "\nExecuting mount syscall-interception tests for immutable resources ... \n"
 	bats --tap tests/syscall/mount/mount-immutables.bats
 
-	# the kind tests need plenty storage (otherwise kubelet fails);
-	# remove all docker images from prior tests to make room, and
-	# remove all docker images after test too.
-	printf "\n"
-	docker system prune -a -f
-	printf "\nExecuting kind basic tests ... \n"
-	bats --tap tests/kind/k8s-custom-net.bats
-	docker system prune -a -f
+	# Launch kind test-suite.
+	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
 
 	# sysbox-pods tests
 	docker system prune -a -f

@@ -40,16 +40,7 @@ else
 	# Launch syscall interception test-suite.
 	./tests/syscall/syscall.sh
 
-	# the kind tests need plenty storage (otherwise kubelet fails);
-	# remove all docker images from prior tests to make room, and
-	# remove all docker images after test too.
-	printf "\n"
-	docker system prune -a -f
-	printf "\nExecuting kind tests ... \n"
-	bats --tap tests/kind
-	docker system prune -a -f
-
-	# Launch k8s kind test-suite.
+	# Launch kind test-suite.
 	./tests/kind/kind.sh
 
 	printf "\nExecuting perf tests ... \n"
