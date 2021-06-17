@@ -28,7 +28,7 @@ export num_workers=2
 export KUBECONFIG=${HOME}/.kube/${cluster}-config
 
 # Cluster's node image.
-export node_image="${CTR_IMG_REPO}/k8s-node-test:v1.18.2"
+export node_image="${CTR_IMG_REPO}/k8s-node-test:v1.20.2"
 
 
 function teardown() {
@@ -48,7 +48,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "k8s custom net cluster up" {
+@test "kind custom net cluster up" {
 
   k8s_check_sufficient_storage
 
@@ -64,7 +64,7 @@ function remove_test_dir() {
   echo $num_workers > "$test_dir/.${cluster}_num_workers"
 }
 
-@test "k8s deployment" {
+@test "kind deployment" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   echo "status = ${status}"
@@ -97,7 +97,7 @@ function remove_test_dir() {
   [ "$status" -eq 0 ]
 }
 
-@test "k8s service clusterIP" {
+@test "kind service clusterIP" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -164,7 +164,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "k8s service nodePort" {
+@test "kind service nodePort" {
 
   local num_workers=$(cat "$test_dir/.${cluster}_num_workers")
 
@@ -231,7 +231,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "k8s DNS clusterIP" {
+@test "kind DNS clusterIP" {
 
   # launch a deployment with an associated service
 
@@ -318,7 +318,7 @@ EOF
   rm /tmp/alpine-sleep.yaml
 }
 
-@test "k8s custom net cluster down" {
+@test "kind custom net cluster down" {
 
   local num_workers=$(cat "$test_dir/.${cluster}_num_workers")
   kindbox_cluster_teardown $cluster $net

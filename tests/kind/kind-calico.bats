@@ -52,7 +52,7 @@ function remove_test_dir() {
 # Testcase #1.
 #
 # Bring k8s cluster up.
-@test "k8s cluster up (calico)" {
+@test "kind cluster up (calico)" {
 
   k8s_check_sufficient_storage
 
@@ -67,7 +67,7 @@ function remove_test_dir() {
 # Testcase #2.
 #
 # Verify that a basic pod can be created and traffic forwarded accordingly.
-@test "k8s pod (calico)" {
+@test "kind pod (calico)" {
 
   cat > "$test_dir/basic-pod.yaml" <<EOF
 apiVersion: v1
@@ -97,7 +97,7 @@ EOF
 #
 # Verify that a multi-container pod can be created and traffic forwarded
 # accordingly.
-@test "k8s pod multi-container (calico)" {
+@test "kind pod multi-container (calico)" {
 
   cat > "$test_dir/multi-cont-pod.yaml" <<EOF
 apiVersion: v1
@@ -140,7 +140,7 @@ EOF
 #
 # Verify that deployment rollouts and scale up/down instructions work
 # as expected.
-@test "k8s deployment (calico)" {
+@test "kind deployment (calico)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
   [ "$status" -eq 0 ]
@@ -174,7 +174,7 @@ EOF
 #
 # Verify that a clusterip service can properly expose a deployment and forward
 # its traffic accordingly.
-@test "k8s service clusterIP (calico)" {
+@test "kind service clusterIP (calico)" {
 
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
@@ -245,7 +245,7 @@ EOF
 #
 # Verify that a nodeip service can properly expose a deployment and forward
 # its traffic accordingly across all the cluster nodes.
-@test "k8s service nodePort (calico)" {
+@test "kind service nodePort (calico)" {
 
   local num_workers=$(cat "$test_dir/."${cluster}"_num_workers")
 
@@ -315,7 +315,7 @@ EOF
 # Testcase #7.
 #
 # Verify that a policy can prevent all traffic from reaching any given pod.
-@test "k8s deny all traffic (calico)" {
+@test "kind deny all traffic (calico)" {
 
   # Policy will drop all traffic to pods of the 'web' application.
   cat > "$test_dir/web-deny-all.yaml" <<EOF
@@ -381,7 +381,7 @@ EOF
 #
 # Verify that a network policy can dictate the level of exposure of a pod within
 # a given namespace.
-@test "k8s limit app traffic (calico)" {
+@test "kind limit app traffic (calico)" {
 
   # Policy allows traffic from only certain pods.
   cat > "$test_dir/api-allow.yaml" <<EOF
@@ -452,7 +452,7 @@ EOF
 # this case we apply a 'deny-all' policy which blocks all non-whitelisted traffic to the
 # application, and yet, this policy is voided the moment that we apply an 'allow-all'
 # policy.
-@test "k8s allow all traffic (calico)" {
+@test "kind allow all traffic (calico)" {
 
   # Policy makes any other policies restricting the traffic to the pod void, and
   # allow all traffic to it from its namespace and other namespaces.
@@ -516,7 +516,7 @@ EOF
 #
 # Verify that apps in a given namespace can be properly isolated from other
 # namespaces.
-@test "k8s deny traffic from other namespaces (calico)" {
+@test "kind deny traffic from other namespaces (calico)" {
 
   # Policy to deny all the traffic from other namespaces while allowing all the
   # traffic coming from the same namespace the pod deployed to.
@@ -588,7 +588,7 @@ EOF
 #
 # Verify that traffic can reach a centralized app regardless of the namespaces in
 # which the source pods are hosted.
-@test "k8s allow traffic from all namespaces (calico)" {
+@test "kind allow traffic from all namespaces (calico)" {
 
   # Policy to allow traffic to reach a particular app from all the pods in all
   # the namespaces.
@@ -648,7 +648,7 @@ EOF
 #
 # Verify that policies that combine multiple clauses and namespaces can be
 # properly enforced.
-@test "k8s allow traffic from some pods in other namespaces (calico)" {
+@test "kind allow traffic from some pods in other namespaces (calico)" {
 
   # Create policy that combines 'podselector' and 'namespace' selector clauses
   # to restrict traffic to pods with label 'type=monitoring' and that are part
@@ -749,7 +749,7 @@ EOF
 # Testcase #13.
 #
 # Verify that policies allowing specific (tcp/udp) ports work as expected.
-@test "k8s allow traffic to only one port app (calico)" {
+@test "kind allow traffic to only one port app (calico)" {
 
   # Policy to allow traffic on port 5000 from pods with label role=monitoring
   # and that are part of the same namespace. All other traffic arriving at the
@@ -824,7 +824,7 @@ EOF
 # Testcase #14.
 #
 # Verify that network policies with multiple selectors can be enforced.
-@test "k8s allow traffic using multiple selectors (calico)" {
+@test "kind allow traffic using multiple selectors (calico)" {
 
   # Policy to allow traffic originated at pods belonging to specific
   # microservices. All other traffic must be rejected.
@@ -896,7 +896,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "k8s cluster down (calico)" {
+@test "kind cluster down (calico)" {
 
   kindbox_cluster_teardown $cluster $net
   remove_test_dir
