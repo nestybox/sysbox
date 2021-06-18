@@ -11,6 +11,14 @@
 # Name of dir for sys container delegation boundary
 export SYSCONT_CGROUP_ROOT="syscont-cgroup-root"
 
+function host_is_cgroup_v2() {
+	if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 function get_docker_cgroup_driver() {
 	ret=$(sh -c "docker info 2>/dev/null | grep 'Cgroup Driver:'")
 	ret=$(echo $ret | awk '{print $3}')

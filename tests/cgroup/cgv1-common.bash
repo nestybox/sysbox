@@ -1,26 +1,8 @@
-#!/usr/bin/env bats
+#!/bin/bash
 
 #
-# Tests that verify cgroup contraints and delegation on system containers.
+# Test functions for cgroups v1
 #
-# The tests verify that a sys container is limited by the cgroups assigned to it
-# at creation time, and these limits can't be bypassed from within the container.
-#
-# The tests also verify that a cgroup manager inside the sys container (e.g., systemd)
-# can create cgroups inside the sys container and assign resources. Such assignments
-# are implicitly constrained by the resources assigned to the sys container itself.
-#
-
-load ../helpers/run
-load ../helpers/fs
-load ../helpers/docker
-load ../helpers/cgroups
-load ../helpers/systemd
-load ../helpers/sysbox-health
-
-function teardown() {
-  sysbox_log_check
-}
 
 function test_cgroup_cpuset() {
 
@@ -73,7 +55,6 @@ function test_cgroup_cpuset() {
 
 	docker exec "$syscont" sh -c "echo \"0-3\" > ${cgPathCont}/cgroup.procs"
 	[ "$status" -eq 1 ]
-	[[ "$output" == "sh: write error: Invalid argument" ]]
 
 	docker exec "$syscont" sh -c "echo 1 > ${cgPathCont}/cpuset.cpus"
 	[ "$status" -eq 0 ]
@@ -359,85 +340,4 @@ function test_cgroup_delegation() {
 	[[ "$output" == "$inner_docker_pid" ]]
 
 	docker_stop "$syscont"
-}
-
-@test "cgroup v1: cpuset" {
-	test_cgroup_cpuset
-}
-
-@test "cgroup v1: cpus" {
-	test_cgroup_cpus
-}
-
-@test "cgroup v1: memory" {
-	test_cgroup_memory
-}
-
-@test "cgroup v1: permissions" {
-	test_cgroup_perm
-}
-
-@test "cgroup v1: delegation" {
-	test_cgroup_delegation
-}
-
-@test "cgroup v1 systemd: enable docker systemd driver" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	docker-cfg -v --cgroup-driver=systemd
-}
-
-@test "cgroup v1 systemd: cpuset" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	test_cgroup_cpuset
-}
-
-@test "cgroup v1 systemd: cpus" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	test_cgroup_cpus
-}
-
-@test "cgroup v1 systemd: memory" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	test_cgroup_memory
-}
-
-@test "cgroup v1 systemd: permissions" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	test_cgroup_perm
-}
-
-@test "cgroup v1 systemd: delegation" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	test_cgroup_delegation
-}
-
-@test "cgroup v1 systemd: disable docker systemd driver" {
-	if ! systemd_env; then
-		skip "no systemd detected"
-	fi
-
-	docker-cfg --cgroup-driver=cgroupfs
-}
-
-# Verify all is good with the revert back to the Docker cgroupfs driver
-@test "cgroup v1: revert" {
-	test_cgroup_cpus
 }
