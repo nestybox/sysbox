@@ -17,7 +17,7 @@ function test_cgroup_cpuset() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	get_docker_cgroup_paths $syscont cg_paths
+	get_docker_cgroupv1_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 	local cgPathHost=${cg_paths[cpuset]}
@@ -53,7 +53,7 @@ function test_cgroup_cpuset() {
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" -eq 1 ]
 
-	docker exec "$syscont" sh -c "echo \"0-3\" > ${cgPathCont}/cgroup.procs"
+	docker exec "$syscont" sh -c "echo \"0-3\" > ${cgPathCont}/cpuset.cpus"
 	[ "$status" -eq 1 ]
 
 	docker exec "$syscont" sh -c "echo 1 > ${cgPathCont}/cpuset.cpus"
@@ -84,7 +84,7 @@ function test_cgroup_cpus() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	get_docker_cgroup_paths $syscont cg_paths
+	get_docker_cgroupv1_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 	local cgPathHost=${cg_paths[cpu]}
@@ -163,7 +163,7 @@ function test_cgroup_memory() {
 	# Verify cgroup config looks good at host-level
 	#
 	declare -A cg_paths
-	get_docker_cgroup_paths $syscont cg_paths
+	get_docker_cgroupv1_paths $syscont cg_paths
 
 	local pid=$(docker_cont_pid $syscont)
 
@@ -286,7 +286,7 @@ function test_cgroup_perm() {
 
 	local files
 	declare -A cg_paths
-	get_docker_cgroup_paths $syscont cg_paths
+	get_docker_cgroupv1_paths $syscont cg_paths
 
 	# verify cgroup for sys container is owned by root:root at host level
 	for cg_path in ${cg_paths[@]}; do
@@ -320,7 +320,7 @@ function test_cgroup_delegation() {
 	#
 
 	# Launch sys container with systemd
-	local syscont=$(docker_run --rm  ${CTR_IMG_REPO}/ubuntu-bionic-systemd-docker)
+	local syscont=$(docker_run --rm  ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
 
 	sleep 15
 
