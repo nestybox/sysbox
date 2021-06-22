@@ -8,11 +8,11 @@ progName=$(basename "$0")
 
 usage()
 {
-  echo "
+	echo "
 Usage: $progName <testName>
 
 "
-  exit 1
+	exit 1
 }
 
 # argument testName is optional
