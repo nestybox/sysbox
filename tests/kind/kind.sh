@@ -10,7 +10,7 @@ progName=$(basename "$0")
 if [ $# -eq 1 ]; then
   printf "\nExecuting $1 ... \n"
   bats --tap $1
-  return
+  exit 0
 fi
 
 # the kind tests need plenty storage (otherwise kubelet fails);
