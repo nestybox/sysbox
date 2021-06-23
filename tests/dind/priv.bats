@@ -12,6 +12,7 @@ load ../helpers/syscall
 load ../helpers/docker
 load ../helpers/sysbox-health
 load ../helpers/fs
+load ../helpers/cgroups
 
 function teardown() {
   sysbox_log_check
@@ -19,7 +20,7 @@ function teardown() {
 
 @test "dind privileged basic" {
 
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -62,7 +63,7 @@ function teardown() {
 # Privileged container security (privileged with respect to sys container context only)
 @test "dind privileged security" {
 
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -110,7 +111,12 @@ function teardown() {
 
 @test "dind privileged ubuntu-bionic" {
 
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-docker:latest tail -f /dev/null)
+  # Ubuntu Bionic carries a version of Docker that needs cgroups v1
+  if host_is_cgroup_v2; then
+		skip "requires host in cgroup v1"
+  fi
+
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -156,6 +162,11 @@ function teardown() {
 
 @test "dind privileged debian-stretch" {
 
+  # Debian-stretch carries a version of Docker that needs cgroups v1
+  if host_is_cgroup_v2; then
+		skip "requires host in cgroup v1"
+  fi
+
   local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-stretch-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -181,7 +192,7 @@ function teardown() {
 @test "dind privileged docker" {
 
   # launch sys cont
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-stretch-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

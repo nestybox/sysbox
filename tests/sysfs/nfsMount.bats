@@ -34,7 +34,7 @@ function teardown() {
   local nfs_srv_ip=$(docker_cont_ip $nfs_srv)
 
   # create a sys container (acts as an nfs client)
-  local sc=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-systemd:latest)
+  local sc=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd:latest)
 
   # ubuntu nfs clients need nfs-common pkg
   # TODO: bake nfs-common into the sys container image
