@@ -1,9 +1,9 @@
 {
   "metadata": {
-      "name": "ubu-bionic-systemd-docker"
+      "name": "ubu-focal-systemd-docker"
   },
   "image":{
-      "image": "ghcr.io/nestybox/ubuntu-bionic-systemd-docker"
+      "image": "ghcr.io/nestybox/ubuntu-focal-systemd-docker"
   },
   "command": [
       "/sbin/init"

@@ -17,7 +17,7 @@ function teardown() {
 # Verify systemd works correctly inside a sysbox pod
 @test "systemd-in-pod" {
 
-	local syscont=$(crictl_run ${POD_MANIFEST_DIR}/ubu-bionic-systemd-docker-container.json ${POD_MANIFEST_DIR}/ubu-bionic-systemd-docker-pod.json)
+	local syscont=$(crictl_run ${POD_MANIFEST_DIR}/ubu-focal-systemd-docker-container.json ${POD_MANIFEST_DIR}/ubu-focal-systemd-docker-pod.json)
 	local pod=$(crictl_cont_get_pod $syscont)
 
 	# We need a better way to wait for systemd; I tried "retry run" with "crictl
