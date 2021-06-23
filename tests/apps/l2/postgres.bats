@@ -27,16 +27,14 @@ function wait_for_inner_postgres() {
   # launch sys container; bind-mount the postgres script into it
   SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
-  # must choose "overlay" driver to avoid an "overlay2" driver bug
-  # (https://stackoverflow.com/questions/45731683/docker-pull-operation-not-permitted)
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
 
   # launch the inner postgres container; bind-mount the postgres script into it
   docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/postgres_alpine.tar"
-  docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres1 postgres:alpine"
+  docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres1 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:alpine"
   [ "$status" -eq 0 ]
 
   wait_for_inner_postgres
@@ -59,7 +57,7 @@ function wait_for_inner_postgres() {
   SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont:latest tail -f /dev/null)
 
   # launch docker inside the sys container
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd --storage-driver=\"overlay\"> /var/log/dockerd.log 2>&1"
+  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd
@@ -71,7 +69,7 @@ function wait_for_inner_postgres() {
   # launch an inner postgres server container; connect it to the network.
   docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/postgres_alpine.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres-server \
-                                     --network postgres-net \
+                                     --network postgres-net -e POSTGRES_HOST_AUTH_METHOD=trust \
                                      postgres:alpine"
   [ "$status" -eq 0 ]
 
@@ -79,7 +77,7 @@ function wait_for_inner_postgres() {
 
   # launch an inner postgres client container; connect it to the network.
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres-client \
-                                     --network postgres-net \
+                                     --network postgres-net -e POSTGRES_HOST_AUTH_METHOD=trust \
                                      postgres:alpine"
   [ "$status" -eq 0 ]
 

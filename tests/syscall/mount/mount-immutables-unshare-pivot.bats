@@ -50,7 +50,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -98,7 +98,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -154,7 +154,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -169,7 +169,7 @@ function local_rootfs_prepare() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
 
@@ -202,7 +202,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -240,7 +240,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -255,7 +255,7 @@ function local_rootfs_prepare() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
     printf "\ntesting rw remount of immutable rw mount ${m}\n"
@@ -281,7 +281,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -296,7 +296,7 @@ function local_rootfs_prepare() {
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
   local target="/root/target"
 
   # Determine the mode in which to operate.
@@ -363,7 +363,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -378,7 +378,7 @@ function local_rootfs_prepare() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
   local target="/root/target"
 
   for m in ${immutable_rw_mounts}; do
@@ -447,7 +447,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -462,7 +462,7 @@ function local_rootfs_prepare() {
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_ro_mounts}; do
 
@@ -513,7 +513,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -528,7 +528,7 @@ function local_rootfs_prepare() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
 
@@ -578,7 +578,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -593,7 +593,7 @@ function local_rootfs_prepare() {
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_mounts}; do
     # Skip /proc and /sys since these are special mounts (we have dedicated
@@ -622,7 +622,7 @@ function local_rootfs_prepare() {
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "docker exec inner sh -c \"umount ${m}\""
-    [ "$status" -eq 0 ]    
+    [ "$status" -eq 0 ]
 
     # Create bind-mount chain and verify that all the unmounts are allowed.
     docker exec ${syscont} sh -c "docker exec inner sh -c \"touch ${m}2 ${m}3\""
@@ -632,7 +632,7 @@ function local_rootfs_prepare() {
     [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "docker exec inner sh -c \"mount -o bind ${m}2 ${m}3\""
-    [ "$status" -eq 0 ]    
+    [ "$status" -eq 0 ]
 
     docker exec ${syscont} sh -c "docker exec inner sh -c \"umount ${m}3\""
     [ "$status" -eq 0 ]
@@ -655,7 +655,7 @@ function local_rootfs_prepare() {
 
   local_rootfs_prepare
 
-  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-bionic-docker-dbg tail -f /dev/null)
+  local syscont=$(docker_run --rm -v ${immutable_ro_dir_path}:${immutable_ro_dir_path}:ro -v ${immutable_ro_file_path}:${immutable_ro_file_path}:ro --mount type=tmpfs,destination=${immutable_masked_dir_path} -v /dev/null:${immutable_masked_file_path} ${CTR_IMG_REPO}/ubuntu-focal-docker-dbg tail -f /dev/null)
 
   docker exec -d ${syscont} sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

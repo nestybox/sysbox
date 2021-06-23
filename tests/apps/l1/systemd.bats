@@ -57,6 +57,11 @@ function check_systemd_mounts() {
 
 @test "systemd ubuntu bionic" {
 
+  # Ubuntu Bionic carries a version of Docker that needs cgroups v1
+  if host_is_cgroup_v2; then
+		skip "requires host in cgroup v1"
+  fi
+
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-bionic-systemd)
@@ -223,7 +228,7 @@ function check_systemd_mounts() {
                             --mount source=testVol,destination=/sys/kernel/config \
                             --mount source=testVol,destination=/sys/kernel/debug \
                             --name=sys-cont-systemd \
-                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-bionic-systemd)
+                            --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
   wait_for_init
 
@@ -257,7 +262,7 @@ function check_systemd_mounts() {
                             --tmpfs /run:rw,noexec,nosuid,size=256m \
                             --tmpfs /run/lock:rw,noexec,nosuid,size=8m \
                             --name=sys-cont-systemd \
-                            ${CTR_IMG_REPO}/ubuntu-bionic-systemd-docker)
+                            ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
 
   wait_for_init
 
