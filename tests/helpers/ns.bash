@@ -39,12 +39,6 @@ PROC_SYS_NON_NS=('e=(/proc/sys/abi/vsyscall32 BOOL) '\
                  'e=(/proc/sys/vm/swappiness INT)' \
                  'e=(/proc/sys/vm/zone_reclaim_mode BOOL)')
 
-# Linux kernel namespaced resources under /sys (representative list,
-# not exhaustive)
-SYS_NS=('e=(/sys/fs/cgroup/memory/memory.swappiness INT) '\
-        'e=(/sys/fs/cgroup/cpu/notify_on_release BOOL) '\
-        'e=(/sys/fs/cgroup/freezer/notify_on_release BOOL)')
-
 # Linux kernel non-namespaced resources under /sys
 # (representative list, not exhaustive)
 SYS_NON_NS=('e=(/sys/kernel/profiling BOOL) '\
