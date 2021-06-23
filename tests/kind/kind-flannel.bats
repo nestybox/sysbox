@@ -29,7 +29,8 @@ export net=bridge
 export KUBECONFIG=${HOME}/.kube/${cluster}-config
 
 # Cluster's node image.
-export node_image="${CTR_IMG_REPO}/k8s-node-test:v1.20.2"
+export k8s_version="v1.20.2"
+export node_image="${CTR_IMG_REPO}/k8s-node-test:${k8s_version}"
 
 function teardown() {
   sysbox_log_check
@@ -57,7 +58,7 @@ function remove_test_dir() {
 
   create_test_dir
 
-  kindbox_cluster_setup $cluster $num_workers $net $node_image
+  kindbox_cluster_setup $cluster $num_workers $net $node_image $k8s_version
 
   # store k8s cluster info so subsequent tests can use it
   echo $num_workers > "$test_dir/."${cluster}"_num_workers"
