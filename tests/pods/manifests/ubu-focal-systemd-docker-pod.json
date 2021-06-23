@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "name": "ubu-bionic-systemd-docker-sandbox",
+        "name": "ubu-focal-systemd-docker-sandbox",
         "namespace": "default",
         "attempt": 1,
         "uid": "sysbox-pod"
