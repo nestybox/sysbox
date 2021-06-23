@@ -592,16 +592,18 @@ function kindbox_cluster_setup() {
   local num_workers=$2
   local net=$3
   local node_image=$4
-  local cni=$5
+  local k8s_version=$5
+  local cni=$6
 
   local pod_net_cidr=10.244.0.0/16
 
   if [[ ${cni} == "" ]]; then
-    run tests/scr/kindbox create --num=$num_workers --image=$node_image --net=$net $cluster
+    run tests/scr/kindbox create --num=$num_workers --image=$node_image --k8s-version=$k8s_version --net=$net $cluster
+	 [ "$status" -eq 0 ]
   else
-    run tests/scr/kindbox create --num=$num_workers --image=$node_image --net=$net --cni=$cni $cluster
+    run tests/scr/kindbox create --num=$num_workers --image=$node_image --k8s-version=$k8s_version --net=$net --cni=$cni $cluster
+	 [ "$status" -eq 0 ]
   fi
-  [ "$status" -eq 0 ]
 
   local join_timeout=$(( $num_workers * 30 ))
 

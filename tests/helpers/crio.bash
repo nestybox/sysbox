@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# CRI-O Test Helper Functions
+# crictl Test Helper Functions
 #
 # Note: for tests using bats.
 #
