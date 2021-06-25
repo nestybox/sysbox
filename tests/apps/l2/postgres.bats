@@ -74,6 +74,7 @@ function wait_for_inner_postgres() {
   [ "$status" -eq 0 ]
 
   wait_for_inner_postgres
+  sleep 5
 
   # launch an inner postgres client container; connect it to the network.
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --name postgres-client \
