@@ -8,12 +8,18 @@ load ../helpers/run
 load ../helpers/docker
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
+load ../helpers/cgroups
 
 function teardown() {
   sysbox_log_check
 }
 
 @test "build with inner images" {
+
+  # Needs cgroups v2 because the sys container carries docker 19.03 which does not support cgroups v2.
+  if host_is_cgroup_v2; then
+	  skip "requires host in cgroup v1"
+  fi
 
   # Reconfigure Docker's default runtime to sysbox-runc
   #
@@ -112,6 +118,12 @@ function teardown() {
 }
 
 @test "commit with inner images" {
+
+  # Needs cgroups v2 because the sys container carries docker 19.03 which does
+  # not support cgroups v2.
+  if host_is_cgroup_v2; then
+	  skip "requires host in cgroup v1"
+  fi
 
   # Note: we use alpine-docker-dbg:3.11 as it comes with Docker 19.03 and helps
   # us avoid sysbox issue #187 (lchown error when Docker v20+ pulls inner images
