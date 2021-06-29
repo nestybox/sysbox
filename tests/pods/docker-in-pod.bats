@@ -17,6 +17,7 @@ function teardown() {
 # Verify Docker works correctly inside a sysbox pod
 @test "docker-in-pod" {
 
+	# TODO: works when "--seccomp-fd-release" is passed to sysbox-fs.
 	skip "Sysbox issue #863"
 
 	local syscont=$(crictl_run ${POD_MANIFEST_DIR}/alpine-docker-container.json ${POD_MANIFEST_DIR}/alpine-docker-pod.json)
@@ -24,7 +25,7 @@ function teardown() {
 
 	# Launching a background process with crictl fails due to a sysbox seccomp
 	# notif tracking bug; see sysbox issue #863.
-	crictl exec -s $syscont sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
+	crictl exec $syscont sh -c "dockerd > /var/log/dockerd.log 2>&1 &"
 	crictl_wait_for_inner_dockerd $syscont
 
 	crictl exec $syscont sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
