@@ -61,7 +61,8 @@ RUN dnf update -y && dnf install -y \
     rsync \
     redhat-lsb-core \
     bash-completion \
-    && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 
 # Install Golang 1.13 release and explicitly activate modules functionality.
 RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \

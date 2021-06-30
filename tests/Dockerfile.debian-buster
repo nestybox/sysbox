@@ -62,6 +62,7 @@ RUN apt-get update && apt-get install -y \
     iproute2 \
     iputils-ping \
     ca-certificates \
+    ssh-client \
     # sysbox deps
     fuse \
     rsync \
@@ -69,7 +70,8 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && echo ". /etc/bash_completion" >> /etc/bash.bashrc
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 
 # Install Golang 1.13 release and explicitly activate modules functionality.
 RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
