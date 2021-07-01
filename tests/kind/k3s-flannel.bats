@@ -13,6 +13,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/k8s
+load ../helpers/k3s
 load ../helpers/fs
 load ../helpers/sysbox-health
 
