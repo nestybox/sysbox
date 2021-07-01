@@ -39,7 +39,7 @@ function k8s_check_sufficient_storage() {
   # space allocated to the K8s node sys-container, so each node sees
   # the storage space of the host.
 
-  local req_storage=$((6*1024*1024*1024))
+  local req_storage=$((6 * 1024 * 1024 * 1024))
   local avail_storage=$(fs_avail "/")
   [ "$avail_storage" -ge "$req_storage" ]
 }
@@ -49,7 +49,7 @@ function k8s_node_ready() {
 
   ret=$(kubectl get node $node | tail -n 1)
   if [ $? -ne 0 ]; then
-	  return 1
+    return 1
   fi
 
   echo $ret | awk '{print $2}' | grep -qw Ready
@@ -110,8 +110,8 @@ function k8s_pod_ready() {
   local pod=$1
   local ns
 
-    if [ $# -eq 2 ]; then
-     ns="-n $2"
+  if [ $# -eq 2 ]; then
+    ns="-n $2"
   fi
 
   run kubectl get pod $pod $ns
@@ -156,7 +156,7 @@ function k8s_pod_absent() {
   local ns
 
   if [ $# -eq 4 ]; then
-     ns="-n $4"
+    ns="-n $4"
   fi
 
   run kubectl get pod $pod $ns
@@ -431,7 +431,7 @@ function verify_nginx_ingress() {
 
   # create an ingress rule that maps nginx.nestykube -> nginx service;
   # this ingress rule is enforced by the nginx ingress controller.
-cat > "$test_dir/nginx-ing.yaml" <<EOF
+  cat >"$test_dir/nginx-ing.yaml" <<EOF
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -455,7 +455,7 @@ EOF
   # setup the ingress hostname in /etc/hosts
   cp /etc/hosts /etc/hosts.orig
   local node_ip=$(k8s_node_ip ${ing_worker_node})
-  echo "$node_ip nginx.nestykube" >> /etc/hosts
+  echo "$node_ip nginx.nestykube" >>/etc/hosts
 
   # verify ingress to nginx works
   sleep 1
@@ -483,11 +483,9 @@ EOF
   rm /etc/hosts.orig
 }
 
-
 ################################################################################
 # KinD specific functions
 ################################################################################
-
 
 function kind_all_nodes_ready() {
   local cluster=$1
@@ -496,13 +494,13 @@ function kind_all_nodes_ready() {
   local delay=$4
 
   local timestamp=$(date +%s)
-  local timeout=$(( $timestamp + $delay ))
+  local timeout=$(($timestamp + $delay))
   local all_ok
 
   while [ $timestamp -lt $timeout ]; do
     all_ok="true"
 
-    for i in `seq 1 $num_workers`; do
+    for i in $(seq 1 $num_workers); do
       local worker
       if [ $i -eq 1 ]; then
         worker="${cluster}"-worker
@@ -510,7 +508,7 @@ function kind_all_nodes_ready() {
         worker="${cluster}"-worker$i
       fi
 
-		run k8s_node_ready $worker
+      run k8s_node_ready $worker
       if [ "$status" -ne 0 ]; then
         all_ok="false"
         break
@@ -518,7 +516,7 @@ function kind_all_nodes_ready() {
     done
 
     if [[ "$all_ok" == "true" ]]; then
-       break
+      break
     fi
 
     sleep 2
@@ -532,11 +530,9 @@ function kind_all_nodes_ready() {
   fi
 }
 
-
 ################################################################################
 # KindBox specific functions
 ################################################################################
-
 
 function kindbox_all_nodes_ready() {
   local cluster_name=$1
@@ -544,17 +540,17 @@ function kindbox_all_nodes_ready() {
   local delay=$3
 
   local timestamp=$(date +%s)
-  local timeout=$(( $timestamp + $delay ))
+  local timeout=$(($timestamp + $delay))
   local all_ok
 
   while [ $timestamp -lt $timeout ]; do
     all_ok="true"
 
-    for (( i=0; i<$num_workers; i++ )); do
+    for ((i = 0; i < $num_workers; i++)); do
       master=${cluster_name}-master
       worker=${cluster_name}-worker-${i}
 
-		run k8s_node_ready $worker
+      run k8s_node_ready $worker
       if [ "$status" -ne 0 ]; then
         all_ok="false"
         break
@@ -562,7 +558,7 @@ function kindbox_all_nodes_ready() {
     done
 
     if [[ "$all_ok" == "true" ]]; then
-       break
+      break
     fi
 
     sleep 2
@@ -600,13 +596,13 @@ function kindbox_cluster_setup() {
 
   if [[ ${cni} == "" ]]; then
     run tests/scr/kindbox create --num=$num_workers --image=$node_image --k8s-version=$k8s_version --net=$net $cluster
-	 [ "$status" -eq 0 ]
+    [ "$status" -eq 0 ]
   else
     run tests/scr/kindbox create --num=$num_workers --image=$node_image --k8s-version=$k8s_version --net=$net --cni=$cni $cluster
-	 [ "$status" -eq 0 ]
+    [ "$status" -eq 0 ]
   fi
 
-  local join_timeout=$(( $num_workers * 30 ))
+  local join_timeout=$(($num_workers * 30))
 
   kindbox_all_nodes_ready $cluster $num_workers $join_timeout
 }
