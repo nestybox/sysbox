@@ -25,5 +25,8 @@ bats --tap tests/kind/kind-flannel.bats
 printf "\nExecuting kind testcases with custom docker networks ... \n"
 bats --tap tests/kind/kind-custom-net.bats
 
+printf "\nExecuting k3s testcases with flannel cni ... \n"
+bats --tap tests/kind/k3s-flannel.bats
+
 printf "\n"
 docker system prune -a -f
