@@ -1,0 +1,28 @@
+{
+    "metadata": {
+        "name": "alpine"
+    },
+    "image":{
+        "image": "ghcr.io/nestybox/alpine"
+    },
+    "command": [
+        "tail", "-f", "/dev/null"
+    ],
+    "log_path":"alpine.log",
+    "mounts": [
+        {
+            "container_path": "/mnt/test",
+            "host_path": "/root/test"
+        }
+    ],
+    "linux": {
+	"security_context": {
+	    "run_as_user":{
+	        "value": 1000
+	    },
+	    "run_as_group":{
+	        "value": 999
+	    }
+        }
+    }
+}

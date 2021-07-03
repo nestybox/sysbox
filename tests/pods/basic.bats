@@ -128,6 +128,27 @@ function teardown() {
 	crictl rmp $pod1 $pod2
 }
 
+@test "pod with security context" {
+
+	local syscont=$(crictl_run ${POD_MANIFEST_DIR}/alpine-container-security.json ${POD_MANIFEST_DIR}/alpine-pod.json)
+	local syscont_pid=$(crictl_cont_get_pid $syscont)
+	local pod=$(crictl_cont_get_pod $syscont)
+
+	# Verify the pod's container is rootless
+	container_is_rootless $syscont_pid "containers"
+
+	# Verify the user is as expected
+	val=$(crictl exec $syscont id -u)
+	[ $val -eq 1000 ]
+
+	val=$(crictl exec $syscont id -g)
+	[ $val -eq 999 ]
+
+	crictl stopp $pod
+	crictl rmp $pod
+}
+
+
 # TODO
 #
 # Verify pod networking
