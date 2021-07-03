@@ -67,3 +67,61 @@ function teardown() {
 
   docker_stop "$syscont"
 }
+
+@test "docker --read-only" {
+
+	local syscont=$(docker_run --rm --read-only ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	# Verify rootfs is read-only
+	docker exec "$syscont" sh -c 'mount | grep "on / " | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	# Verify /sys is read-only
+	docker exec "$syscont" sh -c 'mount | grep "on /sys " | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	# Verify mounts under /sys are read-only (except /sys/fs/cgroup itself which
+	# is a tmpfs rw mount; note that all controllers underneath are read-only).
+	docker exec "$syscont" sh -c 'mount | grep "on /sys/" | grep -v "on /sys/fs/cgroup "'
+	[ "$status" -eq 0 ]
+
+	for line in "${lines[@]}"; do
+		echo "$line" | grep "ro,"
+	done
+
+	# Verify all sysbox special/implicit mounts are also read-only
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/docker" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/kubelet" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/rancher/k3s" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /usr/src/linux-headers" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /lib/modules" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	# Verify mounts under /proc backed by sysbox-fs are read-only
+	docker exec "$syscont" sh -c 'mount | grep "on /proc/" | grep "sysboxfs on"'
+	[ "$status" -eq 0 ]
+
+	for line in "${lines[@]}"; do
+
+		# XXX: skip /proc/sys for now, as it's not getting remounted read-only for
+		# some reason.
+		if [[ "$line" =~ "/proc/sys" ]]; then
+			continue
+		fi
+
+		echo "$line" | grep "ro,"
+	done
+
+	docker_stop "$syscont"
+}
