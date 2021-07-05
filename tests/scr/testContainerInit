@@ -218,9 +218,14 @@ function install_sysbox_pkg() {
 	echo "Installing ${SB_PACKAGE} package at ${SB_PACKAGE_FILE}"
 	dpkg -i ${SB_PACKAGE_FILE}
 
-	# Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
-	# (need this flag inside the test container). Also, add '--log-level debug'
-	# knob to sysbox-fs/mgr if requested.
+	# Take care of the following changes:
+	#
+	# * Set explicit log files to avoid sysbox dumping logs to systemd (testcases
+	#   expect output in /var/log files).
+	# * If requested, add '--log-level debug' knob to sysbox-fs/mgr.
+	# * Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
+	#   (need this flag inside the test container).
+	#
 	if [ -n "$DEBUG_ON" ]; then
 		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service &&
@@ -231,6 +236,8 @@ function install_sysbox_pkg() {
 	else
 		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --ignore-handler-errors|g' \
 			/lib/systemd/system/sysbox-fs.service &&
+			sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log|g' \
+				/lib/systemd/system/sysbox-mgr.service &&
 			systemctl daemon-reload &&
 			systemctl restart sysbox.service
 	fi
