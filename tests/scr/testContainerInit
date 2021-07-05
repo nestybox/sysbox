@@ -78,7 +78,7 @@ function docker_config_mtu() {
 	egress_mtu=$(docker_iface_mtu)
 	if [ ! -z "${egress_mtu}" ] && [ "${egress_mtu}" -ne "${default_mtu}" ]; then
 		jq --arg mtu "${egress_mtu}" --indent 4 '. + {"mtu": $mtu|tonumber}' "${dockerCfgFile}" \
-			> ${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
+			>${tmpfile} && cp ${tmpfile} "${dockerCfgFile}"
 	fi
 }
 
@@ -171,11 +171,11 @@ function crio_config() {
 	# sysbox's range and allow for up to 32 containers of 65536 IDs each.
 	grep "containers" /etc/subuid
 	if [ $? -eq 1 ]; then
-		echo "containers:2147483648:2097152" >> /etc/subuid
+		echo "containers:2147483648:2097152" >>/etc/subuid
 	fi
 	grep "containers" /etc/subgid
 	if [ $? -eq 1 ]; then
-		echo "containers:2147483648:2097152" >> /etc/subgid
+		echo "containers:2147483648:2097152" >>/etc/subgid
 	fi
 
 	# Disable ipv6 (to avoid "failed to set bridge addr: could not add IP address to "cni0": permission denied")
@@ -310,7 +310,7 @@ function main() {
 	# Start docker (without systemd, we must start Docker manually)
 	if ! systemd_env; then
 		dockerd=$(which dockerd)
-		$dockerd > /var/log/dockerd.log 2>&1 &
+		$dockerd >/var/log/dockerd.log 2>&1 &
 	fi
 
 	echo "Waiting for Docker to be ready ..."
@@ -357,7 +357,7 @@ function main() {
 	fi
 
 	if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
-		$PWD/tests/scr/testContainerCgv2Fix > /dev/null 2>&1 &
+		$PWD/tests/scr/testContainerCgv2Fix >/dev/null 2>&1 &
 	fi
 
 	echo "Test container ready ..."
