@@ -14,22 +14,22 @@ default_mtu=1500
 # Retries the given command a given number of attempts, each after a given delay
 # (e.g., retry 10 1 <command>)
 function retry() {
-  local attempts=$1
-  shift
-  local delay=$1
-  shift
-  local i
+	local attempts=$1
+	shift
+	local delay=$1
+	shift
+	local i
 
-  for ((i = 0; i < attempts; i++)); do
-    $@ > /dev/null 2>&1
-    if [ "$?" -eq 0 ]; then
-      return 0
-    fi
-    sleep $delay
-  done
+	for ((i = 0; i < attempts; i++)); do
+		$@ > /dev/null 2>&1
+		if [ "$?" -eq 0 ]; then
+			return 0
+		fi
+		sleep $delay
+	done
 
-  echo "Command \"$@\" failed $attempts times. Output: $?"
-  return 1
+	echo "Command \"$@\" failed $attempts times. Output: $?"
+	return 1
 }
 
 #
@@ -42,33 +42,33 @@ function retry() {
 #
 function docker_iface_mtu() {
 
-   local egress_iface
-   local l0_egress_mtu
-   local l1_egress_mtu
+	local egress_iface
+	local l0_egress_mtu
+	local l1_egress_mtu
 
-   # Identify default egress iface.
-   local egress_iface=$(ip route show | awk '/default via/ {print $5}')
-   if [ -z "${egress_iface}" ]; then
+	# Identify default egress iface.
+	local egress_iface=$(ip route show | awk '/default via/ {print $5}')
+	if [ -z "${egress_iface}" ]; then
 		return
-   fi
+	fi
 
-   # Obtain mtu value associated to the test-container's egress interface.
-   egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
-   if [ ! -z "${egress_mtu}" ] &&
-			[ "${egress_mtu}" -lt "${default_mtu}" ]; then
+	# Obtain mtu value associated to the test-container's egress interface.
+	egress_mtu=$(ip link show ${egress_iface} | awk '/mtu / {print $5}')
+	if [ ! -z "${egress_mtu}" ] &&
+		[ "${egress_mtu}" -lt "${default_mtu}" ]; then
 		l1_egress_mtu=${egress_mtu}
-   else
+	else
 		l1_egress_mtu=${default_mtu}
-   fi
+	fi
 
-   # Pull L0 egress-mtu value passed from Sysbox's makefile.
-   l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
+	# Pull L0 egress-mtu value passed from Sysbox's makefile.
+	l0_egress_mtu=${PHY_EGRESS_IFACE_MTU}
 
-   if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
+	if [ "${l0_egress_mtu}" -lt "${l1_egress_mtu}" ]; then
 		echo ${l0_egress_mtu}
-   else
+	else
 		echo ${l1_egress_mtu}
-   fi
+	fi
 }
 
 # Adjust the test container's Docker mtu configuration. This is required to
@@ -112,14 +112,14 @@ function crio_config() {
 
 	# Add Sysbox to CRI-O's list of runtimes
 	ret=$(dasel put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
-			"runtime_path=/usr/bin/sysbox-runc" "runtime_type=oci")
+		"runtime_path=/usr/bin/sysbox-runc" "runtime_type=oci")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
 	fi
 
 	ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.runtimes.sysbox-runc.allowed_annotations.[0]" \
-					"io.kubernetes.cri-o.userns-mode")
+		"io.kubernetes.cri-o.userns-mode")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
@@ -223,16 +223,16 @@ function install_sysbox_pkg() {
 	# knob to sysbox-fs/mgr if requested.
 	if [ -n "$DEBUG_ON" ]; then
 		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug --ignore-handler-errors|g' \
-			/lib/systemd/system/sysbox-fs.service && \
-		sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log --log-level debug|g' \
-			/lib/systemd/system/sysbox-mgr.service && \
-		systemctl daemon-reload && \
-		systemctl restart sysbox.service
+			/lib/systemd/system/sysbox-fs.service &&
+			sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log --log-level debug|g' \
+				/lib/systemd/system/sysbox-mgr.service &&
+			systemctl daemon-reload &&
+			systemctl restart sysbox.service
 	else
 		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --ignore-handler-errors|g' \
-			/lib/systemd/system/sysbox-fs.service && \
-		systemctl daemon-reload && \
-		systemctl restart sysbox.service
+			/lib/systemd/system/sysbox-fs.service &&
+			systemctl daemon-reload &&
+			systemctl restart sysbox.service
 	fi
 
 	set +e
@@ -277,7 +277,7 @@ function main() {
 	install -D -m0755 scr/sysbox /usr/bin/sysbox
 	install -D -m0755 scr/docker-cfg /usr/bin/docker-cfg
 
-   # Install sysbox
+	# Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then
 		install_sysbox_pkg
 	elif [ -n "$DEBUG_ON" ]; then
