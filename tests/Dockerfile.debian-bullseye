@@ -21,7 +21,7 @@
 
 FROM debian:bullseye
 
-ARG k8s_version=v1.18.2
+ARG k8s_version=v1.20.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
@@ -135,11 +135,6 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
 # Install Kubectl for K8s integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in K8s (L2) nodes.
-#
-# TODO: Define a mechanism in our testing-framework to allow K8s version to be
-# configured in a centralized location, so that the installed K8s components
-# (both inside privileged test-container and within L2 K8s image) are all
-# matching the same K8s release.
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
     && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
     && apt-get update \
