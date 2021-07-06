@@ -1,5 +1,5 @@
 #
-# Sysbox Test Container Dockerfile (Fedora-31 image)
+# Sysbox Test Container Dockerfile (Fedora-34 image)
 #
 # This Dockerfile creates the sysbox test container image. The image
 # contains all dependencies needed to build, run, and test sysbox.
@@ -19,7 +19,7 @@
 # docker build -t sysbox-test .
 #
 
-FROM fedora:31
+FROM fedora:34
 
 ARG k8s_version=v1.20.2
 
@@ -55,6 +55,7 @@ RUN dnf update -y && dnf install -y \
     lsof \
     iputils \
     ca-certificates \
+    bc \
     # sysbox deps
     fuse \
     rsync \
@@ -129,7 +130,8 @@ RUN go get github.com/go-delve/delve/cmd/dlv
 RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
 # sysbox env
-RUN useradd sysbox
+RUN useradd sysbox \
+    && mkdir -p /var/lib/sysboxfs
 
 # test scripts
 COPY scr/testContainerInit /usr/bin
