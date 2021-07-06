@@ -21,7 +21,7 @@
 
 FROM fedora:32
 
-ARG k8s_version=v1.18.2
+ARG k8s_version=v1.20.2
 
 RUN dnf update -y && dnf install -y \
     acl \
@@ -104,22 +104,8 @@ RUN mkdir -p ~/bin/protoc \
 # Install Kubectl for K8s integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in K8s (L2) nodes.
-#
-# TODO: Define a mechanism in our testing-framework to allow K8s version to be
-# configured in a centralized location, so that the installed K8s components
-# (both inside privileged test-container and within L2 K8s image) are all
-# matching the same K8s release.
-RUN echo -e "\
-[kubernetes] \n\
-name=Kubernetes \n\
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64 \n\
-enabled=1 \n\
-gpgcheck=1 \n\
-repo_gpgcheck=1 \n\
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
-" > /etc/yum.repos.d/kubernetes.repo \
-  && yum update -y \
-  && yum install -y kubectl --nobest
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl \
+    && install -o root -g root -m 0755 kubectl /usr/bin/kubectl
 
 # install Docker (used by most sysbox tests to launch sys containers)
 RUN dnf update -y \
