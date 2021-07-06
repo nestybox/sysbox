@@ -23,7 +23,7 @@ FROM ubuntu:focal
 
 # K8s version for k8s-in-docker (i.e., this is the version of K8s running inside
 # the k8s-in-docker container).
-ARG k8s_version=v1.18.2
+ARG k8s_version=v1.20.2
 
 # CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
 # introduces rootless pod support (via the Linux user-ns)
@@ -145,11 +145,6 @@ RUN apt-get update && apt-get install -y shellcheck
 # Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in the K8s-in-docker nodes (L2).
-#
-# TODO: Define a mechanism in our testing-framework to allow K8s version to be
-# configured in a centralized location, so that the installed K8s components
-# (both inside privileged test-container and within L2 K8s image) are all
-# matching the same K8s release.
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
     && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
     && apt-get update \
