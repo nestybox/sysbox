@@ -11,6 +11,14 @@ load ../helpers/run
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
+function setup() {
+	# Sysbox-Pods are only supported in Ubuntu distros for now.
+	local distro=$(get_host_distro)
+	if [[ ${distro} != "ubuntu" ]]; then
+		skip "Sysbox-pods feature not supported in ${distro} distro"
+	fi
+}
+
 function teardown() {
   sysbox_log_check
 }
