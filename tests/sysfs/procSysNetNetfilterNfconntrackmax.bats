@@ -3,6 +3,7 @@
 load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox-health
+load ../helpers/environment
 
 # Container name.
 SYSCONT_NAME=""
@@ -100,5 +101,9 @@ function teardown() {
   # matches the one being pushed above.
   run cat /proc/sys/net/netfilter/nf_conntrack_max
   [ "$status" -eq 0 ]
-  [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
+  # Fedora kernel prevents write-access to this node from a non-init network ns.
+  # Other distros allow it, for now. In these cases an EPERM should be received
+  # above while trying to write to this node, but the sysbox-fs flag
+  #  "--ignore-handler-errors" prevents it.
+  [ $(get_distro) == "fedora" ] || [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
 }
