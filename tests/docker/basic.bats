@@ -102,9 +102,6 @@ function teardown() {
 	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" | grep "ro,"'
 	[ "$status" -eq 0 ]
 
-	docker exec "$syscont" sh -c 'mount | grep "on /usr/src/linux-headers" | grep "ro,"'
-	[ "$status" -eq 0 ]
-
 	docker exec "$syscont" sh -c 'mount | grep "on /lib/modules" | grep "ro,"'
 	[ "$status" -eq 0 ]
 
