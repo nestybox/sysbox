@@ -12,17 +12,18 @@ function get_host_distro() {
 
 function main() {
 
-	local distro=$(get_host_distro)
-
-	if [[ ${distro} != "ubuntu" ]]; then
-		printf "\nSkipping sysbox-pods tests in unsupported distro: %s\n", ${distro}
-		exit 0
-	fi
-
-	# Argument testName is optional
+	# Argument testName is optional.
 	if [ $# -eq 1 ]; then
 		printf "\nExecuting $1 ... \n"
 		bats --tap $1
+		exit 0
+	fi
+
+	local distro=$(get_host_distro)
+
+	# Skip sysbox-pod testcases in all the unsupported distros.
+	if [[ ${distro} != "ubuntu" ]]; then
+		printf "\nSkipping sysbox-pods tests in unsupported distro: %s\n\n" ${distro}
 		exit 0
 	fi
 
