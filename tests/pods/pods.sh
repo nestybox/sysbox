@@ -4,12 +4,6 @@
 # only Ubuntu for now.
 #
 
-# Returns linux distro running in the system.
-function get_host_distro() {
-	local distro=$(cat /etc/os-release | awk -F"=" '/^ID=/ {print $2}' | tr -d '"')
-	echo $distro
-}
-
 function main() {
 
 	# Argument testName is optional.
@@ -19,18 +13,16 @@ function main() {
 		exit 0
 	fi
 
-	local distro=$(get_host_distro)
-
-	# Skip sysbox-pod testcases in all the unsupported distros.
-	if [[ ${distro} != "ubuntu" ]]; then
-		printf "\nSkipping sysbox-pods tests in unsupported distro: %s\n\n" ${distro}
-		exit 0
-	fi
-
-	# sysbox-pods tests
 	docker system prune -a -f
+
 	printf "\nExecuting sysbox-pod tests ... \n"
-	bats --tap tests/pods
+
+	bats --tap tests/pods/basic.bats
+	bats --tap tests/pods/mounts.bats
+	bats --tap tests/pods/systemd-in-pods.bats
+	bats --tap tests/pods/docker-in-pod.bats
+	bats --tap tests/pods/k8s-in-pod.bats
+
 	crictl rmi --all
 }
 
