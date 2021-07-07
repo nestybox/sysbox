@@ -143,8 +143,7 @@ RUN go get github.com/go-delve/delve/cmd/dlv
 RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
 # sysbox env
-RUN useradd sysbox \
-    && mkdir -p /var/lib/sysboxfs
+RUN useradd sysbox
 
 # test scripts
 COPY scr/testContainerInit /usr/bin
