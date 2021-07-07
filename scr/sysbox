@@ -212,8 +212,6 @@ function sysbox_mgr_start() {
 
 function sysbox_fs_start() {
 
-	mkdir -p /var/lib/sysboxfs
-
 	declare -a fs_options=("--log /var/log/sysbox-fs.log")
 
 	if [ $TEST_MODE -eq 1 ]; then
