@@ -6,8 +6,7 @@
 
 progName=$(basename "$0")
 
-usage()
-{
+usage() {
 	echo "
 Usage: $progName <testName>
 
@@ -46,11 +45,8 @@ else
 	printf "\nExecuting perf tests ... \n"
 	bats --tap tests/perf
 
-	# sysbox-pods tests
-	docker system prune -a -f
-	printf "\nExecuting sysbox-pod tests ... \n"
-	bats --tap tests/pods
-	crictl rmi --all
+	# Launch sysbox-pod test-suite.
+	./tests/pods/pods.sh
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
