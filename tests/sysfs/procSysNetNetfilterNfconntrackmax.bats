@@ -86,6 +86,15 @@ function teardown() {
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
+  # Recent kernels (5.8+) will prevent 'nf_conntrack_max' being written from
+  # within a non-init network ns, which is our case when running this testcase
+  # inside a priv container. However, this instruction will always succeed as
+  # we're running with "--ignore-handler-errors" knob turned on, which implies
+  # that the changes will only be made superficially (within sysbox-fs), and
+  # they won't be pushed down to the kernel. For this reason, we will only
+  # check (further below) the superficial value of 'nf_conntrack_max' node as
+  # seen from the sys-container, but we won't check the associated kernel value
+  # from the priv container standpoint.
   sv_runc exec syscont sh -c \
     "echo $NF_CONNTRACK_HIGH_VAL > /proc/sys/net/netfilter/nf_conntrack_max"
   [ "$status" -eq 0 ]
@@ -97,13 +106,13 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
 
+  # As explained above, we are leaving this checkpoint out for now till we find
+  # a better approach (if any) to verify the proper operation of the 'write'
+  # instruction for this node.
+  #
   # Read from host-fs and verify that its value has been modified and it
   # matches the one being pushed above.
-  run cat /proc/sys/net/netfilter/nf_conntrack_max
-  [ "$status" -eq 0 ]
-  # Fedora kernel prevents write-access to this node from a non-init network ns.
-  # Other distros allow it, for now. In these cases an EPERM should be received
-  # above while trying to write to this node, but the sysbox-fs flag
-  #  "--ignore-handler-errors" prevents it.
-  [ $(get_distro) == "fedora" ] || [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
+  # run cat /proc/sys/net/netfilter/nf_conntrack_max
+  # [ "$status" -eq 0 ]
+  # [ "$output" = $NF_CONNTRACK_HIGH_VAL ]
 }
