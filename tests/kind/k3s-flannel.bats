@@ -82,11 +82,11 @@ function remove_test_dir() {
 apiVersion: v1
 kind: Pod
 metadata:
-	name: nginx
+  name: nginx
 spec:
-	containers:
-	- name: nginx
-	image: ${CTR_IMG_REPO}/nginx
+  containers:
+  - name: nginx
+    image: ${CTR_IMG_REPO}/nginx
 EOF
 
 	k8s_create_pod $cluster $controller "$test_dir/basic-pod.yaml"
@@ -112,17 +112,17 @@ EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: multi-cont
+  name: multi-cont
 spec:
-	containers:
-	- name: alpine1
-	image: ${CTR_IMG_REPO}/alpine
-	command: ["tail"]
-	args: ["-f", "/dev/null"]
-	- name: alpine2
-	image: ${CTR_IMG_REPO}/alpine
-	command: ["tail"]
-	args: ["-f", "/dev/null"]
+  containers:
+  - name: alpine1
+    image: ${CTR_IMG_REPO}/alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+  - name: alpine2
+    image: ${CTR_IMG_REPO}/alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
 EOF
 
 	k8s_create_pod $cluster $controller "$test_dir/multi-cont-pod.yaml"
@@ -209,14 +209,14 @@ EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: alpine-sleep
+  name: alpine-sleep
 spec:
-	containers:
-	- name: alpine
-	image: ${CTR_IMG_REPO}/alpine
-	args:
-	- sleep
-	- "1000000"
+  containers:
+  - name: alpine
+    image: ${CTR_IMG_REPO}/alpine
+    args:
+    - sleep
+    - "1000000"
 EOF
 
 	k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
@@ -289,14 +289,14 @@ EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: alpine-sleep
+  name: alpine-sleep
 spec:
-	containers:
-	- name: alpine
-	image: ${CTR_IMG_REPO}/alpine
-	args:
-	- sleep
-	- "1000000"
+  containers:
+  - name: alpine
+    image: ${CTR_IMG_REPO}/alpine
+    args:
+    - sleep
+    - "1000000"
 EOF
 
 	k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
@@ -331,33 +331,33 @@ EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: multi-cont
+  name: multi-cont
 spec:
-	containers:
-	- name: alpine1
-	image: ${CTR_IMG_REPO}/alpine
-	command: ["tail"]
-	args: ["-f", "/dev/null"]
-	volumeMounts:
-	- mountPath: /cache
-		name: cache-vol
-	- mountPath: /cache-mem
-		name: cache-vol-mem
-	- name: alpine2
-	image: ${CTR_IMG_REPO}/alpine
-	command: ["tail"]
-	args: ["-f", "/dev/null"]
-	volumeMounts:
-	- mountPath: /cache
-		name: cache-vol
-	- mountPath: /cache-mem
-		name: cache-vol-mem
-	volumes:
-	- name: cache-vol
-	emptyDir: {}
-	- name: cache-vol-mem
-	emptyDir:
-		medium: Memory
+  containers:
+  - name: alpine1
+    image: ${CTR_IMG_REPO}/alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /cache
+      name: cache-vol
+    - mountPath: /cache-mem
+      name: cache-vol-mem
+  - name: alpine2
+    image: ${CTR_IMG_REPO}/alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /cache
+      name: cache-vol
+    - mountPath: /cache-mem
+      name: cache-vol-mem
+  volumes:
+  - name: cache-vol
+    emptyDir: {}
+  - name: cache-vol-mem
+    emptyDir:
+      medium: Memory
 EOF
 
 	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
@@ -408,33 +408,33 @@ EOF
 
 	# create a test pod with the hostPath vol; must be scheduled on
 	# cluster-worker-1 since that's where the host volume is at.
-cat > "$test_dir/pod.yaml" <<EOF
+	cat > "$test_dir/pod.yaml" <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: hp-test
+  name: hp-test
 spec:
-	nodeSelector:
-	kubernetes.io/hostname: cluster-1-worker-1
-	containers:
-	- image: ${CTR_IMG_REPO}/alpine
-	name: alpine
-	command: ["tail"]
-	args: ["-f", "/dev/null"]
-	volumeMounts:
-	- mountPath: /hostdir
-		name: hp-dir-vol
-	- mountPath: /hostfile
-		name: hp-file-vol
-	volumes:
-	- name: hp-dir-vol
-	hostPath:
-		path: /root/hpdir
-		type: Directory
-	- name: hp-file-vol
-	hostPath:
-		path: /root/hpfile
-		type: File
+  nodeSelector:
+    kubernetes.io/hostname: cluster-1-worker-1
+  containers:
+  - image: ${CTR_IMG_REPO}/alpine
+    name: alpine
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - mountPath: /hostdir
+      name: hp-dir-vol
+    - mountPath: /hostfile
+      name: hp-file-vol
+  volumes:
+  - name: hp-dir-vol
+    hostPath:
+      path: /root/hpdir
+      type: Directory
+  - name: hp-file-vol
+    hostPath:
+      path: /root/hpfile
+      type: File
 EOF
 
 	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
@@ -502,40 +502,40 @@ EOF
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-	name: my-pvol
-	labels:
-	type: local
+  name: my-pvol
+  labels:
+    type: local
 spec:
-	persistentVolumeReclaimPolicy: Delete
-	storageClassName: pv-demo
-	capacity:
-	storage: 10Mi
-	accessModes:
-	- ReadWriteOnce
-	nodeAffinity:
-	required:
-		nodeSelectorTerms:
-		- matchExpressions:
-		- key: kubernetes.io/hostname
-			operator: In
-			values:
-			- cluster-1-worker-1
-	hostPath:
-	path: "/mnt/pvol"
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: pv-demo
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - cluster-1-worker-1
+  hostPath:
+    path: "/mnt/pvol"
 EOF
 
 	cat > "$test_dir/pvol-claim.yaml" <<EOF
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-	name: pvol-claim
+  name: pvol-claim
 spec:
-	storageClassName: pv-demo
-	accessModes:
-	- ReadWriteOnce
-	resources:
-	requests:
-		storage: 5Mi
+  storageClassName: pv-demo
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Mi
 EOF
 
 	k8s_apply $cluster $controller "$test_dir/pvol.yaml"
@@ -543,23 +543,23 @@ EOF
 
 	# create a test pod that mounts the persistent vol; k8s will automatically
 	# schedule the pod on the node where the volume is created.
-cat > "$test_dir/pod.yaml" <<EOF
+	cat > "$test_dir/pod.yaml" <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
-	name: pvol-test
+  name: pvol-test
 spec:
-	containers:
-	- image: ${CTR_IMG_REPO}/alpine
-	name: alpine
-	command: ['tail', '-f', '/dev/null']
-	volumeMounts:
-	- mountPath: /pvol
-		name: pvol-test
-	volumes:
-	- name: pvol-test
-	persistentVolumeClaim:
-		claimName: pvol-claim
+  containers:
+  - image: ${CTR_IMG_REPO}/alpine
+    name: alpine
+    command: ['tail', '-f', '/dev/null']
+    volumeMounts:
+    - mountPath: /pvol
+      name: pvol-test
+  volumes:
+  - name: pvol-test
+    persistentVolumeClaim:
+      claimName: pvol-claim
 EOF
 
 	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
