@@ -101,8 +101,10 @@ function k3s_cluster_setup() {
     "echo 'admin ALL=(ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo"
   [ "$status" -eq 0 ]
 
-  # Install k3s.
-  k3sup install --ip ${master_node_ip} --user admin
+  # Install k3s. Notice that we are explicitly setting the version to pick as
+  # otherwise k3sup would have chosen an earlier one (1.19) which doesn't
+  # support cgroup-v2.
+  k3sup install --ip ${master_node_ip} --user admin --k3s-version v1.20.8+k3s1
   [ "$status" -eq 0 ]
 
   # Repeat above instructions for each worker node.
@@ -129,7 +131,7 @@ function k3s_cluster_setup() {
     [ "$status" -eq 0 ]
 
     # Install k3s and join node to controller.
-    k3sup join --ip ${node_ip} --server-ip ${master_node_ip} --user admin
+    k3sup join --ip ${node_ip} --server-ip ${master_node_ip} --user admin --k3s-version v1.20.8+k3s1
     [ "$status" -eq 0 ]
   done
 
