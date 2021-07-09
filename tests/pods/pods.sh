@@ -23,7 +23,9 @@ function main() {
 	bats --tap tests/pods/docker-in-pod.bats
 	bats --tap tests/pods/k8s-in-pod.bats
 
-	crictl rmi --all
+	if command -v crictl > /dev/null 2>&1; then
+		crictl rmi --all
+	fi
 }
 
 main "$@"
