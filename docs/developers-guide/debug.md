@@ -318,16 +318,23 @@ Let's pick sysbox-fs as an example ...
 
 To load and debug a previously generated core-dump do the following.
 
+* Install the Sysbox debugging package corresponding to the release being
+executed (no symbols are included in the official / production binaries):
+
+    ```console
+    sudo apt-get install ~/sysbox-ce-dbgsym_0.3.0-0.ubuntu-focal_amd64.ddeb
+    ```
+
 * If debugging from your host:
 
     ```console
-    $ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) core sysbox-fs/sysbox-fs ./core.sysbos-fs.1
+    $ sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) core $(which sysbox-fs) ./core.sysbos-fs.1
     ```
 
 * If debugging from Sysbox's dev/test container:
 
     ```console
-    $ dlv core sysbox-fs/sysbox-fs ./core.sysbox-fs.1
+    $ dlv core $(which sysbox-fs) ./core.sysbox-fs.1
     ```
 
 In both cases above, `sysbox-fs/sysbox-fs` refers to the path where to find the
