@@ -145,7 +145,7 @@ group-ID ownership inside the pod.
 With shiftfs you can even share the same host directory across pods, even if
 the pods each get exclusive Linux user-namespace user-ID and group-ID mappings.
 Each pod will see the files with proper ownership inside the pod (e.g., owned
-by users 0->65536) inside the pod.
+by users 0->65536).
 
 ## Sysbox Container Images
 
