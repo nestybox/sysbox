@@ -283,7 +283,7 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
 As it's usually the case, core-dumps can be generated either through the `gcore`
 tool (provided as part of the `gdb` package), or within the `dlv` debugger itself.
-Refer to this [link](docs/user-guide/troubleshoot.md#core-dump-generation) for
+Refer to this [link](../user-guide/troubleshoot.md#core-dump-generation) for
 details about the former procedure. For the later, proceed as below.
 
 Let's pick sysbox-fs as an example ...
