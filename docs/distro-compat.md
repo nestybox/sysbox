@@ -4,22 +4,21 @@
 
 -   [Supported Linux Distros](#supported-linux-distros)
 -   [Kernel Upgrade Procedures](#kernel-upgrade-procedures)
--   [Cgroups v1 Booting Procedure](#cgroups-v1-booting-procedure)
 
 ## Supported Linux Distros
 
 The following table summarizes the supported Linux distros, the installation
 methods supported, and any other requirements:
 
-| Distro / Release      | Package Install | K8s Install | Build from Source | Kernel Upgrade | Other Requirements |
-| --------------------- | :-------------: | :---------: | :------------: | :----: | :---- |
-| Ubuntu Bionic (18.04) | ✓ | ✓ | ✓ | [Maybe](#ubuntu-kernel-upgrade) | |
-| Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | |
-| Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | |
-| Debian Bullseye (11)  | ✓ |   | ✓ | No                              | Must boot with [cgroups v1](#debian-cgroups-v1-config). |
-| Fedora 31             |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | Must boot with [cgroups v1](#fedora-cgroups-v1-config). |
-| Fedora 32             |   |   | ✓ | Yes                             | Must boot with [cgroups v1](#fedora-cgroups-v1-config). |
-| CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | |
+| Distro / Release      | Package Install | K8s Install | Build from Source | Kernel Upgrade |
+| --------------------- | :-------------: | :---------: | :------------: | :----: |
+| Ubuntu Bionic (18.04) | ✓ | ✓ | ✓ | [Maybe](#ubuntu-kernel-upgrade) | 
+| Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | 
+| Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | 
+| Debian Bullseye (11)  | ✓ |   | ✓ | No                              | 
+| Fedora 31             |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | 
+| Fedora 32             |   |   | ✓ | Yes                             | 
+| CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | 
 
 **NOTES:**
 
@@ -95,30 +94,3 @@ $ sudo shutdown -r now
 
 Refer to this [link](https://vitux.com/how-to-upgrade-the-kernel-on-centos-8-0/) for more details.
 
-## Cgroups v1 Booting Procedure
-
-Sysbox does not yet support cgroups v2 (it only supports cgroups v1). In some distros,
-cgroups v2 is now the default. To use Sysbox in these machines, you must reboot them
-with cgroups v1. The subsections below show how to do this.
-
-**NOTE:** we plan to add cgroups v2 support to Sysbox very soon.
-
-### Debian cgroups v1 Config
-
-To boot the Debian kernel with cgroups v1, set kernel parameter
-`systemd.unified_cgroup_hierarchy=0` as follows and reboot the kernel.
-
-```console
-$ sudo sh -c 'echo GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=0" >> /etc/default/grub'
-$ sudo update-grub
-```
-
-### Fedora cgroups v1 Config
-
-To boot the Fedora kernel with cgroups v1, set kernel parameter
-`systemd.unified_cgroup_hierarchy=0` as follows and reboot the kernel.
-
-```console
-sudo dnf install grubby
-sudo grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
-```
