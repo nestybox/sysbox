@@ -10,15 +10,16 @@
 The following table summarizes the supported Linux distros, the installation
 methods supported, and any other requirements:
 
-| Distro / Release      | Package Install | K8s Install | Build from Source | Kernel Upgrade |
-| --------------------- | :-------------: | :---------: | :------------: | :----: |
-| Ubuntu Bionic (18.04) | ✓ | ✓ | ✓ | [Maybe](#ubuntu-kernel-upgrade) | 
-| Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | 
-| Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | 
-| Debian Bullseye (11)  | ✓ |   | ✓ | No                              | 
-| Fedora 31             |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | 
-| Fedora 32             |   |   | ✓ | Yes                             | 
-| CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | 
+| Distro / Release      | Package Install | K8s Install | Build from Source | Kernel Upgrade | Other |
+| --------------------- | :-------------: | :---------: | :------------: | :----: | :----: |
+| Ubuntu Bionic (18.04) | ✓ | ✓ | ✓ | [Maybe](#ubuntu-kernel-upgrade) | |
+| Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | |
+| Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | |
+| Debian Bullseye (11)  | ✓ |   | ✓ | No                              | |
+| Fedora 31             |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | |
+| Fedora 32             |   |   | ✓ | Yes                             | |
+| CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | |
+| Flatcar               | N/A |   | ✓ | No                            | See [Sysbox Flatcar Preview Repo](https://github.com/nestybox/sysbox-flatcar-preview). |
 
 **NOTES:**
 
@@ -93,4 +94,3 @@ $ sudo shutdown -r now
 ```
 
 Refer to this [link](https://vitux.com/how-to-upgrade-the-kernel-on-centos-8-0/) for more details.
-
