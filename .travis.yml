@@ -7,7 +7,16 @@ git:
 
 before_install:
   # Install linux-kernel-headers package.
-  - sudo apt-get install linux-headers-$(uname -r)
+  - sudo apt-get update && sudo apt-get install -y linux-headers-$(uname -r)
+
+  # Build shiftfs kernel module (not available in GCP's ubuntu-focal machines).
+  - sudo apt-get install dkms -y
+  - git clone -b k5.8 https://github.com/toby63/shiftfs-dkms.git shiftfs-k58
+  - cd shiftfs-k58
+  - ./update1
+  - sudo make -f Makefile.dkms
+  - sudo modprobe shiftfs
+  - cd ..
 
   # For parent repos (i.e. sysbox, sysbox-fs, sysbox-libs), let's avoid dealing with ssh-keys mess by simply replacing their
   # ssh url with an http one.
