@@ -59,6 +59,7 @@ IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test
+TEST_IMAGE_FLATCAR := sysbox-test-flatcar
 
 TEST_SYSTEMD_IMAGE := sysbox-systemd-test
 TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
@@ -154,10 +155,22 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
+DOCKER_SYSBOX_BLD_FLATCAR := docker run --privileged --rm --runtime=runc      \
+			--hostname sysbox-build                       \
+			--name sysbox-build                           \
+			-v $(CURDIR):$(PROJECT)                       \
+			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
+			-v $(HOME)/.gitconfig:/root/.gitconfig        \
+			$(TEST_IMAGE_FLATCAR)
+
 sysbox: ## Build sysbox (the build occurs inside a container, so the host is not polluted)
 sysbox: test-img
 	@printf "\n** Building sysbox **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-local"
+
+sysbox-flatcar: test-img-flatcar
+	@printf "\n** Building sysbox for Kinvolk's Flatcar OS**\n\n"
+	$(DOCKER_SYSBOX_BLD_FLATCAR) /bin/bash -c "buildContainerInit sysbox-local"
 
 sysbox-debug: ## Build sysbox (with debug symbols)
 sysbox-debug: test-img
@@ -547,6 +560,12 @@ test-img-systemd: test-img
 	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) \
 		-f $(TEST_SYSTEMD_DOCKERFILE) .
 
+test-img-flatcar: ## Build test container image for Flatcar
+test-img-flatcar:
+	@printf "\n** Building the test container for Flatcar **\n\n"
+	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE_FLATCAR) \
+		-f Dockerfile.flatcar .
+
 test-cleanup: ## Clean up sysbox integration tests (requires root privileges)
 test-cleanup: test-img
 	@printf "\n** Cleaning up sysbox integration tests **\n\n"
@@ -612,7 +631,7 @@ test-sind-shell: test-img
 
 lint: ## Runs lint checker on sysbox source code and tests
 lint: test-img
-	@printf "\n** Building sysbox **\n\n"
+	@printf "\n** Linting sysbox **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "make lint-local"
 
 lint-local: lint-sysbox-local lint-tests-local
@@ -662,6 +681,7 @@ clean:
 	cd $(SYSFS_DIR) && make clean
 	cd $(SYSMGR_DIR) && make clean
 	cd $(SYSIPC_DIR) && make clean
+	rm -rf ./build
 
 clean-libseccomp: ## Clean libseccomp
 clean-libseccomp:
