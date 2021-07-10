@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#
+# Script to build fusermount inside the flatcar dev container
+#
+result_dir=$1
+
+if [ -z "$result_dir" ]; then
+	printf "Usage: $0 <result-dir>\n"
+	exit 1
+fi
+
+distro=$(grep "^ID=" /etc/os-release | cut -d "=" -f2)
+
+if [[ $distro != "flatcar" ]]; then
+	printf "Must run inside flatcar dev container (detected distro = $distro).\n"
+	exit 1
+fi
+
+artifact=${result_dir}/fusermount
+
+if [ -f ${artifact} ]; then
+	printf "${artifact} already exists; skipping build.\n"
+	exit 0
+fi
+
+# Build fusermount
+pushd .
+cd /root
+wget https://github.com/libfuse/libfuse/releases/download/fuse-3.10.4/fuse-3.10.4.tar.xz
+xz -d fuse-3.10.4.tar.xz
+tar -xvf fuse-3.10.4.tar
+cd fuse-3.10.4
+mkdir build
+cd build
+meson ..
+ninja
+ninja install
+rm /usr/local/bin/fusermount
+ln -s /usr/local/bin/fusermount3 /usr/local/bin/fusermount
+
+# Copy resulting artifact
+popd
+mkdir -p ${result_dir}
+cp /usr/local/bin/fusermount ${artifact}
+
+# Cleanup build dir
+rm -rf /root/fuse-*
+
+printf "\nfusermount build complete (result in ${artifact}).\n"

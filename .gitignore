@@ -1,4 +1,5 @@
-# Ignore the sysbox build token
+# Ignore the sysbox build token and build dir
+build
 .buildinfo
 
 # Ignore virtual-studio-code metadata

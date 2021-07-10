@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#
+# Script to build shiftfs inside the flatcar dev container
+#
+
+result_dir=$1
+
+if [ -z "$result_dir" ]; then
+	printf "Usage: $0 <result-dir>\n"
+	exit 1
+fi
+
+distro=$(grep "^ID=" /etc/os-release | cut -d "=" -f2)
+
+if [[ $distro != "flatcar" ]]; then
+	printf "Must run inside flatcar dev container (detected distro = $distro).\n"
+	exit 1
+fi
+
+artifact=${result_dir}/shiftfs.ko
+
+if [ -f ${artifact} ]; then
+	printf "${artifact} already exists; skipping build.\n"
+	exit 0
+fi
+
+target_kernel="5.10.43-flatcar"
+
+pushd .
+cd /root
+git clone -b k5.8 https://github.com/toby63/shiftfs-dkms.git shiftfs-k58
+cd shiftfs-k58
+sudo -u rootless ./update1
+
+# These trick the build scripts to think it's running on a flatcar kernel.
+sed -i "s@^KVERSION :=.*@KVERSION := $target_kernel@g" Makefile
+sed -i "s@^KDIR.*@KDIR ?= /lib/modules/$target_kernel/build@g" Makefile
+ln -s /lib/modules/5.10.43-flatcar /lib/modules/$(uname -r)
+
+# Build the shiftfs module
+make -f Makefile.dkms
+
+# Decompress
+popd
+xz -d /lib/modules/${target_kernel}/kernel/fs/shiftfs.ko.xz
+
+# Copy resulting artifact
+mkdir -p ${result_dir}
+cp /lib/modules/${target_kernel}/kernel/fs/shiftfs.ko ${artifact}
+
+# Cleanup build dir
+rm -rf /root/shiftfs-k58
+
+printf "\nshiftfs build complete (result in ${artifact}).\n"
