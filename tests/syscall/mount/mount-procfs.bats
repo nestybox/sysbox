@@ -8,6 +8,7 @@ load ../../helpers/run
 load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/sysbox-health
+load ../../helpers/environment
 
 function teardown() {
   sysbox_log_check
@@ -93,15 +94,18 @@ function teardown() {
   docker exec "$syscont" bash -c "mount -t proc proc $mnt_path"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" bash -c "mount -t proc proc $mnt_path"
+  # Starting in kernel 5.8+, overlapping mount instructions are allow to succeed.
+  # Prior to this, kernel would prevent these instructions from completing.
+  local overlapping_allowed
+  local cur_kernel=$(get_kernel_release_semver)
+  version_compare ${cur_kernel} "5.8.0" && :
+  if [[ $? -le 1 ]]; then
+    overlapping_allowed="true"
+  fi
 
-  # For some reason, Fedora, CentOS, and Debian kernels are allowing overlapping
-  # mount instructions to succeed. Will handle these cases differently for now,
-  # but we may need to revisit this approach as this is something that may be
-  # applicable to all recent kernels (5.8+).
-  if lsb_release -d | egrep -q Fedora ||
-	  lsb_release -d | egrep -q CentOS ||
-     lsb_release -d | egrep -q Debian; then
+  # Attempt to create a redundant (overlapping) mount.
+  docker exec "$syscont" bash -c "mount -t proc proc $mnt_path"
+  if [[ ${overlapping_allowed} = "true" ]]; then
     [ "$status" -eq 0 ]
   else
     [ "$status" -eq 255 ]
