@@ -177,6 +177,8 @@ EOF
   run kubectl expose deployment/nginx --port 80 --type NodePort
   [ "$status" -eq 0 ]
 
+  sleep 5
+
   # get the node port for the service
   run sh -c 'kubectl get svc nginx -o json | jq .spec.ports[0].nodePort'
   [ "$status" -eq 0 ]
