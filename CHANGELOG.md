@@ -1,6 +1,29 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2021-07-13
+### Added
+  * Added support to create secure Kubernetes PODs with Sysbox (sysbox-pods).
+  * Added support for Cgroups-v2 systems.
+  * Added support to allow K3s execution within Sysbox containers.
+  * Extended Sysbox support to Fedora-33 and Fedora-34 releases.
+  * Extended Sysbox support to Flatcar Linux distribution.
+  * Modified Sysbox binaries' installation path ("/usr/local/sbin" -> "/usr/bin").
+  * Enhanced generation and handling of logging output by relying on systemd (journald) subsystem.
+  * Multiple enhancements in /proc & /sys file-system's emulation logic.
+  * Extended installer to allow it to deploy Sysbox in non-strictly-supported distros / releases.
+  * Improved security of shiftfs mounts.
+  * Fixed issue impacting sysbox-fs stability in scaling scenarios (issue #266).
+  * Fixed issue preventing sys-container initialization due a recent change in oci-runc (issue #291).
+  * Fixed issue with "--mountpoint" cli knob being ignored (sysbox issue #310).
+  * Fixed issue causing sysbox-fs handlers to stall upon access to a procfs node (issue #306).
+  * Fixed issue preventing write access to 'domainname' procfs node (issue #287).
+  * Fixed issue preventing systemd-based containers from being able to initialize (issue #273).
+  * Made changes to allow Docker network sharing between containers.
+  * Ensure that Sysbox mounts in read-only containers are mounted as read only.
+### Removed
+  * Deprecated EOL'd Fedora-31 and Fedora-32 releases.
+
 ## [0.3.0] - 2021-03-26
 ### Added
   * Secured system container initial mounts (mount/remount/unmounts on these from within the container are now restricted). See [here](docs/user-guide/security.md#initial-mount-immutability) for details.
