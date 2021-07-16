@@ -112,7 +112,7 @@ function verify_perm_owner() {
   local uid=$(echo "${listing}" | awk '{print $3}')
   local gid=$(echo "${listing}" | awk '{print $4}')
 
-  # Notice that we are only comparing 10 characters (skiping the last one) on permisions
+  # Notice that we are only comparing 10 characters (skiping the last one) on permissions
   # field to avoid conflicts in scenarios where selinux is enabled (i.e. "-rw-r--r--.").
   [[ "${perm:0:9}" == "${want_perm:0:9}" ]] && [[ "$uid" == "$want_uid" ]] && [[ "$gid" == "$want_gid" ]]
 }

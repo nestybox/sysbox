@@ -7,7 +7,7 @@ will be installed:
 
 *   Otherwise, use the [Sysbox package](install-package.md) for your distro.
 
-*   Alternativley, if a package for your distro is not yet available, or if you
+*   Alternatively, if a package for your distro is not yet available, or if you
     want to get the latest changes from upstream, you [build and install Sysbox from source](../developers-guide/README.md).
 
 **NOTE: Before installing, see the [distro compatibility doc](../distro-compat.md)

@@ -63,7 +63,7 @@ correct ownership (i.e., directories in the container's `/` directory will have
 
 Sysbox detects the presence of the shiftfs module and uses it when appropriate
 to ensure the container has access to its (chroot jail) filesystem and any
-host files or directores mounted into the container.
+host files or directories mounted into the container.
 
 In scenarios where the shiftfs module is required but not present in the kernel,
 Sysbox will fail to launch containers and issue an error such as [this one](troubleshoot.md#ubuntu-shiftfs-module-not-present).

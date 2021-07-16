@@ -58,7 +58,7 @@ For example, to run all sysbox-fs handler tests:
 $ make test-sysbox TESTPATH=tests/sysfs
 ```
 
-Or to run one specific hanlder test:
+Or to run one specific handler test:
 
 ```
 $ make test-sysbox TESTPATH=tests/sysfs/disable_ipv6.bats
