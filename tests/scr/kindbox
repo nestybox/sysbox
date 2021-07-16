@@ -639,7 +639,7 @@ function show_kubectl_usage() {
   printf "\n"
 }
 
-# Parses docker config file to obtain explictly configured 'mtu' value. If not
+# Parses docker config file to obtain explicitly configured 'mtu' value. If not
 # found, returns docker's default value (1500 bytes).
 function docker_iface_mtu() {
 

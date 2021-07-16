@@ -96,7 +96,7 @@ A couple of caveats though:
 2) Do not mount the host's `/var/lib/docker` to a system container's
    `/var/lib/docker`.  Doing so breaks container isolation since the system
    container can now inspect all sibling containers on the host. Furthermore, as
-   mentioned in bullet (1) above, you cannot share `/var/lib/docker` accross
+   mentioned in bullet (1) above, you cannot share `/var/lib/docker` across
    multiple container instances, so you can't share the host's Docker cache with
    a Docker instance running inside a sysbox container.
 

@@ -58,7 +58,7 @@ function verify_syscont_procfs_mnt() {
   # Note: we skip checking for read-only on procfs masked resources
   # because sysbox-fs does not currently set them as read-only.  It's
   # a bug, but a minor one because the resources are masked anyway
-  # (i.e., bind-mounted to /dev/null), so writes are inconsecuential.
+  # (i.e., bind-mounted to /dev/null), so writes are inconsequential.
 
   # for node in "${PROCFS_MASKED[@]}"; do
   #   docker exec "$syscont" bash -c "mount | grep $mnt_path/$node"

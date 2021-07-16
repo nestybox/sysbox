@@ -19,7 +19,7 @@ function usage() {
 	printf "\n"
 	printf "Lists the kernel stack trace for the given pid, its threads, and all it's \n"
 	printf "child processes and threads. Useful to see if any processes inside a sys container\n"
-	printf "are stuck waiting waiting on a syscall or procfs accesss intercepted by Sysbox.\n"
+	printf "are stuck waiting waiting on a syscall or procfs access intercepted by Sysbox.\n"
 	printf "\n"
 	printf "E.g.,\n"
 	printf '   pid_bt <pid-of-first-process-in-sys-container>\n'
