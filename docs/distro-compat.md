@@ -16,10 +16,12 @@ methods supported, and any other requirements:
 | Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | |
 | Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | |
 | Debian Bullseye (11)  | ✓ |   | ✓ | No                              | |
-| Fedora 31             |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | |
-| Fedora 32             |   |   | ✓ | Yes                             | |
+| Fedora 31 (EOL)       |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | |
+| Fedora 32 (EOL)       |   |   | ✓ | No                              | |
+| Fedora 33             |   |   | ✓ | No                              | |
+| Fedora 34             |   |   | ✓ | No                              | |
 | CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | |
-| Flatcar               | N/A |   | ✓ | No                            | See [Sysbox Flatcar Preview Repo](https://github.com/nestybox/sysbox-flatcar-preview). |
+| Flatcar               | N/A |   | ✓ | No                            | More details [here](https://github.com/nestybox/sysbox-flatcar-preview) |
 
 **NOTES:**
 
@@ -30,6 +32,9 @@ methods supported, and any other requirements:
 -   "Build from source" means you can build and install Sysbox from source on that distro. It's pretty easy, see [here](developers-guide/README.md).
 
 -   "Kernel upgrade" means a kernel upgrade may be required (Sysbox requires a fairly new kernel). See [below](#kernel-upgrade-procedures) for more.
+
+- "EOL" releases refer to those that are being deprecated by its distro vendor as
+part of their release scheduling process.
 
 ## Kernel Upgrade Procedures
 
