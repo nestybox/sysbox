@@ -322,7 +322,7 @@ To load and debug a previously generated core-dump do the following.
 executed (no symbols are included in the official / production binaries):
 
     ```console
-    sudo apt-get install ~/sysbox-ce-dbgsym_0.3.0-0.ubuntu-focal_amd64.ddeb
+    sudo apt-get install ~/sysbox-ce-dbgsym_0.4.0-0.ubuntu-focal_amd64.ddeb
     ```
 
 * If debugging from your host:

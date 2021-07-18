@@ -45,8 +45,8 @@ instructions below.
     expected/published one. For example:
 
 ```console
-$ shasum sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
-4850d18ed2af73f2819820cd8993f9cdc647cc79  sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb
+$ sha256sum sysbox-ce_0.4.0-0.debian-bullseye_amd64.deb
+f5f21637e62f8e7b0d24954fb13e0e646fa2b5e46021c9fffe2f11f32ae4b8c9  sysbox-ce_0.4.0-0.debian-bullseye_amd64.deb
 ```
 
 3.  If Docker is running on the host, stop and remove all running Docker containers:
@@ -65,7 +65,7 @@ below for more on this.
 4.  Install the Sysbox package and follow the installer instructions:
 
 ```console
-$ sudo apt-get install ./sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb -y
+$ sudo apt-get install ./sysbox-ce_0.4.0-0.ubuntu-focal_amd64.deb
 ```
 
 5.  Verify that Sysbox's Systemd units have been properly installed, and
@@ -73,39 +73,37 @@ $ sudo apt-get install ./sysbox-ce_0.3.0-0.ubuntu-focal_amd64.deb -y
 
 ```console
 $ sudo systemctl status sysbox -n20
-
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Sat 2021-03-27 00:15:36 EDT; 20s ago
+     Active: active (running) since Sat 2021-07-17 20:32:39 EDT; 23s ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 2305016 (sh)
-      Tasks: 2 (limit: 9487)
-     Memory: 792.0K
+   Main PID: 2917387 (sh)
+      Tasks: 2 (limit: 9484)
+     Memory: 756.0K
      CGroup: /system.slice/sysbox.service
-             ├─2305016 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
-             └─2305039 /bin/sleep infinity
+             ├─2917387 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
+             └─2917423 /bin/sleep infinity
 
-Mar 27 00:15:36 dev-vm1 systemd[1]: Started Sysbox container runtime.
-Mar 27 00:15:36 dev-vm1 sh[2305018]: sysbox-runc
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         edition:         Community Edition (CE)
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         version:         0.3.0
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         commit:          df952e5276cb6e705e0be331e9a9fe88f372eab8
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         built at:         Sat Mar 27 01:34:12 UTC 2021
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         built by:         Rodny Molina
-Mar 27 00:15:36 dev-vm1 sh[2305018]:         oci-specs:         1.0.2-dev
-Mar 27 00:15:36 dev-vm1 sh[2305024]: sysbox-mgr
-Mar 27 00:15:36 dev-vm1 sh[2305024]:         edition:         Community Edition (CE)
-Mar 27 00:15:36 dev-vm1 sh[2305024]:         version:         0.3.0
-Mar 27 00:15:36 dev-vm1 sh[2305024]:         commit:          6ae5668e797ee1bb88fd5f5ae663873a87541ecb
-Mar 27 00:15:36 dev-vm1 sh[2305024]:         built at:         Sat Mar 27 01:34:41 UTC 2021
-Mar 27 00:15:36 dev-vm1 sh[2305024]:         built by:         Rodny Molina
-Mar 27 00:15:36 dev-vm1 sh[2305031]: sysbox-fs
-Mar 27 00:15:36 dev-vm1 sh[2305031]:         edition:         Community Edition (CE)
-Mar 27 00:15:36 dev-vm1 sh[2305031]:         version:         0.3.0
-Mar 27 00:15:36 dev-vm1 sh[2305031]:         commit:          bb001b7fe2a0a234fe86ab20045677470239e248
-Mar 27 00:15:36 dev-vm1 sh[2305031]:         built at:         Sat Mar 27 01:34:30 UTC 2021
-Mar 27 00:15:36 dev-vm1 sh[2305031]:         built by:         Rodny Molina
-$
+Jul 17 20:32:39 dev-vm1 systemd[1]: Started Sysbox container runtime.
+Jul 17 20:32:39 dev-vm1 sh[2917388]: sysbox-runc
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         edition:         Community Edition (CE)
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         version:         0.4.0
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         commit:         9e55c35e249f753c7d31e987c21d4ca4a2ddacfb
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         built at:         Tue Jul 13 18:38:39 UTC 2021
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         built by:         Rodny Molina
+Jul 17 20:32:39 dev-vm1 sh[2917388]:         oci-specs:         1.0.2-dev
+Jul 17 20:32:39 dev-vm1 sh[2917395]: sysbox-mgr
+Jul 17 20:32:39 dev-vm1 sh[2917395]:         edition:         Community Edition (CE)
+Jul 17 20:32:39 dev-vm1 sh[2917395]:         version:         0.4.0
+Jul 17 20:32:39 dev-vm1 sh[2917395]:         commit:         8b13c261d1eb3a7a0c632b7f13c3cd19a447d14b
+Jul 17 20:32:39 dev-vm1 sh[2917395]:         built at:         Tue Jul 13 18:39:19 UTC 2021
+Jul 17 20:32:39 dev-vm1 sh[2917395]:         built by:         Rodny Molina
+Jul 17 20:32:40 dev-vm1 sh[2917400]: sysbox-fs
+Jul 17 20:32:40 dev-vm1 sh[2917400]:         edition:         Community Edition (CE)
+Jul 17 20:32:40 dev-vm1 sh[2917400]:         version:         0.4.0
+Jul 17 20:32:40 dev-vm1 sh[2917400]:         commit:         394d51110fe23bd64b7be8fb9b217dc9cff16032
+Jul 17 20:32:40 dev-vm1 sh[2917400]:         built at:         Tue Jul 13 18:39:04 UTC 2021
+Jul 17 20:32:40 dev-vm1 sh[2917400]:
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
