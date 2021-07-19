@@ -6,7 +6,8 @@
 
 ## GKE
 
-1.  Create a cluster with Kubernetes v1.20 (available via the "Rapid Channel" option).
+1.  Create a cluster with Kubernetes v1.20 (available via the "Rapid" and
+    "Regular" channel options).
 
 2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
     with Containerd" image template.
