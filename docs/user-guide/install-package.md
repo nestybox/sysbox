@@ -295,7 +295,7 @@ $ which docker
 ```
 
 Unfortunately, Sysbox **does not currently support** working with Docker when the latter is
-installed via a snap package. We are working on resolving this.
+installed via a snap package.
 
 In the meantime, you **must install Docker natively** (method (1) above).
 
@@ -370,7 +370,7 @@ There is a simple shell script to do this [here](../../scr/rm_all_syscont).
     files:
 
 ```console
-$ sudo apt-get purge sysbox -y
+$ sudo apt-get purge sysbox-ce -y
 ```
 
 2.  Remove the `sysbox` user from the system:
