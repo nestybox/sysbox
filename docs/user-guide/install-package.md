@@ -45,8 +45,8 @@ instructions below.
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.4.0-0.debian-bullseye_amd64.deb
-f5f21637e62f8e7b0d24954fb13e0e646fa2b5e46021c9fffe2f11f32ae4b8c9  sysbox-ce_0.4.0-0.debian-bullseye_amd64.deb
+$ sha256sum sysbox-ce_0.4.0-0.ubuntu-focal_amd64.deb
+b189602cdb2bbca9a1f25159a6e664ebd251d7c2fb6be968c7148564e96744c4  sysbox-ce_0.4.0-0.ubuntu-focal_amd64.deb
 ```
 
 3.  If Docker is running on the host, stop and remove all running Docker containers:
