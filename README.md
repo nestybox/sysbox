@@ -46,9 +46,9 @@ sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs
 
 ## Demo Videos
 
-"VM-like" containers with Docker + Sysbox: https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo
+- ["VM-like" containers with Docker + Sysbox](https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo?speed=2)
 
-Rootless Kubernetes pods with Sysbox: https://asciinema.org/a/401488?speed=1.5
+- [Rootless Kubernetes pods with Sysbox](https://asciinema.org/a/401488?speed=1.5)
 
 ## Contents
 
