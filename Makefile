@@ -34,6 +34,9 @@ export VERSION := $(shell cat ./VERSION)
 export EDITION := Community Edition (CE)
 export PACKAGE := sysbox-ce
 
+# By default, build for amd64
+ARCH := amd64
+
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
 SYSFS_DIR       := sysbox-fs
@@ -80,6 +83,7 @@ else
 	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
 	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | egrep -v "^\.\." | head -1)
 endif
+
 ifeq ($(KERNEL_HEADERS_BASE), )
 	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
 else
@@ -131,6 +135,17 @@ LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
 
+# Compute the target triple
+ifeq ($(ARCH),armel)
+	HOST_TRIPLE := arm-linux-gnueabi
+else ifeq ($(ARCH),armhf)
+	HOST_TRIPLE := arm-linux-gnueabihf
+else ifeq ($(ARCH),arm64)
+	HOST_TRIPLE := aarch64-linux-gnu
+else
+	HOST_TRIPLE := x86_64-linux-gnu
+endif
+
 #
 # build targets
 # TODO: parallelize building of runc, fs, and mgr; note that grpc must be built before these.
@@ -148,6 +163,7 @@ help:
 DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			--hostname sysbox-build                       \
 			--name sysbox-build                           \
+			-e ARCH=$(ARCH)                               \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -158,6 +174,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 DOCKER_SYSBOX_BLD_FLATCAR := docker run --privileged --rm --runtime=runc      \
 			--hostname sysbox-build                       \
 			--name sysbox-build                           \
+			-e ARCH=$(ARCH)                               \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -183,45 +200,46 @@ sysbox-static: test-img
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-static-local"
 
 sysbox-local: sysbox-runc sysbox-fs sysbox-mgr
-	@echo $(HOSTNAME) > .buildinfo
+	@echo $(HOSTNAME)-$(ARCH) > .buildinfo
 
 sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
 
 sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
+	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
 sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
+	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
 
 sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make static
+	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) static
 
 sysbox-fs: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make
+	@cd $(SYSFS_DIR) && make ARCH=$(ARCH)
 
 sysbox-fs-debug: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make sysbox-fs-debug
+	@cd $(SYSFS_DIR) && make ARCH=$(ARCH) sysbox-fs-debug
 
 sysbox-fs-static: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make sysbox-fs-static
+	@cd $(SYSFS_DIR) && make ARCH=$(ARCH) sysbox-fs-static
 
 sysbox-mgr: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make
+	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH)
 
 sysbox-mgr-debug: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make sysbox-mgr-debug
+	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH) sysbox-mgr-debug
 
 sysbox-mgr-static: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make sysbox-mgr-static
+	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH) sysbox-mgr-static
 
 sysbox-ipc:
-	@cd $(SYSIPC_DIR) && make sysbox-ipc
+	@cd $(SYSIPC_DIR) && make ARCH=$(ARCH) sysbox-ipc
 
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@echo "Building libseccomp ..."
-	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure && make
+	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure --host $(HOST_TRIPLE) && make
+	@chown -R rootless:rootless ./sysbox-libs/libseccomp
 	@echo "Building libseccomp completed."
 
 #
@@ -601,15 +619,15 @@ test-mgr-local: sysbox-ipc
 
 sysbox-in-docker: ## Build sysbox-in-docker sandbox image
 sysbox-in-docker: sysbox
-	@cp -f sysbox-mgr/sysbox-mgr sysbox-in-docker/
-	@cp -f sysbox-runc/sysbox-runc sysbox-in-docker/
-	@cp -f sysbox-fs/sysbox-fs sysbox-in-docker/
+	@cp -f sysbox-mgr/build/$(ARCH)/sysbox-mgr sysbox-in-docker/
+	@cp -f sysbox-runc/build/$(ARCH)/sysbox-runc sysbox-in-docker/
+	@cp -f sysbox-fs/build/$(ARCH)/sysbox-fs sysbox-in-docker/
 	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
 
 sysbox-in-docker-local: sysbox-local
-	@cp sysbox-mgr/sysbox-mgr sysbox-in-docker/
-	@cp sysbox-runc/sysbox-runc sysbox-in-docker/
-	@cp sysbox-fs/sysbox-fs sysbox-in-docker/
+	@cp sysbox-mgr/build/$(ARCH)/sysbox-mgr sysbox-in-docker/
+	@cp sysbox-runc/build/$(ARCH)/sysbox-runc sysbox-in-docker/
+	@cp sysbox-fs/build/$(ARCH)/sysbox-fs sysbox-in-docker/
 	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
 
 test-sind: ## Run the sysbox-in-docker integration tests
@@ -676,16 +694,25 @@ listMgrPkgs:
 ##@ Cleaning targets
 
 clean: ## Eliminate sysbox binaries
-clean:
-	cd $(SYSRUNC_DIR) && make clean
-	cd $(SYSFS_DIR) && make clean
-	cd $(SYSMGR_DIR) && make clean
-	cd $(SYSIPC_DIR) && make clean
+clean: clean-libseccomp
+	cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) clean
+	cd $(SYSFS_DIR) && make ARCH=$(ARCH) clean
+	cd $(SYSMGR_DIR) && make ARCH=$(ARCH) clean
+	cd $(SYSIPC_DIR) && make ARCH=$(ARCH) clean
+	rm -rf ./build/$(ARCH)
+
+
+distclean: ## Eliminate all sysbox binaries
+distclean: clean-libseccomp
+	cd $(SYSRUNC_DIR) && make distclean
+	cd $(SYSFS_DIR) && make distclean
+	cd $(SYSMGR_DIR) && make distclean
+	cd $(SYSIPC_DIR) && make distclean
 	rm -rf ./build
 
 clean-libseccomp: ## Clean libseccomp
 clean-libseccomp:
-	cd $(LIBSECCOMP_DIR) && sudo make distclean
+	cd $(LIBSECCOMP_DIR) && ([ -f ./Makefile ] && make distclean || true)
 
 clean-sysbox-in-docker: ## Clean sysbox-in-docker
 clean-sysbox-in-docker:

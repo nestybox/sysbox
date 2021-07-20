@@ -64,6 +64,21 @@ RUN dnf update -y && dnf install -y \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 
+# install cross compile tool chains
+RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
+    && dnf copr enable -y lantw44/arm-linux-gnueabi-toolchain \
+    && dnf copr enable -y lantw44/arm-linux-gnueabihf-toolchain \
+    && dnf install -y \
+    arm-linux-gnueabi-gcc \
+    arm-linux-gnueabi-glibc \
+    arm-linux-gnueabi-binutils \
+    arm-linux-gnueabihf-gcc \
+    arm-linux-gnueabihf-glibc \
+    arm-linux-gnueabihf-binutils \
+    aarch64-linux-gnu-gcc \
+    aarch64-linux-gnu-glibc \
+    aarch64-linux-gnu-binutils
+
 # Install Golang 1.13 release and explicitly activate modules functionality.
 RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz && \

@@ -247,7 +247,8 @@ function install_sysbox_pkg() {
 
 function build_sysbox() {
 
-	thisHost=$(hostname)
+	# TODO: Support testing other architecures with qmeu?
+	thisHost=$(hostname)-amd64
 
 	# Build cookie (to build from scratch when necessary only)
 	if [[ ! -f .buildinfo ]]; then
