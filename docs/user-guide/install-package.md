@@ -11,10 +11,13 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 
 ## Contents
 
+-   [Available Sysbox Packages](#available-sysbox-packages)
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
+-   [Installing Sysbox Enterprise Edition (Sysbox-EE)](#installing-sysbox-enterprise-edition-sysbox-ee)
 -   [Miscellaneous Installation Info](#miscellaneous-installation-info)
--   [Uninstalling Sysbox](#uninstalling-sysbox)
+-   [Uninstalling Sysbox or Sysbox Enterprise](#uninstalling-sysbox-or-sysbox-enterprise)
+-   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
 
 ## Available Sysbox Packages
 
@@ -36,8 +39,8 @@ The Linux host on which Sysbox runs must meet the following requirements:
 ## Installing Sysbox
 
 **NOTE**: if you have a prior version of Sysbox already installed, please
-[uninstall it](#uninstalling-sysbox) first and then follow the installation
-instructions below.
+[uninstall it](#uninstalling-sysbox-or-sysbox-enterprise) first and then follow
+the installation instructions below.
 
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page.
 
@@ -113,6 +116,59 @@ After you've installed Sysbox, you can now use it to deploy containers with
 Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
 
 If you hit problems during installation, see the [Troubleshooting doc](troubleshoot.md).
+
+## Installing Sysbox Enterprise Edition (Sysbox-EE)
+
+Sysbox Enterprise Edition (Sysbox-EE) is the enterprise version of Sysbox, with
+improved security, functionality, performance, life-cycle, and Nestybox support.
+
+The installation for Sysbox Enterprise Edition (Sysbox-EE) is exactly the same
+as for Sysbox (see [prior section](#installing-sysbox)), except you use the
+Sysbox-EE installation package found in the [Sysbox-EE repo](https://github.com/nestybox/sysbox-ee).
+
+For example, to install Sysbox-EE on a Ubuntu Focal host:
+
+```console
+$ wget https://github.com/nestybox/sysbox-ee/releases/download/v0.4.0/sysbox-ee_0.4.0-0.ubuntu-focal_amd64.deb
+
+$ sudo apt-get install ./sysbox-ee_0.4.0-0.ubuntu-focal_amd64.deb
+
+$ sudo systemctl status sysbox -n20
+● sysbox.service - Sysbox container runtime
+     Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
+     Active: active (running) since Tue 2021-07-20 19:35:31 UTC; 18s ago
+       Docs: https://github.com/nestybox/sysbox
+   Main PID: 7963 (sh)
+      Tasks: 2 (limit: 4617)
+     Memory: 868.0K
+     CGroup: /system.slice/sysbox.service
+             ├─7963 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
+             └─7986 /bin/sleep infinity
+
+Jul 20 19:35:31 focal systemd[1]: Started Sysbox container runtime.
+Jul 20 19:35:32 focal sh[7965]: sysbox-runc
+Jul 20 19:35:32 focal sh[7965]:         edition:         Enterprise Edition (EE)
+Jul 20 19:35:32 focal sh[7965]:         version:         0.4.0
+Jul 20 19:35:32 focal sh[7965]:         commit:         f4daa007da10280095911dde80a8cb95d03c4859
+Jul 20 19:35:32 focal sh[7965]:         built at:         Mon Jul 19 18:55:14 UTC 2021
+Jul 20 19:35:32 focal sh[7965]:         built by:         Rodny Molina
+Jul 20 19:35:32 focal sh[7965]:         oci-specs:         1.0.2-dev
+Jul 20 19:35:32 focal sh[7972]: sysbox-mgr
+Jul 20 19:35:32 focal sh[7972]:         edition:         Enterprise Edition (EE)
+Jul 20 19:35:32 focal sh[7972]:         version:         0.4.0
+Jul 20 19:35:32 focal sh[7972]:         commit:         de7cbb47c9a667d4aaa79e4ca8aeadf6d5124bb2
+Jul 20 19:35:32 focal sh[7972]:         built at:         Mon Jul 19 18:55:51 UTC 2021
+Jul 20 19:35:32 focal sh[7972]:         built by:         Rodny Molina
+Jul 20 19:35:32 focal sh[7978]: sysbox-fs
+Jul 20 19:35:32 focal sh[7978]:         edition:         Enterprise Edition (EE)
+Jul 20 19:35:32 focal sh[7978]:         version:         0.4.0
+Jul 20 19:35:32 focal sh[7978]:         commit:         b0cb35cf449f5c929dba24fc940aef151f4432c5
+Jul 20 19:35:32 focal sh[7978]:         built at:         Mon Jul 19 18:55:37 UTC 2021
+Jul 20 19:35:32 focal sh[7978]:         built by:         Rodny Molina
+```
+
+After you've installed Sysbox-EE, you can now use it to deploy containers with
+Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
 
 ## Miscellaneous Installation Info
 
@@ -361,7 +417,7 @@ See [here](https://docs.docker.com/engine/install/ubuntu/#uninstall-old-versions
 $ sudo snap install docker
 ```
 
-## Uninstalling Sysbox
+## Uninstalling Sysbox or Sysbox Enterprise
 
 Prior to uninstalling Sysbox, make sure all system containers are removed.
 There is a simple shell script to do this [here](../../scr/rm_all_syscont).
@@ -373,8 +429,24 @@ There is a simple shell script to do this [here](../../scr/rm_all_syscont).
 $ sudo apt-get purge sysbox-ce -y
 ```
 
+For Sysbox Enterpise:
+
+```console
+$ sudo apt-get purge sysbox-ee -y
+```
+
 2.  Remove the `sysbox` user from the system:
 
 ```console
 $ sudo userdel sysbox
 ```
+
+## Upgrading Sysbox or Sysbox Enterprise
+
+To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
+
+Note that you must stop all Sysbox containers on the host prior to uninstalling
+Sysbox.
+
+During the uninstall and re-install process, the Sysbox installer will restart
+Docker if needed.
