@@ -18,6 +18,7 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 -   [Miscellaneous Installation Info](#miscellaneous-installation-info)
 -   [Uninstalling Sysbox or Sysbox Enterprise](#uninstalling-sysbox-or-sysbox-enterprise)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
+-   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
 
 ## Available Sysbox Packages
 
@@ -169,6 +170,9 @@ Jul 20 19:35:32 focal sh[7978]:         built by:         Rodny Molina
 
 After you've installed Sysbox-EE, you can now use it to deploy containers with
 Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
+
+**NOTE:** either Sysbox or Sysbox Enterprise must be installed on a given host,
+never both.
 
 ## Miscellaneous Installation Info
 
@@ -429,7 +433,7 @@ There is a simple shell script to do this [here](../../scr/rm_all_syscont).
 $ sudo apt-get purge sysbox-ce -y
 ```
 
-For Sysbox Enterpise:
+For Sysbox Enterprise:
 
 ```console
 $ sudo apt-get purge sysbox-ee -y
@@ -445,8 +449,25 @@ $ sudo userdel sysbox
 
 To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
 
+You can find the latest versions of Sysbox here:
+
+-   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.4.0).
+-   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.4.0).
+
 Note that you must stop all Sysbox containers on the host prior to uninstalling
 Sysbox.
 
 During the uninstall and re-install process, the Sysbox installer will restart
 Docker if needed.
+
+## Replacing Sysbox with Sysbox Enterprise
+
+Sysbox Enterprise Edition (Sysbox-EE) is a drop-in replacement for Sysbox.
+
+If you have a host with Sysbox and wish to install Sysbox Enterprise in it,
+simply [uninstall Sysbox](#uninstalling-sysbox-or-sysbox-enterprise) and
+[install Sysbox Enterprise](#installing-sysbox-enterprise-edition-sysbox-ee)
+as described above.
+
+**NOTE:** either Sysbox or Sysbox Enterprise must be installed on a given host,
+never both.
