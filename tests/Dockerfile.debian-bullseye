@@ -27,6 +27,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     acl \
     build-essential \
+    gcc-aarch64-linux-gnu \
+    libc6-dev-arm64-cross \
+    linux-libc-dev-arm64-cross \
+    gcc-arm-linux-gnueabi \
+    libc6-dev-armel-cross \
+    linux-libc-dev-armel-cross \
+    gcc-arm-linux-gnueabihf \
+    libc6-dev-armhf-cross \
+    linux-libc-dev-armhf-cross \
     automake \
     autoconf \
     libtool \

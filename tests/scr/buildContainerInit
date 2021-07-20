@@ -4,7 +4,7 @@
 # Sysbox build container initialization script
 #
 
-thisHost=$(hostname)
+thisHost=$(hostname)-$ARCH
 
 # Build cookie (to build from scratch when necessary only)
 if [[ ! -f .buildinfo ]]; then
@@ -14,7 +14,7 @@ fi
 
 lastBuildHost=$(cat .buildinfo)
 if [[ "$lastBuildHost" != "$thisHost" ]]; then
-  make clean
+  make ARCH=$ARCH clean
 fi
 
 make_target=$1
@@ -22,16 +22,16 @@ make_target=$1
 distro=$(grep "^ID=" /etc/os-release | cut -d "=" -f2)
 version=$(grep "^VERSION_ID=" /etc/os-release | cut -d "=" -f2 | tr -d '"')
 
-bin_dir=./build/${distro}_${version}
+bin_dir=./build/${distro}_${version}/$ARCH
 
 # Build sysbox
-make $make_target --no-print-directory
+make ARCH=$ARCH $make_target --no-print-directory
 
 # Collect build artifacts
 mkdir -p ${bin_dir}
-cp sysbox-runc/sysbox-runc ${bin_dir}
-cp sysbox-fs/sysbox-fs ${bin_dir}
-cp sysbox-mgr/sysbox-mgr ${bin_dir}
+cp sysbox-runc/build/$ARCH/sysbox-runc ${bin_dir}
+cp sysbox-fs/build/$ARCH/sysbox-fs ${bin_dir}
+cp sysbox-mgr/build/$ARCH/sysbox-mgr ${bin_dir}
 
 # For Kinvolk's Flatcar OS, we also build the binaries for fusermount and
 # shiftfs (as they are not present in flatcar by default).
@@ -42,3 +42,8 @@ fi
 
 # Fix ownership of artifacts
 chown -R rootless:rootless ./build
+chown -R rootless:rootless ./sysbox-runc
+chown -R rootless:rootless ./sysbox-fs
+chown -R rootless:rootless ./sysbox-mgr
+chown -R rootless:rootless ./sysbox-ipc
+
