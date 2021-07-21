@@ -170,12 +170,13 @@ NOTES:
 The [sysbox-deploy-k8s manifest](../../sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml) points to
 a container image that carries the Sysbox binaries, which the daemonset then
 installs onto the Kubernetes worker nodes. The same applies to the
-sysbox-ee-deploy-k8s.yaml for Sysbox Enterprise.
+[sysbox-ee-deploy-k8s manifest](../../sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml) for Sysbox Enterprise.
 
 Nestybox regularly updates these manifests to point to the container images
 carrying the latest Sysbox and Sysbox Enterprise releases.
 
-To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
+To upgrade Sysbox, [first uninstall Sysbox](#uninstallation-of-sysbox-or-sysbox-enterprise)
+and [re-install](#installation) the updated version.
 
 **NOTE:** You must stop all Sysbox pods on the K8s cluster prior to uninstalling
 Sysbox.
