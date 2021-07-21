@@ -118,17 +118,19 @@ supported solution. For such a solution, use the **Sysbox Enterprise Edition
 (Sysbox-EE)**.
 
 Sysbox-EE uses Sysbox at its core, but complements it with enterprise-level
-features for improved security and efficiency as well as Nestybox support
-(see next section).
+features for improved security, functionality, and performance, as well as
+Nestybox support (see next section). It has a 30-day free trial and a paid
+subscription after that.
 
-For more info on Sysbox-EE, refer to the [Nestybox website](https://www.nestybox.com).
+For more info on Sysbox-EE, refer to the [Nestybox website](https://www.nestybox.com)
+and the [Sysbox-EE repo](https://github.com/nestybox/sysbox-ee).
 
 ## Sysbox Features
 
 The table below summarizes the key features of the Sysbox container
 runtime. It also provides a comparison between the Sysbox Community
-Edition (i.e., this repo) and the Sysbox Enterprise Edition
-(Sysbox EE).
+Edition (i.e., this repo) and the Sysbox Enterprise Edition (see prior
+section).
 
 <p align="center">
     <img alt="sysbox" src="./docs/figures/sysbox-features.png" height="800" width="1000" />
@@ -223,12 +225,11 @@ Sysbox.
 
 *   [Sysbox Quick Start Guide](docs/quickstart/README.md)
 
-    *   Provides many examples for using system containers. New users
-        should start here.
+    *   Provides many examples for using Sysbox. New users should start here.
 
 *   [Sysbox User Guide](docs/user-guide/README.md)
 
-    *   Provides more detailed information on Sysbox features and design.
+    *   Provides more detailed information on Sysbox installation, features and design.
 
 *   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
 

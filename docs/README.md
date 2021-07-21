@@ -23,11 +23,12 @@ Sysbox release v0.1.2 and beyond).
 
 -   [Sysbox Quick Start Guide](quickstart/README.md)
 
-    -   Start here if new to Sysbox; has lots of examples on how to use it.
+    -   Start here if new to Sysbox; has lots of examples on how to use
+        it. Assumes you've already [installed it](user-guide/install.md).
 
 -   [Sysbox User Guide](user-guide/README.md)
 
-    -   Provides detailed info and details on Sysbox's features and functionality.
+    -   Provides detailed info and details on Sysbox's installation, features and functionality.
 
 -   [Sysbox Developers Guide](developers-guide/README.md)
 
