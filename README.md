@@ -131,8 +131,12 @@ Edition (i.e., this repo) and the Sysbox Enterprise Edition
 (Sysbox EE).
 
 <p align="center">
-    <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000x" />
+    <img alt="sysbox" src="./docs/figures/sysbox-features.png" height="800" width="1000" />
 </p>
+
+(*) For pricing purposes, a "host" is a computer (bare-metal or virtual-machine)
+with 16 CPU cores (32 hyper threads). Per-core pricing is also available for smaller
+hosts / VMs.
 
 More on the features [here](docs/user-guide/features.md).
 
