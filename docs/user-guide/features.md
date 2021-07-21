@@ -66,6 +66,26 @@
 -   Alternatively, run the K8s.io KinD tool inside a Sysbox container to containerize
     and entire Kubernetes cluster for local testing, and with proper isolation.
 
+## Kubernetes-in-Docker + Network Policies [ v0.4.0+ Sysbox-EE ]
+
+-   Kubernetes nodes running within system containers can be interconnected through
+CNI's capable of enforcing network policies in a cluster. This is the case of WeaveNet
+and Calico CNIs, which offer network features that are more advanced than other more
+simplistic CNIs (e.g. Flannel).
+
+-   WeaveNet and Calico CNI's are currently supported only as part of the Sysbox-EE
+product offering.
+
+## K3s-in-Docker [ v0.4.0+ ]
+
+-   K3s clusters can be deployed within system containers to offer a lighter
+alternative to K8s deployments.
+
+-   As it is the case with K8s-in-Docker solutions, K3s nodes hosted within a
+system container are properly isolated through the diverse security mechanisms
+offered by the Sysbox runtime. In other words, Sysbox is not relying on
+`privileged` containers as other K3s-in-Docker solutions do.
+
 ## Fast & Efficient
 
 -   Sysbox uses host resources optimally and starts containers in a few seconds.

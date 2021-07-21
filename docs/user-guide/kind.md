@@ -111,7 +111,7 @@ shown in the lists means we've not tested it yet (i.e., it may or may not work).
 
 -   K8s deployments, replicas, auto-scale, rolling updates, daemonSets, configMaps, secrets, etc.
 
--   K8s CNIs: Flannel.
+-   K8s CNIs: Flannel, WeaveNet (Sysbox-EE), Calico (Sysbox-EE).
 
 -   K8s services (ClusterIP, NodePort).
 
