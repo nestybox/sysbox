@@ -15,7 +15,7 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 
 -   [Kubernetes Version Requirements](#kubernetes-version-requirements)
 -   [Kubernetes Worker Node Requirements](#kubernetes-worker-node-requirements)
--   [Installation](#installation)
+-   [Installation of Sysbox](#installation-of-sysbox)
 -   [Installation of Sysbox Enterprise Edition (Sysbox-EE)](#installation-of-sysbox-enterprise-edition-sysbox-ee)
 -   [Installation Manifests](#installation-manifests)
 -   [Pod Deployment](#pod-deployment)
@@ -41,7 +41,7 @@ Sysbox meets the following requirement:
 
 -   The node's OS must be Ubuntu Focal or Bionic (with a 5.0+ kernel).
 
-## Installation
+## Installation of Sysbox
 
 **NOTE: These instructions work generally in all Kubernetes clusters. For
 additional instructions specific to cloud-based Kubernetes clusters, see
@@ -96,7 +96,7 @@ Sysbox Enterprise Edition (Sysbox-EE) is the enterprise version of Sysbox, with
 improved security, functionality, performance, life-cycle, and Nestybox support.
 
 The installation for Sysbox Enterprise Edition (Sysbox-EE) in Kubernetes
-clusters is exactly the same as for Sysbox (see [prior section](#installation)),
+clusters is exactly the same as for Sysbox (see [prior section](#installation-of-sysbox)),
 except that you use the `sysbox-ee-deploy-k8s.yaml` instead of `sysbox-deploy-k8s.yaml`:
 
 ```console
@@ -176,7 +176,7 @@ Nestybox regularly updates these manifests to point to the container images
 carrying the latest Sysbox and Sysbox Enterprise releases.
 
 To upgrade Sysbox, [first uninstall Sysbox](#uninstallation-of-sysbox-or-sysbox-enterprise)
-and [re-install](#installation) the updated version.
+and [re-install](#installation-of-sysbox) the updated version.
 
 **NOTE:** You must stop all Sysbox pods on the K8s cluster prior to uninstalling
 Sysbox.
