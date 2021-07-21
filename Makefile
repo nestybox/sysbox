@@ -249,9 +249,9 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 ##@ Installation targets
 
 install: ## Install all sysbox binaries (requires root privileges)
-	install -D -m0755 sysbox-fs/sysbox-fs $(INSTALL_DIR)/sysbox-fs
-	install -D -m0755 sysbox-mgr/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
-	install -D -m0755 sysbox-runc/sysbox-runc $(INSTALL_DIR)/sysbox-runc
+	install -D -m0755 sysbox-fs/build/$(ARCH)/sysbox-fs $(INSTALL_DIR)/sysbox-fs
+	install -D -m0755 sysbox-mgr/build/$(ARCH)/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
+	install -D -m0755 sysbox-runc/build/$(ARCH)/sysbox-runc $(INSTALL_DIR)/sysbox-runc
 	install -D -m0755 scr/sysbox $(INSTALL_DIR)/sysbox
 
 uninstall: ## Uninstall all sysbox binaries (requires root privileges)
