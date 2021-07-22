@@ -133,7 +133,7 @@ Edition (i.e., this repo) and the Sysbox Enterprise Edition (see prior
 section).
 
 <p align="center">
-    <img alt="sysbox" src="./docs/figures/sysbox-features.png" height="800" width="1000" />
+    <img alt="sysbox" src="./docs/figures/sysbox-features.gif" width="1000" />
 </p>
 
 (*) For pricing purposes, a "host" is a computer (bare-metal or virtual-machine)
@@ -156,7 +156,7 @@ More on system containers [here](docs/user-guide/concepts.md#system-container).
 
 The Sysbox host must meet the following requirements:
 
-*   It must be running of the [supported Linux distros](docs/distro-compat.md).
+*   It must be running one of the [supported Linux distros](docs/distro-compat.md).
 
 *   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
     of RAM. Though this is not a hard requirement, smaller configurations may
