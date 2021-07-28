@@ -138,8 +138,9 @@ section).
 
 (\*) For pricing purposes, a "host" is a computer (bare-metal or
 virtual-machine) with up to 16 CPU cores (32 hyper threads). Per-core pricing at
-**$4 per-core per-month** is also available for hosts with < 8 cores. Volume
-discounts available for 50+ per-host licenses or 400+ per-core licenses.
+**$5 per-core per-month** is also available for hosts with < 8 cores. Licensing
+is per-year. Volume discounts available for 50+ per-host licenses or 350+
+per-core licenses.
 
 More on the features [here](docs/user-guide/features.md).
 
