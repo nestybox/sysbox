@@ -136,9 +136,10 @@ section).
     <img alt="sysbox" src="./docs/figures/sysbox-features.gif" width="1000" />
 </p>
 
-(\*) For pricing purposes, a "host" is a computer (bare-metal or virtual-machine) with
-up to 16 CPU cores (32 hyper threads). Per-core pricing is also available for smaller
-hosts / VMs. Volume discounts available for 50 or more licenses.
+(\*) For pricing purposes, a "host" is a computer (bare-metal or
+virtual-machine) with up to 16 CPU cores (32 hyper threads). Per-core pricing at
+**$4 per-core per-month** is also available for hosts with < 8 cores. Volume
+discounts available for 50+ per-host licenses or 400+ per-core licenses.
 
 More on the features [here](docs/user-guide/features.md).
 
