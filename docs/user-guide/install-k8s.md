@@ -58,6 +58,11 @@ kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-deploy-k8s.yaml
 ```
 
+**NOTE:** the above step will restart the Kubelet on all nodes where CRI-O is
+being installed, causing all pods on the node to be stopped and
+re-created. Depending on the number of pods, this process can take anywhere from
+30 secs to 2 minutes. Wait for this process to complete before proceeding.
+
 -   Install Sysbox on the same nodes:
 
 ```console
@@ -67,13 +72,14 @@ kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
 ```
 
+**NOTE:** the above step will restart CRI-O on all nodes where Sysbox is being
+installed, causing all pods on the node to be stopped and re-created. Depending
+on the number of pods, this process can take anywhere from 30 secs to 2
+minutes. Wait for this process to complete before proceeding.
+
 Then deploy pods with Sysbox [see next section](#pod-deployment).
 
-NOTES:
-
--   The installation will temporarily disrupt all pods on the K8s worker nodes
-    where CRI-O and Sysbox were installed, for up to 1 minute, as they require
-    the kubelet to restart.
+Additional notes:
 
 -   Sysbox can be installed in all or some of the Kubernetes cluster worker nodes,
     according to your needs.
