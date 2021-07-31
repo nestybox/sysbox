@@ -16,8 +16,6 @@ spec:
       serviceAccountName: sysbox-label-node
       nodeSelector:
         sysbox-install: "yes"
-      nodeSelector:
-        crio-runtime: "running"
       containers:
       - name: sysbox-ee-deploy-k8s
         image: registry.nestybox.com/nestybox/sysbox-ee-deploy-k8s

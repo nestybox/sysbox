@@ -27,7 +27,7 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         securityContext:
-          privileged: false
+          privileged: true
         volumeMounts:
         - name: host-etc
           mountPath: /mnt/host/etc
