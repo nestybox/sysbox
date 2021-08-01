@@ -20,7 +20,6 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 -   [Installation Manifests](#installation-manifests)
 -   [Pod Deployment](#pod-deployment)
 -   [Uninstallation of Sysbox or Sysbox Enterprise](#uninstallation-of-sysbox-or-sysbox-enterprise)
--   [Uninstallation of CRI-O](#uninstallation-of-cri-o)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
 -   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
 -   [Troubleshooting](#troubleshooting)
@@ -34,6 +33,8 @@ runtime v1.20, as the latter introduces support for "rootless pods" (i.e., pods
 that use the Linux user-namespace). Since the version of CRI-O and K8s must match, the
 K8s version must also be v1.20.\*.
 
+The Sysbox installation steps below automatically install CRI-O on the Kubernetes nodes.
+
 ## Kubernetes Worker Node Requirements
 
 Prior to installing Sysbox, ensure each K8s worker node where you will install
@@ -41,29 +42,20 @@ Sysbox meets the following requirement:
 
 -   The node's OS must be Ubuntu Focal or Bionic (with a 5.0+ kernel).
 
+-   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
+    of RAM in each worker node. Though this is not a hard requirement, smaller
+    configurations may slow down Sysbox.
+
 ## Installation of Sysbox
 
 **NOTE: These instructions work generally in all Kubernetes clusters. For
 additional instructions specific to cloud-based Kubernetes clusters, see
 [here](install-k8s-cloud.md).**
 
-Installation is done via a couple of daemonsets which "drop" the CRI-O and
-Sysbox binaries onto the desired K8s nodes and perform all associated config.
+Installation is done via a daemonset which "drops" the CRI-O and Sysbox binaries
+onto the desired K8s nodes and performs all associated config.
 
--   Install CRI-O on the desired K8s worker nodes:
-
-```console
-kubectl label nodes <node-name> crio-install=yes
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/crio-deploy-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-deploy-k8s.yaml
-```
-
-**NOTE:** the above step will restart the Kubelet on all nodes where CRI-O is
-being installed, causing all pods on the node to be stopped and
-re-created. Depending on the number of pods, this process can take anywhere from
-30 secs to 2 minutes. Wait for this process to complete before proceeding.
-
--   Install Sysbox on the same nodes:
+Steps:
 
 ```console
 kubectl label nodes <node-name> sysbox-install=yes
@@ -72,12 +64,13 @@ kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
 ```
 
-**NOTE:** the above step will restart CRI-O on all nodes where Sysbox is being
-installed, causing all pods on the node to be stopped and re-created. Depending
-on the number of pods, this process can take anywhere from 30 secs to 2
-minutes. Wait for this process to complete before proceeding.
+**NOTE:** the above step will restart the Kubelet on all nodes where Sysbox is
+being installed, causing all pods on the node to be stopped and
+re-created. Depending on the number of pods, this process can take anywhere from
+30 secs to 2 minutes. Wait for this process to complete before proceeding.
 
-Then deploy pods with Sysbox [see next section](#pod-deployment).
+Once Sysbox installation completes, you can proceed to deploy pods with Sysbox
+as shown in section [Pod Deployment](#pod-deployment).
 
 Additional notes:
 
@@ -120,7 +113,7 @@ The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8
 
 ## Pod Deployment
 
-Once Sysbox is installed, you can deploy pods with it easily. See
+Once Sysbox is installed, it's easy to deploy pods with it. See
 [here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more on this.
 
 ## Uninstallation of Sysbox or Sysbox Enterprise
@@ -145,20 +138,6 @@ kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbo
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
 ```
 
-## Uninstallation of CRI-O
-
-To uninstall CRI-O:
-
-```console
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-cleanup-k8s.yaml
-
-sleep 10
-
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/crio-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/crio-deploy-rbac.yaml
-```
-
 NOTES:
 
 -   Make sure to stop all K8s pods deployed with Sysbox prior to uninstalling
@@ -167,9 +146,6 @@ NOTES:
 -   The uninstallation will temporarily disrupt all pods on the nodes where CRI-O
     and Sysbox were installed, for up to 1 minute, as they require the kubelet to
     restart.
-
--   The sleep instruction above is to ensure that kubelet has a chance to launch
-    the 'cleanup' daemonset before it is removed in the next step.
 
 ## Upgrading Sysbox or Sysbox Enterprise
 
