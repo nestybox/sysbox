@@ -52,8 +52,9 @@ Sysbox meets the following requirement:
 additional instructions specific to cloud-based Kubernetes clusters, see
 [here](install-k8s-cloud.md).**
 
-Installation is done via a daemonset which "drops" the CRI-O and Sysbox binaries
-onto the desired K8s nodes and performs all associated config.
+Installation is done via a daemonset called "sysbox-deploy-k8s", which installs
+the CRI-O and Sysbox binaries onto the desired K8s nodes and performs all
+associated config.
 
 Steps:
 
@@ -86,6 +87,12 @@ Additional notes:
 -   Pods deployed with Sysbox are managed via K8s just like any other pods; they
     can live side-by-side with non Sysbox pods and can communicate with them
     according to your K8s networking policy.
+
+-   In the past, we used a separate daemonset to install CRI-O. That daemonset
+    is now deprecated, though it can be found [here](../../sysbox-k8s-manifests/daemonset/crio).
+    There is no need to use it any more, as the sysbox-deploy-k8s daemonset now
+    installs both CRI-O and Sysbox on the node (it's faster and simpler to use
+    only one daemonset).
 
 -   If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
 
