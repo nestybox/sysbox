@@ -89,6 +89,34 @@ Depending on the size of the pod's image, it may take several seconds for the
 pod to deploy on the node. Once the image is downloaded on a node however,
 deployment should be very quick (few seconds).
 
+Here is a similar example, but this time using a Kubernetes Deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syscont-deployment
+  labels:
+    app: syscont
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: syscont
+  template:
+    metadata:
+      labels:
+        app: syscont
+      annotations:
+        io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+    spec:
+      runtimeClassName: sysbox-runc
+      containers:
+      - name: ubu-bio-systemd-docker
+        image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+        command: ["/sbin/init"]
+```
+
 ### Mounting Host Volumes to a Sysbox Pod
 
 To mount host volumes into a K8s pod deployed with Sysbox, the K8s worker node's
@@ -146,6 +174,11 @@ With shiftfs you can even share the same host directory across pods, even if
 the pods each get exclusive Linux user-namespace user-ID and group-ID mappings.
 Each pod will see the files with proper ownership inside the pod (e.g., owned
 by users 0->65536).
+
+### Sysbox Pod Limitations
+
+See the [limitations section](limitations.md#kubernetes-restrictions) of the
+User Guide.
 
 ## Sysbox Container Images
 

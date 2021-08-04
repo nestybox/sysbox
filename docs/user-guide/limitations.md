@@ -6,6 +6,7 @@ system containers.
 ## Contents
 
 -   [Docker Restrictions](#docker-restrictions)
+-   [Kubernetes Restrictions](#kubernetes-restrictions)
 -   [System Container Limitations](#system-container-limitations)
 -   [Sysbox Functional Limitations](#sysbox-functional-limitations)
 
@@ -55,6 +56,51 @@ do not work with system containers.
 
 Sysbox does not currently support exposing host devices inside system
 containers (e.g., via the `docker run --device` option).
+
+## Kubernetes Restrictions
+
+This section describes restrictions when launching containers with Kubernetes +
+Sysbox.
+
+### Pods limited to 16 per-node on Sysbox-CE
+
+Pods launched with the Sysbox Community Edition are limited to **16 pods per Kubernetes worker node**.
+
+Once this limit is reached, new pods scheduled on the node will remain in the
+"ContainerCreating" state. Such pods need to be terminated and re-created once
+there is sufficient capacity on the node.
+
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
+
+With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
+for greater scalability. Thus, you can launch as many pods as will fit on the
+Kubernetes node, allowing you to get the best utilization of the hardware.
+
+Note that the number of pods that can be deployed on a node depends on many
+factors such as the number of CPUs on the node, the memory size on the node, the
+the amount of storage, the type of workloads running in the pods, resource
+limits on the pod, etc.)
+
+***
+
+### Privileged pods are not allowed
+
+The pod's security context must not have the `privileged: true` attribute.
+
+The raison d'être for Sysbox is to avoid the use of (very insecure) privileged
+containers yet enable users to run any type of software inside the container.
+
+### Sharing Linux Namespaces with the Host is not allowed
+
+The pod's spec must not share Linux namespaces with the host, as this breaks
+container isolation. Thus avoid setting these in the pod's spec:
+
+```yaml
+hostNetwork: true
+hostIPC: true
+hostPID: true
+```
 
 ## System Container Limitations
 
