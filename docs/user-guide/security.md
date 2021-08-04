@@ -378,7 +378,7 @@ working on adding support for this.
 
 ## Resource Limiting & Cgroups
 
-System container resource consumption can be limited via cgroups. 
+System container resource consumption can be limited via cgroups.
 
 Sysbox supports both cgroups v1 and v2, and in both cases when managed by
 systemd or not.

@@ -19,6 +19,7 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 -   [Installation of Sysbox Enterprise Edition (Sysbox-EE)](#installation-of-sysbox-enterprise-edition-sysbox-ee)
 -   [Installation Manifests](#installation-manifests)
 -   [Pod Deployment](#pod-deployment)
+-   [Limitations](#limitations)
 -   [Uninstallation of Sysbox or Sysbox Enterprise](#uninstallation-of-sysbox-or-sysbox-enterprise)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
 -   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
@@ -120,8 +121,54 @@ The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8
 
 ## Pod Deployment
 
-Once Sysbox is installed, it's easy to deploy pods with it. See
-[here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more on this.
+Once Sysbox is installed it's easy to deploy pods with it.
+
+For example, here is a sample pod spec using the `ubuntu-bionic-systemd-docker`
+image. It creates a rootless pod that runs systemd as init (pid 1) and comes
+with Docker (daemon + CLI) inside:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubu-bio-systemd-docker
+  annotations:
+    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+spec:
+  runtimeClassName: sysbox-runc
+  containers:
+  - name: ubu-bio-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+    command: ["/sbin/init"]
+  restartPolicy: Never
+```
+
+See [here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more info.
+
+## Limitations
+
+Pods launched with the Sysbox Community Edition are limited to **16 pods per Kubernetes worker node**.
+
+Once this limit is reached, new pods scheduled on the node will remain in the
+"ContainerCreating" state. Such pods need to be terminated and re-created once
+there is sufficient capacity on the node.
+
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
+
+With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
+for greater scalability. Thus, you can launch as many pods as will fit on the
+Kubernetes node, allowing you to get the best utilization of the hardware.
+
+Note that the number of pods that can be deployed on a node depends on many
+factors such as the number of CPUs on the node, the memory size on the node, the
+the amount of storage, the type of workloads running in the pods, resource
+limits on the pod, etc.)
+
+***
+
+See [here](limitations.md#kubernetes-restrictions) for further info on sysbox
+pod limitations.
 
 ## Uninstallation of Sysbox or Sysbox Enterprise
 
