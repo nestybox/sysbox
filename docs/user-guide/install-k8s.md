@@ -147,13 +147,12 @@ See [here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more info.
 
 ## Limitations
 
-Pods launched with the Sysbox Community Edition are limited to **16 pods per Kubernetes worker node**.
+Pods launched with the Sysbox Community Edition are **limited to \*\*16 pods per worker node\*\***.
 
 Once this limit is reached, new pods scheduled on the node will remain in the
 "ContainerCreating" state. Such pods need to be terminated and re-created once
 there is sufficient capacity on the node.
 
-***
 #### ** --- Sysbox-EE Feature Highlight --- **
 
 With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
@@ -165,7 +164,6 @@ factors such as the number of CPUs on the node, the memory size on the node, the
 the amount of storage, the type of workloads running in the pods, resource
 limits on the pod, etc.)
 
-***
 
 See [here](limitations.md#kubernetes-restrictions) for further info on sysbox
 pod limitations.
@@ -186,7 +184,7 @@ For Sysbox Enterprise, use the `sysbox-ee-cleanup-k8s.yaml` instead of the `sysb
 
 ```console
 kubectl delete runtimeclass sysbox-runc
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml

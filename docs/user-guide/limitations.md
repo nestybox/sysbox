@@ -64,13 +64,12 @@ Sysbox.
 
 ### Pods limited to 16 per-node on Sysbox-CE
 
-Pods launched with the Sysbox Community Edition are limited to **16 pods per Kubernetes worker node**.
+Pods launched with the Sysbox Community Edition are **limited to \*\*16 pods per worker node\*\***.
 
 Once this limit is reached, new pods scheduled on the node will remain in the
 "ContainerCreating" state. Such pods need to be terminated and re-created once
 there is sufficient capacity on the node.
 
-***
 #### ** --- Sysbox-EE Feature Highlight --- **
 
 With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
@@ -81,8 +80,6 @@ Note that the number of pods that can be deployed on a node depends on many
 factors such as the number of CPUs on the node, the memory size on the node, the
 the amount of storage, the type of workloads running in the pods, resource
 limits on the pod, etc.)
-
-***
 
 ### Privileged pods are not allowed
 
