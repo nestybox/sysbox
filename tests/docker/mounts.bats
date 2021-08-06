@@ -92,6 +92,47 @@ function teardown() {
   rm -r ${testDir}
 }
 
+@test "docker bind mount skip uid-shift" {
+
+  if ! host_supports_uid_shifting; then
+	  skip "Requires host uid shifting support"
+  fi
+
+  testDir="/testVol"
+  rm -rf ${testDir}
+  mkdir -p ${testDir}
+
+  # set the volume ownership to match a uid in the sys container uid range; this
+  # way, sysbox will skip uid-shifting on the mount.
+  subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
+  chown -R $((subid+1000)):$((subid+1000)) ${testDir}
+
+  # start the container
+  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol ${CTR_IMG_REPO}/busybox tail -f /dev/null)
+
+  # verify bind mount was done correctly and that uid-shifting was skipped
+  docker exec "$syscont" sh -c "mount | grep testVol"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
+
+  # verify the container can write and read from the bind mount
+  docker exec "$syscont" sh -c "echo someData > /mnt/testVol/testData"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "cat /mnt/testVol/testData"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "someData" ]]
+
+  # verify the host sees the changes
+  run cat "${testDir}/testData"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "someData" ]]
+
+  # cleanup
+  docker_stop "$syscont"
+  rm -r ${testDir}
+}
+
 @test "docker tmpfs mount" {
 
   # start container with tmpfs mount
