@@ -50,8 +50,8 @@ Sysbox meets the following requirement:
 ## Installation of Sysbox
 
 **NOTE: These instructions work generally in all Kubernetes clusters. For
-additional instructions specific to cloud-based Kubernetes clusters, see
-[here](install-k8s-cloud.md).**
+additional instructions specific to cloud-based Kubernetes clusters (e.g., GKE,
+EKS, etc.), see [here](install-k8s-cloud.md).**
 
 Installation is done via a daemonset called "sysbox-deploy-k8s", which installs
 the CRI-O and Sysbox binaries onto the desired K8s nodes and performs all
@@ -153,7 +153,7 @@ Once this limit is reached, new pods scheduled on the node will remain in the
 "ContainerCreating" state. Such pods need to be terminated and re-created once
 there is sufficient capacity on the node.
 
-#### ** --- Sysbox-EE Feature Highlight --- **
+#### \*\* --- Sysbox-EE Feature Highlight --- \*\*
 
 With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
 for greater scalability. Thus, you can launch as many pods as will fit on the
@@ -163,7 +163,6 @@ Note that the number of pods that can be deployed on a node depends on many
 factors such as the number of CPUs on the node, the memory size on the node, the
 the amount of storage, the type of workloads running in the pods, resource
 limits on the pod, etc.)
-
 
 See [here](limitations.md#kubernetes-restrictions) for further info on sysbox
 pod limitations.
