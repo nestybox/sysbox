@@ -228,6 +228,10 @@ function teardown() {
   # launch a sys container that comes with inner images baked-in
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img tail -f /dev/null)
 
+  # the syscont-inner-img has stale *.pid files in it; clean them up as otherwise Docker fails to start
+  docker exec -d "$syscont" sh -c "rm -f /run/docker/docker.pid && rm -f /run/docker/containerd/*.pid"
+  [ "$status" -eq 0 ]
+
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
