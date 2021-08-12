@@ -155,14 +155,3 @@ function teardown() {
 	crictl stopp $pod
 	crictl rmp $pod
 }
-
-
-# TODO
-#
-# Verify pod networking
-# Verify pod security (exclusive uid mappings)
-# Verify pod performance (startup)
-# Verify pod cgroup limits
-# Verify pod with read-only rootfs
-# Verify inner docker image sharing with pods (once it's implemented)
-# Verify K8s.io KinD runs inside a pod
