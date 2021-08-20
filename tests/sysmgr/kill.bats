@@ -36,9 +36,8 @@ function teardown() {
   run sh -c 'mount | egrep -q "overlay on /var/lib/sysbox/docker"'
   [ "$status" -ne 0 ]
 
-  run sh -c "ls -l /var/lib/sysbox"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "total 0" ]]
+  run sh -c "ls /var/lib/sysbox"
+  [ "$status" -ne 0 ]
 
   # verify sysbox-mgr sync'd data back to the sys container's rootfs
   rootfs=$(docker_cont_rootfs $syscont0)
@@ -49,11 +48,20 @@ function teardown() {
   run sh -c "mount | egrep -q /var/lib/sysboxfs"
   [ "$status" -ne 0 ]
 
+  run sh -c "ls /var/lib/sysboxfs"
+  [ "$status" -ne 0 ]
+
   # stop and remove the containers
   docker_stop "$syscont0"
   docker_stop "$syscont1"
 
   sysbox_start
+
+  run sh -c "ls /var/lib/sysbox"
+  [ "$status" -eq 0 ]
+
+  run sh -c "ls /var/lib/sysboxfs"
+  [ "$status" -eq 0 ]
 
   # create a new container and verify all is well
   syscont0=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img:latest tail -f /dev/null)
