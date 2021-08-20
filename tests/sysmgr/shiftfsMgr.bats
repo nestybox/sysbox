@@ -26,7 +26,7 @@ function teardown() {
   [ "$status" -eq 1 ]
 
   # verify that /var/lib/sysbox/shiftfs has root-only access (for security)
-  verify_perm_owner "drwx------" "root" "root" $(ls -l /var/lib/sysbox | grep shiftfs)
+  verify_perm_owner "drwx--x---" "root" "root" $(ls -l /var/lib/sysbox | grep shiftfs)
 
   SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
