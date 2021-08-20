@@ -28,11 +28,22 @@ function sysbox_mgr_stopped() {
    # Stop the sysbox-mgr
    sysbox_mgr_stop
 
+   # Verify the sysbox data root is gone
+   run sh -c "ls /var/lib/sysbox"
+   [ "$status" -ne 0 ]
+
    # Create a new data root for it
    mkdir -p $new_data_root
 
    # Start it with the new data root
    sysbox_mgr_start --data-root $new_data_root
+
+   # Verify the prior sysbox data root is now replaced by the new one
+   run sh -c "ls /var/lib/sysbox"
+   [ "$status" -ne 0 ]
+
+   run sh -c "ls ${new_data_root}"
+   [ "$status" -eq 0 ]
 
    # Launch an sys container and verify all is good
    local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -55,9 +66,17 @@ function sysbox_mgr_stopped() {
    # Stop the sysbox-mgr
    sysbox_mgr_stop
 
+	# Verify the new data-root is gone
+	run sh -c "ls ${new_data_root}"
+	[ "$status" -ne 0 ]
+
    # Re-start it with it's default data-root
    sysbox_mgr_start
 
-   # Cleanup
-   rm -rf $new_data_root
+	# Verify the prior sysbox data root is now replaced by the new one
+	run sh -c "ls ${new_data_root}"
+	[ "$status" -ne 0 ]
+
+	run sh -c "ls /var/lib/sysbox"
+	[ "$status" -eq 0 ]
 }
