@@ -6,34 +6,76 @@ Note that usually you don't need to modify Sysbox's default configuration.
 
 ## Contents
 
+-   [Sysbox Systemd Services](#sysbox-systemd-services)
 -   [Reconfiguration Procedure](#reconfiguration-procedure)
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
 -   [Sysbox Log Configuration](#sysbox-log-configuration)
 -   [Sysbox Data Store Configuration \[ v0.3.0+ \]](#sysbox-data-store-configuration--v030-)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
-## Reconfiguration Procedure
+## Sysbox Systemd Services
 
 The Sysbox installer starts the [Sysbox components](design.md#sysbox-components)
-automatically as a Systemd service.
+automatically as Systemd services.
 
-Normally this is sufficient and the user need not worry about reconfiguring
-Sysbox.
+Sysbox is made up of 3 systemd services:
 
-However, there are scenarios where the daemons may need to be
-reconfigured (e.g., to enable a given option on sysbox-fs or
-sysbox-mgr).
+-   `sysbox.service`: top level service to start, stop, and restart Sysbox.
+-   `sysbox-mgr.service`: sub-service that starts the sysbox-mgr daemon
+-   `sysbox-fs.service`: sub-service that starts the sysbox-fs daemon
+
+These are norally located in `/lib/systemd/system/`.
+
+Users normally interact with the top-level `sysbox.service` to start, stop, and
+restart Sysbox.
+
+For example, to stop Sysbox you can type:
+
+```console
+$ sudo systemctl stop sysbox
+```
+
+**NOTE: Make sure all Sysbox containers are stopped and removed before stopping
+Sysbox, as otherwise the will stop operating properly.**
+
+To start Sysbox again you can type:
+
+```console
+$ sudo systemctl start sysbox
+```
+
+Users don't normally interact with the sub-services (sysbox-mgr and sysbox-fs),
+except when you wish to modify command line parameters associated with these
+(see next section).
+
+## Reconfiguration Procedure
+
+Normally users need not worry about reconfiguring Sysbox as the default
+configuration suffices in most cases. However, there are scenarios where the
+sysbox-mgr or sysbox-fs daemons may need to be reconfigured.
+
+You can type `sudo sysbox-fs --help` or `sudo sysbox-mgr --help` to see the
+command line configuration options that each take.
 
 For example, when troubleshooting, it's useful to increase the log level by
 passing the `--log-level debug` to the sysbox-fs or sysbox-mgr daemons.
 
-In order to reconfigure Sysbox, do the following:
+The reconfiguration is done by modifying the systemd sub-service associated
+with sysbox-fs and/or sysbox-mgr (per your needs). Once the systemd sub-service
+is reconfigured, you restart Sysbox using the [top level Sysbox service](#sysbox-systemd-services).
+
+**NOTE: Always use the top level Sysbox service to start, stop, and restart
+Sysbox. Do not do this on the sub-services directly.**
+
+For example, to reconfigure Sysbox, do the following:
 
 1.  Stop all system containers (there is a sample script for this [here](../../scr/rm_all_syscont)).
 
-2.  Modify the desired Systemd service initialization command.
+2.  Modify the `ExecStart` command in the appropriate systemd service
+    (`sysbox-fs.service` or `sysbox-mgr.service`):
 
-    For example, if you wish to change the log-level, do the following:
+    For example, if you wish to change the log-level of the sysbox-fs service,
+    do the following:
 
 ```console
 $ sudo sed -i --follow-symlinks '/^ExecStart/ s/$/ --log-level debug/' /lib/systemd/system/sysbox-fs.service
@@ -48,7 +90,7 @@ ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug
 $ sudo systemctl daemon-reload
 ```
 
-4.  Restart the sysbox service:
+4.  Restart the sysbox (top-level) service:
 
 ```console
 $ sudo systemctl restart sysbox
@@ -72,10 +114,6 @@ Oct 27 05:18:59 disco1 systemd[1]: Started Sysbox General Service.
 ```
 
 That's it. You can now start using Sysbox.
-
-**NOTE: even though Sysbox is comprised of various daemons and its
-respective services, you should only interact with its outer-most
-systemd service called "sysbox".**
 
 ## Sysbox Configuration Options
 
@@ -126,19 +164,19 @@ default).
 
 You can change the location of the Sysbox data store by passing the
 `--data-root` option to the Sysbox Manager daemon via its associated
-systemd service:
+systemd service (`/lib/systemd/system/sysbox-mgr.service`):
 
     ExecStart=/usr/bin/sysbox-mgr --data-root /some/other/dir
 
 Once reconfigured, restart the Sysbox systemd service as described in
 [Reconfiguration Procedure](#reconfiguration-procedure) above.
 
-Finally: if you create a system container and mount a Docker
-volume (or a host directory) into the container's `/var/lib/docker`
-directory, then the inner Docker images are stored in that Docker
-volume rather than in the Sysbox data store. This also means
-that the data can persist across the container's life-cycle
-(i.e., it won't be deleted when the container is removed). See [this section in the quickstart guide](../quickstart/dind.md#persistence-of-inner-container-images-using-docker-volumes)
+Finally: if you create a system container and mount a Docker volume (or a host
+directory) into the container's `/var/lib/docker` directory, then the inner
+Docker images are stored in that Docker volume rather than in the Sysbox data
+store. This also means that the data can persist across the container's
+life-cycle (i.e., it won't be deleted when the container is removed).
+See [this section in the quickstart guide](../quickstart/dind.md#persistence-of-inner-container-images-using-docker-volumes)
 for an example of how to do this.
 
 ## Sysbox Kernel Parameter Configurations
