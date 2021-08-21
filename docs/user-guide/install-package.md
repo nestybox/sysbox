@@ -2,10 +2,13 @@
 
 This document describes how to install Sysbox using the [packaged versions](https://github.com/nestybox/sysbox/releases).
 
-If you are installing Sysbox on a Kubernetes cluster, use the
-[sysbox-deploy-k8s](install-k8s.md) daemonset instead.
+This is usually the case when installing Sysbox on hosts that have Docker in
+them.
 
-And if you need to build and install Sysbox from source (e.g., to get the latest
+**NOTE: If you are installing Sysbox on a Kubernetes cluster, use the
+[sysbox-deploy-k8s](install-k8s.md) daemonset instead.**
+
+Also, if you need to build and install Sysbox from source (e.g., to get the latest
 upstream code or because there is no Sysbox package for your Linux distro),
 see the [Sysbox developer's guide](../developers-guide/README.md).
 
@@ -15,6 +18,7 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 -   [Host Requirements](#host-requirements)
 -   [Installing Sysbox](#installing-sysbox)
 -   [Installing Sysbox Enterprise Edition (Sysbox-EE)](#installing-sysbox-enterprise-edition-sysbox-ee)
+-   [Installing Shiftfs](#installing-shiftfs)
 -   [Miscellaneous Installation Info](#miscellaneous-installation-info)
 -   [Uninstalling Sysbox or Sysbox Enterprise](#uninstalling-sysbox-or-sysbox-enterprise)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
@@ -27,7 +31,7 @@ We are currently offering the [Sysbox packages](https://github.com/nestybox/sysb
 This means that for other distros you must [build and install Sysbox from source](https://github.com/nestybox/sysbox/blob/master/docs/developers-guide/build.md).
 
 We are working on creating packaged versions for the other supported distros, and
-expect to have them soon (ETA summer 2021).
+expect to have them soon (ETA winter 2022).
 
 ## Host Requirements
 
@@ -36,6 +40,23 @@ The Linux host on which Sysbox runs must meet the following requirements:
 1.  It must have one of the [supported Linux distros](../distro-compat.md).
 
 2.  Systemd must be the system's process-manager (the default in the supported distros).
+
+3.  Preferably (though it's not required) the kernel should carry the `shiftfs`
+    module.
+
+    -   This module is included by default in Ubuntu desktop and server images,
+        but is generally not present in Ubuntu-based cloud VMs and in other
+        distros.
+
+    -   When the module is not present, it's possible (and easy) to build it and
+        install it. But this only applies to Ubuntu, Debian, and Flatcar hosts.
+        See [here](#installing-shiftfs) for info on how to do this.
+
+    -   If shiftfs is not present or supported on your host, using Sysbox requires
+        Docker to be configured in "userns-remap mode". The Sysbox installer can
+        do this configuration if you so desire (it will ask you for permission
+        during installation). See [below](#docker-runtime-configuration) for
+        details.
 
 ## Installing Sysbox
 
@@ -174,6 +195,40 @@ Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
 **NOTE:** either Sysbox or Sysbox Enterprise must be installed on a given host,
 never both.
 
+## Installing Shiftfs
+
+Sysbox works best when the `shiftfs` module is present in the Linux kernel.
+
+This module is included by default in Ubuntu desktop and server images, but generally
+not included in Ubuntu-based cloud VMs and other Linux distros.
+
+For hosts where shiftfs is not included, it's possible (and fairly easy) to
+build and install it.
+
+**NOTE: Shiftfs is currently supported on Ubuntu, Debian, and Flatcar. For other distros
+(e.g., Fedora, CentOS) using Sysbox requires that Docker be configured in userns-remap
+mode (see [below](#docker-userns-remap)).**
+
+To build and install shiftfs, follow the instructions here: https://github.com/toby63/shiftfs-dkms
+
+For example, to install shiftfs on a Ubuntu-based cloud VM with Linux 5.8,
+follow these simple steps:
+
+```console
+git clone -b k5.8 https://github.com/toby63/shiftfs-dkms.git shiftfs-k58
+cd shiftfs-k58
+./update1
+sudo make -f Makefile.dkms
+modinfo shiftfs
+```
+
+Note that you'll need to install the `git`, `make`, `dkms`, `wget`, and
+kernel-header packages in order to perform the shiftfs build.
+
+In the near future (kernels 5.12+), shiftfs is expected to be replaced with a
+more generic kernel mechanism for filesystem user-ID mappings that will be
+supported across all distros. Sysbox will soon have support for this.
+
 ## Miscellaneous Installation Info
 
 ### Docker Runtime Configuration
@@ -209,16 +264,10 @@ in [userns-remap mode](https://docs.docker.com/engine/security/userns-remap/) or
 
 The installer uses the following logic:
 
--   If the kernel carries a module called `shiftfs`, then Docker does not need to be
+-   If the kernel carries the `shiftfs` module, then Docker does not need to be
     placed in userns-remap mode.
 
-    -   This is normally the case for the Ubuntu desktop and server editions. It
-        can also be [added](https://github.com/toby63/shiftfs-dkms) to
-        Ubuntu cloud server editions which don't carry it by default.
-
--   Otherwise, Docker does need to be placed in userns-remap mode to work with Sysbox.
-
-    -   This is likely the case for the non-Ubuntu [supported distributions](../distro-compat.md).
+-   Otherwise, Docker needs to be placed in userns-remap mode to work with Sysbox.
 
 If Docker needs to be placed in userns-remap, the Sysbox installer will check if
 Docker is already in this mode (by looking for `userns-remap` in
