@@ -39,7 +39,7 @@ etc.
 Together, sysbox-fs and sysbox-mgr are the "back-ends" for sysbox. Communication
 between the sysbox components is done via gRPC.
 
-Users don't normally interact with the Sysbox components directly.  Instead,
+Users don't normally interact with the Sysbox components directly. Instead,
 they use higher level apps (e.g., Docker) that interact with Sysbox to deploy
 system containers.
 
