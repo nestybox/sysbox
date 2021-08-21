@@ -24,7 +24,7 @@ Sysbox is made up of 3 systemd services:
 -   `sysbox-mgr.service`: sub-service that starts the sysbox-mgr daemon
 -   `sysbox-fs.service`: sub-service that starts the sysbox-fs daemon
 
-These are norally located in `/lib/systemd/system/`.
+These are usually located in `/lib/systemd/system/`.
 
 Users normally interact with the top-level `sysbox.service` to start, stop, and
 restart Sysbox.
@@ -36,7 +36,7 @@ $ sudo systemctl stop sysbox
 ```
 
 **NOTE: Make sure all Sysbox containers are stopped and removed before stopping
-Sysbox, as otherwise the will stop operating properly.**
+Sysbox, as otherwise they will stop operating properly.**
 
 To start Sysbox again you can type:
 
