@@ -27,14 +27,30 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 
 ## Kubernetes Version Requirements
 
-Sysbox is only supported on Kubernetes v1.20.\* at this time.
+Sysbox is only supported on Kubernetes v1.20.\* at this time. We are currently working
+to have this extended to v1.21.
 
-The reason for this is that Sysbox currently requires the presence of the CRI-O
-runtime v1.20, as the latter introduces support for "rootless pods" (i.e., pods
-that use the Linux user-namespace). Since the version of CRI-O and K8s must match, the
-K8s version must also be v1.20.\*.
+The reason for this v1.20 requirement is that Sysbox currently demands the presence
+of the CRI-O runtime v1.20, as the latter introduces support for "rootless pods" (i.e.,
+pods that use the Linux user-namespace). Since the version of CRI-O and K8s must match,
+the K8s version must also be v1.20.\*.
 
-The Sysbox installation steps below automatically install CRI-O on the Kubernetes nodes.
+It is important to highlight that when we use the "Kubernetes" term, we are not
+referring to a particular Kubernetes distribution, but to all those compliant
+implementations. Having said that, at the moment, the Sysbox installation process
+described in this document has been only tested in the following scenarios:
+
+| Kubernetes Distros    |  Tested OS Distros                         | Notes         |
+| --------------------- | ------------------------------------------ | ------------- |
+| Kubernetes (regular)  |  Ubuntu Bionic or Focal                    | [(1)](install-k8s-distros.md#kubernetes-regular) |
+| Amazon EKS            |  Ubuntu Focal                              | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
+| Google GKE            |  Ubuntu-Containerd or Ubuntu-Docker images | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
+| Rancher RKE           |  Ubuntu Focal                              | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
+| K3s (WIP)             |                                            |               |
+
+Regardless of the elected Kubernetes Distro and the pre-existing container runtime
+(i.e. containerd or docker), the Sysbox installation method presented below
+automatically installs CRI-O on the Kubernetes nodes.
 
 ## Kubernetes Worker Node Requirements
 

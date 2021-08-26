@@ -1,9 +1,20 @@
-# Sysbox User Guide: Installing Sysbox on Cloud-Based Kubernetes Clusters
+# Sysbox User Guide: Installing Sysbox on Kubernetes Clusters
 
 ## Contents
 
+-   [Kubernetes (regular)](#kubenetes-(regular))
 -   [Google Kubernetes Engine (GKE)](#google-kubernetes-engine-gke)
 -   [AWS Elastic Kubernetes Service (EKS)](#aws-elastic-kubernetes-service-eks)
+-   [Rancher Kubernetes Engine (RKE)](#rancher-kubernetes-engine-rke)
+
+## Kubernetes (regular)
+
+1. Create a cluster through [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/)
+    or any equivalent tool. Take into account the Sysbox requirements described
+    [here](install-k8s.md#kubernetes-worker-node-requirements).
+
+2.  Once the cluster is created, proceed to install Sysbox as shown
+    [here](install-k8s.md).
 
 ## Google Kubernetes Engine (GKE)
 
@@ -11,7 +22,7 @@
     "Regular" channel options).
 
 2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
-    with Containerd" image template.
+    with Containerd" or the "Ubuntu with Docker" image templates.
 
     -   Ensure the nodes have a minimum of 4 vCPUs each.
 
@@ -108,3 +119,24 @@ Done.
 
 -   If the installation takes significantly longer, something is likely
     wrong. See [here](troubleshoot-k8s.md) for troubleshoot info.
+
+
+## Rancher Kubernetes Engine (RKE)
+
+1.  Create a cluster through the [Rancher](https://rancher.com/quick-start/) UI
+    or by making use of the RKE provisioning [tool](https://rancher.com/products/rke/).
+    Take into account the Sysbox node requirements described
+    [here](install-k8s.md#kubernetes-worker-node-requirements). 
+
+2. Once the cluster is fully operational, proceed to install Sysbox as shown
+    [here](install-k8s.md).
+
+**NOTES:**
+
+-   The installation of Sysbox (which also installs CRI-O on the desired K8s
+    worker nodes) takes between 1->2 minutes on RKE clusters.
+
+-   Upon successful installation of Sysbox, all the K8s PODs will be re-spawned
+    through CRI-O. However, the control-plane components (e.g., kubelet) created as
+    docker containers by the RKE provisioning tool, will continue to be handled by
+    docker.
