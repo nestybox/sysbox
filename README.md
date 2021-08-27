@@ -133,7 +133,7 @@ Edition (i.e., this repo) and the Sysbox Enterprise Edition (see prior
 section).
 
 <p align="center">
-    <img alt="sysbox" src="./docs/figures/sysbox-features.gif" width="1000" />
+    <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000" />
 </p>
 
 (\*) For pricing purposes, a "host" is a computer (bare-metal or
