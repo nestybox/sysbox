@@ -46,7 +46,7 @@ described in this document has been only tested in the following scenarios:
 | Amazon EKS            |  Ubuntu Focal                              | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
 | Google GKE            |  Ubuntu-Containerd or Ubuntu-Docker images | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
 | Rancher RKE           |  Ubuntu Focal                              | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
-| K3s (WIP)             |                                            |               |
+
 
 Regardless of the elected Kubernetes Distro and the pre-existing container runtime
 (i.e. containerd or docker), the Sysbox installation method presented below
