@@ -9,7 +9,7 @@
 
 ## Kubernetes (regular)
 
-1. Create a cluster through [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/)
+1.  Create a cluster through [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/)
     or any equivalent tool. Take into account the Sysbox requirements described
     [here](install-k8s.md#kubernetes-worker-node-requirements).
 
@@ -128,7 +128,7 @@ Done.
     Take into account the Sysbox node requirements described
     [here](install-k8s.md#kubernetes-worker-node-requirements). 
 
-2. Once the cluster is fully operational, proceed to install Sysbox as shown
+2.  Once the cluster is fully operational, proceed to install Sysbox as shown
     [here](install-k8s.md).
 
 **NOTES:**
@@ -138,5 +138,5 @@ Done.
 
 -   Upon successful installation of Sysbox, all the K8s PODs will be re-spawned
     through CRI-O. However, the control-plane components (e.g., kubelet) created as
-    docker containers by the RKE provisioning tool, will continue to be handled by
+    Docker containers by the RKE provisioning tool, will continue to be handled by
     docker.
