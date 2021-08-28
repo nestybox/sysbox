@@ -15,6 +15,7 @@ fi
 lastBuildHost=$(cat .buildinfo)
 if [[ "$lastBuildHost" != "$thisHost" ]]; then
   make ARCH=$ARCH clean
+  echo "$thisHost" > .buildinfo
 fi
 
 make_target=$1
@@ -46,4 +47,3 @@ chown -R rootless:rootless ./sysbox-runc
 chown -R rootless:rootless ./sysbox-fs
 chown -R rootless:rootless ./sysbox-mgr
 chown -R rootless:rootless ./sysbox-ipc
-
