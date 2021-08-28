@@ -66,8 +66,8 @@ Sysbox meets the following requirement:
 ## Installation of Sysbox
 
 **NOTE: These instructions work generally in all Kubernetes clusters. For
-additional instructions specific to cloud-based Kubernetes clusters (e.g., GKE,
-EKS, etc.), see [here](install-k8s-cloud.md).**
+additional instructions specific to a Kubernetes distribution, refer to
+[this](install-k8s-distros.md) document.**
 
 Installation is done via a daemonset called "sysbox-deploy-k8s", which installs
 the CRI-O and Sysbox binaries onto the desired K8s nodes and performs all
