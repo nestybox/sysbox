@@ -1,8 +1,11 @@
-# Sysbox User Guide: Installing Sysbox on Kubernetes Clusters
+# Sysbox User Guide: Kubernetes Distro-Specific Installation Instructions
+
+This document contains info on how to setup a Kubernetes cluster to install
+Sysbox. Each section covers a different Kubernetes distro.
 
 ## Contents
 
--   [Kubernetes (regular)](#kubenetes-(regular))
+-   [Kubernetes (regular)](#kubernetes-(regular))
 -   [Google Kubernetes Engine (GKE)](#google-kubernetes-engine-gke)
 -   [AWS Elastic Kubernetes Service (EKS)](#aws-elastic-kubernetes-service-eks)
 -   [Rancher Kubernetes Engine (RKE)](#rancher-kubernetes-engine-rke)
@@ -126,7 +129,7 @@ Done.
 1.  Create a cluster through the [Rancher](https://rancher.com/quick-start/) UI
     or by making use of the RKE provisioning [tool](https://rancher.com/products/rke/).
     Take into account the Sysbox node requirements described
-    [here](install-k8s.md#kubernetes-worker-node-requirements). 
+    [here](install-k8s.md#kubernetes-worker-node-requirements).
 
 2.  Once the cluster is fully operational, proceed to install Sysbox as shown
     [here](install-k8s.md).
