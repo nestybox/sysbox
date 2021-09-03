@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "docker-cli-container"
+  },
+  "image":{
+      "image": "docker:latest"
+  },
+  "command": [
+      "sh", "-c", "sleep infinity"
+  ],
+  "log_path":"container.log",
+  "linux": {
+  }
+}

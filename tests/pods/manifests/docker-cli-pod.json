@@ -1,0 +1,17 @@
+{
+    "metadata": {
+        "name": "docker-cli-sandbox",
+        "namespace": "default",
+        "attempt": 1,
+        "uid": "docker-cli-pod"
+    },
+    "annotations": {
+        "io.kubernetes.cri-o.userns-mode": "auto:size=65536"
+    },
+    "log_directory": "/tmp",
+    "dns_config": {
+    },
+    "port_mappings": [],
+    "linux": {
+    }
+}

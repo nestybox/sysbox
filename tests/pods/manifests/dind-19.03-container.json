@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "dind-container"
+  },
+  "image":{
+      "image": "docker:19.03.15-dind-alpine3.13"
+  },
+  "command": [
+      "sh", "-c", "dockerd -H tcp://0.0.0.0:2375 > /var/log/dockerd.log 2>&1"
+  ],
+  "log_path":"container.log",
+  "linux": {
+  }
+}
