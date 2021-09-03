@@ -1,0 +1,14 @@
+{
+  "metadata": {
+      "name": "dind-container"
+  },
+  "image":{
+      "image": "docker:20.10.8-dind"
+  },
+  "command": [
+      "sh", "-c", "dockerd -H tcp://0.0.0.0:2375 > /var/log/dockerd.log 2>&1"
+  ],
+  "log_path":"container.log",
+  "linux": {
+  }
+}
