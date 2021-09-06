@@ -20,7 +20,7 @@ spec:
       - name: sysbox-ee-deploy-k8s
         image: registry.nestybox.com/nestybox/sysbox-ee-deploy-k8s
         imagePullPolicy: Always
-        command: [ "bash", "-c", "/opt/sysbox/scripts/sysbox-ee-deploy-k8s.sh install" ]
+        command: [ "bash", "-c", "/opt/sysbox/scripts/sysbox-deploy-k8s.sh ee install" ]
         env:
         - name: NODE_NAME
           valueFrom:
@@ -49,6 +49,8 @@ spec:
           mountPath: /mnt/host/usr/local/bin
         - name: host-run
           mountPath: /mnt/host/run
+        - name: host-var-lib
+          mountPath: /mnt/host/var/lib
       volumes:
         - name: host-etc
           hostPath:
@@ -80,6 +82,9 @@ spec:
         - name: host-run
           hostPath:
             path: /run
+        - name: host-var-lib
+          hostPath:
+            path: /var/lib
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
