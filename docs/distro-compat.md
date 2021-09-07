@@ -21,7 +21,7 @@ methods supported, and any other requirements:
 | Fedora 33             |   |   | ✓ | No                              | |
 | Fedora 34             |   |   | ✓ | No                              | |
 | CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | |
-| Flatcar               | N/A |   | ✓ | No                            | More details [here](https://github.com/nestybox/sysbox-flatcar-preview) |
+| Flatcar (*)           | ✓ | ✓ |   | No                              | Details [here](user-guide/install-flatcar.md) |
 
 **NOTES:**
 
@@ -33,8 +33,11 @@ methods supported, and any other requirements:
 
 -   "Kernel upgrade" means a kernel upgrade may be required (Sysbox requires a fairly new kernel). See [below](#kernel-upgrade-procedures) for more.
 
-- "EOL" releases refer to those that are being deprecated by its distro vendor as
+-   "EOL" releases refer to those that are being deprecated by its distro vendor as
 part of their release scheduling process.
+
+-   Due to the very nature of Flatcar deployments (enterprise focus) and the extra maintenance cost that it
+entails from Sysbox maintainers, Flatcar support is only offered as part of the Sysbox Enterprise (EE) offering.
 
 ## Kernel Upgrade Procedures
 
