@@ -77,6 +77,9 @@ RUN apt-get update && apt-get install -y \
     fuse \
     rsync \
     bash-completion \
+    attr \
+    tree \
+    strace \
     --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \

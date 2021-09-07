@@ -60,6 +60,9 @@ RUN dnf update -y && dnf install -y \
     rsync \
     redhat-lsb-core \
     bash-completion \
+    attr \
+    tree \
+    strace \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 
