@@ -35,13 +35,21 @@ sections).
 Having said that, at the moment the Sysbox installation process described in
 this document has only been tested in the following scenarios:
 
-| Kubernetes Distros    |  Tested OS Distros                         | Cluster Setup Notes |
-| --------------------- | ------------------------------------------ | ------------------- |
-| Kubernetes (regular)  |  Ubuntu Bionic or Focal                    | [(1)](install-k8s-distros.md#kubernetes-regular) |
-| Amazon EKS            |  Ubuntu Focal                              | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
-| Google GKE            |  Ubuntu-Containerd or Ubuntu-Docker images | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
-| Rancher RKE           |  Ubuntu Focal                              | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
+| Kubernetes Distros    |  Tested OS Distros                          | Cluster Setup Notes |
+| --------------------- | ------------------------------------------- | ------------------- |
+| Kubernetes (regular)  |  Ubuntu Bionic / Focal, Flatcar             | [(1)](install-k8s-distros.md#kubernetes-regular) |
+| Amazon EKS            |  Ubuntu Focal, Flatcar                      | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
+| Google GKE            |  Ubuntu-Containerd / Ubuntu-Docker, Flatcar | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
+| Rancher RKE           |  Ubuntu Focal                               | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
 
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
+
+Due to the very nature of Flatcar deployments (enterprise focus) and the extra
+maintenance cost that it entails from Sysbox maintainers, Flatcar support is
+only offered as part of the Sysbox Enterprise (EE) offering.
+
+***
 
 Regardless of the elected Kubernetes distro and the pre-existing container
 runtime (i.e. containerd or docker), the Sysbox installation method presented
