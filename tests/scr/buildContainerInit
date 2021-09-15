@@ -42,8 +42,9 @@ if [[ $distro == "flatcar" ]]; then
 fi
 
 # Fix ownership of artifacts
-chown -R rootless:rootless ./build
-chown -R rootless:rootless ./sysbox-runc
-chown -R rootless:rootless ./sysbox-fs
-chown -R rootless:rootless ./sysbox-mgr
-chown -R rootless:rootless ./sysbox-ipc
+chown -R ${HOST_UID}:${HOST_GID} ./build
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-runc
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-fs
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-mgr
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-ipc
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-libs
