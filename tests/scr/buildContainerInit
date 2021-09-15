@@ -43,8 +43,8 @@ fi
 
 # Fix ownership of artifacts
 chown -R ${HOST_UID}:${HOST_GID} ./build
-chown -R ${HOST_UID}:${HOST_GID} ./sysbox-runc
-chown -R ${HOST_UID}:${HOST_GID} ./sysbox-fs
-chown -R ${HOST_UID}:${HOST_GID} ./sysbox-mgr
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-runc/build
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-fs/build
+chown -R ${HOST_UID}:${HOST_GID} ./sysbox-mgr/build
 chown -R ${HOST_UID}:${HOST_GID} ./sysbox-ipc
 chown -R ${HOST_UID}:${HOST_GID} ./sysbox-libs
