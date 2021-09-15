@@ -33,6 +33,8 @@ endif
 export VERSION := $(shell cat ./VERSION)
 export EDITION := Community Edition (CE)
 export PACKAGE := sysbox-ce
+export HOST_UID := $(shell id -u)
+export HOST_GID := $(shell id -g)
 
 # By default, build for amd64
 ARCH := amd64
@@ -179,21 +181,25 @@ DOCKER_SYSBOX_BLD_FLATCAR := docker run --privileged --rm --runtime=runc      \
 sysbox: ## Build sysbox (the build occurs inside a container, so the host is not polluted)
 sysbox: test-img
 	@printf "\n** Building sysbox **\n\n"
-	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-local"
+	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
+		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-local"
 
 sysbox-flatcar: test-img-flatcar
 	@printf "\n** Building sysbox for Kinvolk's Flatcar OS**\n\n"
-	$(DOCKER_SYSBOX_BLD_FLATCAR) /bin/bash -c "buildContainerInit sysbox-local"
+	$(DOCKER_SYSBOX_BLD_FLATCAR) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
+		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-local"
 
 sysbox-debug: ## Build sysbox (with debug symbols)
 sysbox-debug: test-img
 	@printf "\n** Building sysbox **\n\n"
-	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-debug-local"
+	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
+		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-debug-local"
 
 sysbox-static: ## Build sysbox (static linking)
 sysbox-static: test-img
 	@printf "\n** Building sysbox **\n\n"
-	$(DOCKER_SYSBOX_BLD) /bin/bash -c "buildContainerInit sysbox-static-local"
+	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
+		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-static-local"
 
 sysbox-local: sysbox-runc sysbox-fs sysbox-mgr
 	@echo $(HOSTNAME)-$(ARCH) > .buildinfo
@@ -235,7 +241,7 @@ sysbox-ipc:
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@echo "Building libseccomp ..."
 	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure --host $(HOST_TRIPLE) && make
-	@chown -R rootless:rootless ./sysbox-libs/libseccomp
+	@chown -R $(HOST_UID):$(HOST_GID) ./sysbox-libs/libseccomp
 	@echo "Building libseccomp completed."
 
 #
