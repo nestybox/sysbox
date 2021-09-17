@@ -62,16 +62,6 @@ endif
 
 IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 
-TEST_DIR := $(CURDIR)/tests
-TEST_IMAGE := sysbox-test
-TEST_IMAGE_FLATCAR := sysbox-test-flatcar
-
-TEST_SYSTEMD_IMAGE := sysbox-systemd-test
-TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
-
-TEST_FILES := $(shell find tests -type f | egrep "\.bats")
-TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
-
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
 export KERNEL_REL
@@ -82,9 +72,28 @@ ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat))
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
 else
 	IMAGE_BASE_RELEASE := $(shell lsb_release -cs)
+	ifeq ($(IMAGE_BASE_DISTRO),linuxmint)
+		IMAGE_BASE_DISTRO := ubuntu
+		ifeq ($(IMAGE_BASE_RELEASE),$(filter $(IMAGE_BASE_RELEASE),ulyana ulyssa uma))
+			IMAGE_BASE_RELEASE := focal
+		endif
+		ifeq ($(IMAGE_BASE_RELEASE),$(filter $(IMAGE_BASE_RELEASE),tara tessa tina tricia))
+			IMAGE_BASE_RELEASE := bionic
+		endif
+	endif
 	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
 	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | egrep -v "^\.\." | head -1)
 endif
+
+TEST_DIR := $(CURDIR)/tests
+TEST_IMAGE := sysbox-test
+TEST_IMAGE_FLATCAR := sysbox-test-flatcar
+
+TEST_SYSTEMD_IMAGE := sysbox-systemd-test
+TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
+
+TEST_FILES := $(shell find tests -type f | egrep "\.bats")
+TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
 
 ifeq ($(KERNEL_HEADERS_BASE), )
 	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
