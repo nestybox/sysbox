@@ -36,8 +36,16 @@ methods supported, and any other requirements:
 -   "EOL" releases refer to those that are being deprecated by its distro vendor as
 part of their release scheduling process.
 
--   Due to the very nature of Flatcar deployments (enterprise focus) and the extra maintenance cost that it
-entails from Sysbox maintainers, Flatcar support is only offered as part of the Sysbox Enterprise (EE) offering.
+
+***
+#### ** --- Sysbox-EE Feature Highlight --- **
+
+Due to the enterprise-oriented nature of Flatcar's typical deployments, as well
+as the extra maintenance cost that it entails from Sysbox maintainers, Flatcar
+support is currently only offered as part of the Sysbox Enterprise Edition (EE).
+
+***
+
 
 ## Kernel Upgrade Procedures
 
