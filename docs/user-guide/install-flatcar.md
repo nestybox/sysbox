@@ -7,7 +7,7 @@ on Flatcar distribution.
 
 Due to the enterprise-oriented nature of Flatcar's typical deployments, as well
 as the extra maintenance cost that it entails from Sysbox maintainers, Flatcar
-support is currently only offered as part of the Sysbox Enterprise (EE) offering.
+support is currently only offered as part of the Sysbox Enterprise Edition (EE).
 
 ***
 

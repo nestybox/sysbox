@@ -42,15 +42,6 @@ this document has only been tested in the following scenarios:
 | Google GKE            |  Ubuntu-Containerd / Ubuntu-Docker, Flatcar | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
 | Rancher RKE           |  Ubuntu Focal                               | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
 
-***
-#### ** --- Sysbox-EE Feature Highlight --- **
-
-Due to the enterprise-oriented nature of Flatcar's typical deployments, as well
-as the extra maintenance cost that it entails from Sysbox maintainers, Flatcar
-support is currently only offered as part of the Sysbox Enterprise (EE) offering.
-
-***
-
 Regardless of the elected Kubernetes distro and the pre-existing container
 runtime (i.e. containerd or docker), the Sysbox installation method presented
 below is the same: via the **"sysbox-deploy-k8s"** daemonset. This daemonset
