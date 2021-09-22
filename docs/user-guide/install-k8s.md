@@ -45,9 +45,9 @@ this document has only been tested in the following scenarios:
 ***
 #### ** --- Sysbox-EE Feature Highlight --- **
 
-Due to the very nature of Flatcar deployments (enterprise focus) and the extra
-maintenance cost that it entails from Sysbox maintainers, Flatcar support is
-only offered as part of the Sysbox Enterprise (EE) offering.
+Due to the enterprise-oriented nature of Flatcar's typical deployments, as well
+as the extra maintenance cost that it entails from Sysbox maintainers, Flatcar
+support is currently only offered as part of the Sysbox Enterprise (EE) offering.
 
 ***
 
