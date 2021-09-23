@@ -36,10 +36,10 @@ Having said that, at the moment the Sysbox installation process described in
 this document has only been tested in the following scenarios:
 
 | Kubernetes Distros    |  Tested OS Distros                          | Cluster Setup Notes |
-| --------------------- | ------------------------------------------- | ------------------- |
-| Kubernetes (regular)  |  Ubuntu Bionic / Focal, Flatcar             | [(1)](install-k8s-distros.md#kubernetes-regular) |
-| Amazon EKS            |  Ubuntu Focal, Flatcar                      | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
-| Google GKE            |  Ubuntu-Containerd / Ubuntu-Docker, Flatcar | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
+| --------------------- | ------------------------------------------ | ------------------- |
+| Kubernetes (regular)  |  Ubuntu Bionic / Focal, Flatcar            | [(1)](install-k8s-distros.md#kubernetes-regular) |
+| Amazon EKS            |  Ubuntu Focal                              | [(2)](install-k8s-distros.md#aws-elastic-kubernetes-service-eks) |
+| Google GKE            |  Ubuntu-Containerd or Ubuntu-Docker images | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
 | Rancher RKE           |  Ubuntu Focal                               | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
 
 Regardless of the elected Kubernetes distro and the pre-existing container
