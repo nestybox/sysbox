@@ -1,7 +1,7 @@
 # Flatcar Installation
 
 The document outlines the set of instructions that are required to install Sysbox
-on Flatcar distribution.
+on Kinvolk's Flatcar Linux distribution.
 
 #### ** --- Sysbox-EE Feature Highlight --- **
 
