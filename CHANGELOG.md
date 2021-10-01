@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2021-09-30
+### Added
+  * Added important optimization to expedite the container creation cycle.
+  * Enhanced uid-shifting logic to perform shifting operations of Sysbox's special dirs on a need basis.
+  * Added support for Kinvolk's Flatcar Linux distribution (Sysbox-EE only).
+  * Added basic building-blocks to allow Sysbox support on ARM platforms.
+  * Fixed issue preventing Sysbox folders from being eliminated from HDD when Sysbox is shutdown.
+  * Enable sys container processes to set 'trusted.overlay.opaque' xattr on files (issue #254).
+  * Fixed bug resulting in the failure of "mount" operation within a sys container.
+  * Made various enhancements to Sysbox's kubernetes installer to simplify its operation.
+  * Extend Sysbox's kubernetes installer to support Rancher's RKE k8s distribution.
+
 ## [0.4.0] - 2021-07-13
 ### Added
   * Added support to create secure Kubernetes PODs with Sysbox (sysbox-pods).
