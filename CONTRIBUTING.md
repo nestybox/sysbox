@@ -26,7 +26,7 @@ Strong container security is of upmost concern for Sysbox.
 
 If you are reporting a security issue, please do not create an issue or file a
 pull request on GitHub. Instead, disclose the issue responsibly by sending an
-email to contact@nestybox.com.
+email to security@nestybox.com.
 
 ## Reporting other issues
 
