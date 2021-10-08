@@ -65,6 +65,7 @@ sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs
 *   [Under the Covers](#under-the-covers)
 *   [Comparison to related technologies](#comparison-to-related-technologies)
 *   [Contributing](#contributing)
+*   [Security](#security)
 *   [Troubleshooting & Support](#troubleshooting--support)
 *   [Uninstallation](#uninstallation)
 *   [Roadmap](#roadmap)
@@ -296,6 +297,12 @@ such as LXD, K8s.io KinD, Ignite, Kata Containers, rootless Docker, and more.
 We welcome contributions to Sysbox, whether they are small documentation changes,
 bug fixes, or feature additions. Please see the [contribution guidelines](CONTRIBUTING.md)
 and [developer's guide](docs/developers-guide/README.md) for more info.
+
+## Security
+
+Security issues that may expose a Sysbox vulnerability should be reported
+by sending an email to security@nestybox.com. Please do not open security
+issues here.
 
 ## Troubleshooting & Support
 
