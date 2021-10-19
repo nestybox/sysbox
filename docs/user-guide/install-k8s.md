@@ -197,6 +197,7 @@ To uninstall Sysbox:
 kubectl delete runtimeclass sysbox-runc
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
+sleep 30
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
 ```
@@ -207,6 +208,7 @@ For Sysbox Enterprise, use the `sysbox-ee-cleanup-k8s.yaml` instead of the `sysb
 kubectl delete runtimeclass sysbox-runc
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
+sleep 30
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
 kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
 ```
@@ -219,6 +221,9 @@ NOTES:
 -   The uninstallation will temporarily disrupt all pods on the nodes where CRI-O
     and Sysbox were installed, for up to 1 minute, as they require the kubelet to
     restart.
+
+-   The 'sleep' instruction above is to ensure that kubelet has a chance to launch
+    the 'cleanup' daemonset before it is removed in the subsequent step.
 
 ## Upgrading Sysbox or Sysbox Enterprise
 
