@@ -60,7 +60,7 @@ function retry() {
   for ((i = 0; i < attempts; i++)); do
     $@
     if [ "$?" -eq 0 ]; then
-	return 0
+		 return 0
     fi
     sleep $delay
   done
