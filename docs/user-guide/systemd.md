@@ -47,7 +47,7 @@ on how to use them.
 
 Of course, the container image will also need to have the systemd service units
 that you need. These service units are typically added to the image during the
-image build process. For example, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/main/ubuntu-bionic-systemd-docker/Dockerfile)
+image build process. For example, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/master/ubuntu-bionic-systemd-docker/Dockerfile)
 for the `nestybox/ubuntu-bionic-systemd-docker` image includes Docker's systemd
 service unit by simply installing Docker in the container. As a result, when you
 launch that container, Systemd automatically starts Docker.

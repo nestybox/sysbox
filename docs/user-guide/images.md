@@ -104,7 +104,7 @@ This process also works if the system container image has containerd inside
 (rather than Docker). In this case, the Dockerfile must request containerd
 to pull the inner images.
 
-We use this feature often. For example, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/main/k8s-node/Dockerfile)
+We use this feature often. For example, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/master/k8s-node/1.18/Dockerfile)
 for the `k8s-node` image (used for running Kubernetes-in-Docker) preloads the Kubernetes pod images using
 this same approach.
 
