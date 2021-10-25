@@ -405,7 +405,7 @@ that make up the cluster.
 It's a simple image that includes systemd, Docker, the K8s `kubeadm` tool, and
 preloaded inner pod images for the K8s control plane.
 
-The Dockerfile is [here](https://github.com/nestybox/dockerfiles/blob/main/k8s-node/Dockerfile).
+The Dockerfile is [here](https://github.com/nestybox/dockerfiles/blob/master/k8s-node/1.18/Dockerfile).
 
 Feel free to copy it and customize it per your needs.
 
@@ -799,7 +799,7 @@ When you deploy pods using the nginx image, the image won't be pulled from the n
 You can preload as many images as you want, but note that they will add to the
 size of your K8s node image.
 
-In fact, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/main/k8s-node/Dockerfile)
+In fact, the [Dockerfile](https://github.com/nestybox/dockerfiles/blob/master/k8s-node/1.18/Dockerfile)
 for the `nestybox/k8s-node` image does something even more clever: it invokes `kubeadm`
 inside the K8s node container to preload the inner images for the K8s control-plane pods.
 Kubeadm in turn invokes the inner Docker, which pulls the pod images. The result is that the
