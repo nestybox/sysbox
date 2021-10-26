@@ -9,6 +9,7 @@ Sysbox. Each section covers a different Kubernetes distro.
 -   [Google Kubernetes Engine (GKE)](#google-kubernetes-engine-gke)
 -   [AWS Elastic Kubernetes Service (EKS)](#aws-elastic-kubernetes-service-eks)
 -   [Rancher Kubernetes Engine (RKE)](#rancher-kubernetes-engine-rke)
+-   [Rancher Next-Gen Kubernetes Engine (RKE2)](#rancher-next-gen-kubernetes-engine-rke2)
 
 ## Kubernetes (regular)
 
@@ -126,7 +127,7 @@ Done.
 
 ## Rancher Kubernetes Engine (RKE)
 
-1.  Create a cluster through the [Rancher](https://rancher.com/quick-start/) UI
+1.  Create a cluster through the [Rancher](https://rancher.com/quick-start/) UI,
     or by making use of the RKE provisioning [tool](https://rancher.com/products/rke/).
     Take into account the Sysbox node requirements described
     [here](install-k8s.md#kubernetes-worker-node-requirements).
@@ -143,3 +144,18 @@ Done.
     through CRI-O. However, the control-plane components (e.g., kubelet) created as
     Docker containers by the RKE provisioning tool, will continue to be handled by
     docker.
+
+## Rancher Next-Gen Kubernetes Engine (RKE2)
+
+1.  Create an RKE2 cluster through the [Rancher](https://rancher.com/quick-start/)
+    UI (must be running Rancher v2.6+), or by making use of the RKE2 provisioning
+    [tool](https://docs.rke2.io). Take into account the Sysbox node requirements
+    described [here](install-k8s.md#kubernetes-worker-node-requirements).
+
+2.  Once the cluster is fully operational, proceed to install Sysbox as shown
+    [here](install-k8s.md).
+
+**NOTES:**
+
+-   The installation of Sysbox (which also installs CRI-O on the desired K8s
+    worker nodes) takes between 1->2 minutes on RKE2 clusters.
