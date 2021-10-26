@@ -167,7 +167,7 @@ Done.
 1.  Create a Lokomotive cluster as described in the [documentation](https://kinvolk.io/docs/lokomotive/0.9/installer/lokoctl/).
 Take into account the Sysbox node requirements described [here](install-k8s.md#kubernetes-worker-node-requirements),
 and the fact that Lokomotive runs atop Flatcar Container Linux distribution,
-which is only [supported](../distro-compat.md) in Sysbox-EE offering.
+which is only [supported](../distro-compat.md) in the Sysbox-EE offering.
 
 2.  Once the cluster is fully operational, proceed to install Sysbox as shown
     [here](install-k8s.md).
@@ -189,4 +189,4 @@ $ kubectl delete -n kube-system daemonset.apps/kubelet --cascade=true
 
 -   Sysbox installation in a Lokomotive cluster is strikingly fast -- usually
 doesn't exceed 20-30 seconds. This is just a consequence of the fact that
-`sysbox-deploy-k8s` daemon-set prepackages all the required dependencies.
+`sysbox-ee-deploy-k8s` daemon-set prepackages all the required dependencies.
