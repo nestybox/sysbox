@@ -42,7 +42,7 @@ this document has only been tested in the following scenarios:
 | Google GKE            |  Ubuntu-Containerd or Ubuntu-Docker images | [(3)](install-k8s-distros.md#google-kubernetes-engine-gke) |
 | Rancher RKE           |  Ubuntu Focal                              | [(4)](install-k8s-distros.md#rancher-kubernetes-engine-rke) |
 | Rancher RKE2          |  Ubuntu Focal                              | [(5)](install-k8s-distros.md#rancher-next-gen-kubernetes-engine-rke2) |
-| Kinvolk Lokomotive    |  Flatcar                                   | [(6)](install-k8s-distros.md#kinvolks-lokomotive) |
+| Kinvolk Lokomotive    |  Flatcar                                   | [(6)](install-k8s-distros.md#kinvolk-lokomotive) |
 
 Regardless of the elected Kubernetes distro and the pre-existing container
 runtime (i.e. containerd or docker), the Sysbox installation method presented
