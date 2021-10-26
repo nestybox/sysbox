@@ -18,7 +18,7 @@ spec:
         sysbox-install: "yes"
       containers:
       - name: sysbox-ee-deploy-k8s
-        image: registry.nestybox.com/nestybox/sysbox-ee-deploy-k8s
+        image: registry.nestybox.com/nestybox/sysbox-ee-deploy-k8s:v0.4.1
         imagePullPolicy: Always
         command: [ "bash", "-c", "/opt/sysbox/scripts/sysbox-deploy-k8s.sh ee install" ]
         env:
