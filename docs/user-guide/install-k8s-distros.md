@@ -10,6 +10,8 @@ Sysbox. Each section covers a different Kubernetes distro.
 -   [AWS Elastic Kubernetes Service (EKS)](#aws-elastic-kubernetes-service-eks)
 -   [Rancher Kubernetes Engine (RKE)](#rancher-kubernetes-engine-rke)
 -   [Rancher Next-Gen Kubernetes Engine (RKE2)](#rancher-next-gen-kubernetes-engine-rke2)
+-   [Kinvolk Lokomotive](#kinvolk-lokomotive)
+
 
 ## Kubernetes (regular)
 
@@ -159,3 +161,32 @@ Done.
 
 -   The installation of Sysbox (which also installs CRI-O on the desired K8s
     worker nodes) takes between 1->2 minutes on RKE2 clusters.
+
+## Kinvolk Lokomotive
+
+1.  Create a Lokomotive cluster as described in the [documentation](https://kinvolk.io/docs/lokomotive/0.9/installer/lokoctl/).
+Take into account the Sysbox node requirements described [here](install-k8s.md#kubernetes-worker-node-requirements),
+and the fact that Lokomotive runs atop Flatcar Container Linux distribution,
+which is only [supported](../distro-compat.md) in Sysbox-EE offering.
+
+2.  Once the cluster is fully operational, proceed to install Sysbox as shown
+    [here](install-k8s.md).
+
+**NOTES:**
+
+-   The current Sysbox K8s installer does not fully support Lokomotive's
+"self-hosted" approach to manage K8s clusters. In particular, Sysbox is
+currently unable to interact with the two different sets of Kubelet processes
+created by Lokomotive. That is, Sysbox is only capable of configuring the
+[bootstrap](https://kinvolk.io/docs/lokomotive/latest/how-to-guides/update-bootstrap-kubelet/)
+Kubelet process. Thereby, for the proper operation of Sysbox within a Lokomotive
+cluster, the default Kubelet daemon-set must be disabled or eliminated with the
+following (or equivalent) instruction:
+
+```console
+$ kubectl delete -n kube-system daemonset.apps/kubelet --cascade=true
+```
+
+-   Sysbox installation in a Lokomotive cluster is strikingly fast -- usually
+doesn't exceed 20-30 seconds. This is just a consequence of the fact that
+`sysbox-deploy-k8s` daemon-set prepackages all the required dependencies.
