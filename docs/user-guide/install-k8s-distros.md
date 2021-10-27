@@ -104,10 +104,10 @@ Done.
 
 1.  Create a cluster by following the official [documentation](https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough).
 
-2.  Currently Azure deploys nodes that run Ubuntu-Bionic (18.04.6) nodes with
-Containerd as CRI, which is a fully supported combination by Sysbox. However,
-the default hardware specs (2 vCPU) are not ideal to run Sysbox pods, so
-ensure that the nodes have a minimum of 4 vCPUs each.
+2.  Sysbox can be properly installed over the K8s worker nodes created by
+AKS by default (i.e., Ubuntu-Bionic + Containerd). However, the default
+hardware specs (2 vCPU) are not ideal to run Sysbox pods on, so ensure that
+the nodes have a minimum of 4 vCPUs each.
 
 **NOTES:**
 
