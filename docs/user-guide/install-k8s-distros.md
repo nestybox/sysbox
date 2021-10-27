@@ -6,8 +6,9 @@ Sysbox. Each section covers a different Kubernetes distro.
 ## Contents
 
 -   [Kubernetes (regular)](#kubernetes-(regular))
--   [Google Kubernetes Engine (GKE)](#google-kubernetes-engine-gke)
 -   [AWS Elastic Kubernetes Service (EKS)](#aws-elastic-kubernetes-service-eks)
+-   [Azure Kubernetes Service (AKS)](#azure-kubernetes-service-aks)
+-   [Google Kubernetes Engine (GKE)](#google-kubernetes-engine-gke)
 -   [Rancher Kubernetes Engine (RKE)](#rancher-kubernetes-engine-rke)
 -   [Rancher Next-Gen Kubernetes Engine (RKE2)](#rancher-next-gen-kubernetes-engine-rke2)
 -   [Kinvolk Lokomotive](#kinvolk-lokomotive)
@@ -21,33 +22,6 @@ Sysbox. Each section covers a different Kubernetes distro.
 
 2.  Once the cluster is created, proceed to install Sysbox as shown
     [here](install-k8s.md).
-
-## Google Kubernetes Engine (GKE)
-
-1.  Create a cluster with Kubernetes v1.20 (available via the "Rapid" and
-    "Regular" channel options).
-
-2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
-    with Containerd" or the "Ubuntu with Docker" image templates.
-
-    -   Ensure the nodes have a minimum of 4 vCPUs each.
-
-    -   Do NOT enable secure-boot on the nodes, as this prevents the
-        sysbox-deploy-k8s daemonset from installing the [shiftfs module](design.md#ubuntu-shiftfs-module)
-        into the kernel. This module is usually present in Ubuntu desktop and
-        server images, but not present in Ubuntu cloud images, so the
-        sysbox-deploy-k8s daemonset must install it.
-
-3.  Label the nodes and deploy the Sysbox installation daemonset as shown in
-    the [Sysbox installation on K8s clusters instructions](install-k8s.md).
-
-**NOTES:**
-
--   The installation of Sysbox (which also installs CRI-O on the desired K8s
-    worker nodes) takes between 1->2 minutes on GKE.
-
-    -   If it takes significantly longer than this, something is likely wrong. See
-        [here](troubleshoot-k8s.md) for troubleshoot info.
 
 ## AWS Elastic Kubernetes Service (EKS)
 
@@ -126,6 +100,49 @@ Done.
 -   If the installation takes significantly longer, something is likely
     wrong. See [here](troubleshoot-k8s.md) for troubleshoot info.
 
+## Azure Kubernetes Service (AKS)
+
+1.  Create a cluster by following the official [documentation](https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough).
+
+2.  Currently Azure deploys nodes that run Ubuntu-Bionic (18.04.6) nodes with
+Containerd as CRI, which is a fully supported combination by Sysbox. However,
+the default hardware specs (2 vCPU) are not ideal to run Sysbox pods, so
+ensure that the nodes have a minimum of 4 vCPUs each.
+
+**NOTES:**
+
+-   The installation of Sysbox (which also installs CRI-O on the desired K8s
+    worker nodes) takes between 1->2 minutes on AKS.
+
+    -   If it takes significantly longer than this, something is likely wrong. See
+        [here](troubleshoot-k8s.md) for troubleshoot info.
+
+## Google Kubernetes Engine (GKE)
+
+1.  Create a cluster with Kubernetes v1.20 (available via the "Rapid" and
+    "Regular" channel options).
+
+2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
+    with Containerd" or the "Ubuntu with Docker" image templates.
+
+    -   Ensure the nodes have a minimum of 4 vCPUs each.
+
+    -   Do NOT enable secure-boot on the nodes, as this prevents the
+        sysbox-deploy-k8s daemonset from installing the [shiftfs module](design.md#ubuntu-shiftfs-module)
+        into the kernel. This module is usually present in Ubuntu desktop and
+        server images, but not present in Ubuntu cloud images, so the
+        sysbox-deploy-k8s daemonset must install it.
+
+3.  Label the nodes and deploy the Sysbox installation daemonset as shown in
+    the [Sysbox installation on K8s clusters instructions](install-k8s.md).
+
+**NOTES:**
+
+-   The installation of Sysbox (which also installs CRI-O on the desired K8s
+    worker nodes) takes between 1->2 minutes on GKE.
+
+    -   If it takes significantly longer than this, something is likely wrong. See
+        [here](troubleshoot-k8s.md) for troubleshoot info.
 
 ## Rancher Kubernetes Engine (RKE)
 
