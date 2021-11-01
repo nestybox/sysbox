@@ -172,3 +172,16 @@ function teardown() {
 
 	rm -rf /mnt/scratch/test
 }
+
+@test "l*xattr high-util: nixos use-case" {
+
+	# Deploy a sys container with nixos tooling pre-installed.
+	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-nixos:latest tail -f /dev/null)
+
+	# Verify that 'ripgrep' app is properly installed -- usually takes ~ 1.5 mins.
+	docker exec "$syscont" bash -c "source ~/.nix-profile/etc/profile.d/nix.sh && nix-env -i ripgrep"
+	[ "$status" -eq 0 ]
+	[[ "$output" =~ "created 39 symlinks in user environment" ]]
+
+	docker_stop "$syscont"
+}
