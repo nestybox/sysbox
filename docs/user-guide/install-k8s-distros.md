@@ -119,8 +119,7 @@ the nodes have a minimum of 4 vCPUs each.
 
 ## Google Kubernetes Engine (GKE)
 
-1.  Create a cluster with Kubernetes v1.20 (available via the "Rapid" and
-    "Regular" channel options).
+1.  Create a cluster with Kubernetes v1.20 or v1.21.
 
 2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
     with Containerd" or the "Ubuntu with Docker" image templates.

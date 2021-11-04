@@ -53,13 +53,12 @@ untouched.
 
 ## Kubernetes Version Requirements
 
-Sysbox is only supported on Kubernetes v1.20.\* at this time. We are currently working
-to have this extended to v1.21.
+Sysbox is only supported on the following Kubernetes versions:
 
-The reason for this v1.20 requirement is that Sysbox currently demands the presence
-of the CRI-O runtime v1.20, as the latter introduces support for "rootless pods" (i.e.,
-pods that use the Linux user-namespace). Since the version of CRI-O and K8s must match,
-the K8s version must also be v1.20.\*.
+* Kubernetes v1.20.\*
+* Kubernetes v1.21.\*
+
+Other versions of Kubernetes are not supported.
 
 ## Kubernetes Worker Node Requirements
 
@@ -72,15 +71,25 @@ Sysbox meets the following requirement:
     of RAM in each worker node. Though this is not a hard requirement, smaller
     configurations may slow down Sysbox.
 
+## CRI-O Requirement
+
+Sysbox currently requires the [CRI-O](https://cri-o.io/) runtime as it includes
+support for deploying Kubertenes pods with the Linux user namespace (for
+stronger isolation).  Containerd does not yet include this support.
+
+**NOTE: You don't need to install CRI-O prior to installing Sysbox. The Sysbox
+installer for Kubernetes (see next section) automatically installs CRI-O on the
+desired Kubernetes worker nodes and configures the Kubelet appropriately.**
+
 ## Installation of Sysbox
 
 **NOTE: These instructions work generally in all Kubernetes clusters. For
 additional instructions specific to a Kubernetes distribution, refer to
 [this](install-k8s-distros.md) document.**
 
-Installation is done via a daemonset called "sysbox-deploy-k8s", which installs
-the CRI-O and Sysbox binaries onto the desired K8s nodes and performs all
-associated config.
+Installation is easily done via a daemonset called "sysbox-deploy-k8s", which
+installs the Sysbox and CRI-O binaries onto the desired K8s nodes and performs
+all associated config.
 
 Steps:
 
