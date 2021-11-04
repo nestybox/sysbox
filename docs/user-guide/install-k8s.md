@@ -16,6 +16,7 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 -   [Kubernetes Distro Requirements](#kubernetes-distro-requirements)
 -   [Kubernetes Version Requirements](#kubernetes-version-requirements)
 -   [Kubernetes Worker Node Requirements](#kubernetes-worker-node-requirements)
+-   [CRI-O Requirement](#cri-o-requirement)
 -   [Installation of Sysbox](#installation-of-sysbox)
 -   [Installation of Sysbox Enterprise Edition (Sysbox-EE)](#installation-of-sysbox-enterprise-edition-sysbox-ee)
 -   [Installation Manifests](#installation-manifests)
@@ -55,8 +56,8 @@ untouched.
 
 Sysbox is only supported on the following Kubernetes versions:
 
-* Kubernetes v1.20.\*
-* Kubernetes v1.21.\*
+-   Kubernetes v1.20.\*
+-   Kubernetes v1.21.\*
 
 Other versions of Kubernetes are not supported.
 
