@@ -74,8 +74,8 @@ Sysbox meets the following requirement:
 ## CRI-O Requirement
 
 Sysbox currently requires the [CRI-O](https://cri-o.io/) runtime as it includes
-support for deploying Kubertenes pods with the Linux user namespace (for
-stronger isolation).  Containerd does not yet include this support.
+support for deploying Kubernetes pods with the Linux user namespace (for
+stronger isolation). Containerd does not yet include this support.
 
 **NOTE: You don't need to install CRI-O prior to installing Sysbox. The Sysbox
 installer for Kubernetes (see next section) automatically installs CRI-O on the
