@@ -13,9 +13,6 @@ KERNEL_PANIC_OOPS_DEFAULT_VAL=""
 # Valid panic_on_oops value (>= 0 && <= 1).
 KERNEL_PANIC_OOPS_VALID_VAL="1"
 
-# Invalid panic_on_oops value (< 0 && > 1).
-KERENL_PANIC_OOPS_INVALID_VAL="2"
-
 function setup() {
   setup_busybox
 
@@ -77,25 +74,3 @@ function teardown() {
   [ "$output" = $KERNEL_PANIC_OOPS_DEFAULT_VAL ]
 }
 
-# Write an invalid/unsupported value (< 0 && > 1).
-@test "/proc/sys/kernel/panic_on_oops write() operation (invalid value)" {
-  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
-  [ "$status" -eq 0 ]
-
-  sv_runc exec syscont sh -c \
-    "echo $KERNEL_PANIC_OOPS_INVALID_VAL > /proc/sys/kernel/panic_on_oops"
-  [ "$status" -eq 1 ]
-  [[ "$output" =~ "Invalid argument" ]]
-
-  # Read value back and verify that it's matching the default figure (0), and
-  # not the latest one we attempted to write.
-  sv_runc exec syscont sh -c \
-    "cat /proc/sys/kernel/panic_on_oops"
-  [ "$status" -eq 0 ]
-  [ "$output" = $KERNEL_PANIC_OOPS_DEFAULT_VAL ]
-
-  # Read from host-fs and verify that its value has not been modified either.
-  run cat /proc/sys/kernel/panic_on_oops
-  [ "$status" -eq 0 ]
-  [ "$output" = $KERNEL_PANIC_OOPS_DEFAULT_VAL ]
-}
