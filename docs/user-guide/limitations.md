@@ -1,142 +1,86 @@
 # Sysbox User Guide: Functional Limitations
 
 This document describes functional restrictions and limitations of Sysbox and
-system containers.
+the containers created by it.
 
 ## Contents
 
+-   [Sysbox Container Limitations](#sysbox-container-limitations)
 -   [Docker Restrictions](#docker-restrictions)
 -   [Kubernetes Restrictions](#kubernetes-restrictions)
--   [System Container Limitations](#system-container-limitations)
 -   [Sysbox Functional Limitations](#sysbox-functional-limitations)
+
+## Sysbox Container Limitations
+
+Sysbox enables containers to run applications or system software such as
+systemd, Docker, Kubernetes, K3s, etc., seamlessly & securely (e.g., no
+privileged containers, no complex setups).
+
+While our goal is for Sysbox containers to run **any software that runs on
+bare-metal or VMs**, this is still a work-in-progress. 
+
+Thus, there are some limitations at this time. The table below describes these.
+
+| Limitation    | Description       | Affected Software | Planned Fix |
+| --------      | --------------- | ----- | :--: |
+| mknod         | Fails with "operation not permitted". | Software that creates devices such as /dev/tun, /dev/tap, /dev/fuse, etc. | WIP |
+| binfmt-misc   | Fails with "permission denied". | Software that uses /proc/sys/fs/binfmt_misc inside the container (e.g., buildx+QEMU for multi-arch builds). | WIP |
+| Nested user-namespace | `unshare -U --mount-proc` fails with "invalid argument". | Software that uses the Linux user-namespace (e.g., Docker + userns-remap). Note that the Sysbox container is rootless already, so this implies nesting Linux user-namespaces. | Yes |
+| Host device access | Host devices exposed to the container (e.g., `docker run --devices ...`) show up with "nobody:nogroup" ownership. Thus, access to them will fail with "permission denied" unless the device grants read/write permissions to "others". | Software that needs access to hardware accelerators. | Yes | 
+| rpc-pipefs    | Mounting rpc-pipefs fails with "permission denied". | Running an NFS server inside the Sysbox container. | Yes |
+| Host sockets  | Host sockets exposed to the container (e.g., `docker run -v /host/socket:/mount/point ...`) don't always work as Sysbox mounts shiftfs on them. | Software that requires host socket access (e.g, VNC). | Yes |
+| insmod        | Fails with "operation not permitted". | Can't load kernel modules from inside containers. | TBD |
+
+
+**NOTES:** 
+
+* "WIP" means the fix is being worked-on right now. "TBD" means a
+  decision is yet to be made.
+
+* If you find other software that fails inside the Sysbox container, please open
+  a GitHub issue so we can add it to the list and work on a fix.
 
 ## Docker Restrictions
 
-This section describes restrictions when launching containers with Docker +
-Sysbox.
+This section describes restrictions when using Docker + Sysbox.
 
-### Support for Docker's `--privileged` Option
+These restrictions are in place because they reduce or break container-to-host
+isolation, which is one of the key features of Sysbox.
 
-Sysbox system containers are incompatible with the Docker `--privileged` flag.
+Note that some of these options (e.g., --privileged) are typically needed when
+running complex workloads in containers. With Sysbox, this is no longer needed.
 
-The raison d'être for Sysbox is to avoid the use of (very insecure) privileged
-containers yet enable users to run any type of software inside the container.
+| Limitation    | Description     | Comment |
+| ----------    | --------------- | ------- |
+| docker --privileged | Does not work with Sysbox | Breaks container-to-host isolation. |
+| docker --userns=host | Does not work with Sysbox | Breaks container-to-host isolation. |
+| docker --pid=host | Does not work with Sysbox | Breaks container-to-host isolation. |
+| docker --net=host | Does not work with Sysbox | Breaks container-to-host isolation. |
 
-Using the Docker `--privileged` + Sysbox will fail:
-
-```console
-$ docker run --runtime=sysbox-runc --privileged -it alpine
-docker: Error response from daemon: OCI runtime create failed: container_linux.go:364: starting container process caused "process_linux.go:533: container init caused \"rootfs_linux.go:67: setting up ptmx caused \\\"remove dev/ptmx: device or resource busy\\\"\"": unknown.
-ERRO[0000] error waiting for container: context canceled
-```
-
-### Support for Docker's `--userns=host` Option
-
-When Docker is configured in userns-remap mode, Docker offers the ability
-to disable that mode on a per container basis via the `--userns=host`
-option in the `docker run` and `docker create` commands.
-
-This option **does not work** with Sysbox (i.e., don't use
-`docker run  --runtime=sysbox-runc --userns=host ...`).
-
-Note that usage of this option is rare as it can lead to the problems as
-described [in this Docker article](https://docs.docker.com/engine/security/userns-remap/#disable-namespace-remapping-for-a-container).
-
-### Support for Docker's `--pid=host` and `--network=host` Options
-
-System containers do not support sharing the pid or network namespaces
-with the host (as this is not secure and it's incompatible with the
-system container's user namespace).
-
-For example, when using Docker to launch system containers, the
-`docker run --pid=host` and `docker run --network=host` options
-do not work with system containers.
-
-### Support for Exposing Host Devices inside System Containers
-
-Sysbox does not currently support exposing host devices inside system
-containers (e.g., via the `docker run --device` option).
 
 ## Kubernetes Restrictions
 
-This section describes restrictions when launching containers with Kubernetes +
-Sysbox.
+This section describes restrictions when using Kubernetes + Sysbox.
 
-### Pods limited to 16 per-node on Sysbox-CE
+Some of these restrictions are in place because they reduce or break
+container-to-host isolation, which is one of the key features of Sysbox.
 
-Pods launched with the Sysbox Community Edition are **limited to \*\*16 pods per worker node\*\***.
+Note that some of these options (e.g., privileged: true) are typically needed when
+running complex workloads in pods. With Sysbox, this is no longer needed.
 
-Once this limit is reached, new pods scheduled on the node will remain in the
-"ContainerCreating" state. Such pods need to be terminated and re-created once
-there is sufficient capacity on the node.
-
-#### ** --- Sysbox-EE Feature Highlight --- **
-
-With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
-for greater scalability. Thus, you can launch as many pods as will fit on the
-Kubernetes node, allowing you to get the best utilization of the hardware.
-
-Note that the number of pods that can be deployed on a node depends on many
-factors such as the number of CPUs on the node, the memory size on the node, the
-the amount of storage, the type of workloads running in the pods, resource
-limits on the pod, etc.)
-
-### Privileged pods are not allowed
-
-The pod's security context must not have the `privileged: true` attribute.
-
-The raison d'être for Sysbox is to avoid the use of (very insecure) privileged
-containers yet enable users to run any type of software inside the container.
-
-### Sharing Linux Namespaces with the Host is not allowed
-
-The pod's spec must not share Linux namespaces with the host, as this breaks
-container isolation. Thus avoid setting these in the pod's spec:
-
-```yaml
-hostNetwork: true
-hostIPC: true
-hostPID: true
-```
-
-## System Container Limitations
-
-This section describes limitations for software running inside a system
-container.
-
-### Creating User Namespaces inside a System Container
-
-System containers do not currently support creating a user-namespace
-inside the system container and mounting procfs in it.
-
-That is, executing the following instruction inside a system container
-is not supported:
-
-    unshare -U -i -m -n -p -u -f --mount-proc -r bash
-
-The reason this is not yet supported is that Sysbox is not currently
-capable of ensuring that the procfs mounted inside the unshared
-namespace is the proper one. We expect to fix this soon.
+| Limitation    | Description     | Comment |
+| ----------    | --------------- | ------- |
+| 16 pods /node | Sysbox-CE is limited to 16 pods per node | Sysbox Enterprise removes this limitation. |
+| privileged: true  | Not supported in pod security context | Breaks container-to-host isolation. |
+| hostNetwork: true  | Not supported in pod security context | Breaks container-to-host isolation. |
+| hostIPC: true  | Not supported in pod security context | Breaks container-to-host isolation. |
+| hostPID: true  | Not supported in pod security context | Breaks container-to-host isolation. |
 
 ## Sysbox Functional Limitations
 
-### Sysbox must run as root on the host
+| Limitation    | Description     | Planned Fix |
+| ----------    | --------------- | ------- |
+| Sysbox must run as root | Sysbox needs root privileges on the host to perform the advanced OS virtualization it provides (e.g., procfs/sysfs emualtion, syscall trappings, etc.) | TBD |
+| Container Checkpoint/Restore | Not yet supported | Yes |
+| Sysbox Nesting | Running Sysbox inside a Sysbox container is not supported | TBD | 
 
-Sysbox must run with root privileges on the host system. It won't
-work if executed without root privileges.
-
-Root privileges are necessary in order for Sysbox to interact with the Linux
-kernel in order to create the containers and perform many of the advanced
-functions it provides (e.g., procfs virtualization, sysfs virtualization, etc.)
-
-### Checkpoint and Restore Support
-
-Sysbox does not currently support checkpoint and restore of system containers.
-
-### Sysbox Nesting
-
-Sysbox must run at the host level (or within a privileged container if you must).
-
-Sysbox does not work when running inside a system container. This implies that
-we don't support running a system container inside a system container at this
-time.
