@@ -19,7 +19,7 @@ function teardown() {
    docker exec "$syscont" sh -c "dnf install filesystem -y --downloadonly"
    [ "$status" -eq 0 ]
 
-   docker exec "$syscont" sh -c "rpm -Uvh /var/cache/dnf/ubi-8-baseos-53c30a88cff3796c/packages/filesystem-3.8-3.el8.x86_64.rpm --force"
+   docker exec "$syscont" sh -c "rpm -Uvh /var/cache/dnf/ubi-8-baseos-53c30a88cff3796c/packages/filesystem-3.8-6.el8.x86_64.rpm --force"
    [ "$status" -eq 0 ]
 
    docker_stop "$syscont"
