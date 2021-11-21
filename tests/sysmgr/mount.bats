@@ -354,6 +354,73 @@ load ../helpers/sysbox-health
   rm -rf $mnt_src
 }
 
+@test "uid-shift bind mount over special dir 2" {
+
+  local syscont
+  local uid
+  local gid
+
+  # Verify that sysbox-mgr "shifts" the ownership of a host dir mounted
+  # into /var/lib/docker, to match the host uid:gid of the container's
+  # root user. The shifting is done via chown.
+
+  local mnt_src="/mnt/scratch/docker"
+  local mnt_dst="/var/lib/docker"
+
+  rm -rf $mnt_src
+  mkdir $mnt_src
+  chown 500000:600000 $mnt_src
+
+  orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
+  orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  # Verify chown-based shifting is applied when container starts
+  syscont=$(docker_run -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  uid=$(docker_root_uid_map $syscont)
+  gid=$(docker_root_gid_map $syscont)
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  [ "$uid" -eq "$mnt_src_uid" ]
+  [ "$gid" -eq "$mnt_src_gid" ]
+
+  # Verify chown-based shifting is reverted when container stops
+  docker_stop "$syscont"
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+  [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
+  [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
+
+  # Change mount ownership
+  chown 700000:800000 $mnt_src
+  orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
+  orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  # Verify chown-based shifting is applied correctly when container starts
+  syscont=$(docker_run -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  uid=$(docker_root_uid_map $syscont)
+  gid=$(docker_root_gid_map $syscont)
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+
+  [ "$uid" -eq "$mnt_src_uid" ]
+  [ "$gid" -eq "$mnt_src_gid" ]
+
+  docker_stop "$syscont"
+
+  mnt_src_uid=$(stat -c "%u" $mnt_src)
+  mnt_src_gid=$(stat -c "%g" $mnt_src)
+  [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
+  [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
+
+  rm -rf $mnt_src
+}
+
 @test "skip chown bind mount over special dir" {
 
   local syscont
