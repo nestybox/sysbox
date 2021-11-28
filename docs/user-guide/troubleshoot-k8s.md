@@ -1,6 +1,6 @@
 # Sysbox-Deploy-K8s Troubleshooting
 
-This document has troubleshooting tips when installing / using Sysbox on
+This document has troubleshooting tips when installing or using Sysbox on
 Kubernetes clusters.
 
 For troubleshooting outside of Kubernetes environments, see [here](troubleshoot.md).
@@ -29,8 +29,8 @@ Make sure to follow the [Sysbox installation instructions](install-k8s.md) to so
 
 ## sysbox-deploy-k8s fails to install Sysbox
 
-If the sysbox-deploy-k8s fails to install Sysbox, take a look at the logs
-for the sysbox-deploy-k8s pod (there is one such pod for each K8s worker
+If the sysbox-deploy-k8s daemonset fails to install Sysbox, take a look at the
+logs for the sysbox-deploy-k8s pod (there is one such pod for each K8s worker
 node where sysbox is installed). The logs should ideally look like this:
 
 ```console

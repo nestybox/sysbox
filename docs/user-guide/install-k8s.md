@@ -96,9 +96,7 @@ Steps:
 
 ```console
 kubectl label nodes <node-name> sysbox-install=yes
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-install.yaml
 ```
 
 **NOTE:** the above step will restart the Kubelet on all nodes where Sysbox is
@@ -124,12 +122,6 @@ Additional notes:
     can live side-by-side with non Sysbox pods and can communicate with them
     according to your K8s networking policy.
 
--   In the past, we used a separate daemonset to install CRI-O. That daemonset
-    is now deprecated, though it can be found [here](../../sysbox-k8s-manifests/daemonset/crio).
-    There is no need to use it any more, as the sysbox-deploy-k8s daemonset now
-    installs both CRI-O and Sysbox on the node (it's faster and simpler to use
-    only one daemonset).
-
 -   If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
 
 ## Installation of Sysbox Enterprise Edition (Sysbox-EE)
@@ -139,13 +131,11 @@ improved security, functionality, performance, life-cycle, and Nestybox support.
 
 The installation for Sysbox Enterprise Edition (Sysbox-EE) in Kubernetes
 clusters is exactly the same as for Sysbox (see [prior section](#installation-of-sysbox)),
-except that you use the `sysbox-ee-deploy-k8s.yaml` instead of `sysbox-deploy-k8s.yaml`:
+except that you use the `sysbox-ee-install.yaml` instead of `sysbox-install.yaml`:
 
 ```console
 kubectl label nodes <node-name> sysbox-install=yes
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/runtime-class/sysbox-runtimeclass.yaml
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-ee-install.yaml
 ```
 
 **NOTE:** either Sysbox or Sysbox Enterprise must be installed on a given host, never both.
@@ -207,23 +197,25 @@ pod limitations.
 To uninstall Sysbox:
 
 ```console
-kubectl delete runtimeclass sysbox-runc
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-install.yaml
+sleep 30
+
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-uninstall.yaml
 sleep 60
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
+
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-uninstall.yaml
 ```
 
 For Sysbox Enterprise, use the `sysbox-ee-cleanup-k8s.yaml` instead of the `sysbox-cleanup-k8s.yaml`:
 
 ```console
-kubectl delete runtimeclass sysbox-runc
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml
-kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-ee-install.yaml
+sleep 30
+
+kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-ee-uninstall.yaml
 sleep 60
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/daemonset/sysbox-ee-cleanup-k8s.yaml
-kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/rbac/sysbox-deploy-rbac.yaml
+
+kubectl delete -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-ee-uninstall.yaml
 ```
 
 NOTES:
@@ -235,15 +227,15 @@ NOTES:
     and Sysbox were installed, for up to 1 minute, as they require the kubelet to
     restart.
 
--   The 'sleep' instruction above is to ensure that kubelet has a chance to launch
-    and execute the 'cleanup' daemonset before it is removed in the subsequent step.
+-   The 'sleep' instructions above ensure that kubelet has a chance to launch
+    and execute the daemonsets before the subsequent step.
 
 ## Upgrading Sysbox or Sysbox Enterprise
 
-The [sysbox-deploy-k8s manifest](../../sysbox-k8s-manifests/daemonset/sysbox-deploy-k8s.yaml) points to
-a container image that carries the Sysbox binaries, which the daemonset then
-installs onto the Kubernetes worker nodes. The same applies to the
-[sysbox-ee-deploy-k8s manifest](../../sysbox-k8s-manifests/daemonset/sysbox-ee-deploy-k8s.yaml) for Sysbox Enterprise.
+The [sysbox-install manifest](../../sysbox-k8s-manifests/sysbox-install.yaml) points to
+a container image that carries the Sysbox binaries that are installed
+onto the Kubernetes worker nodes. The same applies to the
+[sysbox-ee-install manifest](../../sysbox-k8s-manifests/sysbox-ee-install.yaml) for Sysbox Enterprise.
 
 Nestybox regularly updates these manifests to point to the container images
 carrying the latest Sysbox and Sysbox Enterprise releases.
@@ -264,8 +256,8 @@ simply [uninstall Sysbox](#uninstallation-of-sysbox-or-sysbox-enterprise) and
 from your K8s clusters as described above.
 
 **NOTE:** While it's possible to have some worker nodes with Sysbox and others
-with Sysbox Enterprise, be aware that the installation & cleanup daemonsets are
-designed to install one or the other, so it's better to install Sysbox or Sysbox
+with Sysbox Enterprise, be aware that the installation daemonsets are designed
+to install one or the other, so it's better to install Sysbox or Sysbox
 Enterprise on a given Kubernetes cluster, never both.
 
 ## Troubleshooting
