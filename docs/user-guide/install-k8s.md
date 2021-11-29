@@ -22,7 +22,7 @@ are installing Sysbox on a regular host (i.e., not a Kubernetes host), follow
 -   [Installation Manifests](#installation-manifests)
 -   [Pod Deployment](#pod-deployment)
 -   [Limitations](#limitations)
--   [Uninstallation of Sysbox or Sysbox Enterprise](#uninstallation-of-sysbox-or-sysbox-enterprise)
+-   [Uninstallation](#uninstallation)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
 -   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
 -   [Troubleshooting](#troubleshooting)
@@ -192,7 +192,7 @@ limits on the pod, etc.)
 See [here](limitations.md#kubernetes-restrictions) for further info on sysbox
 pod limitations.
 
-## Uninstallation of Sysbox or Sysbox Enterprise
+## Uninstallation
 
 To uninstall Sysbox:
 
@@ -240,7 +240,7 @@ onto the Kubernetes worker nodes. The same applies to the
 Nestybox regularly updates these manifests to point to the container images
 carrying the latest Sysbox and Sysbox Enterprise releases.
 
-To upgrade Sysbox, [first uninstall Sysbox](#uninstallation-of-sysbox-or-sysbox-enterprise)
+To upgrade Sysbox, [first uninstall Sysbox](#uninstallation)
 and [re-install](#installation-of-sysbox) the updated version.
 
 **NOTE:** You must stop all Sysbox pods on the K8s cluster prior to uninstalling
@@ -251,7 +251,7 @@ Sysbox.
 Sysbox Enterprise Edition (Sysbox-EE) is a drop-in replacement for Sysbox.
 
 If you have a host with Sysbox and wish to install Sysbox Enterprise in it,
-simply [uninstall Sysbox](#uninstallation-of-sysbox-or-sysbox-enterprise) and
+simply [uninstall Sysbox](#uninstallation) and
 [install Sysbox Enterprise](#installation-of-sysbox-enterprise-edition-sysbox-ee)
 from your K8s clusters as described above.
 

@@ -12,58 +12,70 @@
 
 ## Introduction
 
-**Sysbox** is an open-source container runtime (aka runc), originally developed
-by [Nestybox](https://www.nestybox.com), that enhances containers in two
-key ways:
+**Sysbox** is an open-source and free container runtime (a next-gen "runc"),
+developed by [Nestybox](https://www.nestybox.com), that enhances containers in
+two key ways:
 
-*   **Improves container isolation:** Sysbox always enables the Linux
-    user-namespace on containers (i.e., root user in the container has zero
-    privileges on the host), hides host info inside the container, locks the
-    container's initial mounts, and more.
+*   **Improves container isolation:**
 
-*   **Enables containers to act as VMs**: with Sysbox, containers become capable
-    of running most workloads that run in physical hosts or VMs, including
-    systemd, Docker, Kubernetes, and more, seamlessly and with proper isolation
-    (no privileged containers, no complex images, no tricky entrypoints, no
-    special volume mounts, etc.)
+    *   Linux user-namespace on all containers (i.e., root user in the container
+        has zero privileges on the host).
 
-Sysbox is an OCI-based "runc", meaning that you typically use Docker and
-Kubernetes to deploy these enhanced containers (in fact Sysbox works under the
-covers, you don't interact with it directly). Thus there is no need to learn new
-tools or modify your existing container workflows to take advantage of
-Sysbox. Just install it and point your container manager / orchestrator to it.
+    *   Virtualizes portions of procfs & sysfs inside the container.
 
-For example, this simple Docker command creates a container with Sysbox; you get
-a well isolated container capable of seamlessly running most software that runs
-in a VM (e.g., systemd, Docker, etc):
+    *   Hides host info inside the container.
 
-    $ docker run --runtime=sysbox-runc -it any_image
+    *   Locks the container's initial mounts, and more.
 
-Sysbox was forked from the excellent [OCI runc][oci-runc] in early 2019, and has
-undergone significant changes since then. It's written in Go, and it is
-currently composed of three components: sysbox-runc, sysbox-fs, and
-sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs/user-guide/design.md).
+*   **Enables containers to act as VMs**:
+
+    *   With Sysbox, containers can run systemd, Docker, Kubernetes, K3s, buildx,
+        legacy apps, and more seamlessly & securely.
+
+    *   No privileged containers, no complex images, no tricky entrypoints, no
+        special volume mounts, etc.
+
+Think of it as a **"container supercharger"**: it enables your exisiting container
+managers / orchestrators (e.g., Docker, Kubernetes, etc.) to deploy containers
+that have hardened isolation and can run almost any workload that runs in VMs.
+
+Sysbox does this by making the container resemble a VM-like environment as much
+as possible, using advanced OS virtualization techniques.
+
+Unlike alternative runtimes such as Kata and KubeVirt, **it does not use VMs**;
+this makes it easier to use (particularly in cloud environments by avoiding
+nested virtualization). See [here](#comparison-to-related-technologies) for a
+comparison.
+
+There is no need to learn new tools or modify your existing container images or
+workflows to take advantage of Sysbox. Simply install it and point your container
+manager / orchestrator to it to deploy enhanced containers.
+
+Sysbox can live side-by-side with other container runtimes on the same host
+(e.g., the default OCI runc, Kata, etc.) You can easily choose which containers
+or pods to run with each, depending on your needs.
 
 ## Demo Videos
 
-- ["VM-like" containers with Docker + Sysbox](https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo?speed=2)
+*   ["VM-like" containers with Docker + Sysbox](https://asciinema.org/a/kkTmOxl8DhEZiM2fLZNFlYzbo?speed=2)
 
-- [Rootless Kubernetes pods with Sysbox](https://asciinema.org/a/401488?speed=1.5)
+*   [Rootless Kubernetes pods with Sysbox](https://asciinema.org/a/401488?speed=1.5)
 
 ## Contents
 
-*   [Motivation](#motivation)
 *   [License](#license)
+*   [Motivation](#motivation)
+*   [How it Works?](#how-it-works)
+*   [Comparison to Related Technologies](#comparison-to-related-technologies)
 *   [Audience](#audience)
+*   [Sysbox Enterprise Edition](#sysbox-enterprise-edition)
 *   [Sysbox Features](#sysbox-features)
 *   [System Containers](#system-containers)
-*   [Host Requirements](#host-requirements)
-*   [Installing Sysbox](#installing-sysbox)
+*   [Installation](#installation)
 *   [Using Sysbox](#using-sysbox)
 *   [Documentation](#documentation)
 *   [Performance](#performance)
 *   [Under the Covers](#under-the-covers)
-*   [Comparison to related technologies](#comparison-to-related-technologies)
 *   [Contributing](#contributing)
 *   [Security](#security)
 *   [Troubleshooting & Support](#troubleshooting--support)
@@ -72,6 +84,11 @@ sysbox-mgr. More on Sysbox's design can be found in the [Sysbox user guide](docs
 *   [Relationship to Nestybox](#relationship-to-nestybox)
 *   [Contact](#contact)
 *   [Thank You](#thank-you)
+
+## License
+
+Sysbox is free and open-source, licensed under the Apache License,
+Version 2.0. See the [LICENSE](LICENSE) file for details.
 
 ## Motivation
 
@@ -83,12 +100,12 @@ Sysbox solves problems such as:
 *   Enabling a highly capable root user inside the container without
     compromising host security.
 
-*   Securing CI/CD pipelines by enabling Docker-in-Docker or
-    Kubernetes-in-Docker without insecure privileged containers.
+*   Securing CI/CD pipelines by enabling Docker-in-Docker (DinD) or
+    Kubernetes-in-Docker (KinD) without insecure privileged containers.
 
 *   Enabling the use of containers as "VM-like" environments for development,
     local testing, learning, etc., with strong isolation and the ability
-    to run systemd, Docker, and even kubernetes inside the container.
+    to run systemd, Docker, IDEs, and more inside the container.
 
 *   Running legacy apps inside containers (instead of less efficient VMs).
 
@@ -103,16 +120,49 @@ Sysbox solves problems such as:
 *   Partitioning cloud instances (e.g., EC2, GCP, etc.) into multiple isolated
     compute environments without resorting to expensive nested virtualization.
 
-## License
+## How it Works?
 
-Sysbox is an open-source project, licensed under the Apache License, Version
-2.0. See the [LICENSE](LICENSE) file for details.
+<p align="center">
+    <img alt="sysbox" src="./docs/figures/sysbox-diagram.png"/>
+</p>
+
+Sysbox [installs easily](#installation) on Linux hosts (bare-metal, VM, on-prem, cloud, etc.). It
+works on all mayor cloud-based IaaS and Kubernetes services (e.g., EC2, GCP, GKE,
+EKS, AKS, Rancher, etc.)
+
+Once installed, Sysbox works under the covers: you use Docker, Kubernetes, etc.
+to deploy containers with it.
+
+For example, this simple Docker command creates a container with Sysbox:
+
+    $ docker run --runtime=sysbox-runc -it any_image
+
+You get a well isolated container capable of seamlessly running most software
+that runs in a VM (e.g., systemd, Docker, Kubernetes, etc).
+
+More on how to use Sysbox [here](#using-sysbox).
+
+## Comparison to Related Technologies
+
+<p align="center">
+    <img alt="sysbox" src="./docs/figures/sysbox-comparison.png"/>
+</p>
+
+Sysbox is pretty unique: it is (to the best of our knowledge) the only OCI-based
+container runtime that allows Docker and Kubernetes to deploy "VM-like"
+containers capable of running systemd, Docker, K8s, etc., with ease and strong
+isolation from the underlying host (i.e., no privileged containers, no VMs).
+
+See this [blog post](https://blog.nestybox.com/2020/10/06/related-tech-comparison.html) for
+more.
 
 ## Audience
 
 The Sysbox project is intended for anyone looking to experiment, invent, learn,
 and build systems using system containers. It's cutting-edge OS virtualization,
 and contributions are welcomed.
+
+## Sysbox Enterprise Edition
 
 The Sysbox project is **not** meant for people looking for a commercially
 supported solution. For such a solution, use the **Sysbox Enterprise Edition
@@ -123,27 +173,21 @@ features for improved security, functionality, and performance, as well as
 Nestybox support (see next section). It has a 30-day free trial and a paid
 subscription after that.
 
-For more info on Sysbox-EE, refer to the [Nestybox website](https://www.nestybox.com)
-and the [Sysbox-EE repo](https://github.com/nestybox/sysbox-ee).
+For more info on Sysbox-EE, refer to the [Nestybox website][sysbox-ee].
 
 ## Sysbox Features
 
 The table below summarizes the key features of the Sysbox container
 runtime. It also provides a comparison between the Sysbox Community
-Edition (i.e., this repo) and the Sysbox Enterprise Edition (see prior
-section).
+Edition (i.e., this repo) and the Sysbox Enterprise Edition.
 
 <p align="center">
     <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000" />
 </p>
 
-(\*) For pricing purposes, a "host" is a computer (bare-metal or
-virtual-machine) with up to 16 CPU cores (32 hyper threads). Per-core pricing at
-**$5 per-core per-month** is also available for hosts with < 8 cores. Licensing
-is per-year. Volume discounts available for 50+ per-host licenses or 350+
-per-core licenses.
+More on the Sysbox features [here](docs/user-guide/features.md).
 
-More on the features [here](docs/user-guide/features.md).
+More on Sysbox Enterprise [here](https://www.nestybox.com/sysbox-ee).
 
 If you have questions, you can reach us [here](#contact).
 
@@ -155,7 +199,9 @@ also system software such as Docker, Kubernetes, Systemd, inner containers, etc.
 
 More on system containers [here](docs/user-guide/concepts.md#system-container).
 
-## Host Requirements
+## Installation
+
+### Host Requirements
 
 The Sysbox host must meet the following requirements:
 
@@ -165,7 +211,7 @@ The Sysbox host must meet the following requirements:
     of RAM. Though this is not a hard requirement, smaller configurations may
     slow down Sysbox.
 
-## Installing Sysbox
+### Installing Sysbox
 
 The method of installation depends on the environment where Sysbox will be
 installed:
@@ -177,9 +223,6 @@ installed:
 
 *   Alternatively, if a package for your distro is not yet available, or if you
     want to get the latest changes from upstream, you can [build and install Sysbox from source](docs/developers-guide/README.md).
-
-Before installing, ensure your host meets the [host requirements](#host-requirements)
-listed in the prior section.
 
 ## Using Sysbox
 
@@ -262,35 +305,36 @@ referenced above has more on this.
 
 ## Under the Covers
 
+Sysbox was forked from the excellent [OCI runc][oci-runc] in early 2019 and it
+stands on the shoulders of the work done by the OCI runc developers.
+
+Having said this, Sysbox adds significant functionality on top. It's written in
+Go, and it is currently composed of three components: sysbox-runc, sysbox-fs,
+and sysbox-mgr.
+
 Sysbox uses many OS-virtualization features of the Linux kernel and complements
 these with OS-virtualization techniques implemented in user-space. These include
 using all Linux namespaces (in particular the user-namespace), partial
 virtualization of procfs and sysfs, selective syscall trapping, and more.
 
-The [Sysbox User Guide](docs/user-guide/README.md) has more info on this.
+More on Sysbox's design can be found in the [Sysbox user guide](docs/user-guide/design.md).
 
 ### Sysbox does not use hardware virtualization
 
 Though the containers generated by Sysbox resemble virtual machines in some ways
 (e.g., you can run as root, run multiple services, and deploy Docker and K8s
-inside), Sysbox does **not** use hardware virtualization. It's purely an
-OS-virtualization technology meant to create containers that can run
-applications as well as system-level software, easily and securely.
+inside), Sysbox does **not** use hardware virtualization.
 
-This makes the containers created by Sysbox fast, efficient, and portable.
-Isolation wise, it's fair to say that they provide stronger isolation than
-regular Docker containers (by virtue of using the Linux user-namespace), but
-weaker isolation than VMs (by sharing the Linux kernel among containers).
+Sysbox is a pure OS-virtualization technology meant to create containers that
+can run applications as well as system-level software, easily and securely.
 
-## Comparison to related technologies
+This makes the containers created by Sysbox fast, efficient, and portable (i.e.,
+they aren't tied to a hypervisor).
 
-Sysbox is pretty unique: it is (to the best of our knowledge) the only OCI-based
-container runtime that allows Docker and Kubernetes to deploy "VM-like"
-containers capable of running systemd, Docker, K8s, etc., with ease and strong
-isolation from the underlying host (i.e., no privileged containers).
-
-See this [blog post](https://blog.nestybox.com/2020/10/06/related-tech-comparison.html) for a high-level comparison between Sysbox and related technologies
-such as LXD, K8s.io KinD, Ignite, Kata Containers, rootless Docker, and more.
+Isolation wise, it's fair to say that Sysbox containers provide stronger
+isolation than regular Docker containers (by virtue of using the Linux
+user-namespace and light-weight OS shim), but weaker isolation than VMs (by
+sharing the Linux kernel among containers).
 
 ## Contributing
 
@@ -320,7 +364,7 @@ The method of uninstallation depends on the method used to install Sysbox:
 
 *   To uninstall Sysbox on a Kubernetes cluster, follow [these instructions](docs/user-guide/install-k8s.md#uninstallation).
 
-*   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/user-guide/install-package.md#uninstalling-sysbox).
+*   Otherwise, to uninstall the Sysbox package, follow [these instructions](docs/user-guide/install-package.md#uninstallation).
 
 *   If Sysbox was built and installed from source, follow [these instructions](docs/developers-guide/build.md#cleanup--uninstall).
 
@@ -387,3 +431,5 @@ ways.
 [perf-blog]: https://blog.nestybox.com/2020/09/23/perf-comparison.html
 
 [oci-runc]: https://github.com/opencontainers/runc
+
+[sysbox-ee]: https://www.nestybox.com/sysbox-ee

@@ -20,7 +20,7 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 -   [Installing Sysbox Enterprise Edition (Sysbox-EE)](#installing-sysbox-enterprise-edition-sysbox-ee)
 -   [Installing Shiftfs](#installing-shiftfs)
 -   [Miscellaneous Installation Info](#miscellaneous-installation-info)
--   [Uninstalling Sysbox or Sysbox Enterprise](#uninstalling-sysbox-or-sysbox-enterprise)
+-   [Uninstallation](#uninstallion)
 -   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
 -   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
 
@@ -61,7 +61,7 @@ The Linux host on which Sysbox runs must meet the following requirements:
 ## Installing Sysbox
 
 **NOTE**: if you have a prior version of Sysbox already installed, please
-[uninstall it](#uninstalling-sysbox-or-sysbox-enterprise) first and then follow
+[uninstall it](#uninstallation) first and then follow
 the installation instructions below.
 
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page.
@@ -470,7 +470,7 @@ See [here](https://docs.docker.com/engine/install/ubuntu/#uninstall-old-versions
 $ sudo snap install docker
 ```
 
-## Uninstalling Sysbox or Sysbox Enterprise
+## Uninstallation
 
 Prior to uninstalling Sysbox, make sure all system containers are removed.
 There is a simple shell script to do this [here](../../scr/rm_all_syscont).
@@ -514,7 +514,7 @@ Docker if needed.
 Sysbox Enterprise Edition (Sysbox-EE) is a drop-in replacement for Sysbox.
 
 If you have a host with Sysbox and wish to install Sysbox Enterprise in it,
-simply [uninstall Sysbox](#uninstalling-sysbox-or-sysbox-enterprise) and
+simply [uninstall Sysbox](#uninstallation) and
 [install Sysbox Enterprise](#installing-sysbox-enterprise-edition-sysbox-ee)
 as described above.
 
