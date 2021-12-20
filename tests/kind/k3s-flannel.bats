@@ -19,18 +19,19 @@ load ../helpers/sysbox-health
 
 export test_dir="/tmp/k3s-test/"
 export manifest_dir="tests/kind/manifests/"
+export k3s_version="v1.21.7+k3s1"
 
 # Cluster definition.
 export cluster=cluster-1
 export controller="${cluster}"-master
 export num_workers=2
 export net=bridge
+export cluster_cidr="10.244.0.0/16"
 
 # Preset kubeconfig env-var to point to the cluster-config file.
 export KUBECONFIG=/root/nestybox/sysbox/kubeconfig
 
 # Cluster's node image.
-export k3s_version="v1.20.2" # currently not utilized
 export node_image="${CTR_IMG_REPO}/ubuntu-focal-systemd-docker:latest"
 
 function setup() {
@@ -67,10 +68,10 @@ function remove_test_dir() {
 
 	create_test_dir
 
-	k3s_cluster_setup $cluster $num_workers $net $node_image $k8s_version
+	k3s_cluster_setup $cluster $num_workers $k3s_version flannel $cluster_cidr $node_image
 
 	# store k3s cluster info so subsequent tests can use it
-	echo $num_3workers > "$test_dir/."${cluster}"_num_workers"
+	echo $num_wworkers > "$test_dir/."${cluster}"_num_workers"
 }
 
 # Testcase #2.

@@ -45,107 +45,103 @@ function k3s_all_nodes_ready() {
   fi
 }
 
-# Deploys a k3s cluster through k3sup tool. The cluster has one master node
-# and the given number of worker nodes. The cluster uses the K8s flannel cni.
 #
-# usage: k3s_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
-#
-# cluster: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
-#          "<cluster-name>-worker-1", "<cluster-name>-worker-2", etc.
-# num_workers: number of k3s worker nodes
-# network: docker network to which the k3s nodes are connected (e.g., bridge,
-#          user-defined, etc.)
+# Deploys a k3s cluster with one controller/master node and 'n' worker nodes.
 #
 function k3s_cluster_setup() {
   local cluster=$1
   local num_workers=$2
-  local net=$3
-  local node_image=$4
-  local k8s_version=$5
-  local cni=$6
-
-  local pod_net_cidr=10.244.0.0/16
+  local k3s_version=$3
+  local cni=$4
+  local cluster_cidr=$5
+  local node_image=$6
   local master_node=${cluster}-master
+  local pubKey=$(cat ~/.ssh/id_rsa.pub)
 
-  # Install k3sup.
-  curl -sLS https://get.k3sup.dev | sh
-  [ "$status" -eq 0 ]
-
-  # Create master and worker nodes.
+  # Create master node and prepare ssh connectivity.
   docker_run --rm --name=${master_node} --hostname=${master_node} ${node_image}
   [ "$status" -eq 0 ]
+  docker exec ${master_node} bash -c "mkdir -p ~/.ssh && echo $pubKey > ~/.ssh/authorized_keys"
+  [ "$status" -eq 0 ]
 
+  # Create worker nodes and prepare ssh connectivity.
   for i in $(seq 1 ${num_workers}); do
     local node=${cluster}-worker-${i}
 
     docker_run --rm --name=${node} --hostname=${node} ${node_image}
     [ "$status" -eq 0 ]
+
+    docker exec ${node} bash -c "mkdir -p ~/.ssh && echo $pubKey > ~/.ssh/authorized_keys"
+    [ "$status" -eq 0 ]
   done
 
   wait_for_inner_systemd ${master_node}
 
-  # Obtain master container ip-address.
+  # Controller's k3s installation.
+  if [[ "$cni" == "flannel" ]]; then
+    docker exec ${master_node} bash -c "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$k3s_version INSTALL_K3S_EXEC=\"--disable-network-policy --cluster-cidr=$cluster_cidr --disable=traefik\" sh -"
+    [ "$status" -eq 0 ]
+  else
+    docker exec ${master_node} bash -c "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$k3s_version INSTALL_K3S_EXEC=\"--flannel-backend=none --disable-network-policy --cluster-cidr=$cluster_cidr --disable=traefik\" sh -"
+    [ "$status" -eq 0 ]
+  fi
+
+  sleep 10
+
+  # Obtain controller's ip address.
   docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ${master_node}
   [ "$status" -eq 0 ]
-  local master_node_ip=$output
+  local controller_ip=$output
 
-  # Prepare ssh access.
-  docker cp /root/.ssh/id_rsa.pub ${master_node}:/host_id_rsa.pub
+  # Obtain controller's k8s token.
+  docker exec ${master_node} cat /var/lib/rancher/k3s/server/node-token
   [ "$status" -eq 0 ]
-  docker exec ${master_node} sh -c \
-    "cat /host_id_rsa.pub >> /home/admin/.ssh/authorized_keys; chown admin:admin /home/admin/.ssh/authorized_keys; chmod 600 /home/admin/.ssh/authorized_keys"
-  [ "$status" -eq 0 ]
+  local k8s_token=$output
 
-  # Allow passwordless sudo access (k3sup requirement).
-  docker exec ${master_node} bash -c \
-    "echo 'admin ALL=(ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo"
-  [ "$status" -eq 0 ]
-
-  # Install k3s. Notice that we are explicitly setting the version to pick as
-  # otherwise k3sup would have chosen an earlier one (1.19) which doesn't
-  # support cgroup-v2.
-  k3sup install --ip ${master_node_ip} --user admin --k3s-version v1.20.8+k3s1
-  [ "$status" -eq 0 ]
-
-  # Repeat above instructions for each worker node.
+  # Initialize control-plane in worker nodes.
   for i in $(seq 1 ${num_workers}); do
     local node=${cluster}-worker-${i}
 
-    wait_for_inner_systemd ${node}
-
-    # Obtain worker container ip-address.
-    docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ${node}
-    [ "$status" -eq 0 ]
-    local node_ip=${output}
-
-    # Prepare ssh access
-    docker cp /root/.ssh/id_rsa.pub ${node}:/host_id_rsa.pub
-    [ "$status" -eq 0 ]
-    docker exec ${node} sh -c \
-      "cat /host_id_rsa.pub >> /home/admin/.ssh/authorized_keys; chown admin:admin /home/admin/.ssh/authorized_keys; chmod 600 /home/admin/.ssh/authorized_keys"
-    [ "$status" -eq 0 ]
-
-    # Allow passwordless sudo access
-    docker exec ${node} bash -c \
-      "echo 'admin ALL=(ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo"
-    [ "$status" -eq 0 ]
-
-    # Install k3s and join node to controller.
-    k3sup join --ip ${node_ip} --server-ip ${master_node_ip} --user admin --k3s-version v1.20.8+k3s1
+    docker exec ${node} bash -c "curl -sfL https://get.k3s.io | K3S_URL=https://${controller_ip}:6443 K3S_TOKEN=${k8s_token} sh -"
     [ "$status" -eq 0 ]
   done
+
+  run rm -rf config.yaml
+  [ "$status" -eq 0 ]
 
   # Set KUBECONFIG path.
   export KUBECONFIG=/root/nestybox/sysbox/kubeconfig
   [ "$status" -eq 0 ]
   kubectl config set-context default
   [ "$status" -eq 0 ]
+  docker cp ${master_node}:/etc/rancher/k3s/k3s.yaml kubeconfig
+  [ "$status" -eq 0 ]
+  run sed -i "s/127.0.0.1/${controller_ip}/" kubeconfig
+  [ "$status" -eq 0 ]
 
+  # If requested, install Calico requirements.
+  if [[ "$cni" == "calico" ]]; then
+    docker exec ${master_node} bash -c "kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml"
+    [ "$status" -eq 0 ]
+
+    docker exec ${master_node} bash -c "kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml"
+    [ "$status" -eq 0 ]
+  fi
+
+  # Wait for workers to register.
   local join_timeout=$(($num_workers * 30))
-
   k3s_all_nodes_ready $cluster $num_workers $join_timeout
+
+  # Wait till all kube-system pods have been initialized.
+  retry_run 60 5 "k8s_pods_ready kube-system"
+
+  # Also wait for calico ones.
+  if [[ "$cni" == "calico" ]]; then
+    retry_run 30 5 "k8s_pods_ready calico-system"
+  fi
 }
 
+#
 # Tears-down a k3s cluster created with k3s_cluster_setup().
 #
 function k3s_cluster_teardown() {
