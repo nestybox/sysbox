@@ -46,7 +46,8 @@ function k3s_all_nodes_ready() {
 }
 
 #
-# Deploys a k3s cluster with one controller/master node and 'n' worker nodes.
+# Deploys a k3s cluster with one controller/master node and 'n' worker nodes. Each
+# K3s node runs inside a Sysbox container.
 #
 function k3s_cluster_setup() {
   local cluster=$1
@@ -133,11 +134,11 @@ function k3s_cluster_setup() {
   k3s_all_nodes_ready $cluster $num_workers $join_timeout
 
   # Wait till all kube-system pods have been initialized.
-  retry_run 60 5 "k8s_pods_ready kube-system"
+  retry_run 60 5 "k8s_all_pods_ready kube-system"
 
   # Also wait for calico ones.
   if [[ "$cni" == "calico" ]]; then
-    retry_run 30 5 "k8s_pods_ready calico-system"
+    retry_run 30 5 "k8s_all_pods_ready calico-system"
   fi
 }
 
