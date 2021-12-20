@@ -149,6 +149,30 @@ function k8s_pod_array_ready() {
   return 0
 }
 
+# Verify if all the pods of a given namespace have been fully initialized (i.e.,
+# "running" or "completed" state).
+# $1 - k8s namespace (optional)
+function k8s_all_pods_ready() {
+  local ns
+
+  if [ $# -eq 1 ]; then
+    ns="-n $1"
+  fi
+
+  run sh -c "kubectl get pods $ns -o wide | awk 'NR>1' | wc -l"
+  [ "$status" -eq 0 ]
+  echo "status = $status"
+  echo "pods_count = $output"
+  local pods_count=$output
+
+  run sh -c "kubectl get pods $ns -o wide | awk 'NR>1' | egrep "Running | Completed" | wc -l"
+  [ "$status" -eq 0 ]
+  echo "status = $status"
+  echo "running_pods_count = $output"
+  local running_pods_count=$output
+  [ "$running_pods_count" -eq "$pods_count" ]
+}
+
 function k8s_pod_absent() {
   local cluster_name=$1
   local k8s_master=$2

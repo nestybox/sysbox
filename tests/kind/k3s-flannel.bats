@@ -71,7 +71,7 @@ function remove_test_dir() {
 	k3s_cluster_setup $cluster $num_workers $k3s_version flannel $cluster_cidr $node_image
 
 	# store k3s cluster info so subsequent tests can use it
-	echo $num_wworkers > "$test_dir/."${cluster}"_num_workers"
+	echo $num_workers > "$test_dir/."${cluster}"_num_workers"
 }
 
 # Testcase #2.
