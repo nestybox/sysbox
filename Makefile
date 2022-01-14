@@ -709,7 +709,9 @@ shfmt:
 #
 
 # recvtty is a tool inside the sysbox-runc repo that is needed by some integration tests
-sysbox-runc-recvtty:
+sysbox-runc-recvtty: sysbox-runc/contrib/cmd/recvtty/recvtty
+
+sysbox-runc/contrib/cmd/recvtty/recvtty:
 	@cd $(SYSRUNC_DIR) && make recvtty
 
 listRuncPkgs:
