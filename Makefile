@@ -229,7 +229,7 @@ sysbox-static: test-img
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-static-local"
 
-sysbox-local: sysbox-runc sysbox-fs sysbox-mgr
+sysbox-local: sysbox-ipc sysbox-runc sysbox-fs sysbox-mgr
 	@echo $(HOSTNAME)-$(TARGET_ARCH) > .buildinfo
 
 sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
@@ -728,6 +728,13 @@ listMgrPkgs:
 #
 
 ##@ Cleaning targets
+
+gomod-tidy: ## Clean go.mod and go.sum files across the Sysbox subrepos
+gomod-tidy:
+	@cd $(SYSIPC_DIR) && make gomod-tidy
+	@cd $(SYSRUNC_DIR) && make gomod-tidy
+	@cd $(SYSMGR_DIR) && make gomod-tidy
+	@cd $(SYSFS_DIR) && make gomod-tidy
 
 clean: ## Eliminate sysbox binaries
 clean: clean-libseccomp
