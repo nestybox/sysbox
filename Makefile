@@ -93,6 +93,8 @@ IMAGE_BASE_DISTRO := $(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
+KERNEL_REL_MAJ := $(shell echo $(KERNEL_REL) | cut -d'.' -f1)
+KERNEL_REL_MIN := $(shell echo $(KERNEL_REL) | cut -d'.' -f2)
 export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the sysbox's building and testing process.
@@ -156,11 +158,16 @@ export TEST_VOL3
 EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
 EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
 
-# Find out if the host supports uid shifting.
-#
-# NOTE: for now uid shifting necessarily means the presence of the shiftfs kernel module.
-# In the near future, we expect this will be replaced with kernel ID-mapped mounts.
-HOST_SUPPORTS_UID_SHIFT := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
+# Find out if the host supports uid shifting, via ID-mapped-mounts (kernel >= 5.12) or
+# via the shiftfs module.
+CMD := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
+KERNEL_SHIFTFS := $(.SHELLSTATUS)
+
+CMD := $(shell [ $(KERNEL_REL_MAJ) -gt 5 ] || ( [ $(KERNEL_REL_MAJ) -eq 5 ] && [ $(KERNEL_REL_MIN) -ge 12 ] ))
+KERNEL_IDMAPPED_MOUNT := $(.SHELLSTATUS)
+
+CMD := $(shell [ $(KERNEL_SHIFTFS) -eq 0 ] || [ $(KERNEL_IDMAPPED_MOUNT) -eq 0 ] )
+KERNEL_UID_SHIFT := $(.SHELLSTATUS)
 
 # libseccomp (used by Sysbox components)
 LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
@@ -387,9 +394,9 @@ test-sysbox-installer: test-prereq test-img-systemd
 	$(DOCKER_STOP)
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
-test-sysbox-shiftuid: test-prereq test-img
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-sysbox-shiftuid: test-img
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -399,9 +406,9 @@ else
 endif
 
 test-sysbox-shiftuid-ci: ## Run sysbox integration tests with uid-shifting (shiftfs) (continuous integration)
-test-sysbox-shiftuid-ci: test-prereq test-img test-fs test-mgr
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-sysbox-shiftuid-ci: test-img test-fs test-mgr
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -411,9 +418,9 @@ else
 endif
 
 test-sysbox-shiftuid-systemd: ## Run sysbox integration tests with uid-shifting (shiftfs) and systemd
-test-sysbox-shiftuid-systemd: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-sysbox-shiftuid-systemd: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting and systemd) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -424,9 +431,9 @@ else
 endif
 
 test-sysbox-shiftuid-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
-test-sysbox-shiftuid-installer: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-sysbox-shiftuid-installer: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	@printf "\n** Running sysbox integration tests (with uid shifting + systemd + the sysbox installer) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -511,9 +518,10 @@ test-shell-installer-debug: test-prereq test-img-systemd
 	$(DOCKER_STOP)
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
-test-shell-shiftuid: test-prereq test-img
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+
+test-shell-shiftuid: test-img
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
@@ -521,9 +529,9 @@ else
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
 endif
 
-test-shell-shiftuid-debug: test-prereq test-img
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-shell-shiftuid-debug: test-img
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
@@ -532,9 +540,10 @@ else
 endif
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
-test-shell-shiftuid-systemd: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+
+test-shell-shiftuid-systemd: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -545,9 +554,9 @@ else
 	$(DOCKER_STOP)
 endif
 
-test-shell-shiftuid-systemd-debug: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-shell-shiftuid-systemd-debug: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true -e DEBUG_ON=true)
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
@@ -559,9 +568,9 @@ else
 endif
 
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
-test-shell-shiftuid-installer: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-shell-shiftuid-installer: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
@@ -574,9 +583,9 @@ else
 	$(DOCKER_STOP)
 endif
 
-test-shell-shiftuid-installer-debug: test-prereq test-img-systemd
-ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
-	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
+test-shell-shiftuid-installer-debug: test-img-systemd
+ifeq ($(KERNEL_UID_SHIFT),1)
+	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
 else
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
