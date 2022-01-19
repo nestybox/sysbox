@@ -71,7 +71,7 @@ or pods to run with each, depending on your needs.
 
 *   [License](#license)
 *   [Motivation](#motivation)
-*   [How it Works?](#how-it-works)
+*   [How it Works](#how-it-works)
 *   [Comparison to Related Technologies](#comparison-to-related-technologies)
 *   [Audience](#audience)
 *   [Sysbox Enterprise Edition](#sysbox-enterprise-edition)
@@ -127,7 +127,7 @@ Sysbox solves problems such as:
 *   Partitioning cloud instances (e.g., EC2, GCP, etc.) into multiple isolated
     compute environments without resorting to expensive nested virtualization.
 
-## How it Works?
+## How it Works
 
 <p align="center">
     <img alt="sysbox" src="./docs/figures/sysbox-diagram.png"/>
