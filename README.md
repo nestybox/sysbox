@@ -12,7 +12,7 @@
 
 ## Introduction
 
-**Sysbox** is an open-source and free container runtime (a next-gen "runc"),
+**Sysbox** is an open-source and free container runtime (a specialized "runc"),
 developed by [Nestybox](https://www.nestybox.com), that enhances containers in
 two key ways:
 
@@ -27,10 +27,15 @@ two key ways:
 
     *   Locks the container's initial mounts, and more.
 
-*   **Enables containers to act as VMs**:
+*   **Enables containers to run same workloads as VMs**:
 
-    *   With Sysbox, containers can run systemd, Docker, Kubernetes, K3s, buildx,
-        legacy apps, and more seamlessly & securely.
+    *   With Sysbox, containers can run system-level software such as systemd,
+        Docker, Kubernetes, K3s, buildx, legacy apps, and more seamlessly &
+        securely.
+
+    *   This software can run inside Sysbox containers without modification and
+        without using special versions of the software (e.g., rootless
+        variants).
 
     *   No privileged containers, no complex images, no tricky entrypoints, no
         special volume mounts, etc.
@@ -42,9 +47,10 @@ that have hardened isolation and can run almost any workload that runs in VMs.
 Sysbox does this by making the container resemble a VM-like environment as much
 as possible, using advanced OS virtualization techniques.
 
-Unlike alternative runtimes such as Kata and KubeVirt, **it does not use VMs**;
-this makes it easier to use (particularly in cloud environments by avoiding
-nested virtualization). See [here](#comparison-to-related-technologies) for a
+Unlike alternative runtimes such as Kata and KubeVirt, **it does not use VMs**.
+This makes it easier to use (particularly in cloud environments by avoiding
+nested virtualization), although it does not provide the level of isolation
+that VM-based runtimes do. See [here](#comparison-to-related-technologies) for a
 comparison.
 
 There is no need to learn new tools or modify your existing container images or
@@ -101,7 +107,8 @@ Sysbox solves problems such as:
     compromising host security.
 
 *   Securing CI/CD pipelines by enabling Docker-in-Docker (DinD) or
-    Kubernetes-in-Docker (KinD) without insecure privileged containers.
+    Kubernetes-in-Docker (KinD) without insecure privileged containers
+    or host Docker socket mounts.
 
 *   Enabling the use of containers as "VM-like" environments for development,
     local testing, learning, etc., with strong isolation and the ability
@@ -148,10 +155,21 @@ More on how to use Sysbox [here](#using-sysbox).
     <img alt="sysbox" src="./docs/figures/sysbox-comparison.png"/>
 </p>
 
-Sysbox is pretty unique: it is (to the best of our knowledge) the only OCI-based
-container runtime that allows Docker and Kubernetes to deploy "VM-like"
-containers capable of running systemd, Docker, K8s, etc., with ease and strong
-isolation from the underlying host (i.e., no privileged containers, no VMs).
+As shown, Sysbox enables unprivileged containers to run system-level workloads
+such as systemd, Docker, Kubernetes, etc., seamlessly, while giving you a
+balanced approach between container isolation, performance, efficiency, and
+portability.
+
+And it does this with minimal configuration changes to your existing infra: just
+install Sysbox and configure your container manager/orchestrator to launch
+containers with it, using the image of your choice.
+
+Note that while Sysbox hardens the isolation of standard containers and voids
+the need for insecure privileged containers in many scenarios, it does not (yet)
+provide the same level of isolation as VM-based alternatives or user-space OSes
+like gVisor. Therefore, for scenarios where the highest level of isolation is
+required, alternatives such as KubeVirt may be preferable (at the expense of
+lower performance and efficiency, and higher complexity and cost).
 
 See this [blog post](https://blog.nestybox.com/2020/10/06/related-tech-comparison.html) for
 more.
