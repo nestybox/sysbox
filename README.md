@@ -10,6 +10,21 @@
     <img src="https://img.shields.io/badge/chat-on%20slack-FF3386"></a>
 </p>
 
+***
+
+**Security Note (01/21/22)**:
+
+A vulnerability ([CVE 2022-0185](https://ubuntu.com/security/CVE-2022-0185)) was
+recently found in the Linux kernel, permitting a "User Namespace" escape (i.e.,
+an unprivileged user inside a user-namespace may gain root access to the
+host). This vulnerability affects containers deployed with Sysbox as they always
+use the Linux user-namespace for extra isolation. To mitigate it, check if your
+kernel distro carries the fix. For Ubuntu, the fix has been released and requires
+a [kernel update](https://ubuntu.com/security/notices/USN-5240-1). Reach out to the
+[Sysbox Slack channel][slack] for further questions.
+
+***
+
 ## Introduction
 
 **Sysbox** is an open-source and free container runtime (a specialized "runc"),
