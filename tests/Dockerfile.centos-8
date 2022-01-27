@@ -63,7 +63,8 @@ RUN dnf update -y && dnf install -y \
     tree \
     strace \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
-    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
+    && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 # Install Golang 1.16.4 release and explicitly activate modules functionality.
 RUN wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz && \

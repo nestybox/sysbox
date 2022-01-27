@@ -65,7 +65,8 @@ RUN dnf update -y && dnf install -y \
     tree \
     strace \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
-    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
+    && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 # install cross compile tool chains
 RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
