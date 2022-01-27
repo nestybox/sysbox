@@ -57,11 +57,19 @@ function docker_cont_rootfs() {
 }
 
 function docker_cont_pid() {
-	local cont=$1
-	local pid=$(__docker inspect -f '{{.State.Pid}}' $cont)
-	echo $pid
+  local cont=$1
+  local pid=$(__docker inspect -f '{{.State.Pid}}' $cont)
+  echo $pid
 }
 
 function docker_userns_remap() {
-  __docker info -f '{{json .SecurityOptions}}' | grep -q "name=userns";
+  __docker info -f '{{json .SecurityOptions}}' | grep -q "name=userns"
+}
+
+# Configures key-based (passwordless) ssh access in a docker container.
+function docker_ssh_access() {
+  local cont=$1
+  local pubkey=$(cat ~/.ssh/id_rsa.pub)
+
+  __docker exec $cont bash -c "mkdir -p ~/.ssh && echo $pubkey > ~/.ssh/authorized_keys"
 }
