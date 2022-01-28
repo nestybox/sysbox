@@ -84,8 +84,8 @@ RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
     aarch64-linux-gnu-binutils
 
 # Install Golang 1.13 release and explicitly activate modules functionality.
-RUN wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.13.3.linux-amd64.tar.gz && \
+RUN wget https://dl.google.com/go/go1.13.3.linux-${arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.13.3.linux-${arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go

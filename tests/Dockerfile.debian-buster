@@ -87,8 +87,8 @@ RUN apt-get update && apt-get install -y \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 # Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz && \
+RUN wget https://golang.org/dl/go1.16.4.linux-${arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.16.4.linux-${arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
