@@ -36,8 +36,27 @@ export PACKAGE := sysbox-ce
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
-# By default, build for amd64
-ARCH := amd64
+# Obtain architecture
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_M),x86_64)
+	ARCH := amd64
+else ifeq ($(UNAME_M),aarch64)
+	ARCH := arm64
+else ifeq ($(UNAME_M),arm)
+	ARCH := armhf
+endif
+
+# Compute the target triple
+ifeq ($(ARCH),armel)
+	HOST_TRIPLE := arm-linux-gnueabi
+else ifeq ($(ARCH),armhf)
+	HOST_TRIPLE := arm-linux-gnueabihf
+else ifeq ($(ARCH),arm64)
+	HOST_TRIPLE := aarch64-linux-gnu
+else
+	HOST_TRIPLE := x86_64-linux-gnu
+endif
+
 
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
@@ -141,17 +160,6 @@ LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
 
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
-
-# Compute the target triple
-ifeq ($(ARCH),armel)
-	HOST_TRIPLE := arm-linux-gnueabi
-else ifeq ($(ARCH),armhf)
-	HOST_TRIPLE := arm-linux-gnueabihf
-else ifeq ($(ARCH),arm64)
-	HOST_TRIPLE := aarch64-linux-gnu
-else
-	HOST_TRIPLE := x86_64-linux-gnu
-endif
 
 #
 # build targets
@@ -574,19 +582,21 @@ endif
 test-img: ## Build test container image
 test-img:
 	@printf "\n** Building the test container **\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) \
+	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) --build-arg arch=$(ARCH) \
 		-f Dockerfile.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE) .
 
 test-img-systemd: ## Build test container image that includes systemd
 test-img-systemd: test-img
 	@printf "\n** Building the test container image (includes systemd) **\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) \
+	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) --build-arg arch=$(ARCH) \
 		-f $(TEST_SYSTEMD_DOCKERFILE) .
 
 test-img-flatcar: ## Build test container image for Flatcar
 test-img-flatcar:
 	@printf "\n** Building the test container for Flatcar **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE_FLATCAR) \
+		--build-arg arch=$(ARCH) \
+		--build-arg FLATCAR_VERSION=$(FLATCAR_VERSION) \
 		-f Dockerfile.flatcar .
 
 test-cleanup: ## Clean up sysbox integration tests (requires root privileges)

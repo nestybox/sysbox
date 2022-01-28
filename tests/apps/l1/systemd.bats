@@ -162,6 +162,10 @@ function check_systemd_mounts() {
 
 @test "systemd archlinux" {
 
+  if [[ $(get_platform) != "amd64" ]]; then
+     skip "archlinux supported only in amd64 architecture"
+  fi
+
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/archlinux-systemd)
