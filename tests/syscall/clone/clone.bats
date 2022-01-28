@@ -7,6 +7,7 @@
 
 load ../../helpers/run
 load ../../helpers/docker
+load ../../helpers/environment
 load ../../helpers/sysbox-health
 
 function teardown() {
@@ -24,8 +25,10 @@ function teardown() {
   # The "userns_child_exec" program (borrowed from "The Linux Programming
   # Interface" book examples (Kerrisk)) performs a clone() into a configurable
   # set of new namespaces.
+  local arch=$(get_platform)
 
-  docker cp /usr/bin/userns_child_exec "$syscont:/usr/bin/userns_child_exec"
+  #docker cp /usr/bin/userns_child_exec_${arch} "$syscont:/usr/bin/userns_child_exec"
+  docker cp tests/bin/userns_child_exec_${arch} "$syscont:/usr/bin/userns_child_exec"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "userns_child_exec -nmipuC echo success"

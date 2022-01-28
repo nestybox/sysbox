@@ -167,7 +167,7 @@ function teardown() {
 		skip "requires host in cgroup v1"
   fi
 
-  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-stretch-docker:latest tail -f /dev/null)
+  local syscont_name=$(docker_run --rm ${CTR_IMG_REPO}/debian-buster-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont_name" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]

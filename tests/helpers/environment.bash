@@ -47,6 +47,20 @@ function get_kernel_release() {
 	uname -r
 }
 
+function get_platform() {
+	local arch=$(uname -m)
+
+	if [[ ${arch} == "x86_64" ]]; then
+		echo "amd64"
+	elif [[ ${arch} == "aarch64" ]]; then
+		echo "arm64"
+	elif [[ ${arch} == "arm32" ]]; then
+		echo "arm"
+	else
+		echo "unsupported"
+	fi
+}
+
 # Returns kernel's release in semver format (e.g. 5.4.1)
 function get_kernel_release_semver() {
 	echo $(uname -r | cut -d'-' -f1)

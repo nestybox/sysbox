@@ -14,6 +14,10 @@ function teardown() {
 
 @test "rpm in redhat container" {
 
+   if [[ $(get_platform) != "amd64" ]]; then
+      skip "testcase supported only in amd64 architecture"
+   fi
+
    local syscont=$(docker_run --rm registry.access.redhat.com/ubi8/ubi:8.2-347 tail -f /dev/null)
 
    docker exec "$syscont" sh -c "dnf install filesystem -y --downloadonly"
