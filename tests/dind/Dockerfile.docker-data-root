@@ -1,4 +1,4 @@
-FROM ghcr.io/nestybox/alpine-docker-dbg:3.11
+FROM ghcr.io/nestybox/alpine-docker-dbg:latest
 
 RUN mkdir /etc/docker && \
     echo -e "{\n" \
@@ -12,4 +12,3 @@ RUN mkdir /etc/docker && \
     "  \"data-root\": \"/var/lib/different-docker-data-root\",\n" \
     "  \"bip\": \"172.21.0.1/16\"\n" \
     "}\n" > /etc/docker/daemon.json
-

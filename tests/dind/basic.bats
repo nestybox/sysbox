@@ -135,6 +135,6 @@ EOF
 
   # Cleaning up.
   docker_stop "$syscont"
-  docker image rm sc-with-non-default-docker-data-root:lates
+  docker image rm sc-with-non-default-docker-data-root:latest
   docker image prune -f
 }

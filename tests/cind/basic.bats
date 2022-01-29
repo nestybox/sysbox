@@ -119,9 +119,6 @@ function teardown() {
 
 @test "build with inner containerd images" {
 
-  # randomly pre-mount shiftfs on /lib/modules/<kernel-version>, to test whether the sysbox-mgr
-  # shiftfs manager detects and skips mounting shiftfs on this directory
-
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/cind

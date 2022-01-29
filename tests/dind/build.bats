@@ -33,19 +33,6 @@ function teardown() {
   # mv /tmp/tmp.json /etc/docker/daemon.json
   # dockerd_start
 
-  # randomly pre-mount shiftfs on /lib/modules/<kernel-version>, to test whether the sysbox-mgr
-  # shiftfs manager detects and skips mounting shiftfs on this directory
-
-  # XXX: this causes test to sometimes fail; see sysbox issue 294.
-  #
-  # local premount="false"
-  # if host_supports_uid_shifting; then
-  #    if [[ $((RANDOM % 2)) == "0" ]]; then
-  #       mount -t shiftfs -o mark /lib/modules/$(uname -r) /lib/modules/$(uname -r)
-  #       premount="true"
-  #    fi
-  # fi
-
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
