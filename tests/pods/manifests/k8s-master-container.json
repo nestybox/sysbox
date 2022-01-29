@@ -3,7 +3,7 @@
       "name": "k8s-master"
   },
   "image":{
-      "image": "ghcr.io/nestybox/k8s-node-test:v1.20.2"
+      "image": "ghcr.io/nestybox/k8s-node-test:latest"
   },
   "command": [
       "/sbin/init"
