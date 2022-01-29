@@ -43,11 +43,11 @@ function wait_for_inner_fluentd() {
   docker exec "$SYSCONT_NAME" sh -c "chmod 777 /fluentd/log"
 
   # launch the inner fluentd container
-  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/fluentd_edge.tar"
+  docker exec "$SYSCONT_NAME" sh -c "docker load -i /root/img/fluentd_1.14.1.tar"
   docker exec "$SYSCONT_NAME" sh -c "docker run -d --rm --name fluentd \
                                      --network fluentd-net \
                                      -v /fluentd/log:/fluentd/log \
-                                     fluent/fluentd:edge"
+                                     fluentd:v1.14-1"
   [ "$status" -eq 0 ]
 
   wait_for_inner_fluentd

@@ -57,7 +57,7 @@ EOF
   # query prometheus
   docker exec "$SYSCONT_NAME" sh -c "curl -s http://localhost:9090/api/v1/targets"
   [ "$status" -eq 0 ]
-  [[ "$output" =~ '{"status":"success","data":{"activeTargets":[{"discoveredLabels":{"__address__":"localhost:9090","__metrics_path__":"/metrics","__scheme__":"http","job":"prometheus"}' ]]
+  [[ "$output" =~ '{"status":"success","data":{"activeTargets":[{"discoveredLabels":{"__address__":"localhost:9090","__metrics_path__":"/metrics","__scheme__":"http"' ]]
 
   # cleanup
   docker_stop "$SYSCONT_NAME"

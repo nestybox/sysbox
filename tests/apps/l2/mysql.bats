@@ -47,12 +47,12 @@ EOF
   wait_for_inner_dockerd $syscont
 
   # launch the inner mysql container; bind-mount the mysql script into it
-  docker exec "$syscont" sh -c "docker load -i /root/img/mysql_server_5.6.tar"
+  docker exec "$syscont" sh -c "docker load -i /root/img/mysql_server_8.0.tar"
   docker exec "$syscont" sh -c "docker run -d --name mysql1 \
                                      --mount type=bind,source=/mysql-scr.txt,target=/mysql-scr.txt \
                                      -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
                                      -e MYSQL_LOG_CONSOLE=true \
-                                     mysql/mysql-server:5.6"
+                                     mysql/mysql-server:8.0"
   [ "$status" -eq 0 ]
 
   wait_for_inner_mysql $syscont
@@ -76,6 +76,11 @@ EOF
   # (see https://tableplus.com/blog/2018/07/failed-to-load-caching-sha2-password-authentication-plugin-solved.html)
   # it's possible to use mysqel 8.0 server, but then the client must be a
   # ubuntu image which is a bit too heavy for an already painfully slow test.
+  #
+  # Update Jan 2022: I needed to deploy a more recent mysql-server release for
+  # multi-arch support purposes (only amd64 image provided in 5.6). I fixed the
+  # above issue by enabling this knob (--default-authentication-plugin=mysql_native_password)
+  # to have mysql defaulting to the legacy password-based authentication.
 
   # launch a sys container
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/test-syscont tail -f /dev/null)
@@ -92,13 +97,14 @@ EOF
 
   # launch an inner mysql server container; connect it to the network;
   # allow connections from any host without password
-  docker exec "$syscont" sh -c "docker load -i /root/img/mysql_server_5.6.tar"
+  docker exec "$syscont" sh -c "docker load -i /root/img/mysql_server_8.0.tar"
   docker exec "$syscont" sh -c "docker run -d --name mysql-server \
                                      --network mysql-net \
                                      -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
                                      -e MYSQL_LOG_CONSOLE=true \
                                      -e MYSQL_ROOT_HOST=% \
-                                     mysql/mysql-server:5.6"
+                                     mysql/mysql-server:8.0 \
+				     --default-authentication-plugin=mysql_native_password"
   [ "$status" -eq 0 ]
 
   wait_for_inner_mysql $syscont
