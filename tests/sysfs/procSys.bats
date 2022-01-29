@@ -736,19 +736,25 @@ EOF
   # build the fileDac program
   make -C "$SYSBOX_ROOT/tests/scr/capRaise"
 
-  # launch sys container
-  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+  # launch sys container, mount the tests/scr/capRaise dir into it.
+  local syscont=$(docker_run --rm -v ${SYSBOX_ROOT}/tests/scr/capRaise:/mnt/capRaise ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
-  # add a regular user in it
+  # install required software inside the inner container
+  docker exec "$syscont" bash -c "apt-get update && apt-get install -y make gcc libcap-dev libcap2-bin"
+  [ "$status" -eq 0 ]
+
+  # add a regular user in the inner container
   docker exec "$syscont" bash -c "useradd -u 1000 someone"
   [ "$status" -eq 0 ]
 
-   # copy fileDac program and set file caps on it
-  sysbox-docker-cp "$SYSBOX_ROOT/tests/scr/capRaise/fileDac" "$syscont:/usr/bin"
-
-  docker exec "$syscont" bash -c "chown someone:someone /usr/bin/fileDac"
+  # build the fileDac program inside the inner container, and install it
+  docker exec "$syscont" bash -c "cd /mnt/capRaise && make clean && make"
   [ "$status" -eq 0 ]
 
+  docker exec "$syscont" bash -c "cp /mnt/capRaise/fileDac /usr/bin/fileDac && chown someone:someone /usr/bin/fileDac"
+  [ "$status" -eq 0 ]
+
+  # set file caps on the fileDac program
   docker exec "$syscont" sh -c 'setcap "cap_dac_read_search,cap_dac_override=p" /usr/bin/fileDac'
   [ "$status" -eq 0 ]
 

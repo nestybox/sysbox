@@ -145,6 +145,10 @@ function teardown() {
   docker_stop "$syscont"
 }
 
+function setup() {
+	run_only_test "mount capability checking"
+}
+
 # Testcase #3.
 #
 # Verify that mount syscall emulation does correct capability checks
@@ -152,7 +156,27 @@ function teardown() {
   if [[ $skipTest -eq 1 ]]; then
     skip
   fi
-  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
+
+  # launch sys container, mount the tests/scr/capRaise dir into it.
+  local syscont=$(docker_run --rm -v ${SYSBOX_ROOT}/tests/scr/capRaise:/mnt/capRaise ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+
+  # install required software inside the inner container
+  docker exec "$syscont" bash -c "apt-get update && apt-get install -y make gcc libcap-dev libcap2-bin"
+  [ "$status" -eq 0 ]
+
+  # add a regular user in the inner container
+  docker exec "$syscont" bash -c "useradd -u 1000 someone"
+  [ "$status" -eq 0 ]
+
+  # build the mountProcDac program inside the inner container, and install it
+  docker exec "$syscont" bash -c "cd /mnt/capRaise && make clean && make"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" bash -c "cp /mnt/capRaise/mountProcDac /usr/bin/mountProcDac && chown someone:someone /usr/bin/mountProcDac"
+  [ "$status" -eq 0 ]
+
+  # start the test in earnest
+
   local mnt_path=/root/l1/l2/proc
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
@@ -163,7 +187,7 @@ function teardown() {
   [ "$status" -ne 0 ]
 
   # root user without CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH can't mount if path is non-searchable
-  docker exec "$syscont" bash -c "chmod 400 /root/l1"
+  docker exec "$syscont" bash -c "chmod 600 /root/l1"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "capsh --inh=\"\" --drop=cap_dac_override,cap_dac_read_search -- -c \"mount -t proc proc $mnt_path\""
@@ -171,19 +195,6 @@ function teardown() {
 
   # a non-root user with appropriate caps can perform the mount; we use the
   # mountProcDac program to obtain these caps.
-
-  make -C "$SYSBOX_ROOT/tests/scr/capRaise"
-
-  docker exec "$syscont" bash -c "useradd -u 1000 someone"
-  [ "$status" -eq 0 ]
-
-   # copy mountProcDac program and set file caps on it
-  docker cp "$SYSBOX_ROOT/tests/scr/capRaise/mountProcDac" "$syscont:/usr/bin"
-  [ "$status" -eq 0 ]
-
-  docker exec "$syscont" bash -c "chown someone:someone /usr/bin/mountProcDac"
-  [ "$status" -eq 0 ]
-
   docker exec "$syscont" sh -c 'setcap "cap_sys_admin,cap_dac_read_search,cap_dac_override=p" /usr/bin/mountProcDac'
   [ "$status" -eq 0 ]
 
@@ -192,4 +203,5 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
+  make -C "$SYSBOX_ROOT/tests/scr/capRaise" clean
 }
