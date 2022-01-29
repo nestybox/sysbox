@@ -291,6 +291,7 @@ function main() {
 	# Install helper scripts
 	install -D -m0755 scr/sysbox /usr/bin/sysbox
 	install -D -m0755 scr/docker-cfg /usr/bin/docker-cfg
+	install -D -m0755 tests/scr/sysbox-docker-cp /usr/bin/sysbox-docker-cp
 
 	# Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then

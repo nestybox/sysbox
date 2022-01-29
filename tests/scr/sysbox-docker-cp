@@ -1,0 +1,217 @@
+#!/bin/bash
+
+#
+# Copyright 2022 Nestybox, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Usage:
+#        sysbox-docker-cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-
+#        sysbox-docker-cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH
+#
+# Note: options are identical to "docker cp"; refer to the "docker cp --help"
+# for further info.
+#
+# "sysbox-docker-cp" implements "docker cp" for Sysbox containers. It solves the
+# problem where "docker cp" does not work well in hosts where shiftfs is not
+# present (unless Docker is configured with userns-remap).
+#
+# The reason "docker cp" does not work well in hosts without shiftfs (even if
+# the host supports idmapped mounts) is that in such hosts Sysbox need to chown
+# the container's rootfs to the unprivileged uid:gid associated with the
+# container's user-namespace. Since "docker cp" is not aware that the Sysbox
+# container uses the user-ns, it performs the copy but not the chown. Thus, the
+# file shows up as "nobody:nogroup" inside the container, which is not as
+# intended. Furthermore, the file can't be chowned from within the container
+# (permission denied).
+#
+# As a work-around, this tool (docker-sysbox-cp) peforms the copy and chown. It
+# simply calls "docker cp" and then performs the chown of the file.
+#
+# This tool is expected to be temporary: once Linux supports idmapped-mounts
+# over overlayfs, "docker cp" should work normally and this tool would become
+# obsolete.
+#
+
+# Globals
+
+# Note: in the future, get the sysbox data root from sysbox itself.
+SYSBOX_DATA_ROOT="/var/lib/sysbox"
+ARCHIVE=""
+FOLLOW_LINK=""
+
+function show_usage() {
+	 printf "\n"
+    printf "sysbox-docker-cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-\n"
+	 printf "sysbox-docker-cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH\n"
+	 printf "\n"
+	 printf "This tool is a wrapper for \"docker cp\" for containers created with Docker + Sysbox.\n"
+	 printf "Usage is identical to \"docker cp\"; refer to the \"docker cp --help\" for further info.\n"
+	 printf "\n"
+}
+
+function parse_opt() {
+	options=$(getopt -o aLh -l archive,follow-link,help -- "$@")
+
+	eval set -- "$options"
+
+	while true; do
+		case "$1" in
+			-h | --help)
+				show_usage
+				exit 1
+				;;
+			-a | --archive)
+				ARCHIVE="-a"
+				;;
+			-L | --follow-link)
+				FOLLOW_LINK="-L"
+				;;
+			--)
+				shift
+				break
+				;;
+			-*)
+				show_usage
+				exit 1
+				;;
+			*)
+				show_usage
+				exit 1
+				;;
+		esac
+		shift
+	done
+
+	if [[ $# != 2 ]]; then
+		show_usage
+		exit 1
+	fi
+
+	ARG1=$1
+	ARG2=$2
+}
+
+function parse_args() {
+	if [[ "$ARG1" == *":"* ]]; then
+		COPY_TO_CONTAINER=false
+		CONT_NAME=$(echo $ARG1 | cut -d ":" -f1)
+		SRC_PATH=$(echo $ARG1 | cut -d ":" -f2)
+		DST_PATH=$ARG2
+	elif [[ "$ARG2" == *":"* ]]; then
+		COPY_TO_CONTAINER=true
+		CONT_NAME=$(echo $ARG2 | cut -d ":" -f1)
+		DST_PATH=$(echo $ARG2 | cut -d ":" -f2)
+		SRC_PATH=$ARG1
+	else
+		printf "\nError: incorrect argument; was the container specified?\n"
+		exit 1
+	fi
+}
+
+function docker_cp() {
+	docker cp ${ARCHIVE} ${FOLLOW_LINK} ${ARG1} ${ARG2}
+	if [[ $? != 0 ]]; then
+		exit 1
+	fi
+}
+
+function get_container_info() {
+	CONT_ID=$(docker inspect --format '{{.Id}}' $CONT_NAME)
+	CONT_INIT_PID=$(docker inspect -f '{{.State.Pid}}' $CONT_ID)
+	CONT_HOST_UID=$(cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $2}')
+	CONT_HOST_GID=$(cat /proc/${CONT_INIT_PID}/gid_map | awk '{print $2}')
+}
+
+function is_sysbox_container() {
+	# XXX: in the future we should query Sysbox for this info.
+	stat ${SYSBOX_DATA_ROOT}/docker/${CONT_ID} > /dev/null 2>&1
+}
+
+function sysbox_rootfs_cloned() {
+	stat ${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID} > /dev/null 2>&1
+}
+
+function get_container_uid() {
+	cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $1}'
+
+}
+
+function chown_container_file() {
+	local rootfs_path="${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID}/top/merged/${DST_PATH}"
+
+	if [[ -d ${rootfs_path} ]]; then
+		local src_base=$(basename ${SRC_PATH})
+		rootfs_path="${rootfs_path}/${src_base}"
+	fi
+
+	orig_uid=$(stat -c %u $rootfs_path)
+	orig_gid=$(stat -c %u $rootfs_path)
+
+	new_uid=$(($orig_uid + $CONT_HOST_UID))
+	new_gid=$(($orig_gid + $CONT_HOST_GID))
+
+	# if dir, chown recursively
+
+	ret=$(chown $new_uid:$new_gid $rootfs_path)
+	if [[ $? != 0 ]]; then
+		exit 1
+	fi
+}
+
+function chown_local_file() {
+	local local_path=${DST_PATH}
+
+	if [[ -d ${local_path} ]]; then
+		local src_base=$(basename ${SRC_PATH})
+		local_path="${local_path}/${src_base}"
+	fi
+
+	my_uid=$(stat -c "%u" /proc/self/)
+	my_gid=$(stat -c "%g" /proc/self/)
+
+	ret=$(chown ${my_uid}:${my_gid} $local_path)
+	if [[ $? != 0 ]]; then
+		exit 1
+	fi
+}
+
+function main() {
+
+	parse_opt "$@"
+	parse_args
+
+	get_container_info
+
+	if ! is_sysbox_container; then
+		printf "\nError: ${CONT_NAME} is not a Sysbox container. Exiting.\n"
+		exit 1
+	fi
+
+	docker_cp
+
+	if ! sysbox_rootfs_cloned; then
+		exit 0
+	fi
+
+	if [[ $COPY_TO_CONTAINER == true ]]; then
+		chown_container_file
+	else
+		chown_local_file
+	fi
+
+	exit 0
+}
+
+main "$@"
