@@ -14,6 +14,8 @@ PROGNAME=$(basename $0)
 VERBOSE=1
 TEST_MODE=0
 DEBUG_MODE=0
+NO_SHIFTFS=0
+NO_IDMAPPED_MOUNT=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
@@ -201,6 +203,14 @@ function sysbox_mgr_start() {
 		mgr_options+=("--log-level=debug")
 	fi
 
+	if [ $NO_SHIFTFS -eq 1 ]; then
+		mgr_options+=("--disable-shiftfs")
+	fi
+
+	if [ $NO_IDMAPPED_MOUNT -eq 1 ]; then
+		mgr_options+=("--disable-idmapped-mount")
+	fi
+
 	sysbox-mgr ${mgr_options[@]} &
 	sleep 1
 	res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
@@ -254,14 +264,16 @@ function show_usage() {
 	printf "Useful when building Sysbox from source and for testing. Must run as root.\n"
 	printf "\n"
 	printf "Options:\n"
-	printf "  -t, --test-mode   Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
-	printf "  -d, --debug       Enables debug logging in Sysbox (useful for debugging).\n"
-	printf "  -h, --help        Display usage.\n"
+	printf "  -t, --test-mode          Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
+	printf "  -d, --debug              Enables debug logging in Sysbox (useful for debugging).\n"
+	printf "      --no-shiftfs         Disables Sysbox's use of shiftfs.\n"
+	printf "      --no-idmapped-mount  Disables Sysbox's use of ID-mapped mounts.\n"
+	printf "  -h, --help               Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,no-shiftfs,no-idmapped-mount,help -- "$@")
 
 	eval set -- "$options"
 
@@ -276,6 +288,12 @@ function parse_args() {
 				;;
 			-d | --debug)
 				DEBUG_MODE=1
+				;;
+			--no-shiftfs)
+				NO_SHIFTFS=1
+				;;
+			--no-idmapped-mount)
+				NO_IDMAPPED_MOUNT=1
 				;;
 			--)
 				shift
