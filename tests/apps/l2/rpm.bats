@@ -14,6 +14,10 @@ function teardown() {
 
 @test "rpm in inner redhat container (sysbox issue 130)" {
 
+   if [[ $(get_platform) != "amd64" ]]; then
+     skip "rpm-in-redhat testcase supported only in amd64 architecture"
+   fi
+
    local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
