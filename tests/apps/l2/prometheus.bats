@@ -17,7 +17,7 @@ function wait_for_inner_dockerd() {
 
 function wait_for_prometheus() {
   retry_run 10 1 eval "__docker exec $SYSCONT_NAME sh -c \"docker ps --format \"{{.Status}}\" | grep \"Up\"\""
-  sleep 5
+  sleep 10
 }
 
 @test "l2 prometheus basic" {
@@ -57,7 +57,7 @@ EOF
   # query prometheus
   docker exec "$SYSCONT_NAME" sh -c "curl -s http://localhost:9090/api/v1/targets"
   [ "$status" -eq 0 ]
-  [[ "$output" =~ '{"status":"success","data":{"activeTargets":[{"discoveredLabels":{"__address__":"localhost:9090","__metrics_path__":"/metrics","__scheme__":"http"' ]]
+  [[ "$output" =~ '"job":"prometheus"'.+'"health":"up"' ]]
 
   # cleanup
   docker_stop "$SYSCONT_NAME"
