@@ -255,10 +255,12 @@ function test_cgroup_memory() {
    distro=$(get_distro)
    rel=$(get_distro_release)
 
-   if [[ "$distro" != "debian" ]] || [[ "$rel" != "buster" ]]; then
-      run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
-      [ "$status" -eq 0 ]
-      [ "$output" -eq 0 ]
+   if [[ $(get_platform) == "amd64" ]]; then
+       if [[ "$distro" != "debian" ]] || [[ "$rel" != "buster" ]]; then
+	   run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
+	   [ "$status" -eq 0 ]
+	   [ "$output" -eq 0 ]
+       fi
    fi
 
 	# Increase the cgroup mem limit for the container, so that "docker stop" can work properly
