@@ -293,8 +293,7 @@ EOF
 
   local sc=$(docker_run --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null)
 
-  docker cp ${work_scr} $sc:/worker.sh
-  [ "$status" -eq 0 ]
+  sysbox-docker-cp ${work_scr} $sc:/worker.sh
 
   docker exec "$sc" sh -c "cat /proc/sys/net/netfilter/nf_conntrack_frag6_timeout"
   [ "$status" -eq 0 ]
@@ -372,8 +371,7 @@ EOF
   declare -a syscont
   for i in $(seq 1 $num_sc); do
     syscont[$i]=$(docker_run --rm --hostname="sc_$i" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-    docker cp $worker_scr ${syscont[$i]}:/worker.sh
-    [ "$status" -eq 0 ]
+    sysbox-docker-cp $worker_scr ${syscont[$i]}:/worker.sh
   done
 
   # wait for all sys containers to be up before starting worker scripts
@@ -461,8 +459,7 @@ EOF
   wait_for_inner_dockerd $syscont
 
   # copy worker script into sys container
-  docker cp $worker_scr $syscont:/worker.sh
-  [ "$status" -eq 0 ]
+  sysbox-docker-cp $worker_scr $syscont:/worker.sh
 
   # deploy the app (l2) containers
   declare -a app_cntr
@@ -554,8 +551,7 @@ EOF
   sleep 2
 
   # copy worker script into sys container
-  docker cp $worker_scr $syscont:/worker.sh
-  [ "$status" -eq 0 ]
+  sysbox-docker-cp $worker_scr $syscont:/worker.sh
 
   # launch unshare sessions
   for i in $(seq 1 $num_un); do
@@ -741,15 +737,14 @@ EOF
   make -C "$SYSBOX_ROOT/tests/scr/capRaise"
 
   # launch sys container
-  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/debian:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   # add a regular user in it
   docker exec "$syscont" bash -c "useradd -u 1000 someone"
   [ "$status" -eq 0 ]
 
    # copy fileDac program and set file caps on it
-  docker cp "$SYSBOX_ROOT/tests/scr/capRaise/fileDac" "$syscont:/usr/bin"
-  [ "$status" -eq 0 ]
+  sysbox-docker-cp "$SYSBOX_ROOT/tests/scr/capRaise/fileDac" "$syscont:/usr/bin"
 
   docker exec "$syscont" bash -c "chown someone:someone /usr/bin/fileDac"
   [ "$status" -eq 0 ]
