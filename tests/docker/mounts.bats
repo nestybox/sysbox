@@ -30,8 +30,12 @@ function teardown() {
   # otherwise sysbox must mount shiftfs over the volume.
   if docker_userns_remap; then
     [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
-  else
+  elif sysbox_using_shiftfs; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
+  elif sysbox_using_idmapped_mnt; then
+    [[ "$output" =~ "idmapped" ]]
+  else
+	 [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
   fi
 
   # verify the container can write and read from the volume
@@ -49,13 +53,13 @@ function teardown() {
 
 @test "docker bind mount" {
 
-  testDir="/testVol"
+  testDir="/mnt/scratch/testVol"
   rm -rf ${testDir}
   mkdir -p ${testDir}
 
-  # without uid shifting, the bind source must be accessible by
+  # Without uid shifting, the bind source must be accessible by
   # the container's user ID.
-  if ! host_supports_uid_shifting; then
+  if ! sysbox_using_uid_shifting; then
     subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
     chown -R $subid:$subid ${testDir}
   fi
@@ -67,8 +71,10 @@ function teardown() {
   docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
-  if host_supports_uid_shifting; then
+  if sysbox_using_shiftfs; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
+  elif sysbox_using_idmapped_mnt; then
+    [[ "$output" =~ "idmapped" ]]
   else
     # overlay because we are running in the test container
     [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
@@ -94,11 +100,11 @@ function teardown() {
 
 @test "docker bind mount skip uid-shift" {
 
-  if ! host_supports_uid_shifting; then
-	  skip "Requires host uid shifting support"
+  if ! sysbox_using_uid_shifting; then
+	  skip "Requires Sysbox uid shifting support"
   fi
 
-  testDir="/testVol"
+  testDir="/mnt/scratch/testVol"
   rm -rf ${testDir}
   mkdir -p ${testDir}
 
@@ -113,7 +119,7 @@ function teardown() {
   # verify bind mount was done correctly and that uid-shifting was skipped
   docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "overlay on /mnt/testVol type overlay" ]]
+  echo $output | egrep -qv "idmapped|shiftfs"
 
   # verify the container can write and read from the bind mount
   docker exec "$syscont" sh -c "echo someData > /mnt/testVol/testData"
@@ -213,6 +219,7 @@ function teardown() {
 
   [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
+  echo $line | grep -qv "idmapped"
 
   # Verify sysbox changed the permissions on the mount source.
   uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
@@ -368,6 +375,7 @@ function teardown() {
 
   [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
+  echo $line | grep -qv "idmapped"
 
   uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
   gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
@@ -458,20 +466,20 @@ function teardown() {
 
 @test "nested mount sources" {
 
-   rm -rf /mnt/subdir
-   rm -rf /mnt/scratch/subdir
+   rm -rf /mnt/scratch/testdir
+   rm -rf /mnt/scratch/testdir/subdir
 
    docker run --runtime=sysbox-runc --rm \
-          -v /mnt/subdir:/mnt/subdir \
-          -v /mnt/scratch/subdir:/mnt/scratch/subdir \
+          -v /mnt/scratch/testdir:/mnt/subdir \
+          -v /mnt/scratch/testdir/subdir:/mnt/testdir/subdir \
           -v /mnt/scratch/var-lib-docker-cache:/var/lib/docker \
           ${CTR_IMG_REPO}/alpine-docker-dbg:latest \
           echo hello
 
    [ "$status" -eq 0 ]
 
-   rm -rf /mnt/subdir
-   rm -rf /mnt/scratch/subdir
+   rm -rf /mnt/scratch/testdir
+   rm -rf /mnt/scratch/testdir/subdir
 
    mkdir -p /mnt/scratch/subdir/var-lib-docker-cache
 
@@ -504,8 +512,8 @@ function teardown() {
 
 @test "bind mount above container rootfs" {
 
-	if ! host_supports_uid_shifting; then
-		skip "CAUSES HANG WITHOUT UID-SHIFTING"
+	if ! sysbox_using_shiftfs; then
+		skip "Fails without shiftfs"
 	fi
 
 	docker run --runtime=sysbox-runc --rm \
