@@ -9,15 +9,8 @@ load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/net
 load ../helpers/run
+load ../helpers/cgroups
 load ../helpers/sysbox-health
-
-function setup() {
-	# Sysbox-Pods are only supported in Ubuntu distros for now.
-	local distro=$(get_host_distro)
-	if [[ ${distro} != "ubuntu" ]]; then
-		skip "Sysbox-pods feature not supported in ${distro} distro"
-	fi
-}
 
 function teardown() {
   sysbox_log_check
@@ -45,6 +38,10 @@ function teardown() {
 # Launch two pods, one with docker CLI and the other with Docker's dind image,
 # and verify all is good.
 @test "docker-cli + dind 19.03 pods" {
+
+	if host_is_cgroup_v2; then
+		skip "needs cgroup v1 host"
+	fi
 
 	local eng=$(crictl_run ${POD_MANIFEST_DIR}/dind-19.03-container.json ${POD_MANIFEST_DIR}/dind-pod.json)
 	local pod1=$(crictl_cont_get_pod $eng)
