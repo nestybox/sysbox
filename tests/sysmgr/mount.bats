@@ -19,8 +19,10 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if host_supports_uid_shifting; then
+  if sysbox_using_shiftfs; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+  elif sysbox_using_idmapped_mnt; then
+    [[ "$output" =~ "idmapped" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
   fi
@@ -42,8 +44,10 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if host_supports_uid_shifting; then
+  if sysbox_using_shiftfs; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+  elif sysbox_using_idmapped_mnt; then
+    [[ "$output" =~ "idmapped" ]]
   else
     [[ "$output" =~ "on /lib/modules/${kernel_rel}".+"ro".+"relatime" ]]
   fi
@@ -71,8 +75,10 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if host_supports_uid_shifting; then
+		if sysbox_using_shiftfs; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+		elif sysbox_using_idmapped_mnt; then
+			[[ "${lines[0]}" =~ "idmapped" ]]
       else
 			[[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -86,8 +92,10 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if host_supports_uid_shifting; then
+		if sysbox_using_shiftfs; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+		elif sysbox_using_idmapped_mnt; then
+			[[ "${lines[0]}" =~ "idmapped" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -119,8 +127,10 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if host_supports_uid_shifting; then
+		if sysbox_using_shiftfs; then
         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+		elif sysbox_using_idmapped_mnt; then
+			[[ "${lines[0]}" =~ "idmapped" ]]
       else
         [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -135,8 +145,10 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if host_supports_uid_shifting; then
+		if sysbox_using_shiftfs; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+		elif sysbox_using_idmapped_mnt; then
+			[[ "${lines[0]}" =~ "idmapped" ]]
       else
 			[[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
       fi
@@ -460,71 +472,4 @@ load ../helpers/sysbox-health
   [ "$sub2_gid" -ne "$sysbox_subid" ]
 
   rm -rf $mnt_src
-}
-
-@test "bind-mount-uid-shift disable" {
-
-  if ! host_supports_uid_shifting; then
-	  skip "needs uid shifting"
-  fi
-
-  local testDir="/testVol"
-
-  sysbox_mgr_stop
-  sysbox_mgr_start "--bind-mount-id-shift=false"
-
-  rm -rf ${testDir}
-  mkdir -p ${testDir}
-
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
-
-  # verify the bind mount occurred, but without uid shifting
-  docker exec "$syscont" sh -c "cat /proc/self/mountinfo | grep testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" != *"shiftfs"* ]]
-
-  # verify the container sees the mount as nobody:nobody
-  docker exec "$syscont" sh -c "stat -c %U /mnt/testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "nobody" ]]
-
-  docker exec "$syscont" sh -c "stat -c %G /mnt/testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "nobody" ]]
-
-  # verify the container can't write to the mount
-  docker exec "$syscont" sh -c "touch /mnt/testVol/testfile"
-  [ "$status" -ne 0 ]
-
-  docker_stop "$syscont"
-  rm -r ${testDir}
-
-  sysbox_mgr_stop
-  sysbox_mgr_start
-
-  mkdir -p ${testDir}
-
-  # Verify uid shifting on bind mounts works now ...
-  local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/mnt/testVol ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
-
-  # verify the bind mount occurred, but without uid shifting
-  docker exec "$syscont" sh -c "cat /proc/self/mountinfo | grep testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"shiftfs"* ]]
-
-  # verify the container sees the mount as root:root
-  docker exec "$syscont" sh -c "stat -c %U /mnt/testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "root" ]]
-
-  docker exec "$syscont" sh -c "stat -c %G /mnt/testVol"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "root" ]]
-
-  # verify the container can write to the mount
-  docker exec "$syscont" sh -c "touch /mnt/testVol/testfile"
-  [ "$status" -eq 0 ]
-
-  docker_stop "$syscont"
-  rm -r ${testDir}
 }

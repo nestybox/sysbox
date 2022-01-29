@@ -6,11 +6,12 @@
 
 load ../helpers/run
 load ../helpers/fs
+load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function setup() {
-  if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
-    skip "needs UID shifting"
+  if ! sysbox_using_shiftfs; then
+    skip "requires shiftfs"
   fi
 }
 
