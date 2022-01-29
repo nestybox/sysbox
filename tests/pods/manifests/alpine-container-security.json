@@ -12,7 +12,7 @@
     "mounts": [
         {
             "container_path": "/mnt/test",
-            "host_path": "/root/test"
+            "host_path": "/mnt/scratch/test"
         }
     ],
     "linux": {

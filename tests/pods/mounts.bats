@@ -11,14 +11,6 @@ load ../helpers/run
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
-function setup() {
-	# Sysbox-Pods are only supported in Ubuntu distros for now.
-	local distro=$(get_host_distro)
-	if [[ ${distro} != "ubuntu" ]]; then
-		skip "Sysbox-pods feature not supported in ${distro} distro"
-	fi
-}
-
 function teardown() {
   sysbox_log_check
 }
@@ -27,7 +19,7 @@ function teardown() {
 
 	# Create a dir on the host with ownership matching the sys container's root
 	# process.
-	local host_path=$(mktemp -d "${WORK_DIR}/tmp-vol.XXXXXX")
+	local host_path=$(mktemp -d "/mnt/scratch/tmp-vol.XXXXXX")
 	echo "some data" > $host_path/testfile.txt
 
 	subuid=$(grep containers /etc/subuid | cut -d":" -f2)
@@ -36,7 +28,7 @@ function teardown() {
 
 	# Create a pod with a volume mount of that host dir
 	local ctr_path="/mnt/test-vol"
-	local container_json="${WORK_DIR}/container.json"
+	local container_json="/mnt/scratch/container.json"
 
 	jq --arg host_path "$host_path" --arg ctr_path "$ctr_path" \
 		'  .mounts = [ {
@@ -59,9 +51,9 @@ function teardown() {
 	[ $uid -eq 0 ]
 	[ $gid -eq 0 ]
 
-	# Verify shiftfs is NOT mounted on the pod's volume
-	run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | grep shiftfs"
-	[ "$status" -ne 0 ]
+	# Verify uid shifting is NOT done on the pod's volume
+	run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | egrep -qv \"shiftfs|idmapped\""
+	[ "$status" -eq 0 ]
 
 	# Verify the pod can write to the mounted host volume
 	run crictl exec $syscont sh -c "echo 'new data' > $ctr_path/testfile.txt"
@@ -80,17 +72,17 @@ function teardown() {
 
 @test "pod hostPath vol (uid-shift)" {
 
-	if ! host_supports_uid_shifting; then
-		skip "needs host uid shifting support"
+	if ! sysbox_using_uid_shifting; then
+		skip "needs Sysbox uid shifting"
 	fi
 
 	# Create a dir on the host with root ownership
-	local host_path=$(mktemp -d "${WORK_DIR}/tmp-vol.XXXXXX")
+	local host_path=$(mktemp -d "/mnt/scratch/tmp-vol.XXXXXX")
 	echo "some data" > $host_path/testfile.txt
 
 	# Create a pod with a volume mount of that host dir
 	local ctr_path="/mnt/test-vol"
-	local container_json="${WORK_DIR}/container.json"
+	local container_json="/mnt/scratch/container.json"
 
 	jq --arg host_path "$host_path" --arg ctr_path "$ctr_path" \
 		'  .mounts = [ {
@@ -113,9 +105,14 @@ function teardown() {
 	[ $uid -eq 0 ]
 	[ $gid -eq 0 ]
 
-	# Verify shiftfs is mounted on the pod's volume
-	run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | grep shiftfs"
-	[ "$status" -eq 0 ]
+	# Verify the pod's volume is uid-shifted
+	if sysbox_using_shiftfs; then
+		run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | grep shiftfs"
+		[ "$status" -eq 0 ]
+	elif sysbox_using_idmapped_mnt; then
+		run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | grep idmapped"
+		[ "$status" -eq 0 ]
+	fi
 
 	# Verify the pod can write to the mounted host volume
 	run crictl exec $syscont sh -c "echo 'new data' > $ctr_path/testfile.txt"
@@ -136,7 +133,7 @@ function teardown() {
 
 	# Create a dir on the host with ownership matching the sys container's root
 	# process.
-	local host_path=$(mktemp -d "${WORK_DIR}/tmp-vol.XXXXXX")
+	local host_path=$(mktemp -d "/mnt/scratch/tmp-vol.XXXXXX")
 	echo "some data" > $host_path/testfile.txt
 
 	subuid=$(grep containers /etc/subuid | cut -d":" -f2)
@@ -145,7 +142,7 @@ function teardown() {
 
 	# Create a pod with a volume mount of that host dir
 	local ctr_path="/mnt/test-vol"
-	local container_json="${WORK_DIR}/container.json"
+	local container_json="/mnt/scratch/container.json"
 
 	jq --arg host_path "$host_path" --arg ctr_path "$ctr_path" \
 		'  .mounts = [ {
