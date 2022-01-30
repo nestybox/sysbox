@@ -21,6 +21,9 @@
 
 FROM fedora:34
 
+# Desired platform architecture to build upon.
+ARG arch
+
 ARG k8s_version=v1.20.2
 
 RUN dnf update -y && dnf install -y \
@@ -83,9 +86,9 @@ RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
     aarch64-linux-gnu-glibc \
     aarch64-linux-gnu-binutils
 
-# Install Golang 1.13 release and explicitly activate modules functionality.
-RUN wget https://dl.google.com/go/go1.13.3.linux-${arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.13.3.linux-${arch}.tar.gz && \
+# Install Golang 1.16.4 release and explicitly activate modules functionality.
+RUN wget https://golang.org/dl/go1.16.4.linux-${arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.16.4.linux-${arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
@@ -107,23 +110,19 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN mkdir -p ~/bin/protoc \
-    && cd ~/bin/protoc/ \
-    && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip \
-    && unzip protoc-3.6.1-linux-x86_64.zip \
-    && cp -r include/* /usr/local/include/ \
-    && cp bin/protoc /usr/local/bin/ \
-    && cd \
-    && rm -rf ~/bin/protoc/ \
-    && GIT_TAG="v1.3.1" \
-    && go get -d -u github.com/golang/protobuf/protoc-gen-go \
-    && git -C "$GOPATH"/src/github.com/golang/protobuf checkout $GIT_TAG > /dev/null \
-    && go install github.com/golang/protobuf/protoc-gen-go
+RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
+    && export PATH="$PATH:$HOME/.local/bin" \
+    && go install github.com/golang/protobuf/protoc-gen-go@latest \
+    && export PATH="$PATH:$(go env GOPATH)/bin"
 
 # Install Kubectl for K8s integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in K8s (L2) nodes.
-RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl \
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${arch}/kubectl \
     && install -o root -g root -m 0755 kubectl /usr/bin/kubectl
 
 # install Docker (used by most sysbox tests to launch sys containers)
@@ -157,6 +156,7 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY scr/buildContainerInit /usr/bin
 COPY scr/sindTestContainerInit /usr/bin
+COPY bin/userns_child_exec_${arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox

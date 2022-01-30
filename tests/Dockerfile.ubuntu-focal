@@ -124,15 +124,20 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip \
-    && unzip protoc-3.15.8-linux-x86_64.zip -d $HOME/.local \
+#RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; fi \
+RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
     && export PATH="$PATH:$HOME/.local/bin" \
     && go install github.com/golang/protobuf/protoc-gen-go@latest \
     && export PATH="$PATH:$(go env GOPATH)/bin"
 
 # Install Docker
-RUN curl -fsSL https://get.docker.com -o get-docker.sh
-RUN sh get-docker.sh
+RUN curl -fsSL https://get.docker.com -o get-docker.sh \
+    && sh get-docker.sh
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
 # Go Dlv for debugging
 RUN go get github.com/go-delve/delve/cmd/dlv
@@ -180,7 +185,7 @@ RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep 
 # after the change. On the other hand, if we were to use the new
 # definition, seccomp notify would fail when sysbox runs in old
 # kernels.
-#RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
+RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
 # sysbox env
 RUN useradd sysbox \
@@ -191,9 +196,8 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY scr/buildContainerInit /usr/bin
 COPY scr/sindTestContainerInit /usr/bin
+COPY bin/userns_child_exec_${arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
 CMD /bin/bash
-
-
