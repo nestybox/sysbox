@@ -28,7 +28,6 @@ PROC_SYS_NS=('e=(/proc/sys/net/ipv4/ip_default_ttl INT)' \
 # Linux kernel non-namespaced resources under /proc/sys
 # (representative list, not exhaustive)
 PROC_SYS_NON_NS=('e=(/proc/sys/debug/exception-trace BOOL) '\
-                 'e=(/proc/sys/debug/kprobes-optimization BOOL) '\
                  'e=(/proc/sys/fs/pipe-max-size INT) '\
                  'e=(/proc/sys/fs/mount-max INT)' \
                  'e=(/proc/sys/fs/mqueue/msg_max INT)'
