@@ -1,24 +1,53 @@
 #!/bin/bash -e
 
 #
-# script to run sysbox integration tests for continuous-integration purposes
+# script to run sysbox integration tests
 #
 
 progName=$(basename "$0")
 
-usage() {
-	echo "
-Usage: $progName <testName>
-
-"
+function usage() {
+	printf "\nUsage: $progName [testName]\n"
 	exit 1
 }
 
-# argument testName is optional
-if [ $# -eq 1 ]; then
-	printf "\nExecuting $1 ... \n"
-	bats --tap $1
-else
+function idmapped_mount_supported() {
+	local kernel_rel=$(uname -r)
+	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
+	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
+	[ ${rel_major} -gt 5 ] || ( [ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ] )
+}
+
+function shiftfs_supported() {
+	modprobe shiftfs >/dev/null 2>&1 && lsmod | grep -q shiftfs
+}
+
+function set_sysbox_idmapped_mount() {
+	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
+	if [ -n "$DEBUG_ON" ]; then
+		if [[ "$1" == "disable" ]]; then
+			sysbox -d -t --no-idmapped-mount
+		else
+			sysbox -d -t
+		fi
+	else
+		if [[ "$1" == "disable" ]]; then
+			sysbox -t --no-idmapped-mount
+		else
+			sysbox -t
+		fi
+	fi
+
+	return 0
+}
+
+function run_idmapped_mount_tests() {
+	if ! idmapped_mount_supported; then
+		printf "\nSkipping idmapped mount tests (not supported on host)\n"
+	fi
+
+	printf "\nExecuting Sysbox tests (idmapped mounts)\n"
+
 	printf "\nExecuting sysbox-mgr tests ... \n"
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
@@ -56,6 +85,109 @@ else
 	bats --tap tests/health/sysbox-health.bats
 
 	docker system prune -a -f
-fi
+	return 0
+}
 
-exit 0
+function run_shiftfs_tests() {
+	if ! shiftfs_supported; then
+		printf "\nSkipping shiftfs tests (not supported on host)\n"
+	fi
+
+	printf "\nDisabling Sysbox idmapped-mounts.\n"
+	set_sysbox_idmapped_mount "disable"
+
+	printf "\nExecuting Sysbox tests (shiftfs)\n"
+
+	printf "\nExecuting sysbox-mgr tests ... \n"
+	bats --tap tests/sysmgr
+	printf "\nExecuting sysbox-fs tests ... \n"
+	bats --tap tests/sysfs
+	printf "\nExecuting docker tests ... \n"
+	bats --tap tests/docker
+	printf "\nExecuting dind tests ... \n"
+	bats --tap tests/dind
+	printf "\nExecuting cind tests ... \n"
+	bats --tap tests/cind
+	printf "\nExecuting app tests (l1) ... \n"
+	bats --tap tests/apps/l1
+	printf "\nExecuting chown syscall tests ... \n"
+	bats --tap tests/syscall/chown
+	printf "\nExecuting basic mount syscall-interception tests ... \n"
+	bats --tap tests/syscall/mount/mount.bats
+	printf "\nExecuting mount syscall-interception tests for procfs resources ... \n"
+	bats --tap tests/syscall/mount/mount-procfs.bats
+	printf "\nExecuting mount syscall-interception tests for sysfs resources ... \n"
+	bats --tap tests/syscall/mount/mount-sysfs.bats
+	printf "\nExecuting mount syscall-interception tests for overlayfs resources ... \n"
+	bats --tap tests/syscall/mount/mount-overlayfs.bats
+	printf "\nExecuting mount syscall-interception tests for immutable resources ... \n"
+	bats --tap tests/syscall/mount/mount-immutables.bats
+
+	# Launch kind test-suite.
+	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
+
+	# Launch sysbox-pod test-suite.
+	./tests/pods/pods.sh
+
+	printf "\nSysbox health checking ...\n"
+	bats --tap tests/health/sysbox-health.bats
+
+	docker system prune -a -f
+
+	printf "\nRe-enabling Sysbox idmapped-mounts.\n"
+	set_sysbox_idmapped_mount "enable"
+
+	return 0
+}
+
+function run_docker_userns_remap_tests() {
+	printf "\nExecuting Sysbox tests (docker-userns-remap)\n"
+
+	printf "\nConfiguring Docker with userns-remap\n"
+	docker system prune -a -f
+	docker-cfg --userns-remap=enable
+
+	printf "\nExecuting sysbox-mgr tests ... \n"
+	bats --tap tests/sysmgr
+	printf "\nExecuting sysbox-fs tests ... \n"
+	bats --tap tests/sysfs
+	printf "\nExecuting docker tests ... \n"
+	bats --tap tests/docker
+	printf "\nExecuting dind tests ... \n"
+	bats --tap tests/dind
+	printf "\nExecuting cind tests ... \n"
+	bats --tap tests/cind
+
+	# Launch basic kind-flannel test
+	docker system prune -a -f
+	printf "\nExecuting kind testcases with flannel cni ... \n"
+	bats --tap tests/kind/kind-flannel.bats
+	docker system prune -a -f
+
+	# Launch sysbox-pod test-suite.
+	./tests/pods/pods.sh
+
+	printf "\nSysbox health checking ...\n"
+	bats --tap tests/health/sysbox-health.bats
+
+	# TODO: disable all uid shifting in sysbox and verify things still work
+
+	printf "\nReverting Docker userns-remap config\n"
+	docker system prune -a -f
+	docker-cfg --userns-remap=disable
+}
+
+function main() {
+
+	# argument testName is optional; if present, only that test is executed.
+	if [ $# -eq 1 ]; then
+		printf "\nExecuting $1 ... \n"
+		bats --tap $1
+	else
+		run_idmapped_mount_tests
+		run_shiftfs_tests
+		run_docker_userns_remap_tests
+	fi
+}
+
+main "$@"
