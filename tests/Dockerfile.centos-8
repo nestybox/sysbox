@@ -23,6 +23,15 @@ FROM centos:8
 
 ARG k8s_version=v1.18.2
 
+# Desired platform architecture to build upon.
+ARG arch
+
+# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
+# introduces rootless pod support (via the Linux user-ns)
+ARG crio_version=1.20
+ARG crio_os=CentOS_8
+ARG crictl_version=v1.20.0
+
 RUN dnf update -y && dnf install -y \
     acl \
     yum-utils \
@@ -90,8 +99,11 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip \
-    && unzip protoc-3.15.8-linux-x86_64.zip -d $HOME/.local \
+RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
     && export PATH="$PATH:$HOME/.local/bin" \
     && go install github.com/golang/protobuf/protoc-gen-go@latest \
     && export PATH="$PATH:$(go env GOPATH)/bin"
@@ -125,6 +137,34 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
 
 # Go Dlv for debugging
 RUN go get github.com/go-delve/delve/cmd/dlv
+
+# Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in the K8s-in-docker nodes (L2).
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${arch}/kubectl \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
+RUN curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/devel:kubic:libcontainers:stable.repo \
+    && curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/devel:kubic:libcontainers:stable:cri-o:${crio_version}.repo \
+    && yum install -y conntrack cri-o
+
+RUN curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${arch}.tar.gz --output crictl-${crictl_version}-linux-${arch}.tar.gz \
+    && tar zxvf crictl-${crictl_version}-linux-${arch}.tar.gz -C /usr/local/bin \
+    && rm -f crictl-${crictl_version}-linux-${arch}.tar.gz
+
+# Container CNIs (needed by CRI-O)
+RUN cd /root \
+    && git clone https://github.com/containernetworking/plugins \
+    && cd plugins \
+    && git checkout -b v0.9.1 v0.9.1 \
+    && ./build_linux.sh \
+    && mkdir -p /opt/cni/bin \
+    && cp bin/* /opt/cni/bin/
+
+# Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
+RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${arch} dasel && chmod +x dasel \
+    && mv ./dasel /usr/local/bin/dasel
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #

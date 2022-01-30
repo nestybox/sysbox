@@ -22,6 +22,10 @@
 FROM debian:buster
 
 ARG k8s_version=v1.20.2
+
+# Desired platform architecture to build upon.
+ARG arch
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
@@ -110,27 +114,18 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip \
-    && unzip protoc-3.15.8-linux-x86_64.zip -d $HOME/.local \
+RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
     && export PATH="$PATH:$HOME/.local/bin" \
     && go install github.com/golang/protobuf/protoc-gen-go@latest \
     && export PATH="$PATH:$(go env GOPATH)/bin"
 
-# install Docker (used by most sysbox tests to launch sys containers)
-RUN  apt-get update \
-    && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add - \
-    && apt-key fingerprint 0EBFCD88 \
-    && add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/debian \
-    $(lsb_release -cs) \
-    stable" \
-    && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+# Install Docker
+RUN curl -fsSL https://get.docker.com -o get-docker.sh \
+    && sh get-docker.sh
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
 # Install Kubectl for K8s integration-testing. Notice that we are explicitly
@@ -148,6 +143,39 @@ RUN apt-get update && apt-get install -y shellcheck
 
 # Go Dlv for debugging
 RUN go get github.com/go-delve/delve/cmd/dlv
+
+# Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in the K8s-in-docker nodes (L2).
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
+    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
+    && apt-get update \
+    && apt-get install kubectl:${arch}="${k8s_version#v}"-00 \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
+RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
+    && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
+    && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | apt-key add - \
+    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | apt-key add - \
+    && apt-get update && apt-get install -y --no-install-recommends conntrack:${arch} cri-o:${arch} cri-o-runc:${arch} \
+    && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${arch}.tar.gz \
+    && sudo tar zxvf crictl-${crictl_version}-linux-${arch}.tar.gz -C /usr/local/bin \
+    && rm -f crictl-${crictl_version}-linux-${arch}.tar.gz
+
+# Container CNIs (needed by CRI-O)
+RUN cd /root \
+    && git clone https://github.com/containernetworking/plugins \
+    && cd plugins \
+    && git checkout -b v0.9.1 v0.9.1 \
+    && ./build_linux.sh \
+    && mkdir -p /opt/cni/bin \
+    && cp bin/* /opt/cni/bin/
+
+# Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
+RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${arch} dasel && chmod +x dasel \
+    && mv ./dasel /usr/local/bin/dasel
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
@@ -169,6 +197,7 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY scr/buildContainerInit /usr/bin
 COPY scr/sindTestContainerInit /usr/bin
+COPY bin/userns_child_exec_${arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
