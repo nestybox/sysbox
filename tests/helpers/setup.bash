@@ -109,11 +109,7 @@ function runc_spec() {
     args+=("--bundle" "$bundle")
   fi
 
-  if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
-    $RUNC spec "${args[@]}" --id-map "$UID_MAP $GID_MAP $ID_MAP_SIZE"
-  else
-    $RUNC spec "${args[@]}"
-  fi
+  $RUNC spec "${args[@]}"
 }
 
 function setup_recvtty() {
@@ -154,18 +150,10 @@ function setup_bundle() {
 
   tar --exclude './dev/*' -C "$bundle"/rootfs -xzf "$tar_gz"
 
-  # set bundle ownership per sysbox-runc requirements
-  if [ -n "$SHIFT_ROOTFS_UIDS" ]; then
-    chown -R root:root "$bundle"
-  else
-    chown -R "$UID_MAP":"$GID_MAP" "$bundle"
-  fi
-
-  # Restrict search access to bundle when using uid-shift, to ensure Sysbox
+  # Set bundle ownership and restrict search access to it, to ensure Sysbox
   # can deal with this.
-  if [ -n "$SHIFT_ROOTFS_UIDS" ]; then
-    chmod 700 "$bundle"
-  fi
+  chown -R root:root "$bundle"
+  chmod 700 "$bundle"
 
   cd "$bundle"
   runc_spec

@@ -11,10 +11,8 @@
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer \
-	test-sysbox-shiftuid test-sysbox-shiftuid-ci test-sysbox-shiftuid-systemd test-sysbox-shiftuid-installer \
 	test-runc test-fs test-mgr \
 	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
-	test-shell-shiftuid test-shell-shiftuid-debug test-shell-shiftuid-systemd test-shell-shiftuid-systemd-debug test-shell-shiftuid-installer test-shell-shiftuid-installer-debug \
 	test-img test-img-systemd test-cleanup \
 	test-sysbox-local test-sysbox-local-installer test-sysbox-local-ci test-fs-local test-mgr-local \
 	sysbox-in-docker sysbox-in-docker-local \
@@ -157,17 +155,6 @@ export TEST_VOL3
 # we must explicitly configure dockerd with such a value.
 EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
 EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
-
-# Find out if the host supports uid shifting, via ID-mapped-mounts (kernel >= 5.12) or
-# via the shiftfs module.
-CMD := $(shell modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs)
-KERNEL_SHIFTFS := $(.SHELLSTATUS)
-
-CMD := $(shell [ $(KERNEL_REL_MAJ) -gt 5 ] || ( [ $(KERNEL_REL_MAJ) -eq 5 ] && [ $(KERNEL_REL_MIN) -ge 12 ] ))
-KERNEL_IDMAPPED_MOUNT := $(.SHELLSTATUS)
-
-CMD := $(shell [ $(KERNEL_SHIFTFS) -eq 0 ] || [ $(KERNEL_IDMAPPED_MOUNT) -eq 0 ] )
-KERNEL_UID_SHIFT := $(.SHELLSTATUS)
 
 # libseccomp (used by Sysbox components)
 LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
@@ -356,7 +343,7 @@ DOCKER_STOP := docker stop -t0 sysbox-test
 ##@ Testing targets
 
 test: ## Run all sysbox test suites
-test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid test-sysbox-systemd
+test: test-fs test-mgr test-runc test-sysbox test-sysbox-systemd
 
 test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-prereq test-img
@@ -392,59 +379,6 @@ test-sysbox-installer: test-prereq test-img-systemd
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
-
-test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
-test-sysbox-shiftuid: test-img
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
-		make test-sysbox-local TESTPATH=$(TESTPATH)"
-endif
-
-test-sysbox-shiftuid-ci: ## Run sysbox integration tests with uid-shifting (shiftfs) (continuous integration)
-test-sysbox-shiftuid-ci: test-img test-fs test-mgr
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	@printf "\n** Running sysbox integration tests (with uid shifting) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_ROOTFS_UIDS=true && testContainerInit && \
-		make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
-endif
-
-test-sysbox-shiftuid-systemd: ## Run sysbox integration tests with uid-shifting (shiftfs) and systemd
-test-sysbox-shiftuid-systemd: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	@printf "\n** Running sysbox integration tests (with uid shifting and systemd) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_ROOTFS_UIDS=true && testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
-	$(DOCKER_STOP)
-endif
-
-test-sysbox-shiftuid-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
-test-sysbox-shiftuid-installer: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	@printf "\n** Running sysbox integration tests (with uid shifting + systemd + the sysbox installer) **\n\n"
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		export SHIFT_ROOTFS_UIDS=true SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
-		testContainerInit && \
-		make test-sysbox-local TESTPATH=$(TESTPATH) && \
-		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
-	$(DOCKER_STOP)
-endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: test-prereq sysbox
@@ -516,88 +450,6 @@ test-shell-installer-debug: test-prereq test-img-systemd
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
-
-test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
-
-test-shell-shiftuid: test-img
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		make sysbox-runc-recvtty && \
-		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
-endif
-
-test-shell-shiftuid-debug: test-img
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		make sysbox-runc-recvtty && \
-		export SHIFT_ROOTFS_UIDS=true DEBUG_ON=true && testContainerInit && /bin/bash"
-endif
-
-test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
-
-test-shell-shiftuid-systemd: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
-	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
-	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
-	$(DOCKER_STOP)
-endif
-
-test-shell-shiftuid-systemd-debug: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true -e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
-	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
-	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
-	$(DOCKER_STOP)
-endif
-
-test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
-test-shell-shiftuid-installer: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
-		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
-		-e SB_PACKAGE_FILE-$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
-	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
-	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
-	$(DOCKER_STOP)
-endif
-
-test-shell-shiftuid-installer-debug: test-img-systemd
-ifeq ($(KERNEL_UID_SHIFT),1)
-	@printf "\n** Kernel does not support UID shifting. Skipping $@ target. **\n\n"
-else
-	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) -e SHIFT_ROOTFS_UIDS=true \
-		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
-		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
-		-e DEBUG_ON=true)
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_SYSTEMD)
-	docker exec $(DOCKER_ENV) sysbox-test make sysbox-runc-recvtty
-	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
-	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
-	$(DOCKER_STOP)
-endif
 
 test-prereq:
 ifneq ($(SYS_ARCH),$(TARGET_ARCH))

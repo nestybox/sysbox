@@ -320,13 +320,8 @@ function main() {
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
 	common_opt="--config-only --sysbox-runtime=enable --default-runtime=sysbox-runc"
 
-	if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
-		docker-cfg -v $common_opt --userns-remap=enable
-		[ $? -eq 0 ] || exit 1
-	else
-		docker-cfg -v $common_opt
-		[ $? -eq 0 ] || exit 1
-	fi
+	docker-cfg -v $common_opt
+	[ $? -eq 0 ] || exit 1
 
 	# Configure the Docker networks to avoid overlap with host networking.
 	# Note: the chosen IP addresses will likely not overlap with the host Docker networks

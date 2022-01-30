@@ -25,7 +25,7 @@ function teardown() {
   docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/var/lib/kubelet\" | grep \"kubelet/$SYSCONT_NAME\""
   [ "$status" -eq 0 ]
 
-  # ownership of "/var/lib/kubelet" should be root:root
+  # ownership of "/var/lib/kubelet" inside the container should be root:root
   docker exec "$SYSCONT_NAME" sh -c "stat /var/lib/kubelet | grep Uid"
   [ "$status" -eq 0 ]
   [[ ${lines[0]} == "Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
