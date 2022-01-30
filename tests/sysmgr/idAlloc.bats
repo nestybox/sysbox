@@ -13,7 +13,7 @@ function teardown() {
 
 @test "uid alloc basic" {
 
-  if [ -z "$SHIFT_ROOTFS_UIDS" ]; then
+  if docker_userns_remap; then
     skip "uid shifting disabled"
   fi
 

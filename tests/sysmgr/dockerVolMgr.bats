@@ -142,12 +142,12 @@ function teardown() {
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 	local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
 
-	if [ -n "$SHIFT_ROOTFS_UIDS" ]; then
-		rootfs_uid=0
-		rootfs_gid=0
-	else
+	if docker_userns_remap; then
 		rootfs_uid=$(docker_root_uid_map $syscont)
 		rootfs_gid=$(docker_root_gid_map $syscont)
+	else
+		rootfs_uid=0
+		rootfs_gid=0
 	fi
 
 	docker exec "$syscont" sh -c "touch /var/lib/docker/root-file"
