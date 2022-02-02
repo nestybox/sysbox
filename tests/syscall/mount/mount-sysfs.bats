@@ -70,7 +70,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "mount -t sysfs sysfs $mnt_path"
-  [ "$status" -eq 255 ]
+  [ "$status" -ne 0 ]
   [[ "$output" =~ "Resource busy" ]]
 
   docker_stop "$syscont"

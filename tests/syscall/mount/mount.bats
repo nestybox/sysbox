@@ -103,7 +103,7 @@ function teardown() {
 
   # invalid path
   docker exec "$syscont" bash -c "cd /root && mount -t proc proc invalidpath"
-  [ "$status" -eq 255 ]
+  [ "$status" -ne 0 ]
   [[ "$output" =~ "No such file or directory" ]]
 
   # TODO: overly long path (> MAXPATHLEN) returns in ENAMETOOLONG
