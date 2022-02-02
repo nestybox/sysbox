@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 {
    FILE *fp;
    char *filename, *op, *data;
-   char ch;
+   int ch;
    opType optype;
 
    // parse command line args
