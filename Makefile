@@ -44,6 +44,8 @@ else ifeq ($(UNAME_M),aarch64)
 	ARCH := arm64
 else ifeq ($(UNAME_M),arm)
 	ARCH := armhf
+else ifeq ($(UNAME_M),armel)
+	ARCH := armel
 endif
 
 # Compute the target triple
