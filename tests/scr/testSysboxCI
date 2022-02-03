@@ -31,6 +31,8 @@ else
 	bats --tap tests/cind
 	printf "\nExecuting app tests (l1) ... \n"
 	bats --tap tests/apps/l1
+	printf "\nExecuting buildx + buildkit tests ... \n"
+	bats --tap tests/buildx/basic.bats
 	printf "\nExecuting chown syscall tests ... \n"
 	bats --tap tests/syscall/chown
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
