@@ -35,6 +35,8 @@ else
 	bats --tap tests/apps/l1
 	printf "\nExecuting app tests (l2) ... \n"
 	bats --tap tests/apps/l2
+	printf "\nExecuting buildx + buildkit tests ... \n"
+	bats --tap tests/buildx/basic.bats
 
 	# Launch syscall interception test-suite.
 	./tests/syscall/syscall.sh
