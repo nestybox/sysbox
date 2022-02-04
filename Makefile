@@ -509,7 +509,7 @@ else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
-		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
+		export ARCH=$(ARCH) SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
 endif
 
 test-shell-shiftuid-debug: test-img
