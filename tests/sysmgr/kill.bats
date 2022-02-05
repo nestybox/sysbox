@@ -28,21 +28,21 @@ function teardown() {
   sysbox_stop
 
   # verify sysbox-mgr has cleaned up it's state on the host correctly
-  if host_supports_uid_shifting; then
-	  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
-     [ "$status" -ne 0 ]
-  fi
-
-  run sh -c 'mount | egrep -q "overlay on /var/lib/sysbox/docker"'
+  run sh -c 'mount | grep "/var/lib/sysbox"'
   [ "$status" -ne 0 ]
 
   run sh -c "ls /var/lib/sysbox"
   [ "$status" -ne 0 ]
 
-  # verify sysbox-mgr sync'd data back to the sys container's rootfs
-  rootfs=$(docker_cont_rootfs $syscont0)
-  run sh -c "ls -l $rootfs/var/lib/docker/testfile"
-  [ "$status" -eq 0 ]
+  # verify sysbox-mgr sync'd data back to the sys container's rootfs; this only
+  # works with shiftfs (i.e., it does not work when the rootfs is cloned under
+  # `/var/lib/sysbox`, as stopping sysbox causes the contents of that directory
+  # to be removed).
+  if sysbox_using_shiftfs; then
+	  rootfs=$(docker_cont_rootfs $syscont0)
+	  run sh -c "ls -l $rootfs/var/lib/docker/testfile"
+	  [ "$status" -eq 0 ]
+  fi
 
   # verify sysbox-fs mount is gone
   run sh -c "mount | egrep -q /var/lib/sysboxfs"
