@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #
-# script to run sysbox integration tests
+# script to run sysbox integration tests for CI
 #
 
 progName=$(basename "$0")
@@ -41,13 +41,26 @@ function set_sysbox_idmapped_mount() {
 	return 0
 }
 
-function run_idmapped_mount_tests() {
-	if ! idmapped_mount_supported; then
-		printf "\nSkipping idmapped mount tests (not supported on host)\n"
+function set_sysbox_shiftfs() {
+	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
+	if [ -n "$DEBUG_ON" ]; then
+		if [[ "$1" == "disable" ]]; then
+			sysbox -d -t --no-shiftfs
+		else
+			sysbox -d -t
+		fi
+	else
+		if [[ "$1" == "disable" ]]; then
+			sysbox -t --no-shiftfs
+		else
+			sysbox -t
+		fi
 	fi
 
-	printf "\nExecuting Sysbox tests (idmapped mounts)\n"
+	return 0
+}
 
+function run_ci_tests() {
 	printf "\nExecuting sysbox-mgr tests ... \n"
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
@@ -85,54 +98,61 @@ function run_idmapped_mount_tests() {
 	bats --tap tests/health/sysbox-health.bats
 
 	docker system prune -a -f
+}
+
+# Test sysbox on when using idmapped-mounts and shiftfs (e.g., Ubuntu with
+# kernel >= 5.12). Sysbox will use shiftfs for the rootfs and idmapped-mounts
+# for the bind-mounts.
+function test_with_idmapped_and_shiftfs() {
+
+	if ! idmapped_mount_supported; then
+		printf "\nSkipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
+	fi
+
+	if ! shiftfs_supported; then
+		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
+	fi
+
+	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
+	run_ci_tests
+
 	return 0
 }
 
-function run_shiftfs_tests() {
-	if ! shiftfs_supported; then
-		printf "\nSkipping shiftfs tests (not supported on host)\n"
+# Test sysbox when using idmapped-mounts only (e.g., RedHat, Fedora, CentOS).
+# Sysbox will use chown for the rootfs and idmapped-mounts for the container
+# bind-mounts.
+function test_with_idmapped_only() {
+	if ! idmapped_mount_supported; then
+		printf "\nSkipping idmapped-mount only tests (not supported on host)\n"
 	fi
+
+	printf "\nExecuting Sysbox tests (idmapped mounts only)\n"
+
+	printf "\nDisabling Sysbox shiftfs.\n"
+	set_sysbox_shiftfs "disable"
+
+	run_ci_tests
+
+	printf "\nRe-enabling Sysbox shiftfs.\n"
+	set_sysbox_shiftfs "enable"
+
+	return 0
+}
+
+# Test sysbox when using shiftfs only (e.g., Ubuntu with kernel < 5.12).
+# Sysbox will use shiftfs for the rootfs and for the container bind-mounts.
+function test_with_shiftfs_only() {
+	if ! shiftfs_supported; then
+		printf "\nSkipping shiftfs only tests (not supported on host)\n"
+	fi
+
+	printf "\nExecuting Sysbox tests (shiftfs only)\n"
 
 	printf "\nDisabling Sysbox idmapped-mounts.\n"
 	set_sysbox_idmapped_mount "disable"
 
-	printf "\nExecuting Sysbox tests (shiftfs)\n"
-
-	printf "\nExecuting sysbox-mgr tests ... \n"
-	bats --tap tests/sysmgr
-	printf "\nExecuting sysbox-fs tests ... \n"
-	bats --tap tests/sysfs
-	printf "\nExecuting docker tests ... \n"
-	bats --tap tests/docker
-	printf "\nExecuting dind tests ... \n"
-	bats --tap tests/dind
-	printf "\nExecuting cind tests ... \n"
-	bats --tap tests/cind
-	printf "\nExecuting app tests (l1) ... \n"
-	bats --tap tests/apps/l1
-	printf "\nExecuting chown syscall tests ... \n"
-	bats --tap tests/syscall/chown
-	printf "\nExecuting basic mount syscall-interception tests ... \n"
-	bats --tap tests/syscall/mount/mount.bats
-	printf "\nExecuting mount syscall-interception tests for procfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-procfs.bats
-	printf "\nExecuting mount syscall-interception tests for sysfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-sysfs.bats
-	printf "\nExecuting mount syscall-interception tests for overlayfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-overlayfs.bats
-	printf "\nExecuting mount syscall-interception tests for immutable resources ... \n"
-	bats --tap tests/syscall/mount/mount-immutables.bats
-
-	# Launch kind test-suite.
-	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
-
-	# Launch sysbox-pod test-suite.
-	./tests/pods/pods.sh
-
-	printf "\nSysbox health checking ...\n"
-	bats --tap tests/health/sysbox-health.bats
-
-	docker system prune -a -f
+	run_ci_tests
 
 	printf "\nRe-enabling Sysbox idmapped-mounts.\n"
 	set_sysbox_idmapped_mount "enable"
@@ -140,7 +160,8 @@ function run_shiftfs_tests() {
 	return 0
 }
 
-function run_docker_userns_remap_tests() {
+# Test sysbox when Docker is configured with userns-remap mode.
+function test_with_docker_userns_remap() {
 	printf "\nExecuting Sysbox tests (docker-userns-remap)\n"
 
 	printf "\nConfiguring Docker with userns-remap\n"
@@ -164,16 +185,10 @@ function run_docker_userns_remap_tests() {
 	bats --tap tests/kind/kind-flannel.bats
 	docker system prune -a -f
 
-	# Launch sysbox-pod test-suite.
-	./tests/pods/pods.sh
-
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
 
-	# TODO: disable all uid shifting in sysbox and verify things still work
-
 	printf "\nReverting Docker userns-remap config\n"
-	docker system prune -a -f
 	docker-cfg --userns-remap=disable
 }
 
@@ -184,9 +199,10 @@ function main() {
 		printf "\nExecuting $1 ... \n"
 		bats --tap $1
 	else
-		run_idmapped_mount_tests
-		run_shiftfs_tests
-		run_docker_userns_remap_tests
+		test_with_idmapped_and_shiftfs
+		test_with_idmapped_only
+		test_with_shiftfs_only
+		test_with_docker_userns_remap
 	fi
 }
 
