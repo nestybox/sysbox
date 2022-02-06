@@ -4,7 +4,7 @@
 # Sysbox build container initialization script
 #
 
-thisHost=$(hostname)-$ARCH
+thisHost=$(hostname)-${TARGET_ARCH}
 
 # Build cookie (to build from scratch when necessary only)
 if [[ ! -f .buildinfo ]]; then
@@ -14,7 +14,7 @@ fi
 
 lastBuildHost=$(cat .buildinfo)
 if [[ "$lastBuildHost" != "$thisHost" ]]; then
-  make ARCH=$ARCH clean
+  make TARGET_ARCH=${TARGET_ARCH} clean
   echo "$thisHost" > .buildinfo
 fi
 
@@ -23,16 +23,16 @@ make_target=$1
 distro=$(grep "^ID=" /etc/os-release | cut -d "=" -f2)
 version=$(grep "^VERSION_ID=" /etc/os-release | cut -d "=" -f2 | tr -d '"')
 
-bin_dir=./build/${distro}_${version}/$ARCH
+bin_dir=./build/${distro}_${version}/${TARGET_ARCH}
 
 # Build sysbox
-make ARCH=$ARCH $make_target --no-print-directory
+make TARGET_ARCH=${TARGET_ARCH} $make_target --no-print-directory
 
 # Collect build artifacts
 mkdir -p ${bin_dir}
-cp sysbox-runc/build/$ARCH/sysbox-runc ${bin_dir}
-cp sysbox-fs/build/$ARCH/sysbox-fs ${bin_dir}
-cp sysbox-mgr/build/$ARCH/sysbox-mgr ${bin_dir}
+cp sysbox-runc/build/${TARGET_ARCH}/sysbox-runc ${bin_dir}
+cp sysbox-fs/build/${TARGET_ARCH}/sysbox-fs ${bin_dir}
+cp sysbox-mgr/build/${TARGET_ARCH}/sysbox-mgr ${bin_dir}
 
 # For Kinvolk's Flatcar OS, we also build the binaries for fusermount and
 # shiftfs (as they are not present in flatcar by default).
