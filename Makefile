@@ -51,7 +51,7 @@ endif
 $(info $$SYS_ARCH is $(SYS_ARCH))
 $(info $$TARGET_ARCH is $(TARGET_ARCH))
 
-# Set target architecture
+# Set target architecture if not explicitly defined by user.
 ifeq ($(TARGET_ARCH),)
 	TARGET_ARCH := $(SYS_ARCH)
 endif
@@ -358,21 +358,21 @@ test: ## Run all sysbox test suites
 test: test-fs test-mgr test-runc test-sysbox test-sysbox-shiftuid test-sysbox-systemd
 
 test-sysbox: ## Run sysbox integration tests
-test-sysbox: test-img
+test-sysbox: test-prereq test-img
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local TESTPATH=$(TESTPATH)"
 
 test-sysbox-ci: ## Run sysbox integration tests (continuous integration)
-test-sysbox-ci: test-img test-fs test-mgr
+test-sysbox-ci: test-prereq test-img test-fs test-mgr
 	@printf "\n** Running sysbox integration tests **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		testContainerInit && make test-sysbox-local-ci TESTPATH=$(TESTPATH)"
 
 test-sysbox-systemd: ## Run sysbox integration tests in a test container with systemd
-test-sysbox-systemd: test-img-systemd
+test-sysbox-systemd: test-prereq test-img-systemd
 	@printf "\n** Running sysbox integration tests (with systemd) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
@@ -381,7 +381,7 @@ test-sysbox-systemd: test-img-systemd
 	$(DOCKER_STOP)
 
 test-sysbox-installer: ## Run sysbox integration tests in a test container with systemd and the sysbox installer
-test-sysbox-installer: test-img-systemd
+test-sysbox-installer: test-prereq test-img-systemd
 	@printf "\n** Running sysbox integration tests (with systemd + the sysbox installer) **\n\n"
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
@@ -393,7 +393,7 @@ test-sysbox-installer: test-img-systemd
 	$(DOCKER_STOP)
 
 test-sysbox-shiftuid: ## Run sysbox integration tests with uid-shifting (shiftfs)
-test-sysbox-shiftuid: test-img
+test-sysbox-shiftuid: test-prereq test-img
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -405,7 +405,7 @@ else
 endif
 
 test-sysbox-shiftuid-ci: ## Run sysbox integration tests with uid-shifting (shiftfs) (continuous integration)
-test-sysbox-shiftuid-ci: test-img test-fs test-mgr
+test-sysbox-shiftuid-ci: test-prereq test-img test-fs test-mgr
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -417,7 +417,7 @@ else
 endif
 
 test-sysbox-shiftuid-systemd: ## Run sysbox integration tests with uid-shifting (shiftfs) and systemd
-test-sysbox-shiftuid-systemd: test-img-systemd
+test-sysbox-shiftuid-systemd: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -430,7 +430,7 @@ else
 endif
 
 test-sysbox-shiftuid-installer: ## Run sysbox integration tests in a test with uid-shifting (shiftfs), systemd, and the sysbox installer
-test-sysbox-shiftuid-installer: test-img-systemd
+test-sysbox-shiftuid-installer: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -446,35 +446,35 @@ else
 endif
 
 test-runc: ## Run sysbox-runc unit & integration tests
-test-runc: sysbox
+test-runc: test-prereq sysbox
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
 	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
 
 test-fs: ## Run sysbox-fs unit tests
-test-fs: sysbox
+test-fs: test-prereq sysbox
 	@printf "\n** Running sysbox-fs unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-fs-local"
 
 test-mgr: ## Run sysbox-mgr unit tests
-test-mgr: test-img
+test-mgr: test-prereq test-img
 	@printf "\n** Running sysbox-mgr unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
 
 test-shell: ## Get a shell in the test container (useful for debug)
-test-shell: test-img
+test-shell: test-prereq test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		testContainerInit && /bin/bash"
 
-test-shell-debug: test-img
+test-shell-debug: test-prereq test-img
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
 		export DEBUG_ON=true && testContainerInit && /bin/bash"
 
 test-shell-systemd: ## Get a shell in the test container that includes systemd (useful for debug)
-test-shell-systemd: test-img-systemd
+test-shell-systemd: test-prereq test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU))
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_SYSTEMD)
@@ -493,7 +493,7 @@ test-shell-systemd-debug: test-img-systemd
 	$(DOCKER_STOP)
 
 test-shell-installer: ## Get a shell in the test container that includes systemd and the sysbox installer (useful for debug)
-test-shell-installer: test-img-systemd
+test-shell-installer: test-prereq test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME))
@@ -504,7 +504,7 @@ test-shell-installer: test-img-systemd
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
 
-test-shell-installer-debug: test-img-systemd
+test-shell-installer-debug: test-prereq test-img-systemd
 	$(eval DOCKER_ENV := -e PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) \
 		-e SB_INSTALLER=true -e SB_PACKAGE=$(PACKAGE) \
 		-e SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) \
@@ -517,7 +517,7 @@ test-shell-installer-debug: test-img-systemd
 	$(DOCKER_STOP)
 
 test-shell-shiftuid: ## Get a shell in the test container with uid-shifting
-test-shell-shiftuid: test-img
+test-shell-shiftuid: test-prereq test-img
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -527,7 +527,7 @@ else
 		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
 endif
 
-test-shell-shiftuid-debug: test-img
+test-shell-shiftuid-debug: test-prereq test-img
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -538,7 +538,7 @@ else
 endif
 
 test-shell-shiftuid-systemd: ## Get a shell in the test container that includes shiftfs & systemd (useful for debug)
-test-shell-shiftuid-systemd: test-img-systemd
+test-shell-shiftuid-systemd: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -551,7 +551,7 @@ else
 	$(DOCKER_STOP)
 endif
 
-test-shell-shiftuid-systemd-debug: test-img-systemd
+test-shell-shiftuid-systemd-debug: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -565,7 +565,7 @@ else
 endif
 
 test-shell-shiftuid-installer: ## Get a shell in the test container that includes shiftfs, systemd and the sysbox installer (useful for debug)
-test-shell-shiftuid-installer: test-img-systemd
+test-shell-shiftuid-installer: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -580,7 +580,7 @@ else
 	$(DOCKER_STOP)
 endif
 
-test-shell-shiftuid-installer-debug: test-img-systemd
+test-shell-shiftuid-installer-debug: test-prereq test-img-systemd
 ifeq ($(HOST_SUPPORTS_UID_SHIFT), )
 	@printf "\n** No shiftfs module found. Skipping $@ target. **\n\n"
 else
@@ -594,6 +594,12 @@ else
 	docker exec $(DOCKER_ENV) sysbox-test testContainerInit
 	docker exec -it $(DOCKER_ENV) sysbox-test /bin/bash
 	$(DOCKER_STOP)
+endif
+
+test-prereq:
+ifneq ($(SYS_ARCH),$(TARGET_ARCH))
+	@printf "\n\n*** Test execution targets are not allowed in cross-compilation setups: sys-arch \"$(SYS_ARCH)\", target-arch \"$(TARGET_ARCH)\" ***\n\n"
+	@exit 1
 endif
 
 test-img: ## Build test container image
