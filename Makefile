@@ -121,8 +121,8 @@ else
 endif
 
 TEST_DIR := $(CURDIR)/tests
-TEST_IMAGE := sysbox-test
-TEST_IMAGE_FLATCAR := sysbox-test-flatcar
+TEST_IMAGE := sysbox-test-$(TARGET_ARCH)
+TEST_IMAGE_FLATCAR := sysbox-test-flatcar-$(TARGET_ARCH):$(FLATCAR_VERSION)
 
 TEST_SYSTEMD_IMAGE := sysbox-systemd-test
 TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
