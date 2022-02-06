@@ -16,6 +16,7 @@ TEST_MODE=0
 DEBUG_MODE=0
 NO_SHIFTFS=0
 NO_IDMAPPED_MOUNT=0
+NO_ROOTFS_CLONING=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
@@ -211,6 +212,10 @@ function sysbox_mgr_start() {
 		mgr_options+=("--disable-idmapped-mount")
 	fi
 
+	if [ $NO_ROOTFS_CLONING -eq 1 ]; then
+		mgr_options+=("--disable-rootfs-cloning")
+	fi
+
 	sysbox-mgr ${mgr_options[@]} &
 	sleep 1
 	res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
@@ -268,12 +273,13 @@ function show_usage() {
 	printf "  -d, --debug              Enables debug logging in Sysbox (useful for debugging).\n"
 	printf "      --no-shiftfs         Disables Sysbox's use of shiftfs.\n"
 	printf "      --no-idmapped-mount  Disables Sysbox's use of ID-mapped mounts.\n"
+	printf "      --no-rootfs-cloning  Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time.\n"
 	printf "  -h, --help               Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,no-shiftfs,no-idmapped-mount,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,no-shiftfs,no-idmapped-mount,no-rootfs-cloning,help -- "$@")
 
 	eval set -- "$options"
 
@@ -294,6 +300,9 @@ function parse_args() {
 				;;
 			--no-idmapped-mount)
 				NO_IDMAPPED_MOUNT=1
+				;;
+			--no-rootfs-cloning)
+				NO_ROOTFS_CLONING=1
 				;;
 			--)
 				shift
