@@ -27,7 +27,7 @@
 export SHELL=bash
 
 ifeq ($(HOSTNAME),)
-export HOSTNAME=$(shell hostname)
+	export HOSTNAME=$(shell hostname)
 endif
 
 export VERSION := $(shell cat ./VERSION)
@@ -36,24 +36,38 @@ export PACKAGE := sysbox-ce
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
-# Obtain architecture
+# Obtain system architecture
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
-	ARCH := amd64
+	SYS_ARCH := amd64
 else ifeq ($(UNAME_M),aarch64)
-	ARCH := arm64
+	SYS_ARCH := arm64
 else ifeq ($(UNAME_M),arm)
-	ARCH := armhf
+	SYS_ARCH := armhf
 else ifeq ($(UNAME_M),armel)
-	ARCH := armel
+	SYS_ARCH := armel
 endif
 
+$(info $$SYS_ARCH is $(SYS_ARCH))
+$(info $$TARGET_ARCH is $(TARGET_ARCH))
+
+# Set target architecture
+ifeq ($(TARGET_ARCH),)
+	TARGET_ARCH := $(SYS_ARCH)
+endif
+
+$(info $$SYS_ARCH is ${SYS_ARCH})
+$(info $$TARGET_ARCH is ${TARGET_ARCH})
+
+export SYS_ARCH
+export TARGET_ARCH
+
 # Compute the target triple
-ifeq ($(ARCH),armel)
+ifeq ($(TARGET_ARCH),armel)
 	HOST_TRIPLE := arm-linux-gnueabi
-else ifeq ($(ARCH),armhf)
+else ifeq ($(TARGET_ARCH),armhf)
 	HOST_TRIPLE := arm-linux-gnueabihf
-else ifeq ($(ARCH),arm64)
+else ifeq ($(TARGET_ARCH),arm64)
 	HOST_TRIPLE := aarch64-linux-gnu
 else
 	HOST_TRIPLE := x86_64-linux-gnu
@@ -180,7 +194,8 @@ help:
 DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			--hostname sysbox-build                       \
 			--name sysbox-build                           \
-			-e ARCH=$(ARCH)                               \
+			-e SYS_ARCH=$(SYS_ARCH)                       \
+			-e TARGET_ARCH=$(TARGET_ARCH)                 \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
@@ -221,41 +236,41 @@ sysbox-static: test-img
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-static-local"
 
 sysbox-local: sysbox-runc sysbox-fs sysbox-mgr
-	@echo $(HOSTNAME)-$(ARCH) > .buildinfo
+	@echo $(HOSTNAME)-$(TARGET_ARCH) > .buildinfo
 
 sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
 
 sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
+	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
 
 sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
+	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
 
 sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) static
+	@cd $(SYSRUNC_DIR) && make static
 
 sysbox-fs: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make ARCH=$(ARCH)
+	@cd $(SYSFS_DIR) && make
 
 sysbox-fs-debug: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make ARCH=$(ARCH) sysbox-fs-debug
+	@cd $(SYSFS_DIR) && make sysbox-fs-debug
 
 sysbox-fs-static: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSFS_DIR) && make ARCH=$(ARCH) sysbox-fs-static
+	@cd $(SYSFS_DIR) && make sysbox-fs-static
 
 sysbox-mgr: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH)
+	@cd $(SYSMGR_DIR) && make
 
 sysbox-mgr-debug: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH) sysbox-mgr-debug
+	@cd $(SYSMGR_DIR) && make sysbox-mgr-debug
 
 sysbox-mgr-static: sysbox-ipc
-	@cd $(SYSMGR_DIR) && make ARCH=$(ARCH) sysbox-mgr-static
+	@cd $(SYSMGR_DIR) && make sysbox-mgr-static
 
 sysbox-ipc:
-	@cd $(SYSIPC_DIR) && make ARCH=$(ARCH) sysbox-ipc
+	@cd $(SYSIPC_DIR) && make sysbox-ipc
 
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@echo "Building libseccomp ..."
@@ -270,9 +285,9 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 ##@ Installation targets
 
 install: ## Install all sysbox binaries (requires root privileges)
-	install -D -m0755 sysbox-fs/build/$(ARCH)/sysbox-fs $(INSTALL_DIR)/sysbox-fs
-	install -D -m0755 sysbox-mgr/build/$(ARCH)/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
-	install -D -m0755 sysbox-runc/build/$(ARCH)/sysbox-runc $(INSTALL_DIR)/sysbox-runc
+	install -D -m0755 sysbox-fs/build/$(TARGET_ARCH)/sysbox-fs $(INSTALL_DIR)/sysbox-fs
+	install -D -m0755 sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
+	install -D -m0755 sysbox-runc/build/$(TARGET_ARCH)/sysbox-runc $(INSTALL_DIR)/sysbox-runc
 	install -D -m0755 scr/sysbox $(INSTALL_DIR)/sysbox
 
 uninstall: ## Uninstall all sysbox binaries (requires root privileges)
@@ -509,7 +524,7 @@ else
 	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
 	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		make sysbox-runc-recvtty && \
-		export ARCH=$(ARCH) SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
+		export SHIFT_ROOTFS_UIDS=true && testContainerInit && /bin/bash"
 endif
 
 test-shell-shiftuid-debug: test-img
@@ -584,20 +599,22 @@ endif
 test-img: ## Build test container image
 test-img:
 	@printf "\n** Building the test container **\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) --build-arg arch=$(ARCH) \
+	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE) \
+		--build-arg sys_arch=$(SYS_ARCH) --build-arg target_arch=$(TARGET_ARCH) \
 		-f Dockerfile.$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE) .
 
 test-img-systemd: ## Build test container image that includes systemd
 test-img-systemd: test-img
 	@printf "\n** Building the test container image (includes systemd) **\n\n"
-	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) --build-arg arch=$(ARCH) \
+	@cd $(TEST_DIR) && docker build -t $(TEST_SYSTEMD_IMAGE) \
+		--build-arg sys_arch=$(SYS_ARCH) --build-arg target_arch=$(TARGET_ARCH) \
 		-f $(TEST_SYSTEMD_DOCKERFILE) .
 
 test-img-flatcar: ## Build test container image for Flatcar
 test-img-flatcar:
 	@printf "\n** Building the test container for Flatcar **\n\n"
 	@cd $(TEST_DIR) && docker build -t $(TEST_IMAGE_FLATCAR) \
-		--build-arg arch=$(ARCH) \
+		--build-arg arch=$(SYS_ARCH) --build-arg target_arch=$(TARGET_ARCH) \
 		--build-arg FLATCAR_VERSION=$(FLATCAR_VERSION) \
 		-f Dockerfile.flatcar .
 
@@ -636,15 +653,15 @@ test-mgr-local: sysbox-ipc
 
 sysbox-in-docker: ## Build sysbox-in-docker sandbox image
 sysbox-in-docker: sysbox
-	@cp -f sysbox-mgr/build/$(ARCH)/sysbox-mgr sysbox-in-docker/
-	@cp -f sysbox-runc/build/$(ARCH)/sysbox-runc sysbox-in-docker/
-	@cp -f sysbox-fs/build/$(ARCH)/sysbox-fs sysbox-in-docker/
+	@cp -f sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr sysbox-in-docker/
+	@cp -f sysbox-runc/build/$(TARGET_ARCH)/sysbox-runc sysbox-in-docker/
+	@cp -f sysbox-fs/build/$(TARGET_ARCH)/sysbox-fs sysbox-in-docker/
 	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
 
 sysbox-in-docker-local: sysbox-local
-	@cp sysbox-mgr/build/$(ARCH)/sysbox-mgr sysbox-in-docker/
-	@cp sysbox-runc/build/$(ARCH)/sysbox-runc sysbox-in-docker/
-	@cp sysbox-fs/build/$(ARCH)/sysbox-fs sysbox-in-docker/
+	@cp sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr sysbox-in-docker/
+	@cp sysbox-runc/build/$(TAGET_ARCH)/sysbox-runc sysbox-in-docker/
+	@cp sysbox-fs/build/$(TAGET_ARCH)/sysbox-fs sysbox-in-docker/
 	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
 
 test-sind: ## Run the sysbox-in-docker integration tests
@@ -712,11 +729,11 @@ listMgrPkgs:
 
 clean: ## Eliminate sysbox binaries
 clean: clean-libseccomp
-	cd $(SYSRUNC_DIR) && make ARCH=$(ARCH) clean
-	cd $(SYSFS_DIR) && make ARCH=$(ARCH) clean
-	cd $(SYSMGR_DIR) && make ARCH=$(ARCH) clean
-	cd $(SYSIPC_DIR) && make ARCH=$(ARCH) clean
-	rm -rf ./build/$(ARCH)
+	cd $(SYSRUNC_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
+	cd $(SYSFS_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
+	cd $(SYSMGR_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
+	cd $(SYSIPC_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
+	rm -rf ./build/$(TARGET_ARCH)
 
 
 distclean: ## Eliminate all sysbox binaries
