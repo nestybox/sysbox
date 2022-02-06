@@ -36,7 +36,7 @@ export PACKAGE := sysbox-ce
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
-# Obtain system architecture
+# Obtain the current system architecture.
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
 	SYS_ARCH := amd64
@@ -48,21 +48,12 @@ else ifeq ($(UNAME_M),armel)
 	SYS_ARCH := armel
 endif
 
-$(info $$SYS_ARCH is $(SYS_ARCH))
-$(info $$TARGET_ARCH is $(TARGET_ARCH))
-
 # Set target architecture if not explicitly defined by user.
 ifeq ($(TARGET_ARCH),)
 	TARGET_ARCH := $(SYS_ARCH)
 endif
 
-$(info $$SYS_ARCH is ${SYS_ARCH})
-$(info $$TARGET_ARCH is ${TARGET_ARCH})
-
-export SYS_ARCH
-export TARGET_ARCH
-
-# Compute the target triple
+# Compute the target triple.
 ifeq ($(TARGET_ARCH),armel)
 	HOST_TRIPLE := arm-linux-gnueabi
 else ifeq ($(TARGET_ARCH),armhf)
@@ -73,6 +64,9 @@ else
 	HOST_TRIPLE := x86_64-linux-gnu
 endif
 
+export SYS_ARCH
+export TARGET_ARCH
+export HOST_TRIPPLE
 
 # Source-code paths of the sysbox binary targets.
 SYSRUNC_DIR     := sysbox-runc
@@ -214,24 +208,24 @@ DOCKER_SYSBOX_BLD_FLATCAR := docker run --privileged --rm --runtime=runc      \
 
 sysbox: ## Build sysbox (the build occurs inside a container, so the host is not polluted)
 sysbox: test-img
-	@printf "\n** Building sysbox **\n\n"
+	@printf "\n** Building sysbox (target-arch: $(TARGET_ARCH)) **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-local"
 
 sysbox-flatcar: test-img-flatcar
-	@printf "\n** Building sysbox for Kinvolk's Flatcar OS**\n\n"
+	@printf "\n** Building sysbox for Kinvolk's Flatcar OS (target-arch: $(TARGET_ARCH)) **\n\n"
 	$(DOCKER_SYSBOX_BLD_FLATCAR) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-local"
 
 sysbox-debug: ## Build sysbox (with debug symbols)
 sysbox-debug: test-img
-	@printf "\n** Building sysbox **\n\n"
+	@printf "\n** Building sysbox with debuging on (target-arch: $(TARGET_ARCH)) **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-debug-local"
 
 sysbox-static: ## Build sysbox (static linking)
 sysbox-static: test-img
-	@printf "\n** Building sysbox **\n\n"
+	@printf "\n** Building sysbox statically (target-arch: $(TARGET_ARCH)) **\n\n"
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-static-local"
 
