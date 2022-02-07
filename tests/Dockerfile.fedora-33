@@ -24,7 +24,10 @@ FROM fedora:33
 ARG k8s_version=v1.20.2
 
 # Desired platform architecture to build upon.
-ARG arch
+ARG sys_arch
+ENV SYS_ARCH=${sys_arch}
+ARG target_arch
+ENV TARGET_ARCH=${target_arch}
 
 RUN dnf update -y && dnf install -y \
     acl \
@@ -87,8 +90,8 @@ RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
     aarch64-linux-gnu-binutils
 
 # Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://golang.org/dl/go1.16.4.linux-${arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.16.4.linux-${arch}.tar.gz && \
+RUN wget https://golang.org/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.16.4.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
@@ -110,9 +113,9 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
-    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
-    else echo "Unsupported platform: ${arch}"; exit; fi \
+RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$sys_arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${sys_arch}"; exit; fi \
     && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
     && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
     && export PATH="$PATH:$HOME/.local/bin" \
@@ -122,7 +125,7 @@ RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
 # Install Kubectl for K8s integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in K8s (L2) nodes.
-RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${arch}/kubectl \
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${sys_arch}/kubectl \
     && install -o root -g root -m 0755 kubectl /usr/bin/kubectl
 
 # install Docker (used by most sysbox tests to launch sys containers)
@@ -156,7 +159,7 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY scr/buildContainerInit /usr/bin
 COPY scr/sindTestContainerInit /usr/bin
-COPY bin/userns_child_exec_${arch} /usr/bin
+COPY bin/userns_child_exec_${sys_arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
