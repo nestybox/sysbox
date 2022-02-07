@@ -98,6 +98,40 @@ function teardown() {
   rm -r ${testDir}
 }
 
+@test "docker mount host socket" {
+
+  # launch a sys container with a mount of the host docker socket; this should
+  # work fine with idmapped-mounts, but (unfortunately) won't work with shiftfs
+  # (see Sysbox issue #404).
+
+  if ! sysbox_using_idmapped_mnt; then
+	  skip "Requires Sysbox idmapped mount support"
+  fi
+
+  # start the container
+  docker_run --rm --name syscont -v /var/run/docker.sock:/var/run/docker.sock ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null
+
+  # verify the socket has an idmapped mount on it and ownership inside container looks good
+  docker exec syscont sh -c "mount | grep 'docker.sock' | grep idmapped"
+  [ "$status" -eq 0 ]
+
+  docker exec syscont sh -c "stat -c %u /var/run/docker.sock"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec syscont sh -c "stat -c %g /var/run/docker.sock"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 999 ]
+
+  # verify the docker inside the container can access the mounted socket; it
+  # should see the container itself.
+  docker exec syscont sh -c "docker ps | grep syscont"
+  [ "$status" -eq 0 ]
+
+  # cleanup
+  docker_stop syscont
+}
+
 @test "docker bind mount skip uid-shift" {
 
   if ! sysbox_using_uid_shifting; then
