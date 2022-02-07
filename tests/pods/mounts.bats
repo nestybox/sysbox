@@ -106,7 +106,7 @@ function teardown() {
 	[ $gid -eq 0 ]
 
 	# Verify the pod's volume is uid-shifted
-	if sysbox_using_shiftfs; then
+	if sysbox_using_shiftfs_only; then
 		run crictl exec $syscont sh -c "grep $ctr_path /proc/self/mountinfo | grep shiftfs"
 		[ "$status" -eq 0 ]
 	elif sysbox_using_idmapped_mnt; then

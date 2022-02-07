@@ -7,7 +7,7 @@ load ../helpers/run
 #
 
 function kernel_supports_shiftfs() {
-	modprobe shiftfs >/dev/null 2>&1 && lsmod | grep shiftfs
+	modprobe shiftfs >/dev/null 2>&1 && lsmod | grep -q shiftfs
 }
 
 function kernel_supports_idmapped_mnt() {
@@ -27,6 +27,14 @@ function sysbox_idmapped_mnt_enabled {
 	ps -fu | grep "$(pidof sysbox-mgr)" | grep -qv "disable-idmapped-mount"
 }
 
+function sysbox_shiftfs_disabled {
+	ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-shiftfs"
+}
+
+function sysbox_shiftfs_enabled {
+	ps -fu | grep "$(pidof sysbox-mgr)" | grep -qv "disable-shiftfs"
+}
+
 function sysbox_using_idmapped_mnt() {
 	if kernel_supports_idmapped_mnt && sysbox_idmapped_mnt_enabled; then
 		return 0
@@ -36,7 +44,7 @@ function sysbox_using_idmapped_mnt() {
 }
 
 function sysbox_using_shiftfs() {
-	if kernel_supports_shiftfs && sysbox_idmapped_mnt_disabled; then
+	if kernel_supports_shiftfs && sysbox_shiftfs_enabled; then
 		return 0
 	else
 		return 1
@@ -45,6 +53,30 @@ function sysbox_using_shiftfs() {
 
 function sysbox_using_uid_shifting() {
 	if sysbox_using_idmapped_mnt || sysbox_using_shiftfs; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function sysbox_using_all_uid_shifting() {
+	if sysbox_using_idmapped_mnt && sysbox_using_shiftfs; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function sysbox_using_idmapped_mnt_only() {
+	if sysbox_using_idmapped_mnt && ! sysbox_using_shiftfs; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function sysbox_using_shiftfs_only() {
+	if ! sysbox_using_idmapped_mnt && sysbox_using_shiftfs; then
 		return 0
 	else
 		return 1

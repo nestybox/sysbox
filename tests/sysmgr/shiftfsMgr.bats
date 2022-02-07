@@ -10,8 +10,8 @@ load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function setup() {
-  if ! sysbox_using_shiftfs; then
-    skip "requires shiftfs"
+  if ! sysbox_using_shiftfs_only; then
+    skip "requires only shiftfs"
   fi
 }
 
