@@ -30,9 +30,11 @@ function teardown() {
   # otherwise sysbox must mount shiftfs over the volume.
   if docker_userns_remap; then
     [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
-  elif sysbox_using_shiftfs; then
+  elif sysbox_using_shiftfs_only; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
-  elif sysbox_using_idmapped_mnt; then
+  elif sysbox_using_idmapped_mnt_only; then
+    [[ "$output" =~ "idmapped" ]]
+  elif sysbox_using_all_uid_shifting; then
     [[ "$output" =~ "idmapped" ]]
   else
 	 [[ "$output" =~ "/dev".+"on /mnt/testVol" ]]
@@ -71,9 +73,11 @@ function teardown() {
   docker exec "$syscont" sh -c "mount | grep testVol"
   [ "$status" -eq 0 ]
 
-  if sysbox_using_shiftfs; then
+  if sysbox_using_shiftfs_only; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /mnt/testVol type shiftfs" ]]
-  elif sysbox_using_idmapped_mnt; then
+  elif sysbox_using_idmapped_mnt_only; then
+    [[ "$output" =~ "idmapped" ]]
+  elif sysbox_using_all_uid_shifting; then
     [[ "$output" =~ "idmapped" ]]
   else
     # overlay because we are running in the test container
@@ -148,11 +152,49 @@ function teardown() {
   docker exec "$syscont" sh -c "mount | grep testfile"
   [ "$status" -eq 0 ]
 
-  if sysbox_using_shiftfs; then
+  if sysbox_using_shiftfs_only; then
     [[ "$output" =~ "shiftfs" ]]
   elif sysbox_using_idmapped_mnt; then
     [[ "$output" =~ "idmapped" ]]
   fi
+
+  docker exec "$syscont" sh -c "stat -c %u /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec "$syscont" sh -c "stat -c %g /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  # verify the container can read and write the file
+  docker exec "$syscont" sh -c "echo data > /mnt/testfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "cat /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  # cleanup
+  docker_stop "$syscont"
+  rm -rf /mnt/scratch/testfile
+}
+
+@test "idmapped mount precedence over shiftfs" {
+
+  if ! sysbox_using_all_uid_shifting; then
+	  skip "Requires shiftfs and idmapped mounts."
+  fi
+
+  rm -rf /mnt/scratch/testfile
+  touch /mnt/scratch/testfile
+
+  # start the container
+  local syscont=$(docker_run --rm -v /mnt/scratch/testfile:/mnt/testfile ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  # verify file was mounted with idmapped-mount (has precedence over shiftfs)
+  docker exec "$syscont" sh -c "mount | grep testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "idmapped" ]]
 
   docker exec "$syscont" sh -c "stat -c %u /mnt/testfile"
   [ "$status" -eq 0 ]
@@ -589,7 +631,7 @@ function teardown() {
 
 @test "bind mount above container rootfs" {
 
-	if ! sysbox_using_shiftfs; then
+	if ! sysbox_using_shiftfs_only; then
 		skip "Fails without shiftfs"
 	fi
 

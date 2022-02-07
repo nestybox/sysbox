@@ -19,7 +19,7 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if sysbox_using_shiftfs; then
+  if sysbox_using_shiftfs_only; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   elif sysbox_using_idmapped_mnt; then
     [[ "$output" =~ "idmapped" ]]
@@ -44,7 +44,7 @@ load ../helpers/sysbox-health
   docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
 
-  if sysbox_using_shiftfs; then
+  if sysbox_using_shiftfs_only; then
     [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"on /lib/modules/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
   elif sysbox_using_idmapped_mnt; then
     [[ "$output" =~ "idmapped" ]]
@@ -75,7 +75,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs; then
+		if sysbox_using_shiftfs_only; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
@@ -92,7 +92,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs; then
+		if sysbox_using_shiftfs_only; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
@@ -127,7 +127,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs; then
+		if sysbox_using_shiftfs_only; then
         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
@@ -145,7 +145,7 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
       [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs; then
+		if sysbox_using_shiftfs_only; then
          [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
