@@ -98,7 +98,7 @@ function teardown() {
   rm -r ${testDir}
 }
 
-@test "docker mount host socket" {
+@test "docker host socket mount" {
 
   # launch a sys container with a mount of the host docker socket; this should
   # work fine with idmapped-mounts, but (unfortunately) won't work with shiftfs
@@ -130,6 +130,49 @@ function teardown() {
 
   # cleanup
   docker_stop syscont
+}
+
+@test "docker single-file mount" {
+
+  if ! sysbox_using_uid_shifting; then
+	  skip "Requires Sysbox uid shifting support"
+  fi
+
+  rm -rf /mnt/scratch/testfile
+  touch /mnt/scratch/testfile
+
+  # start the container
+  local syscont=$(docker_run --rm -v /mnt/scratch/testfile:/mnt/testfile ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  # verify file was mounted with shiftfs or idmapped-mount, and has proper permissions
+  docker exec "$syscont" sh -c "mount | grep testfile"
+  [ "$status" -eq 0 ]
+
+  if sysbox_using_shiftfs; then
+    [[ "$output" =~ "shiftfs" ]]
+  elif sysbox_using_idmapped_mnt; then
+    [[ "$output" =~ "idmapped" ]]
+  fi
+
+  docker exec "$syscont" sh -c "stat -c %u /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec "$syscont" sh -c "stat -c %g /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  # verify the container can read and write the file
+  docker exec "$syscont" sh -c "echo data > /mnt/testfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "cat /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  # cleanup
+  docker_stop "$syscont"
+  rm -rf /mnt/scratch/testfile
 }
 
 @test "docker bind mount skip uid-shift" {
