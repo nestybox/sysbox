@@ -26,7 +26,10 @@ FROM ubuntu:bionic
 ARG k8s_version=v1.20.2
 
 # Desired platform architecture to build upon.
-ARG arch
+ARG sys_arch
+ENV SYS_ARCH=${sys_arch}
+ARG target_arch
+ENV TARGET_ARCH=${target_arch}
 
 # CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
 # introduces rootless pod support (via the Linux user-ns)
@@ -39,6 +42,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     acl \
     build-essential \
+    gcc-x86-64-linux-gnu \
+    libc6-dev-amd64-cross \
+    linux-libc-dev-amd64-cross \
     gcc-aarch64-linux-gnu \
     libc6-dev-arm64-cross \
     linux-libc-dev-arm64-cross \
@@ -99,8 +105,8 @@ RUN apt-get update && apt-get install -y \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 # Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://golang.org/dl/go1.16.4.linux-${arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.16.4.linux-${arch}.tar.gz && \
+RUN wget https://golang.org/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.16.4.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
@@ -122,9 +128,9 @@ RUN cd /tmp \
     && rm -rf /tmp/bats
 
 # install protoc compiler for gRPC
-RUN if [ "$arch" = "amd64" ] ; then arch_str="x86_64"; \
-    elif [ "$arch" = "arm64" ]; then arch_str="aarch_64"; \
-    else echo "Unsupported platform: ${arch}"; exit; fi \
+RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$sys_arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${sys_arch}"; exit; fi \
     && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
     && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
     && export PATH="$PATH:$HOME/.local/bin" \
@@ -148,7 +154,7 @@ RUN apt-get update && apt-get install -y shellcheck
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
     && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
     && apt-get update \
-    && apt-get install kubectl:${arch}="${k8s_version#v}"-00 \
+    && apt-get install kubectl:${sys_arch}="${k8s_version#v}"-00 \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
@@ -157,10 +163,10 @@ RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontai
     && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
     && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | apt-key add - \
     && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | apt-key add - \
-    && apt-get update && apt-get install -y --no-install-recommends conntrack:${arch} cri-o:${arch} cri-o-runc:${arch} \
-    && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${arch}.tar.gz \
-    && sudo tar zxvf crictl-${crictl_version}-linux-${arch}.tar.gz -C /usr/local/bin \
-    && rm -f crictl-${crictl_version}-linux-${arch}.tar.gz
+    && apt-get update && apt-get install -y --no-install-recommends conntrack:${sys_arch} cri-o:${sys_arch} cri-o-runc:${sys_arch} \
+    && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${sys_arch}.tar.gz \
+    && sudo tar zxvf crictl-${crictl_version}-linux-${sys_arch}.tar.gz -C /usr/local/bin \
+    && rm -f crictl-${crictl_version}-linux-${sys_arch}.tar.gz
 
 # Container CNIs (needed by CRI-O)
 RUN cd /root \
@@ -172,7 +178,7 @@ RUN cd /root \
     && cp bin/* /opt/cni/bin/
 
 # Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
-RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${arch} dasel && chmod +x dasel \
+RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${sys_arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${sys_arch} dasel && chmod +x dasel \
     && mv ./dasel /usr/local/bin/dasel
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
@@ -195,7 +201,7 @@ COPY scr/testContainerInit /usr/bin
 COPY scr/testContainerCleanup /usr/bin
 COPY scr/buildContainerInit /usr/bin
 COPY scr/sindTestContainerInit /usr/bin
-COPY bin/userns_child_exec_${arch} /usr/bin
+COPY bin/userns_child_exec_${sys_arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
