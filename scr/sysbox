@@ -269,17 +269,17 @@ function show_usage() {
 	printf "Useful when building Sysbox from source and for testing. Must run as root.\n"
 	printf "\n"
 	printf "Options:\n"
-	printf "  -t, --test-mode          Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
-	printf "  -d, --debug              Enables debug logging in Sysbox (useful for debugging).\n"
-	printf "      --no-shiftfs         Disables Sysbox's use of shiftfs.\n"
-	printf "      --no-idmapped-mount  Disables Sysbox's use of ID-mapped mounts.\n"
-	printf "      --no-rootfs-cloning  Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time.\n"
-	printf "  -h, --help               Display usage.\n"
+	printf "  -t, --test-mode               Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
+	printf "  -d, --debug                   Enables debug logging in Sysbox (useful for debugging).\n"
+	printf "      --disable-shiftfs         Disables Sysbox's use of shiftfs.\n"
+	printf "      --disable-idmapped-mount  Disables Sysbox's use of ID-mapped mounts.\n"
+	printf "      --disable-rootfs-cloning  Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time.\n"
+	printf "  -h, --help                    Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,no-shiftfs,no-idmapped-mount,no-rootfs-cloning,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-rootfs-cloning,help -- "$@")
 
 	eval set -- "$options"
 
@@ -295,13 +295,13 @@ function parse_args() {
 			-d | --debug)
 				DEBUG_MODE=1
 				;;
-			--no-shiftfs)
+			--disable-shiftfs)
 				NO_SHIFTFS=1
 				;;
-			--no-idmapped-mount)
+			--disable-idmapped-mount)
 				NO_IDMAPPED_MOUNT=1
 				;;
-			--no-rootfs-cloning)
+			--disable-rootfs-cloning)
 				NO_ROOTFS_CLONING=1
 				;;
 			--)
