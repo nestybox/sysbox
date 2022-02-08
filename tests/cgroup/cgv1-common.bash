@@ -286,8 +286,12 @@ function test_cgroup_perm() {
 	#
 	# Verify /sys/fs/cgroup permissions look good inside the container
 	#
+	# Note: sysbox does not yet support the rdma and misc cgroup controllers, so
+	# don't check permissions on those (they show up as nobody:nogroup inside the
+	# container).
+	#
 
-	docker exec "$syscont" sh -c "ls -lL /sys/fs/cgroup | grep -v rdma | tail -n +2"
+	docker exec "$syscont" sh -c "ls -lL /sys/fs/cgroup | grep -v rdma | grep -v misc | tail -n +2"
 	[ "$status" -eq 0 ]
 
 	for file in "${lines[@]}"; do
