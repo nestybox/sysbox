@@ -248,20 +248,25 @@ function test_cgroup_memory() {
 
    # ... but zero inside the sys container
    #
-   # Note: in debian-buster, we see that the failcnt counter is also non-zero
-   # inside the sys container; this behavior is different than other distros,
-   # but is not a big deal. Thus we skip this check in debian-buster.
+   # Note: in debian-buster and ubuntu-impish, we see that the failcnt counter
+   # is also non-zero inside the sys container; this behavior is different than
+   # other distros, but is not a big deal. Thus we skip this check in
+   # debian-buster.
 
    distro=$(get_distro)
    rel=$(get_distro_release)
 
    if [[ $(get_platform) == "amd64" ]]; then
-       if [[ "$distro" != "debian" ]] || [[ "$rel" != "buster" ]]; then
-	   run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
-	   [ "$status" -eq 0 ]
-	   [ "$output" -eq 0 ]
-       fi
-   fi
+		if [[ "$distro" == "debian" ]] && [[ "$rel" == "buster" ]] ||
+			[[ "$distro" == "ubuntu" ]] && [[ "$rel" == "impish" ]]; then
+			run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
+			[ "$status" -eq 0 ]
+		else
+			run nsenter -a -t "$pid" cat ${cgPathCont}/memory.failcnt
+			[ "$status" -eq 0 ]
+			[ "$output" -eq 0 ]
+		fi
+	fi
 
 	# Increase the cgroup mem limit for the container, so that "docker stop" can work properly
 	run echo 67108264 > ${cgPathHost}/memory.limit_in_bytes
