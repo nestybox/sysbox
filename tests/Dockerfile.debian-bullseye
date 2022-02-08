@@ -21,8 +21,6 @@
 
 FROM debian:bullseye
 
-ARG k8s_version=v1.20.2
-
 # Desired platform architecture to build upon.
 ARG sys_arch
 ENV SYS_ARCH=${sys_arch}
@@ -30,6 +28,14 @@ ARG target_arch
 ENV TARGET_ARCH=${target_arch}
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+ARG k8s_version=v1.20.2
+
+# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
+# introduces rootless pod support (via the Linux user-ns)
+ARG crio_version=1.20
+ARG crio_os=xUbuntu_20.04
+ARG crictl_version=v1.20.0
 
 RUN apt-get update && apt-get install -y \
     acl \
