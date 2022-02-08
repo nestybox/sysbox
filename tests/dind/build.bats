@@ -16,7 +16,7 @@ function teardown() {
 
 @test "build with inner images" {
 
-  # Needs cgroups v2 because the sys container carries docker 19.03 which does not support cgroups v2.
+  # Needs cgroups v1 because the sys container carries docker 19.03 which does not support cgroups v2.
   if host_is_cgroup_v2; then
 	  skip "requires host in cgroup v1"
   fi
@@ -106,7 +106,7 @@ function teardown() {
 
 @test "commit with inner images" {
 
-  # Needs cgroups v2 because the sys container carries docker 19.03 which does
+  # Needs cgroups v1 because the sys container carries docker 19.03 which does
   # not support cgroups v2.
   if host_is_cgroup_v2; then
 	  skip "requires host in cgroup v1"
