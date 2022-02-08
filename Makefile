@@ -292,7 +292,7 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 #
 
 # For batch targets
-DOCKER_RUN := docker run --privileged --rm --runtime=runc         \
+DOCKER_RUN := docker run --privileged --rm --runtime=runc             \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			-v $(CURDIR):$(PROJECT)                       \
