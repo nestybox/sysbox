@@ -42,7 +42,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     acl \
     build-essential \
-    gcc-x86-64-linux-gnu \
     libc6-dev-amd64-cross \
     linux-libc-dev-amd64-cross \
     gcc-aarch64-linux-gnu \
