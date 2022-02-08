@@ -411,6 +411,8 @@ load ../helpers/sysbox-health
   orig_mnt_src_uid=$(stat -c "%u" $mnt_src)
   orig_mnt_src_gid=$(stat -c "%g" $mnt_src)
 
+  docker rm "$syscont"
+
   # Verify chown-based shifting is applied correctly when container starts
   syscont=$(docker_run -v $mnt_src:$mnt_dst ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
 
@@ -430,6 +432,7 @@ load ../helpers/sysbox-health
   [ "$mnt_src_uid" -eq "$orig_mnt_src_uid" ]
   [ "$mnt_src_gid" -eq "$orig_mnt_src_gid" ]
 
+  docker rm "$syscont"
   rm -rf $mnt_src
 }
 

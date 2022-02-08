@@ -111,6 +111,9 @@ function test_with_idmapped_and_shiftfs() {
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
 	fi
 
+	set_sysbox_shiftfs "enable"
+	set_sysbox_idmapped_mount "enable"
+
 	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
 	run_all_tests
 
@@ -192,6 +195,15 @@ function test_with_docker_userns_remap() {
 	docker-cfg --userns-remap=disable
 }
 
+# These tests reconfigure and restart Sysbox; they must execute after all other
+# tests to prevent the reconfig from affecting the "--disable-idmapped-mount"
+# and "--disable-shiftfs" options used by the other sections of this test
+# script.
+function test_sysbox_config() {
+	printf "\nExecuting sysbox config tests ... \n"
+	bats --tap tests/config
+}
+
 function main() {
 
 	# argument testName is optional; if present, only that test is executed.
@@ -203,6 +215,7 @@ function main() {
 		test_with_idmapped_only
 		test_with_shiftfs_only
 		test_with_docker_userns_remap
+		test_sysbox_config
 	fi
 }
 
