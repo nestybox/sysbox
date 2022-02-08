@@ -26,13 +26,13 @@ function set_sysbox_idmapped_mount() {
 	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
 	if [ -n "$DEBUG_ON" ]; then
 		if [[ "$1" == "disable" ]]; then
-			sysbox -d -t --no-idmapped-mount
+			sysbox -d -t --disable-idmapped-mount
 		else
 			sysbox -d -t
 		fi
 	else
 		if [[ "$1" == "disable" ]]; then
-			sysbox -t --no-idmapped-mount
+			sysbox -t --disable-idmapped-mount
 		else
 			sysbox -t
 		fi
@@ -45,13 +45,13 @@ function set_sysbox_shiftfs() {
 	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
 	if [ -n "$DEBUG_ON" ]; then
 		if [[ "$1" == "disable" ]]; then
-			sysbox -d -t --no-shiftfs
+			sysbox -d -t --disable-shiftfs
 		else
 			sysbox -d -t
 		fi
 	else
 		if [[ "$1" == "disable" ]]; then
-			sysbox -t --no-shiftfs
+			sysbox -t --disable-shiftfs
 		else
 			sysbox -t
 		fi
