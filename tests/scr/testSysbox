@@ -111,9 +111,6 @@ function test_with_idmapped_and_shiftfs() {
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
 	fi
 
-	set_sysbox_shiftfs "enable"
-	set_sysbox_idmapped_mount "enable"
-
 	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
 	run_all_tests
 

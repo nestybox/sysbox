@@ -11,14 +11,14 @@ load ../helpers/docker
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
-function sysbox_rootfs_cloning_disabled {
-	ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-rootfs-cloning"
+function sysbox_rootfs_cloning_disabled() {
+  ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-rootfs-cloning"
 }
 
 function setup() {
-	if sysbox_using_shiftfs || docker_userns_remap || sysbox_rootfs_cloning_disabled; then
-		skip "rootfs cloning not active."
-	fi
+  if sysbox_using_shiftfs || docker_userns_remap || sysbox_rootfs_cloning_disabled; then
+	  skip "rootfs cloning not active"
+  fi
 }
 
 function teardown() {
@@ -29,8 +29,7 @@ function teardown() {
 
   # verify no rootfs clones exist yet (want to start clean)
   run sh -c "ls -l /var/lib/sysbox/rootfs"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "total 0" ]]
+  [ "$status" -ne 0 ] || [[ "$output" == "total 0" ]]
 
   local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
