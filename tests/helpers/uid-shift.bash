@@ -1,7 +1,5 @@
 #!/bin/bash
 
-load ../helpers/run
-
 #
 # Uid shifting helper functions
 #
