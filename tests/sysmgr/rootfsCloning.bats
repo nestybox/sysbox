@@ -27,6 +27,11 @@ function teardown() {
 
 @test "rootfs-clone basic" {
 
+  # verify no rootfs clones exist yet (want to start clean)
+  run sh -c "ls -l /var/lib/sysbox/rootfs"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "total 0" ]]
+
   local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   syscont=$(docker_cont_full_id $syscont)
