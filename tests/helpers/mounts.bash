@@ -8,6 +8,37 @@
 #
 
 . $(dirname ${BASH_SOURCE[0]})/run.bash
+. $(dirname ${BASH_SOURCE[0]})/sysbox-cfg.bash
+
+function allow_immutable_remounts() {
+	local options
+
+	sysbox_get_cmdline_flags "sysbox-fs" options
+
+	for param in "${options[@]}"; do
+		if [[ ${param} == "--allow-immutable-remounts=true" ]] ||
+			[[ ${param} == "--allow-immutable-remounts=\"true\"" ]]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+function allow_immutable_unmounts() {
+	local options
+
+	sysbox_get_cmdline_flags "sysbox-fs" options
+
+	for param in "${options[@]}"; do
+		if [[ ${param} == "--allow-immutable-unmounts=false" ]] ||
+			[[ ${param} == "--allow-immutable-unmounts=\"false\"" ]]; then
+			return 1
+		fi
+	done
+
+	return 0
+}
 
 function is_list_empty() {
   local list=$1
