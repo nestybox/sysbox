@@ -9,8 +9,8 @@ load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/mounts
+load ../../helpers/sysbox
 load ../../helpers/sysbox-health
-
 
 function teardown() {
   sysbox_log_check
@@ -316,7 +316,7 @@ function teardown() {
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} "0" "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
   local target=/root/target
 
   for m in $immutable_rw_mounts; do
@@ -477,8 +477,8 @@ function teardown() {
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} "0" "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
-  
+  [ "$status" -ne 0 ]
+
   local linux_libmod_mount=$(echo $immutable_ro_mounts |  tr ' ' '\n' | grep "lib/modules")
 
   [ -n "$linux_libmod_mount" ]
@@ -599,7 +599,7 @@ function teardown() {
   local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
   local immutable_char_mounts=$(list_container_char_mounts ${syscont} "0" "/")
   run is_list_empty ${immutable_char_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
   local unmounts_allowed

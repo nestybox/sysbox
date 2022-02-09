@@ -2,6 +2,7 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 # Container name.
@@ -73,4 +74,3 @@ function teardown() {
   [ "$status" -eq 0 ]
   [ "$output" = $KERNEL_PANIC_OOPS_DEFAULT_VAL ]
 }
-

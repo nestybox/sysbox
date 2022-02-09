@@ -1,14 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
 #
-# crictl Test Helper Functions
-#
-# Note: for tests using bats.
+# crictl test helper functions
 #
 
 . $(dirname ${BASH_SOURCE[0]})/run.bash
 
 export POD_MANIFEST_DIR=/root/nestybox/sysbox/tests/pods/manifests
+
+# Executes crictl run pod (runp) command with sysbox-runc; returns the pod id
+function crictl_runp() {
+	run crictl runp --runtime=sysbox-runc "$@"
+	[ "$status" -eq 0 ]
+  echo "$output"
+}
+
+# Executes crictl run with sysbox-runc; returns the container id (not the pod id)
+function crictl_run() {
+	run crictl run --timeout=20s --runtime=sysbox-runc "$@"
+	[ "$status" -eq 0 ]
+  echo "$output"
+}
 
 # Given a pod's ID, return the associated host pid (i.e., the pid of the pod's pause container)
 function crictl_pod_get_pid() {

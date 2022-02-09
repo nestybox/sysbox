@@ -4,7 +4,7 @@
 # Volume mount tests for sysbox-pods.
 #
 
-load ../helpers/crio
+load ../helpers/crictl
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run

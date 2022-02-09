@@ -3,12 +3,8 @@
 #
 # Tests for running K8s in side a sysbox pods.
 #
-# TODO:
-#
-# - Cleanup all crictl images after tests
-# - Refactor kindbox.bats tests so we can use all those same tests when running k8s-in-pod
 
-load ../helpers/crio
+load ../helpers/crictl
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run

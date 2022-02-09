@@ -6,6 +6,7 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 function setup() {

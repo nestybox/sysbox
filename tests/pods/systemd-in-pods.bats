@@ -4,7 +4,7 @@
 # Tests for running systemd in sysbox-pods.
 #
 
-load ../helpers/crio
+load ../helpers/crictl
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run

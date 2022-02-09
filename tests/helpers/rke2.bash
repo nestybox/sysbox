@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
-load ../helpers/run
-load ../helpers/docker
-load ../helpers/systemd
-load ../helpers/fs
-load ../helpers/k8s
+load $(dirname ${BASH_SOURCE[0]})/run.bash
+load $(dirname ${BASH_SOURCE[0]})/docker.bash
+load $(dirname ${BASH_SOURCE[0]})/systemd.bash
+load $(dirname ${BASH_SOURCE[0]})/fs.bash
+load $(dirname ${BASH_SOURCE[0]})/k8s.bash
 
 # Wait for all worker nodes to be connected to master.
 function rke2_all_nodes_ready() {

@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
-load ../helpers/run
+load $(dirname ${BASH_SOURCE[0]})/run.bash
 
 #
 # Containerd Test Helper Functions

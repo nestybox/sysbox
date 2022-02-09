@@ -4,6 +4,7 @@
 
 load ../helpers/run
 load ../helpers/ns
+load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 function setup() {

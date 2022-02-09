@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/uid-shift
+load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 function teardown() {
