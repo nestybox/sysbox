@@ -8,6 +8,7 @@ load ../helpers/run
 load ../helpers/docker
 load ../helpers/uid-shift
 load ../helpers/sysbox
+load ../helpers/sysbox-cfg
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -23,22 +24,17 @@ function sysbox_mgr_stopped() {
 }
 
 @test "--data-root" {
-
    local new_data_root="/mnt/scratch/sysbox-mgr"
    rm -rf $new_data_root
 
-   # Stop the sysbox-mgr
-   sysbox_mgr_stop
+   sysbox_stop
 
    # Verify the sysbox data root is gone
    run sh -c "ls /var/lib/sysbox"
    [ "$status" -ne 0 ]
 
-   # Create a new data root for it
-   mkdir -p $new_data_root
-
    # Start it with the new data root
-   sysbox_mgr_start --data-root $new_data_root
+   sysbox_start --data-root $new_data_root
 
    # Verify the prior sysbox data root is now replaced by the new one
    run sh -c "ls /var/lib/sysbox"
@@ -65,15 +61,14 @@ function sysbox_mgr_stopped() {
 
    docker_stop "$syscont"
 
-   # Stop the sysbox-mgr
-   sysbox_mgr_stop
+   sysbox_stop
 
 	# Verify the new data-root is gone
 	run sh -c "ls ${new_data_root}"
 	[ "$status" -ne 0 ]
 
    # Re-start it with it's default data-root
-   sysbox_mgr_start
+   sysbox_start
 
 	# Verify the prior sysbox data root is now replaced by the new one
 	run sh -c "ls ${new_data_root}"
@@ -85,8 +80,8 @@ function sysbox_mgr_stopped() {
 
 @test "--disable-rootfs-cloning" {
 
-  sysbox_mgr_stop
-  sysbox_mgr_start --disable-shiftfs --disable-rootfs-cloning
+  sysbox_stop
+  sysbox_start --disable-shiftfs --disable-rootfs-cloning
 
   local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -136,5 +131,6 @@ function sysbox_mgr_stopped() {
   docker_stop "$syscont"
   docker rm "$syscont"
 
+  sysbox_stop
   sysbox_start
 }
