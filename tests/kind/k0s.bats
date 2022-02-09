@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/k8s
 load ../helpers/sysbox-health
+load ../../helpers/environment
 
 # Basic test to verify k0s control plane comes up
 @test "k0s control-plane up" {

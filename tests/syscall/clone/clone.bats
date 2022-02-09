@@ -9,6 +9,7 @@ load ../../helpers/run
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/sysbox-health
+load ../../helpers/environment
 
 function teardown() {
   sysbox_log_check
@@ -27,7 +28,6 @@ function teardown() {
   # set of new namespaces.
   local arch=$(get_platform)
 
-  #docker cp /usr/bin/userns_child_exec_${arch} "$syscont:/usr/bin/userns_child_exec"
   docker cp tests/bin/userns_child_exec_${arch} "$syscont:/usr/bin/userns_child_exec"
   [ "$status" -eq 0 ]
 
