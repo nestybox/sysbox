@@ -3,36 +3,12 @@
 . $(dirname ${BASH_SOURCE[0]})/systemd.bash
 . $(dirname ${BASH_SOURCE[0]})/run.bash
 
-function sysbox_mgr_start() {
-
-	# Note: here we assume sysbox-mgr is started with this command
-	cmd="/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log"
-
-	if [ -n "$SB_INSTALLER" ]; then
-		systemd_unit="/lib/systemd/system/sysbox-mgr.service"
-
-		cmd_old=$(grep "^ExecStart" $systemd_unit | awk -F "ExecStart=" '{print $2_}')
-		cmd_new="${cmd} $@"
-		sed -i "s@${cmd_old}@${cmd_new}@g" $systemd_unit
-
-		systemctl daemon-reload
-		systemctl restart sysbox
-	else
-		bats_bg ${cmd} $@
-	fi
-
-	sleep 2
-	retry_run 10 1 grep -q "Ready" /var/log/sysbox-mgr.log
+function sysbox_mgr_started() {
+	tail -f /var/log/sysbox-mgr.log | grep -q Ready
 }
 
-function sysbox_mgr_stop() {
-  if [ -n "$SB_INSTALLER" ]; then
-    systemctl stop sysbox
-  else
-    kill $(pidof sysbox-mgr)
-  fi
-
-  retry_run 10 1 sysbox_mgr_stopped
+function sysbox_fs_started() {
+	tail -f /var/log/sysbox-fs.log | grep -q Ready
 }
 
 function sysbox_mgr_stopped() {
@@ -44,49 +20,8 @@ function sysbox_mgr_stopped() {
 	fi
 }
 
-function sysbox_mgr_started() {
-	tail -f /var/log/sysbox-mgr.log | grep -q Ready
-}
-
-function sysbox_fs_started() {
-	tail -f /var/log/sysbox-fs.log | grep -q Ready
-}
-
-function sysbox_fs_start() {
-
-	# Note: here we assume sysbox-fs is started with this command
-	cmd="/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log"
-
-	if [ -n "$SB_INSTALLER" ]; then
-		systemd_unit="/lib/systemd/system/sysbox-fs.service"
-
-		cmd_old=$(grep "^ExecStart" $systemd_unit | awk -F "ExecStart=" '{print $2_}')
-		cmd_new="${cmd} $@"
-		sed -i "s@${cmd_old}@${cmd_new}@g" $systemd_unit
-
-		systemctl daemon-reload
-		systemctl restart sysbox
-		sleep 1
-	else
-		bats_bg ${cmd} $@
-	fi
-
-	sleep 2
-	retry_run 10 1 grep -q "Ready" /var/log/sysbox-fs.log
-}
-
-function sysbox_fs_stop() {
-  if [ -n "$SB_INSTALLER" ]; then
-     systemctl stop sysbox
-  else
-    kill $(pidof sysbox-fs)
-  fi
-
-  retry_run 10 1 sysbox_fs_stopped
-}
-
 function sysbox_fs_stopped() {
-   run pgrep sysbox-fs
+	run pgrep sysbox-fs
 	if [ "$status" -eq 0 ]; then
 		return 1
 	else
@@ -94,7 +29,9 @@ function sysbox_fs_stopped() {
 	fi
 }
 
+
 function sysbox_start() {
+	local flags=$@
 
 	# NOTE: for sysbox, just being in a systemd environment is not sufficient to
 	# know if we are using the sysbox systemd services (i.e, we could have installed
@@ -104,9 +41,9 @@ function sysbox_start() {
 		systemctl start sysbox
 	else
 		if [ -n "$DEBUG_ON" ]; then
-			bats_bg sysbox -t -d
+			bats_bg sysbox -t -d $flags
 		else
-			bats_bg sysbox -t
+			bats_bg sysbox -t $flags
 		fi
 	fi
 
