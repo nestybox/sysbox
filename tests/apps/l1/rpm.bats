@@ -7,6 +7,7 @@
 load ../../helpers/run
 load ../../helpers/docker
 load ../../helpers/sysbox-health
+load ../../helpers/environment
 
 function teardown() {
   sysbox_log_check
