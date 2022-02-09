@@ -5,6 +5,7 @@
 #
 
 load ../../helpers/run
+load ../../helpers/docker
 load ../../helpers/sysbox-health
 
 function teardown() {

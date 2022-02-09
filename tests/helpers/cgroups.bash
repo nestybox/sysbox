@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
 #
 # Cgroup Test Helper Functions
-#
-# Note: for tests using bats.
 #
 
 . $(dirname ${BASH_SOURCE[0]})/systemd.bash

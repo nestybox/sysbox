@@ -9,8 +9,8 @@ load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/mounts
+load ../../helpers/sysbox
 load ../../helpers/sysbox-health
-
 
 function teardown() {
   sysbox_log_check
@@ -139,7 +139,7 @@ function teardown() {
 @test "immutable rw mount can be remounted ro -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -149,7 +149,7 @@ function teardown() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
 
@@ -179,7 +179,7 @@ function teardown() {
 @test "immutable ro mount can be remounted ro -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -189,7 +189,7 @@ function teardown() {
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_ro_mounts}; do
     printf "\ntesting ro remount of immutable ro mount ${m}\n"
@@ -211,7 +211,7 @@ function teardown() {
 @test "immutable rw mount can be remounted rw -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -221,7 +221,7 @@ function teardown() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
     printf "\ntesting rw remount of immutable rw mount ${m}\n"
@@ -245,7 +245,7 @@ function teardown() {
 @test "immutable ro mount can't be bind-mounted rw -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -255,7 +255,7 @@ function teardown() {
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
   local target=/root/target
 
   # Determine the mode in which to operate.
@@ -320,7 +320,7 @@ function teardown() {
 @test "immutable rw mount can be bind-mounted ro -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -397,7 +397,7 @@ function teardown() {
 @test "rw mount on top of immutable ro mount -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -407,7 +407,7 @@ function teardown() {
 
   local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_ro_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_ro_mounts}; do
 
@@ -450,7 +450,7 @@ function teardown() {
 @test "ro mount on top of immutable rw mount -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -460,7 +460,7 @@ function teardown() {
 
   local immutable_rw_mounts=$(list_container_rw_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_rw_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   for m in ${immutable_rw_mounts}; do
 
@@ -510,7 +510,7 @@ function teardown() {
 @test "unmount chain of file bind-mounts -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -520,7 +520,7 @@ function teardown() {
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
   local unmounts_allowed
@@ -584,7 +584,7 @@ function teardown() {
 @test "umount chain of char bind-mounts -- unshare(mnt)" {
 
   local syscont=$(docker_run --rm -v /dev/null:/usr/bin/dpkg-maintscript-helper ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -594,7 +594,7 @@ function teardown() {
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
   local unmounts_allowed
@@ -619,7 +619,7 @@ function teardown() {
     if [ "$status" -eq 0 ]; then
       continue
     fi
-  
+
     # Create mount-stack and verify that last element can be always
     # unmounted.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o bind /dev/null ${m}"
@@ -658,7 +658,7 @@ function teardown() {
 @test "unmount chain of dir bind-mounts" {
 
   local syscont=$(docker_run --rm --mount type=tmpfs,destination=/app ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
-  
+
   docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
   [ "$status" -eq 0 ]
 
@@ -668,7 +668,7 @@ function teardown() {
 
   local immutable_mounts=$(list_container_mounts ${syscont} ${inner_pid} "/")
   run is_list_empty ${immutable_mounts}
-  [ "$status" -ne 0 ]  
+  [ "$status" -ne 0 ]
 
   # Determine the mode in which to operate.
   local unmounts_allowed
@@ -713,7 +713,7 @@ function teardown() {
     # operations attending to sysbox-fs runtime settings.
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mkdir ${m}2 ${m}3"
     [ "$status" -eq 0 ]
-    
+
     docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount -o bind ${m} ${m}2"
     [ "$status" -eq 0 ]
 

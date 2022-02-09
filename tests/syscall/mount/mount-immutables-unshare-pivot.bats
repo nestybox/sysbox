@@ -9,8 +9,8 @@ load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/mounts
+load ../../helpers/sysbox
 load ../../helpers/sysbox-health
-
 
 function teardown() {
   sysbox_log_check

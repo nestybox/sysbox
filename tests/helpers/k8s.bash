@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
-load ../helpers/run
-load ../helpers/docker
-load ../helpers/systemd
-load ../helpers/fs
+load $(dirname ${BASH_SOURCE[0]})/run.bash
+load $(dirname ${BASH_SOURCE[0]})/docker.bash
+load $(dirname ${BASH_SOURCE[0]})/systemd.bash
+load $(dirname ${BASH_SOURCE[0]})/fs.bash
 
 #
 # K8s Test Helper Functions

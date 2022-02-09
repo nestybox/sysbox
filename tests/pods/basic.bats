@@ -4,7 +4,7 @@
 # Basic tests for sysbox-pods (i.e., deploying pods with crictl + CRI-O + Sysbox)
 #
 
-load ../helpers/crio
+load ../helpers/crictl
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run

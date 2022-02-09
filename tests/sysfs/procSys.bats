@@ -9,6 +9,8 @@
 load ../helpers/run
 load ../helpers/fs
 load ../helpers/ns
+load ../helpers/docker
+load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 disable_ipv6=/proc/sys/net/ipv6/conf/all/disable_ipv6

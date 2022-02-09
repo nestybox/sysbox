@@ -1,17 +1,81 @@
-#!/bin/bash
+#!/usr/bin/env bats
 
 #
 # Docker Test Helper Functions
 #
-# Note: for tests using bats.
-#
 
-. $(dirname ${BASH_SOURCE[0]})/run.bash
+load $(dirname ${BASH_SOURCE[0]})/run.bash
+load $(dirname ${BASH_SOURCE[0]})/systemd.bash
 
+# Need this to avoid recursion on docker()
+function __docker() {
+  command docker "$@"
+}
+# Wrapper for docker using bats
+function docker() {
+  run __docker "$@"
+
+  # Debug info
+  echo "docker $@ (status=$status):" >&2
+  echo "$output" >&2
+}
+
+# Executes docker run with sysbox-runc; returns the container id
+function docker_run() {
+  docker run --runtime=sysbox-runc -d "$@"
+  [ "$status" -eq 0 ]
+
+  docker ps --format "{{.ID}}"
+  [ "$status" -eq 0 ]
+
+  echo "$output" | head -1
+}
+
+# Stops a docker container immediately
+function docker_stop() {
+  [[ "$#" == 1 ]]
+
+  local id="$1"
+
+  echo "Stopping $id ..."
+
+  if [ -z "$id" ]; then
+    return 1
+  fi
+
+  docker stop -t0 "$id"
+}
+
+# Docker daemon start
+function dockerd_start() {
+  if systemd_env; then
+    systemctl start docker.service
+    sleep 2
+  else
+    bats_bg dockerd $@ > /var/log/dockerd.log 2>&1
+    sleep 2
+  fi
+}
+
+# Docker daemon stop
+function dockerd_stop() {
+  if systemd_env; then
+    systemctl stop docker.service
+    sleep 1
+  else
+    local pid=$(pidof dockerd)
+    kill $pid
+    sleep 1
+    if [ -f /var/run/docker.pid ]; then rm /var/run/docker.pid; fi
+  fi
+}
+
+# Wait for docker daemon to start
 function wait_for_dockerd {
   retry_run 10 1 "docker ps"
 }
 
+# Wait for docker daemon inside sysbox container to start
 function wait_for_inner_dockerd {
   local syscont=$1
   retry_run 10 1 "__docker exec $syscont docker ps"

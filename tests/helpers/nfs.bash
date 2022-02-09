@@ -1,4 +1,6 @@
-#!/bin/bash -x
+#!/usr/bin/env bats
+
+. $(dirname ${BASH_SOURCE[0]})/docker.bash
 
 #
 # nfs test helpers

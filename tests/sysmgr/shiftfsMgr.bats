@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/fs
 load ../helpers/uid-shift
+load ../helpers/docker
 load ../helpers/sysbox-health
 
 function setup() {
