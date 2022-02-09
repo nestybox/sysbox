@@ -28,10 +28,10 @@ BUNDLES="${INTEGRATION_ROOT}/../bundles"
 
 CONSOLE_SOCKET="$WORK_DIR/console.sock"
 
-BUSYBOX_TAR_GZ="$BUNDLES/busybox.tar.gz"
+BUSYBOX_TAR_GZ="$BUNDLES/busybox_${TARGET_ARCH}.tar.gz"
 BUSYBOX_BUNDLE="$WORK_DIR/busyboxtest"
 
-DEBIAN_TAR_GZ="$BUNDLES/debian.tar.gz"
+DEBIAN_TAR_GZ="$BUNDLES/debian_${TARGET_ARCH}.tar.gz"
 DEBIAN_BUNDLE="$WORK_DIR/debiantest"
 
 # Root state path.
