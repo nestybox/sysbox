@@ -76,7 +76,7 @@ EOF
   docker buildx inspect --bootstrap
   [ "$status" -eq 0 ]
 
-  docker buildx build --load -t $image --platform linux/amd64 -f $file /mnt
+  docker buildx build --load -t $image -f $file /mnt
   [ "$status" -eq 0 ]
 
   docker run --rm $image
@@ -133,7 +133,7 @@ EOF
   docker buildx inspect --bootstrap
   [ "$status" -eq 0 ]
 
-  docker buildx build --load -t $image --platform linux/amd64 -f $file /mnt
+  docker buildx build --load -t $image -f $file /mnt
   [ "$status" -eq 0 ]
 
   docker run --rm $image
