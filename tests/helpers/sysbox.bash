@@ -4,11 +4,19 @@
 . $(dirname ${BASH_SOURCE[0]})/run.bash
 
 function sysbox_mgr_started() {
-	tail -f /var/log/sysbox-mgr.log | grep -q Ready
+	if [ -n "$SB_INSTALLER" ]; then
+		systemctl is-active --quiet sysbox-mgr
+	else
+		tail -f /var/log/sysbox-mgr.log | grep -q Ready
+	fi
 }
 
 function sysbox_fs_started() {
-	tail -f /var/log/sysbox-fs.log | grep -q Ready
+	if [ -n "$SB_INSTALLER" ]; then
+		systemctl is-active --quiet sysbox-fs
+	else
+		tail -f /var/log/sysbox-fs.log | grep -q Ready
+	fi
 }
 
 function sysbox_mgr_stopped() {
@@ -33,24 +41,16 @@ function sysbox_fs_stopped() {
 function sysbox_start() {
 	local flags=$@
 
-	# NOTE: for sysbox, just being in a systemd environment is not sufficient to
-	# know if we are using the sysbox systemd services (i.e, we could have installed
-	# sysbox from source). Thus we check for SB_INSTALLER instead of systemd_env.
-
-	if [ -n "$SB_INSTALLER" ]; then
-		systemctl start sysbox
+	if [ -n "$DEBUG_ON" ]; then
+		bats_bg sysbox -t -d $flags
 	else
-		if [ -n "$DEBUG_ON" ]; then
-			bats_bg sysbox -t -d $flags
-		else
-			bats_bg sysbox -t $flags
-		fi
+		bats_bg sysbox -t $flags
 	fi
 
-  retry_run 10 1 sysbox_fs_started
-  retry_run 10 1 sysbox_mgr_started
+	retry_run 10 1 sysbox_fs_started
+	retry_run 10 1 sysbox_mgr_started
 
-  sleep 2
+	sleep 2
 }
 
 function sysbox_stop() {
