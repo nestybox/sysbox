@@ -205,44 +205,20 @@ function wait_docker_ready() {
 }
 
 function install_sysbox_pkg() {
-
 	if [ ! -f ${SB_PACKAGE_FILE} ]; then
 		echo "Did not find sysbox installer: file ${SB_PACKAGE_FILE} does not exist"
 		exit 1
 	fi
 
-	set -e
-
+	# These quirks are required for apt-get to work correctly inside the test container
 	rm -rf /usr/sbin/policy-rc.d
+	dpkg -i dummy > /dev/null 2>&1 || true
+	apt-get update
 
+	# Install sysbox; the --reinstall flag ensures the test container need not be
+	# cleaned up between executions of the testContainerInit script.
 	echo "Installing ${SB_PACKAGE} package at ${SB_PACKAGE_FILE}"
-	dpkg -i ${SB_PACKAGE_FILE}
-
-	# Take care of the following changes:
-	#
-	# * Set explicit log files to avoid sysbox dumping logs to systemd (testcases
-	#   expect output in /var/log files).
-	# * If requested, add '--log-level debug' knob to sysbox-fs/mgr.
-	# * Add the '--ignore-handler-errors' to the sysbox-fs service and restart it
-	#   (need this flag inside the test container).
-	#
-	if [ -n "$DEBUG_ON" ]; then
-		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --log-level debug --ignore-handler-errors|g' \
-			/lib/systemd/system/sysbox-fs.service &&
-			sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log --log-level debug|g' \
-				/lib/systemd/system/sysbox-mgr.service &&
-			systemctl daemon-reload &&
-			systemctl restart sysbox.service
-	else
-		sed -i 's|ExecStart=/usr/bin/sysbox-fs|ExecStart=/usr/bin/sysbox-fs --log /var/log/sysbox-fs.log --ignore-handler-errors|g' \
-			/lib/systemd/system/sysbox-fs.service &&
-			sed -i 's|ExecStart=/usr/bin/sysbox-mgr|ExecStart=/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log|g' \
-				/lib/systemd/system/sysbox-mgr.service &&
-			systemctl daemon-reload &&
-			systemctl restart sysbox.service
-	fi
-
-	set +e
+	apt-get install --reinstall -y --no-install-recommends "${PWD}/${SB_PACKAGE_FILE}"
 }
 
 function build_sysbox() {
@@ -296,14 +272,15 @@ function main() {
 	# Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then
 		install_sysbox_pkg
-	elif [ -n "$DEBUG_ON" ]; then
+	else
 		build_sysbox
+	fi
 
+	# Start Sysbox.
+	if [ -n "$DEBUG_ON" ]; then
 		echo "Starting sysbox in debug mode ..."
 		sysbox -d -t
 	else
-		build_sysbox
-
 		echo "Starting sysbox in test mode ..."
 		sysbox -t
 	fi

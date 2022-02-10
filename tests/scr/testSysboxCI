@@ -23,7 +23,6 @@ function shiftfs_supported() {
 }
 
 function set_sysbox_idmapped_mount() {
-	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
 	if [ -n "$DEBUG_ON" ]; then
 		if [[ "$1" == "disable" ]]; then
 			sysbox -d -t --disable-idmapped-mount
@@ -42,7 +41,6 @@ function set_sysbox_idmapped_mount() {
 }
 
 function set_sysbox_shiftfs() {
-	# TODO: If using sysbox installer, reconfigure the systemd service unit (see testContainerInit install_sysbox_pkg).
 	if [ -n "$DEBUG_ON" ]; then
 		if [[ "$1" == "disable" ]]; then
 			sysbox -d -t --disable-shiftfs
@@ -112,9 +110,6 @@ function test_with_idmapped_and_shiftfs() {
 	if ! shiftfs_supported; then
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
 	fi
-
-	set_sysbox_shiftfs "enable"
-	set_sysbox_idmapped_mount "enable"
 
 	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
 	run_ci_tests
@@ -190,6 +185,8 @@ function test_with_docker_userns_remap() {
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
+
+	docker system prune -a -f
 
 	printf "\nReverting Docker userns-remap config\n"
 	docker-cfg --userns-remap=disable
