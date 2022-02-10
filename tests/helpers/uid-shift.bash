@@ -18,19 +18,19 @@ function kernel_supports_idmapped_mnt() {
 }
 
 function sysbox_idmapped_mnt_disabled {
-	ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-idmapped-mount"
+	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-idmapped-mount"
 }
 
 function sysbox_idmapped_mnt_enabled {
-	ps -fu | grep "$(pidof sysbox-mgr)" | grep -qv "disable-idmapped-mount"
+	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -qv "disable-idmapped-mount"
 }
 
 function sysbox_shiftfs_disabled {
-	ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-shiftfs"
+	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-shiftfs"
 }
 
 function sysbox_shiftfs_enabled {
-	ps -fu | grep "$(pidof sysbox-mgr)" | grep -qv "disable-shiftfs"
+	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -qv "disable-shiftfs"
 }
 
 function sysbox_using_idmapped_mnt() {
