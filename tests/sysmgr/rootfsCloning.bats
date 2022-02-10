@@ -12,7 +12,7 @@ load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function sysbox_rootfs_cloning_disabled() {
-  ps -fu | grep "$(pidof sysbox-mgr)" | grep -q "disable-rootfs-cloning"
+  ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-rootfs-cloning"
 }
 
 function setup() {
