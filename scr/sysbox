@@ -1,12 +1,12 @@
 #!/bin/bash -e
 
 #
-# Launch Sysbox (requires root privileges)
+# Script to configure & start (or restart) Sysbox.
 #
-# Note: normally Sysbox is installed via a distro-specific package
-# which sets up the Sysbox systemd units. This script is meant as a
-# quick alternative to the installer to help launch Sysbox manually
-# (e.g. for development & testing).
+# If Sysbox is running as a systemd service, this script reconfigures the
+# systemd unit and restarts the service. Otherwise, this script starts the
+# Sysbox components (e.g. sysbox-mgr, sysbox-fs) by executing their binaries
+# (which are assumed to be installed on the host in the /usr/bin/ directory).
 #
 # Type "sudo ./sysbox --help". for usage info.
 
@@ -21,6 +21,9 @@ SET_DATA_ROOT=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
+
+# Systemd related variables
+SYSTEMD_LIB_DIR="/lib/systemd/system"
 
 # Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
 # (copied from runc/tests/integration/helpers.bash)
@@ -195,34 +198,43 @@ function sysbox_stop() {
 	sleep 2
 }
 
+function sysbox_mgr_set_cmdline_opts() {
+	local -n options=$1
+
+	if [ $DEBUG_MODE -eq 1 ]; then
+		options+=("--log-level=debug")
+	fi
+
+	if [ $NO_SHIFTFS -eq 1 ]; then
+		options+=("--disable-shiftfs")
+	fi
+
+	if [ $NO_IDMAPPED_MOUNT -eq 1 ]; then
+		options+=("--disable-idmapped-mount")
+	fi
+
+	if [ $NO_ROOTFS_CLONING -eq 1 ]; then
+		options+=("--disable-rootfs-cloning")
+	fi
+
+	if [ $SET_DATA_ROOT -eq 1 ]; then
+		options+=("--data-root ${DATA_ROOT}")
+	fi
+
+	options+=("--log /var/log/sysbox-mgr.log")
+
+}
+
 function sysbox_mgr_start() {
 
 	[[ $VERBOSE ]] && printf "Starting sysbox-mgr\n"
 
-	declare -a mgr_options=("--log /var/log/sysbox-mgr.log")
-
-	if [ $DEBUG_MODE -eq 1 ]; then
-		mgr_options+=("--log-level=debug")
-	fi
-
-	if [ $NO_SHIFTFS -eq 1 ]; then
-		mgr_options+=("--disable-shiftfs")
-	fi
-
-	if [ $NO_IDMAPPED_MOUNT -eq 1 ]; then
-		mgr_options+=("--disable-idmapped-mount")
-	fi
-
-	if [ $NO_ROOTFS_CLONING -eq 1 ]; then
-		mgr_options+=("--disable-rootfs-cloning")
-	fi
-
-	if [ $SET_DATA_ROOT -eq 1 ]; then
-		mgr_options+=("--data-root ${DATA_ROOT}")
-	fi
+	declare -a mgr_options
+	sysbox_mgr_set_cmdline_opts mgr_options
 
 	sysbox-mgr ${mgr_options[@]} &
 	sleep 1
+
 	res=$(retry 10 1 grep -q Ready /var/log/sysbox-mgr.log)
 	if [ $? -ne 0 ]; then
 		printf "\nsysbox-mgr failed to start. Here is the log file:\n"
@@ -231,47 +243,86 @@ function sysbox_mgr_start() {
 	fi
 }
 
-function sysbox_fs_start() {
-
-	declare -a fs_options=("--log /var/log/sysbox-fs.log")
-
-	if [ $TEST_MODE -eq 1 ]; then
-		fs_options+=("--ignore-handler-errors")
-	fi
+function sysbox_fs_set_cmdline_opts() {
+	local -n options=$1
 
 	if [ $DEBUG_MODE -eq 1 ]; then
-		fs_options+=("--log-level=debug")
+		options+=("--log-level=debug")
 	fi
+
+	if [ $TEST_MODE -eq 1 ]; then
+		options+=("--ignore-handler-errors")
+	fi
+
+	options+=("--log /var/log/sysbox-fs.log")
+}
+
+function sysbox_fs_start() {
 
 	[[ $VERBOSE ]] && printf "Starting sysbox-fs\n"
 
-	sysbox-fs ${fs_options[@]} &
+	declare -a fs_options
+	sysbox_fs_set_cmdline_opts fs_options
 
+	sysbox-fs ${fs_options[@]} &
 	sleep 1
+
 	res=$(retry 10 1 grep -q Ready /var/log/sysbox-fs.log)
 	if [ $? -ne 0 ]; then
 		printf "\nsysbox-fs failed to start. Here is the log file:\n"
 		cat /var/log/sysbox-fs.log
 		exit 1
 	fi
-
 }
 
 function sysbox_start() {
-
 	# Note: sysbox-runc is started by the higher level container manager (e.g.,
 	# Docker, containerd)
-
 	sysbox_mgr_start
 	sysbox_fs_start
+}
+
+function systemd_service_detected() {
+	if [ -f "${SYSTEMD_LIB_DIR}/sysbox.service" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function systemd_sysfs_config() {
+	declare -a fs_options
+	sysbox_fs_set_cmdline_opts fs_options
+	local opt_str=${fs_options[@]}
+	sed -i "s|ExecStart=.*|ExecStart=/usr/bin/sysbox-fs $opt_str|g" ${SYSTEMD_LIB_DIR}/sysbox-fs.service
+}
+
+function systemd_sysmgr_config() {
+	declare -a mgr_options
+	sysbox_mgr_set_cmdline_opts mgr_options
+	local opt_str=${mgr_options[@]}
+	sed -i "s|ExecStart=.*|ExecStart=/usr/bin/sysbox-mgr $opt_str|g" ${SYSTEMD_LIB_DIR}/sysbox-mgr.service
+}
+
+function systemd_config() {
+	systemd_sysfs_config
+	systemd_sysmgr_config
+}
+
+function systemd_restart() {
+	systemctl daemon-reload
+	systemctl restart sysbox.service
 }
 
 function show_usage() {
 	printf "\n"
 	printf "Usage: $PROGNAME [OPTIONS]\n"
 	printf "\n"
-	printf "Starts Sysbox without using the Sysbox systemd service units.\n"
-	printf "Useful when building Sysbox from source and for testing. Must run as root.\n"
+	printf "Configures and starts (or restarts) Sysbox. Meant for Sysbox testing.\n"
+	printf "If Sysbox is running as a systemd service, this script reconfigures the\n"
+	printf "systemd unit and restarts the service. Otherwise, this script starts the\n"
+	printf "Sysbox components (e.g. sysbox-mgr, sysbox-fs) by executing their binaries\n"
+	printf "(which are assumed to be installed on the host in the /usr/bin/ directory).\n"
 	printf "\n"
 	printf "Options:\n"
 	printf "  -t, --test-mode               Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
@@ -347,9 +398,14 @@ function main() {
 		exit
 	fi
 
-	sysbox_stop
-	sysbox_setup
-	sysbox_start
+	if systemd_service_detected; then
+		systemd_config
+		systemd_restart
+	else
+		sysbox_stop
+		sysbox_setup
+		sysbox_start
+	fi
 
 	[[ $VERBOSE ]] && printf "Done.\n"
 }
