@@ -75,9 +75,6 @@ SYSLIBS_DIR     := sysbox-libs
 LIB_SECCOMP_DIR := $(SYSLIBS_DIR)/libseccomp-golang
 SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
-# Consider to have this one moved out within sysbox-runc folder.
-SYSRUNC_BUILDTAGS := seccomp apparmor
-
 PROJECT := /root/nestybox/sysbox
 
 # Sysbox binary targets destination.
@@ -231,10 +228,10 @@ sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
 sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)"
+	@cd $(SYSRUNC_DIR) && make
 
 sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
-	@cd $(SYSRUNC_DIR) && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" sysbox-runc-debug
+	@cd $(SYSRUNC_DIR) && make sysbox-runc-debug
 
 sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
@@ -383,7 +380,7 @@ test-sysbox-installer: test-prereq test-img-systemd
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: test-prereq sysbox
 	@printf "\n** Running sysbox-runc unit & integration tests **\n\n"
-	cd $(SYSRUNC_DIR) && make clean && make BUILDTAGS="$(SYSRUNC_BUILDTAGS)" test
+	cd $(SYSRUNC_DIR) && make clean && make test
 
 test-fs: ## Run sysbox-fs unit tests
 test-fs: test-prereq sysbox
