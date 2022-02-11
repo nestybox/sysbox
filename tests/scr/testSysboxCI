@@ -105,10 +105,12 @@ function test_with_idmapped_and_shiftfs() {
 
 	if ! idmapped_mount_supported; then
 		printf "\nSkipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
+		return
 	fi
 
 	if ! shiftfs_supported; then
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
+		return
 	fi
 
 	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
@@ -123,6 +125,7 @@ function test_with_idmapped_and_shiftfs() {
 function test_with_idmapped_only() {
 	if ! idmapped_mount_supported; then
 		printf "\nSkipping idmapped-mount only tests (not supported on host)\n"
+		return
 	fi
 
 	printf "\nExecuting Sysbox tests (idmapped mounts only)\n"
@@ -143,6 +146,7 @@ function test_with_idmapped_only() {
 function test_with_shiftfs_only() {
 	if ! shiftfs_supported; then
 		printf "\nSkipping shiftfs only tests (not supported on host)\n"
+		return
 	fi
 
 	printf "\nExecuting Sysbox tests (shiftfs only)\n"
