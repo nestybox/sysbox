@@ -4,7 +4,7 @@
 # Basic tests for buildx / buildkit scenarios.
 #
 
-load ../helpers/crio
+load ../helpers/crictl
 load ../helpers/userns
 load ../helpers/k8s
 load ../helpers/run
