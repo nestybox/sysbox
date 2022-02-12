@@ -35,21 +35,11 @@ function teardown() {
 
    # verify all containers are up
    for i in $(seq 0 $((num_syscont-1))); do
-      docker exec syscont$i hostname
+      docker exec syscont${i} hostname
       [ "$status" -eq 0 ]
-      [ "$output" = "syscont$i" ]
+      [ "$output" = "syscont${i}" ]
    done
 
-   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} ${CTR_IMG_REPO}/k8s-node:v1.20.2
-
-   # verify all containers are up
-   for i in $(seq 0 $((num_syscont-1))); do
-      docker exec syscont$i hostname
-      [ "$status" -eq 0 ]
-      [ "$output" = "syscont$i" ]
-   done
-
-   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} ${CTR_IMG_REPO}/k8s-node:v1.20.2
    seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker exec syscont{} hostname
    seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker stop -t0 syscont{}
 }
