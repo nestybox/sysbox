@@ -14,6 +14,10 @@ function setup() {
   if ! sysbox_using_shiftfs_only; then
     skip "requires only shiftfs"
   fi
+
+  if docker_userns_remap; then
+    skip "docker userns-remap"
+  fi
 }
 
 function teardown() {
