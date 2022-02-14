@@ -13,6 +13,7 @@ DISTRO=$(lsb_release -is)
 if [ "$DISTRO" != "Ubuntu" ] &&
    [ "$DISTRO" != "Debian" ] &&
    [ "$DISTRO" != "CentOS" ] &&
+   [ "$DISTRO" != "AlmaLinux" ] &&
    [ "$DISTRO" != "Fedora" ]; then
     printf "\nError: sysbox is not supported in this distribution: %s.\n\n", $DISTRO
     exit 1

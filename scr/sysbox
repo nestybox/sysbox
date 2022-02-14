@@ -74,6 +74,7 @@ function check_distro() {
 	if [[ "${distro}" != "ubuntu" ]] &&
 			[[ "${distro}" != "debian" ]] &&
 			[[ "${distro}" != "centos" ]] &&
+			[[ "${distro}" != "almalinux" ]] &&
 			[[ "${distro}" != "fedora" ]]; then
       echo "Unsupported Linux distribution: $distro. Sysbox may not operate as expected."
 	fi
