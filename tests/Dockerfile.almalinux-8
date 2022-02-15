@@ -1,5 +1,5 @@
 #
-# Sysbox Test Container Dockerfile (AlmaLinux-ArcticSphynx image)
+# Sysbox Test Container Dockerfile (AlmaLinux-8 image)
 #
 # This Dockerfile creates the sysbox test container image. The image
 # contains all dependencies needed to build, run, and test sysbox.
