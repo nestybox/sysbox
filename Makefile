@@ -96,7 +96,7 @@ KERNEL_REL := $(shell uname -r)
 export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the sysbox's building and testing process.
-ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat))
+ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat almalinux))
 	IMAGE_BASE_RELEASE := $(shell lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1)
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
 else
