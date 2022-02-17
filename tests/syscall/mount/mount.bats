@@ -145,10 +145,6 @@ function teardown() {
   docker_stop "$syscont"
 }
 
-function setup() {
-	run_only_test "mount capability checking"
-}
-
 # Testcase #3.
 #
 # Verify that mount syscall emulation does correct capability checks
