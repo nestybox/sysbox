@@ -76,35 +76,35 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if sysbox_using_shiftfs_only; then
-         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+			[[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
-      else
+		else
 			[[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
-      fi
+		fi
 
       # Verify that /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
       # softlink has been created in ubuntu's kernel-headers expected path.
       docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
       [ "$status" -eq 0 ]
 
- else
-      docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
-      [ "$status" -eq 0 ]
+  else
+     docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
+     [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs_only; then
-         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
-		elif sysbox_using_idmapped_mnt; then
-			[[ "${lines[0]}" =~ "idmapped" ]]
-      else
+	  if sysbox_using_shiftfs_only; then
+        [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs/".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+	  elif sysbox_using_idmapped_mnt; then
+		  [[ "${lines[0]}" =~ "idmapped" ]]
+     else
         [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
-      fi
+     fi
 
-      # Verify that no /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
-      # softlink has been created -- it's not needed in this case as sysbox-runc/mgr
-      # already bind-mounts all the required paths.
-      docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
-      [ "$status" -eq 1 ]
+     # Verify that no /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
+     # softlink has been created -- it's not needed in this case as sysbox-runc/mgr
+     # already bind-mounts all the required paths.
+     docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
+     [ "$status" -eq 1 ]
   fi
 
   docker_stop "$syscont"
@@ -128,12 +128,12 @@ load ../helpers/sysbox-health
       [ "$status" -eq 0 ]
 
 		if sysbox_using_shiftfs_only; then
-        [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+			[[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/kernels/${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
 		elif sysbox_using_idmapped_mnt; then
 			[[ "${lines[0]}" =~ "idmapped" ]]
-      else
-        [[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
-      fi
+		else
+			[[ "${lines[0]}" =~ "on /usr/src/kernels/${kernel_rel}".+"ro".+"relatime" ]]
+		fi
 
       # Verify that no /usr/src/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
       # softlink has been created -- it's not needed in this case as sysbox-runc/mgr
@@ -141,22 +141,22 @@ load ../helpers/sysbox-health
       docker exec "$syscont" sh -c "stat /usr/src/linux-headers-${kernel_rel} | egrep -q \"symbolic\""
       [ "$status" -eq 1 ]
 
- else
-      docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
-      [ "$status" -eq 0 ]
+  else
+     docker exec "$syscont" sh -c "mount | grep \"/usr/src/linux-headers-${kernel_rel}\""
+     [ "$status" -eq 0 ]
 
-		if sysbox_using_shiftfs_only; then
-         [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
-		elif sysbox_using_idmapped_mnt; then
-			[[ "${lines[0]}" =~ "idmapped" ]]
-      else
-			[[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
-      fi
+	  if sysbox_using_shiftfs_only; then
+        [[ "${lines[0]}" =~ "/var/lib/sysbox/shiftfs".+"on /usr/src/linux-headers-${kernel_rel} type shiftfs".+"ro".+"relatime" ]]
+	  elif sysbox_using_idmapped_mnt; then
+		  [[ "${lines[0]}" =~ "idmapped" ]]
+     else
+		  [[ "${lines[0]}" =~ "on /usr/src/linux-headers-${kernel_rel}".+"ro".+"relatime" ]]
+     fi
 
-      # Verify that /usr/src/kernels/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
-      # softlink has been created in fedora's kernel-headers expected path).
-      docker exec "$syscont" sh -c "stat /usr/src/kernels/${kernel_rel} | egrep -q \"symbolic\""
-      [ "$status" -eq 0 ]
+     # Verify that /usr/src/kernels/linux-headers-$kernel_rel --> /usr/src/kernels/$kernel_rel
+     # softlink has been created in fedora's kernel-headers expected path).
+     docker exec "$syscont" sh -c "stat /usr/src/kernels/${kernel_rel} | egrep -q \"symbolic\""
+     [ "$status" -eq 0 ]
   fi
 
   docker_stop "$syscont"

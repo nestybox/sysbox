@@ -250,8 +250,7 @@ function test_cgroup_memory() {
    #
    # Note: in debian-buster and ubuntu-impish, we see that the failcnt counter
    # is also non-zero inside the sys container; this behavior is different than
-   # other distros, but is not a big deal. Thus we skip this check in
-   # debian-buster.
+   # other distros, but is not a big deal. Thus we skip these distros / releases.
 
    distro=$(get_distro)
    rel=$(get_distro_release)
