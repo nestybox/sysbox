@@ -113,7 +113,11 @@ function test_with_idmapped_and_shiftfs() {
 		return
 	fi
 
-	printf "\nExecuting Sysbox tests (idmapped + shiftfs)\n"
+	printf "\n"
+	printf "*******************************************\n"
+	printf "Executing Sysbox tests (idmapped + shiftfs)\n"
+	printf "*******************************************\n"
+
 	run_ci_tests
 
 	return 0
@@ -128,7 +132,10 @@ function test_with_idmapped_only() {
 		return
 	fi
 
+	printf "\n"
+	printf "***********************************************\n"
 	printf "\nExecuting Sysbox tests (idmapped mounts only)\n"
+	printf "***********************************************\n"
 
 	printf "\nDisabling Sysbox shiftfs.\n"
 	set_sysbox_shiftfs "disable"
@@ -149,7 +156,10 @@ function test_with_shiftfs_only() {
 		return
 	fi
 
-	printf "\nExecuting Sysbox tests (shiftfs only)\n"
+	printf "\n"
+	printf "*************************************\n"
+	printf "Executing Sysbox tests (shiftfs only)\n"
+	printf "*************************************\n"
 
 	printf "\nDisabling Sysbox idmapped-mounts.\n"
 	set_sysbox_idmapped_mount "disable"
@@ -164,7 +174,10 @@ function test_with_shiftfs_only() {
 
 # Test sysbox when Docker is configured with userns-remap mode.
 function test_with_docker_userns_remap() {
+	printf "\n"
+	printf "**********************************************\n"
 	printf "\nExecuting Sysbox tests (docker-userns-remap)\n"
+	printf "**********************************************\n"
 
 	printf "\nConfiguring Docker with userns-remap\n"
 	docker system prune -a -f
