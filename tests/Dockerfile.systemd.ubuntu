@@ -1,4 +1,5 @@
-FROM sysbox-test:latest
+ARG sys_arch
+FROM sysbox-test-${sys_arch}:latest
 
 #
 # Systemd installation
