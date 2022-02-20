@@ -24,17 +24,18 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
+
 	"golang.org/x/sys/unix"
 )
 
 // Verify the f*xattr() syscalls
 func testFxattr(tfile string) error {
 	var (
-		f *os.File
+		f    *os.File
 		size int
-		err error
+		err  error
 	)
 
 	f, err = os.Create(tfile)
@@ -105,9 +106,9 @@ func testFxattr(tfile string) error {
 // Verify the l*xattr() syscalls
 func testLxattr(tfile string) error {
 	var (
-		f *os.File
+		f    *os.File
 		size int
-		err error
+		err  error
 	)
 
 	// create a test file
@@ -186,9 +187,9 @@ func testLxattr(tfile string) error {
 // Verifies the 'flags' parameter of *setxattr() syscalls works as expected
 func testXattrFlags(tfile string) error {
 	var (
-		f *os.File
+		f    *os.File
 		size int
-		err error
+		err  error
 	)
 
 	f, err = os.Create(tfile)
@@ -224,6 +225,16 @@ func testXattrFlags(tfile string) error {
 
 	if len(buf) != 1 || buf[0] != 'n' || size != len(buf) {
 		return fmt.Errorf("fgetxattr() got unexpected attr: %s", string(buf))
+	}
+
+	err = unix.Fremovexattr(fd, "trusted.overlay.opaque")
+	if err != nil {
+		return fmt.Errorf("fremovexattr() failed: %s", err)
+	}
+
+	size, err = unix.Fgetxattr(fd, "trusted.overlay.opaque", buf)
+	if err == nil {
+		return fmt.Errorf("fgetxattr() expected to failed but passed")
 	}
 
 	return nil
