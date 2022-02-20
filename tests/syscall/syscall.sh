@@ -19,6 +19,9 @@ bats --tap tests/syscall/chown
 printf "\nExecuting clone syscall tests ... \n"
 bats --tap tests/syscall/clone
 
+printf "\nExecuting xattr syscall tests ... \n"
+bats --tap tests/syscall/xattr
+
 printf "\nExecuting basic mount syscall-interception tests ... \n"
 bats --tap tests/syscall/mount/mount.bats
 

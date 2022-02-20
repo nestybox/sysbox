@@ -75,6 +75,8 @@ function run_ci_tests() {
 	bats --tap tests/buildx/basic.bats
 	printf "\nExecuting chown syscall tests ... \n"
 	bats --tap tests/syscall/chown
+	printf "\nExecuting xattr syscall tests ... \n"
+	bats --tap tests/syscall/xattr
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
 	bats --tap tests/syscall/mount/mount.bats
 	printf "\nExecuting mount syscall-interception tests for procfs resources ... \n"
