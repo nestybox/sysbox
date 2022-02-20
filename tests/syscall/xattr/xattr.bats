@@ -17,7 +17,8 @@ function teardown() {
 
 @test "*xattr" {
 
-	mkdir /mnt/scratch/test
+	rm -rf /mnt/scratch/test
+	mkdir -p /mnt/scratch/test
 	chown 165536:165536 /mnt/scratch/test
 
 	# deploy a sys container
@@ -83,7 +84,8 @@ function teardown() {
 	make xattr-test
 	popd
 
-	mkdir /mnt/scratch/test
+	rm -rf /mnt/scratch/test
+	mkdir -p /mnt/scratch/test
 	chown 165536:165536 /mnt/scratch/test
 
 	# deploy a sys container
@@ -106,7 +108,8 @@ function teardown() {
 
 @test "xattr: trusted.overlay.opaque" {
 
-	mkdir /mnt/scratch/test
+	rm -rf /mnt/scratch/test
+	mkdir -p /mnt/scratch/test
 	chown 165536:165536 /mnt/scratch/test
 
 	# deploy a sys container
@@ -167,6 +170,49 @@ function teardown() {
 	# umount overlayfs
 	docker exec "$syscont" sh -c "umount /mnt/merged"
 	[ "$status" -eq 0 ]
+
+	docker_stop "$syscont"
+
+	rm -rf /mnt/scratch/test
+}
+
+@test "listxattr non-root" {
+
+	rm -rf /mnt/scratch/test
+	mkdir -p /mnt/scratch/test
+	chown 166536:166536 /mnt/scratch/test
+
+	# deploy a sys container
+	local syscont=$(docker_run --rm -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	# the attr package brings the setfattr and getfattr utils
+	docker exec "$syscont" sh -c "apk add attr"
+	[ "$status" -eq 0 ]
+
+	docker exec -u 1000:1000 "$syscont" sh -c "mkdir -p /mnt/tdir && chmod 700 /mnt/tdir && touch /mnt/tdir/tfile"
+	[ "$status" -eq 0 ]
+
+	# set some xattrs
+	docker exec -u 1000:1000 "$syscont" sh -c 'setfattr -n user.someattr -v "someval" /mnt/tdir/tfile'
+	[ "$status" -eq 0 ]
+
+	# getfattr -d will invoke the listxattr() syscall
+	docker exec -u 1000:1000 "$syscont" sh -c 'getfattr -d -m "user\.someattr" /mnt/tdir/tfile'
+	[ "$status" -eq 0 ]
+	[[ "$output" =~ "user.someattr=\"someval\"" ]]
+
+	# getfattr -n will invoke the getaxattr() syscall; the "cd" is used on purpose to
+	# check that sysbox-fs resolves non-absolute paths correctly
+	docker exec -u 1000:1000 "$syscont" sh -c 'cd /mnt && getfattr -n "user.someattr" tdir/tfile'
+	[ "$status" -eq 0 ]
+	[[ "$output" =~ "user.someattr=\"someval\"" ]]
+
+	# remove the the xattr
+	docker exec -u 1000:1000 "$syscont" sh -c 'cd /mnt && setfattr -x user.someattr tdir/tfile'
+	[ "$status" -eq 0 ]
+
+	docker exec -u 1000:1000 "$syscont" sh -c 'getfattr -n "user.someattr" tdir/tfile 2>/dev/null'
+	[ "$status" -eq 1 ]
 
 	docker_stop "$syscont"
 
