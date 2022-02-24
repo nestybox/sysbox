@@ -82,6 +82,7 @@ function check_distro() {
 			[[ "${distro}" != "debian" ]] &&
 			[[ "${distro}" != "centos" ]] &&
 			[[ "${distro}" != "almalinux" ]] &&
+			[[ "${distro}" != "rocky" ]] &&
 			[[ "${distro}" != "fedora" ]]; then
       echo "Unsupported Linux distribution: $distro. Sysbox may not operate as expected."
 	fi
@@ -111,6 +112,8 @@ function kernel_header_path() {
 
 	if [[ "${distro}" == "centos" ]] ||
 			[[ "${distro}" == "fedora" ]] ||
+			[[ "${distro}" == "almalinux" ]] ||
+			[[ "${distro}" == "rocky" ]] ||
 			[[ "${distro}" == "redhat" ]]; then
       path="/usr/src/kernels/$(uname -r)"
 	else

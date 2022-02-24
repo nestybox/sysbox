@@ -70,6 +70,8 @@ load ../helpers/sysbox-health
   # host (i.e. test-priv container).
   if [[ "${distro}" == "centos" ]] ||
       [[ "${distro}" == "fedora" ]] ||
+      [[ "${distro}" == "rocky" ]] ||
+      [[ "${distro}" == "almalinux" ]] ||
       [[ "${distro}" == "redhat" ]]; then
 
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
@@ -122,6 +124,8 @@ load ../helpers/sysbox-health
   # host (i.e. test-priv container).
   if [[ "${distro}" == "centos" ]] ||
       [[ "${distro}" == "fedora" ]] ||
+      [[ "${distro}" == "rocky" ]] ||
+      [[ "${distro}" == "almalinux" ]] ||
       [[ "${distro}" == "redhat" ]]; then
 
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
