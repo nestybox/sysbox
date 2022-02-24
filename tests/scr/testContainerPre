@@ -14,6 +14,7 @@ if [ "$DISTRO" != "Ubuntu" ] &&
    [ "$DISTRO" != "Debian" ] &&
    [ "$DISTRO" != "CentOS" ] &&
    [ "$DISTRO" != "AlmaLinux" ] &&
+   [ "$DISTRO" != "Rocky" ] &&
    [ "$DISTRO" != "Fedora" ]; then
     printf "\nError: sysbox is not supported in this distribution: %s.\n\n", $DISTRO
     exit 1
