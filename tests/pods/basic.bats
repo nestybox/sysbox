@@ -147,3 +147,17 @@ function teardown() {
 	crictl stopp $pod
 	crictl rmp $pod
 }
+
+@test "pod with sysbox env var" {
+
+	local syscont=$(crictl_run ${POD_MANIFEST_DIR}/alpine-container-ignore-sysfs-chown.json ${POD_MANIFEST_DIR}/alpine-pod.json)
+	local syscont_pid=$(crictl_cont_get_pid $syscont)
+	local pod=$(crictl_cont_get_pod $syscont)
+
+	# Verify the user is as expected
+	run crictl exec $syscont chown root:root /sys
+	[ $status -eq 0 ]
+
+	crictl stopp $pod
+	crictl rmp $pod
+}

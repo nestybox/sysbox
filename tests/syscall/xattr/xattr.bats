@@ -219,7 +219,41 @@ function teardown() {
 	rm -rf /mnt/scratch/test
 }
 
-@test "l*xattr high-util: nixos use-case" {
+@test "allow-trusted-xattr disabled" {
+
+	rm -rf /mnt/scratch/test
+	mkdir -p /mnt/scratch/test
+	chown 165536:165536 /mnt/scratch/test
+
+	# deploy a sys container, turn off "allow-trusted-xattr" for it
+	local syscont=$(docker_run --rm -e "SYSBOX_ALLOW_TRUSTED_XATTR=FALSE" -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	# the attr package brings the setfattr and getfattr utils
+	docker exec "$syscont" sh -c "apk add attr"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "mkdir /mnt/tdir && touch /mnt/tdir/tfile"
+	[ "$status" -eq 0 ]
+
+	# setting "trusted.overlay.opaque" xattr should fail now
+	docker exec "$syscont" sh -c 'setfattr -n trusted.overlay.opaque -v "y" /mnt/tdir/tfile'
+	[ "$status" -eq 1 ]
+	docker exec "$syscont" sh -c 'setfattr -n trusted.another -v "another value" /mnt/tdir/tfile'
+	[ "$status" -eq 1 ]
+	docker exec "$syscont" sh -c 'cd /mnt && getfattr -d -m "trusted\." tdir/tfile'
+	[ "$status" -eq 0 ]
+	[[ "$output" == "" ]]
+
+	# setting "user.*" xattr is fine
+	docker exec "$syscont" sh -c 'setfattr -n user.x -v "user value" /mnt/tdir/tfile'
+	[ "$status" -eq 0 ]
+
+	docker_stop "$syscont"
+
+	rm -rf /mnt/scratch/test
+}
+
+@test "l*xattr high-util" {
 
 	# Deploy a sys container with nixos tooling pre-installed.
 	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-bionic-nixos:latest tail -f /dev/null)

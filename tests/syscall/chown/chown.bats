@@ -73,10 +73,23 @@ function verify_sys_chown {
 }
 
 @test "chown /sys" {
+	# verify chown /sys fails when env var SYSBOX_IGNORE_SYSFS_CHOWN is not present
    local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-   verify_sys_owner nobody nobody
-   verify_sys_chown nobody nobody
-   docker_stop "$syscont"
+	docker exec "$syscont" sh -c "chown root:root /sys"
+	[ "$status" -ne 0 ]
+	docker_stop "$syscont"
+
+	# verify chown /sys fails when env var SYSBOX_IGNORE_SYSFS_CHOWN=FALSE
+	local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	docker exec "$syscont" sh -c "chown root:root /sys"
+	[ "$status" -ne 0 ]
+	docker_stop "$syscont"
+
+	# verify chown /sys does not fail (i.e., is ignored) when env var SYSBOX_IGNORE_SYSFS_CHOWN=TRUE
+	local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	verify_sys_owner nobody nobody
+	verify_sys_chown nobody nobody
+	docker_stop "$syscont"
 }
 
 
@@ -90,7 +103,7 @@ function verify_sys_chown {
 
 @test "fchownat /sys" {
    # Note: in Ubuntu, chown(1) uses the fchownat syscall
-   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
+   local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/ubuntu tail -f /dev/null)
    verify_sys_owner nobody nogroup
    verify_sys_chown nobody nogroup
    docker_stop "$syscont"
@@ -117,7 +130,7 @@ function verify_sys_chown {
 }
 
 @test "chown inner container" {
-   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    docker exec "$syscont" sh -c "docker run -d --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null"
@@ -154,7 +167,7 @@ function verify_sys_chown {
 }
 
 @test "fchownat inner container" {
-   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    # Note: in Ubuntu, chown(1) uses the fchownat syscall

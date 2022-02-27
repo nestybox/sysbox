@@ -1,0 +1,26 @@
+{
+    "metadata": {
+        "name": "alpine"
+    },
+    "image":{
+        "image": "ghcr.io/nestybox/alpine"
+    },
+    "command": [
+        "tail", "-f", "/dev/null"
+    ],
+    "envs": [
+	{
+	    "key": "SYSBOX_IGNORE_SYSFS_CHOWN",
+	    "value": "TRUE"
+	}
+    ],
+    "log_path":"alpine.log",
+    "mounts": [
+        {
+            "container_path": "/mnt/test",
+            "host_path": "/mnt/scratch/test"
+        }
+    ],
+    "linux": {
+    }
+}
