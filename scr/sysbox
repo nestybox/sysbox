@@ -17,6 +17,8 @@ DEBUG_MODE=0
 NO_SHIFTFS=0
 NO_IDMAPPED_MOUNT=0
 NO_ROOTFS_CLONING=0
+IGNORE_SYSFS_CHOWN=0
+ALLOW_TRUSTED_XATTR="true"
 SET_DATA_ROOT=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
@@ -220,6 +222,14 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--disable-rootfs-cloning")
 	fi
 
+	if [ $IGNORE_SYSFS_CHOWN -eq 1 ]; then
+		options+=("--ignore-sysfs-chown")
+	fi
+
+	if [[ $ALLOW_TRUSTED_XATTR == "false" ]]; then
+		options+=("--allow-trusted-xattr=false")
+	fi
+
 	if [ $SET_DATA_ROOT -eq 1 ]; then
 		options+=("--data-root ${DATA_ROOT}")
 	fi
@@ -331,15 +341,17 @@ function show_usage() {
 	printf "  -t, --test-mode               Configures Sysbox in test mode (for use in the Sysbox test suite only).\n"
 	printf "  -d, --debug                   Enables debug logging in Sysbox (useful for debugging).\n"
 	printf "      --data-root <dir>         Path to Sysbox data store (defaults to /var/lib/sysbox).\n"
-	printf "      --disable-shiftfs         Disables Sysbox's use of shiftfs.\n"
-	printf "      --disable-idmapped-mount  Disables Sysbox's use of ID-mapped mounts.\n"
-	printf "      --disable-rootfs-cloning  Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time.\n"
+	printf "      --disable-shiftfs         Disables Sysbox's use of shiftfs (defaut = false).\n"
+	printf "      --disable-idmapped-mount  Disables Sysbox's use of ID-mapped mounts (default = false).\n"
+	printf "      --disable-rootfs-cloning  Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time (default = false).\n"
+	printf "      --ignore-sysfs-chown      Ignore chown of /sys inside all Sysbox containers; may be needed to run a few apps that chown /sys inside the container (e.g,. rpm). Causes Sysbox to trap the chown syscall inside the container, slowing it down (default = false).\n"
+	printf "      --allow-trusted-xattr     Allows the overlayfs trusted.overlay.opaque xattr to be set inside all Sysbox containers; needed when running Docker inside Sysbox on hosts with kernel < 5.11. Causes Sysbox to trap the *xattr syscalls inside the container, slowing it down (default = true).",
 	printf "  -h, --help                    Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-rootfs-cloning,data-root:,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-rootfs-cloning,ignore-sysfs-chown,allow-trusted-xattr:,data-root:,help -- "$@")
 
 	eval set -- "$options"
 
@@ -363,6 +375,13 @@ function parse_args() {
 				;;
 			--disable-rootfs-cloning)
 				NO_ROOTFS_CLONING=1
+				;;
+			--ignore-sysfs-chown)
+				IGNORE_SYSFS_CHOWN=1
+				;;
+			--allow-trusted-xattr)
+				shift
+				ALLOW_TRUSTED_XATTR=$1
 				;;
 			--data-root)
 				SET_DATA_ROOT=1
