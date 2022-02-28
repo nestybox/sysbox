@@ -19,7 +19,7 @@
 # docker build -t sysbox-test .
 #
 
-FROM almalinux
+FROM almalinux:8.5
 
 ARG k8s_version=v1.18.2
 
