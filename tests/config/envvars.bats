@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Verify sysbox-mgr command line arguments
+# Verify per-container config via SYSBOX_* env vars.
 #
 
 load ../helpers/run
@@ -14,17 +14,16 @@ function teardown() {
 
 @test "sysbox env vars" {
 
-	run __docker run -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest chown root:root /sys
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest chown root:root /sys
 	[ "$status" -eq 0 ]
 
-	run __docker run -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest chown root:root /sys
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest chown root:root /sys
 	[ "$status" -ne 0 ]
-
 }
 
 @test "sysbox env vars on exec" {
 
-	local syscont=$(docker_run -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	# exec sees the effect of the SYSBOX_* env var
 	docker exec "$syscont" sh -c "chown root:root /sys"
@@ -37,7 +36,7 @@ function teardown() {
    docker_stop "$syscont"
 
 	# Change the value of the env var
-	local syscont=$(docker_run -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	# exec sees the effect of the SYSBOX_* env var
 	docker exec "$syscont" sh -c "chown root:root /sys"
@@ -52,8 +51,8 @@ function teardown() {
 
 @test "sysbox env vars multi-container" {
 
-	local sc1=$(docker_run -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-	local sc2=$(docker_run -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local sc1=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	local sc2=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=FALSE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	docker exec "$sc1" sh -c "chown root:root /sys"
 	[ "$status" -eq 0 ]
@@ -67,12 +66,12 @@ function teardown() {
 
 @test "sysbox env vars invalid" {
 
-	run __docker run -e "SYSBOX_IGNORE_SYSFS_CHOWN=BAD_VAL" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=BAD_VAL" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
 	[ "$status" -ne 0 ]
 
-	run __docker run -e "SYSBOX_IGNORE_SYSFS_CHOWN=BAD_VAL=BAD_VAL2" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=BAD_VAL=BAD_VAL2" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
 	[ "$status" -ne 0 ]
 
-	run __docker run -e "SYSBOX_IGNORE_SYSFS_CHOWN=" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
 	[ "$status" -ne 0 ]
 }
