@@ -35,8 +35,8 @@ microservice deployment.
 
 ## Supported Flatcar Releases
 
-* 2765.2.6
 * 2905.2.3
+* 2905.2.6
 
 ## Installing Sysbox on Flatcar
 
