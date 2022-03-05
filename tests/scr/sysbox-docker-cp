@@ -136,7 +136,7 @@ function get_container_info() {
 
 function is_sysbox_container() {
 	# XXX: in the future we should query Sysbox for this info.
-	stat ${SYSBOX_DATA_ROOT}/docker/${CONT_ID} > /dev/null 2>&1
+	stat ${SYSBOX_DATA_ROOT}/containerd/${CONT_ID} > /dev/null 2>&1
 }
 
 function sysbox_rootfs_cloned() {
