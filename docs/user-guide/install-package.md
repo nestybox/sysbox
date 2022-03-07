@@ -211,12 +211,12 @@ mode (see [below](#docker-userns-remap)).**
 
 To build and install shiftfs, follow the instructions here: https://github.com/toby63/shiftfs-dkms
 
-For example, to install shiftfs on a Ubuntu-based cloud VM with Linux 5.8,
+For example, to install shiftfs on an Ubuntu-based cloud VM with Linux kernel version 5.8 or 5.10,
 follow these simple steps:
 
 ```console
-git clone -b k5.8 https://github.com/toby63/shiftfs-dkms.git shiftfs-k58
-cd shiftfs-k58
+git clone -b k5.10 https://github.com/toby63/shiftfs-dkms.git shiftfs-k510
+cd shiftfs-k510
 ./update1
 sudo make -f Makefile.dkms
 modinfo shiftfs
