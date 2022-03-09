@@ -79,16 +79,26 @@ product offering.
 ## K3s-in-Docker [ v0.4.0+ ]
 
 -   K3s clusters can be deployed within system containers to offer a lighter
-alternative to K8s deployments.
+alternative to K8s deployments without the limitations of the
+[rootless-k3s](https://rancher.com/docs/k3s/latest/en/advanced/#known-issues-with-rootless-mode)
+deployment approach.
 
 -   As it is the case with K8s-in-Docker solutions, K3s nodes hosted within a
 system container are properly isolated through the diverse security mechanisms
 offered by the Sysbox runtime. In other words, Sysbox is not relying on
 `privileged` containers as other K3s-in-Docker solutions do.
 
+## RKE/RKE2-in-Docker [ v0.5.0+ Sysbox-EE ]
+
+-   Deploy RKE and RKE2 clusters within Sysbox-powered docker containers or
+    K8s pods for extra security and isolation.
+
+-   The Canal CNI utilized by both RKE and RKE2 is currently only supported as
+    part of the Sysbox-EE product offering.
+
 ## Buildx + Buildkit [ v0.5.0+ ]
 
--   Run buildx and/or buildkit inside a Docker container or K8s pods for extra
+-   Run buildx and/or buildkit inside Docker containers or K8s pods for extra
     security and performance.
 
 -   Avoid the limitations associated with running Buildkit in secure environments
