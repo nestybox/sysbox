@@ -10,18 +10,17 @@
 The following table summarizes the supported Linux distros, the installation
 methods supported, and any other requirements:
 
-| Distro / Release      | Package Install | K8s Install | Build from Source | Kernel Upgrade | Other |
-| --------------------- | :-------------: | :---------: | :------------: | :----: | :----: |
-| Ubuntu Bionic (18.04) | ✓ | ✓ | ✓ | [Maybe](#ubuntu-kernel-upgrade) | |
-| Ubuntu Focal  (20.04) | ✓ | ✓ | ✓ | No                              | |
-| Debian Buster (10)    | ✓ |   | ✓ | [Yes](#debian-kernel-upgrade)   | |
-| Debian Bullseye (11)  | ✓ |   | ✓ | No                              | |
-| Fedora 31 (EOL)       |   |   | ✓ | [Maybe](#fedora-kernel-upgrade) | |
-| Fedora 32 (EOL)       |   |   | ✓ | No                              | |
-| Fedora 33             |   |   | ✓ | No                              | |
-| Fedora 34             |   |   | ✓ | No                              | |
-| CentOS 8              |   |   | ✓ | [Yes](#centos-kernel-upgrade)   | |
-| Flatcar               | ✓ | ✓ |   | No                              | Sysbox-EE only; see details [here](user-guide/install-flatcar.md) |
+| Distro / Release      | Package Install | K8s Install | Build from Source | Min Kernel | Shiftfs Required | Other |
+| --------------------- | :-------------: | :---------: | :---------------: | :--------: | :--------------: | ----- |
+| Ubuntu Bionic (18.04) | ✓               | ✓           | ✓                 | 5.3+       | If kernel < 5.12 | [Kernel upgrade notes](#ubuntu-kernel-upgrade) |
+| Ubuntu Focal  (20.04) | ✓               | ✓           | ✓                 | 5.4+       | If kernel < 5.12 | |
+| Debian Buster (10)    | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | [Kernel upgrade notes](#debian-kernel-upgrade) |
+| Debian Bullseye (11)  | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | |
+| Fedora 33             | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Fedora 34             | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| CentOS Stream         | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| RedHat Enterprise     | WIP             | WIP         |                   | 5.12+      | No | Sysbox-EE only |
+| Flatcar               | ✓               | ✓           |                   | 5.10+      | If kernel < 5.12  | Sysbox-EE only; see [here](user-guide/install-flatcar.md). |
 
 **NOTES:**
 
@@ -33,8 +32,15 @@ methods supported, and any other requirements:
 
 -   "Kernel upgrade" means a kernel upgrade may be required (Sysbox requires a fairly new kernel). See [below](#kernel-upgrade-procedures) for more.
 
--   "EOL" releases refer to those that are being deprecated by its distro vendor as
-part of their release scheduling process.
+-   "WIP" means "work-in-progress" (i.e., we expect to have this soon).
+
+-   These are the Linux distros we officially support (and test with). However, we expect Sysbox to work fine on other Linux distros too.
+
+## Shiftfs Installation Procedure
+
+TODO: complete this section
+
+TODO: shiftfs installation may not be required; check first.
 
 ## Kernel Upgrade Procedures
 
@@ -67,35 +73,3 @@ $ sudo shutdown -r now
 ```
 
 Refer to this [link](https://wiki.debian.org/HowToUpgradeKernel) for more details.
-
-### Fedora Kernel Upgrade
-
-This is only applicable to Fedora 31 release; more recent releases already
-include 5.5+ kernels.
-
-```console
-$ sudo dnf config-manager --set-enabled kernel-vanilla-mainline
-
-$ sudo dnf update
-
-$ sudo shutdown -r now
-```
-
-Refer to this [link](https://www.cloudinsidr.com/content/how-to-upgrade-the-linux-kernel-in-fedora-29/) for more details.
-
-### CentOS Kernel Upgrade
-
-Applicable to CentOS 8 release.
-
-```console
-
-$ sudo rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
-
-$ sudo dnf install https://www.elrepo.org/elrepo-release-8.0-2.el8.elrepo.noarch.rpm
-
-$ sudo dnf --enablerepo=elrepo-kernel install kernel-ml
-
-$ sudo shutdown -r now
-```
-
-Refer to this [link](https://vitux.com/how-to-upgrade-the-kernel-on-centos-8-0/) for more details.
