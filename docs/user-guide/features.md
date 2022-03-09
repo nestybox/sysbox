@@ -86,6 +86,14 @@ system container are properly isolated through the diverse security mechanisms
 offered by the Sysbox runtime. In other words, Sysbox is not relying on
 `privileged` containers as other K3s-in-Docker solutions do.
 
+## Buildx + Buildkit [ v0.5.0+ ]
+
+-   Run buildx and/or buildkit inside a Docker container or K8s pods for extra
+    security and performance.
+
+-   Avoid the limitations associated with running Buildkit in secure environments
+    (i.e., buildkit-rootless) without the need to resort to `privileged` containers.
+
 ## Fast & Efficient
 
 -   Sysbox uses host resources optimally and starts containers in a few seconds.
