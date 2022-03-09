@@ -25,7 +25,9 @@ planning to contribute to Sysbox's public repositories, you should then have a
 distro that carries the `shiftfs` module (e.g. Ubuntu Server versions for Bionic
 or Focal) so that you can properly test your changes with and without `shiftfs`.
 
-2) Docker must be installed natively (i.e., **not** with the Docker snap package).
+2) It must be hosted on one of the [supported architectures](../arch-compat.md).
+
+3) Docker must be installed natively (i.e., **not** with the Docker snap package).
 
 -   See [below](#docker-installation) if you have a Docker snap installation and
     need to change it to a native installation.
