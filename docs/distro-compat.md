@@ -51,7 +51,7 @@ show up as owned by `nobody:nogroup` inside the container. See the [user-guide d
 for more info on this.
 
 When Sysbox is installed in hosts with Linux kernel >= 5.12, shiftfs is NOT
-required as Sysbox can leverage a buitl-in kernel feature called "ID-mapped
+required as Sysbox can leverage a built-in kernel feature called "ID-mapped
 mounts" as an alternative to shiftfs.
 
 Having said this, we recommend having shiftfs installed on the host when
