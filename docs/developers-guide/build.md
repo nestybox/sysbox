@@ -26,6 +26,8 @@ distro that carries the `shiftfs` module (e.g. Ubuntu Server versions for Bionic
 or Focal) so that you can properly test your changes with and without `shiftfs`.
 
 2) It must be hosted on one of the [supported architectures](../arch-compat.md).
+Refer to the cross-compilation section for more details if working on heterogenous
+scenarios.
 
 3) Docker must be installed natively (i.e., **not** with the Docker snap package).
 
@@ -108,6 +110,39 @@ $ sudo make install
 This last target simply copies the Sysbox binaries to your machine's
 `/usr/bin` directory; we don't have a package installer for Sysbox
 (unlike the Sysbox version distributed by Nestybox).
+
+## Cross-compilation
+
+By default, the generated Sysbox binaries will match the hardware architecture
+of the build-server being utilized. However, users can create Sysbox artifacts
+for different architectures by explicitly setting the desired target platform:
+
+```
+make sysbox TARGET_ARCH=arm64
+```
+
+The generated binaries will be placed in the corresponding branch of the
+build artifacts tree:
+
+```
+sysbox-mgr/build
+├── amd64
+│   └── sysbox-mgr
+├── arm64
+│   └── sysbox-mgr
+
+sysbox-fs/build
+├── amd64
+│   └── sysbox-fs
+└── arm64
+    └── sysbox-fs
+
+sysbox-runc/build
+├── amd64
+│   └── sysbox-runc
+└── arm64
+    └── sysbox-runc
+```
 
 ## Starting Sysbox
 
