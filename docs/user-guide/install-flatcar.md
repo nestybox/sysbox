@@ -53,7 +53,7 @@ details.
 ### Installing Sysbox on Flatcar Docker Hosts
 
 To install Sysbox on a host machine (physical or VM) running Flatcar, simply
-use this [Container Linux configuration file](config/config.yaml). This config
+use this [Container Linux configuration file](flatcar-config.yaml). This config
 installs the [Sysbox components](#sysbox-components) on the Flatcar host.
 
 **NOTE**: Add to the config file any other configurations you need for the machine
@@ -62,7 +62,7 @@ installs the [Sysbox components](#sysbox-components) on the Flatcar host.
 For example, the steps below deploy Sysbox on a Google Compute Engine (GCE)
 virtual machine:
 
-1) Add the ssh authorized key to the [config.yaml](config/config.yaml):
+1) Add the ssh authorized key to the [flatcar-config.yaml](flatcar-config.yaml):
 
 ```yaml
 passwd:
@@ -76,7 +76,7 @@ passwd:
 as described [in this Kinvolk doc](https://kinvolk.io/docs/flatcar-container-linux/latest/provisioning/config-transpiler/):
 
 ```console
-$ ct --platform=gce < config.yaml > config.ign
+$ ct --platform=gce < flatcar-config.yaml > config.ign
 ```
 
 3) Provision the GCE VM and pass the `config.ign` generated in the prior step as "user-data".
@@ -132,7 +132,7 @@ without problem.
 
 ## Sysbox Components
 
-The [config.yaml](config/config.yaml) performs the following configurations on a Flatcar host:
+The [flatcar-config.yaml](flatcar-config.yaml) performs the following configurations on a Flatcar host:
 
 * Places the Sysbox-EE binaries in a directory called `/opt/bin/sysbox`. The
   binaries include:
@@ -146,7 +146,7 @@ The [config.yaml](config/config.yaml) performs the following configurations on a
     ability to isolate containers with the Linux user-namespace without changes
     in Docker's configuration. More on shiftfs [here](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/design.md#ubuntu-shiftfs-module).
 
-* Configures some kernel sysctl parameters (the config.yaml has the details).
+* Configures some kernel sysctl parameters (the `flatcar-config.yaml` has the details).
 
 * Installs and starts the Sysbox-EE systemd units.
 
