@@ -3,7 +3,7 @@
 The document outlines the set of instructions that are required to install Sysbox
 on Kinvolk's Flatcar Linux distribution.
 
-#### ** --- Sysbox-EE Feature Highlight --- **
+#### \*\* --- Sysbox-EE Feature Highlight --- \*\*
 
 Due to the enterprise-oriented nature of Flatcar's typical deployments, as well
 as the extra maintenance cost that it entails from Sysbox maintainers, Flatcar
@@ -13,12 +13,10 @@ support is currently only offered as part of the Sysbox Enterprise Edition (EE).
 
 ## Contents
 
-*   [Why Sysbox on Flatcar?](#why-sysbox-on-flatcar)
-*   [Supported Flatcar Releases](#supported-flatcar-releases)
-*   [Installing Sysbox on Flatcar](#installing-sysbox-on-flatcar)
-*   [Sysbox Components](#sysbox-components)
-*   [Contact](#contact)
-*   [Thank You!](#thank-you)
+-   [Why Sysbox on Flatcar?](#why-sysbox-on-flatcar)
+-   [Supported Flatcar Releases](#supported-flatcar-releases)
+-   [Installing Sysbox on Flatcar](#installing-sysbox-on-flatcar)
+-   [Sysbox Components](#sysbox-components)
 
 ## Why Sysbox on Flatcar?
 
@@ -35,8 +33,8 @@ microservice deployment.
 
 ## Supported Flatcar Releases
 
-* 2905.2.3
-* 2905.2.6
+-   2905.2.3
+-   2905.2.6
 
 ## Installing Sysbox on Flatcar
 
@@ -62,7 +60,7 @@ installs the [Sysbox components](#sysbox-components) on the Flatcar host.
 For example, the steps below deploy Sysbox on a Google Compute Engine (GCE)
 virtual machine:
 
-1) Add the ssh authorized key to the [flatcar-config.yaml](flatcar-config.yaml):
+1. Add the ssh authorized key to the [flatcar-config.yaml](flatcar-config.yaml):
 
 ```yaml
 passwd:
@@ -72,14 +70,14 @@ passwd:
         - "ssh-rsa AAAAB3NzaC1yc..."
 ```
 
-2) Convert the config to the Ignition format. This is done using the `ct` tool,
-as described [in this Kinvolk doc](https://kinvolk.io/docs/flatcar-container-linux/latest/provisioning/config-transpiler/):
+2.  Convert the config to the Ignition format. This is done using the `ct` tool,
+    as described [in this Kinvolk doc](https://kinvolk.io/docs/flatcar-container-linux/latest/provisioning/config-transpiler/):
 
 ```console
 $ ct --platform=gce < flatcar-config.yaml > config.ign
 ```
 
-3) Provision the GCE VM and pass the `config.ign` generated in the prior step as "user-data".
+3.  Provision the GCE VM and pass the `config.ign` generated in the prior step as "user-data".
 
 ```console
 $ gcloud compute instances create flatcar-vm --image-project kinvolk-public --image-family flatcar-stable --zone us-central1-a --machine-type n2-standard-4 --metadata-from-file user-data=config.ign
@@ -134,23 +132,22 @@ without problem.
 
 The [flatcar-config.yaml](flatcar-config.yaml) performs the following configurations on a Flatcar host:
 
-* Places the Sysbox-EE binaries in a directory called `/opt/bin/sysbox`. The
-  binaries include:
+-   Places the Sysbox-EE binaries in a directory called `/opt/bin/sysbox`. The
+    binaries include:
 
-  - sysbox-mgr, sysbox-runc, sysbox-fs, the `shiftfs` module, and `fusermount`.
+    -   sysbox-mgr, sysbox-runc, sysbox-fs, the `shiftfs` module, and `fusermount`.
 
-* Loads the `shiftfs` module into the kernel.
+-   Loads the `shiftfs` module into the kernel.
 
-  - This module is present in Ubuntu kernels, but typically not present on other
-    distros. It brings multiple functional benefits, such as giving Sysbox the
-    ability to isolate containers with the Linux user-namespace without changes
-    in Docker's configuration. More on shiftfs [here](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/design.md#ubuntu-shiftfs-module).
+    -   This module is present in Ubuntu kernels, but typically not present on other
+        distros. It brings multiple functional benefits as described
+        [here](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/design.md#ubuntu-shiftfs-module).
 
-* Configures some kernel sysctl parameters (the `flatcar-config.yaml` has the details).
+-   Configures some kernel sysctl parameters (the `flatcar-config.yaml` has the details).
 
-* Installs and starts the Sysbox-EE systemd units.
+-   Installs and starts the Sysbox-EE systemd units.
 
-* Configures Docker to learn about Sysbox-EE and restarts Docker.
+-   Configures Docker to learn about Sysbox-EE and restarts Docker.
 
 The result is that the host is fully configured to run Docker containers
 with Sysbox.
