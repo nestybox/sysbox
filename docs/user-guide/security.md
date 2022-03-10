@@ -84,79 +84,17 @@ between the container and the host.
 
 Sysbox performs the mapping as follows:
 
--   If the [container manager](concepts.md#container-manager) (e.g., Docker)
-    tells Sysbox to run the container with the user-namespace enabled, Sysbox
-    honors the user-ID mappings provided by the container manager.
+-   If the [container manager](concepts.md#container-manager) (e.g., Docker or
+    CRI-O) tells Sysbox to run the container with the user-namespace enabled,
+    Sysbox honors the user-ID mappings provided by the container manager.
 
 -   Otherwise, Sysbox automatically enables the user-namespace in the container
     and allocates user-ID mappings for it.
 
-We call these "Directed userns ID mapping" and "Auto userns ID mapping"
-respectively.
-
-The following sub-sections describe these in further detail.
-
-**Recommendation**:
-
-If your kernel has the `shiftfs` module (you can check by running `lsmod | grep shiftfs`), then
-Auto Userns ID Mapping is preferred. Otherwise, you must use Directed Userns ID
-Mapping (e.g., by configuring Docker with userns-remap).
-
-### Directed userns ID mapping
-
-When the container manager (e.g., Docker) tells Sysbox to enable
-the user-namespace in containers, Sysbox honors the user-ID mappings provided by
-the higher layer.
-
-For Docker specifically, this occurs when the Docker daemon is configured with
-"userns-remap", as described this [Docker document](https://docs.docker.com/engine/security/userns-remap).
-
-There is one advantage of Directed userns ID mapping:
-
--   Sysbox does not need the Linux kernel's [shiftfs module](design.md#ubuntu-shiftfs-module).
-    This means Sysbox can run in kernels that don't carry that module (e.g.,
-    Fedora, CentOS).
-
-But there are a couple of drawbacks:
-
--   Configuring Docker with userns-remap places a few [functional limitations](https://docs.docker.com/engine/security/userns-remap/#user-namespace-known-limitations)
-    on regular Docker containers (those launched with Docker's default runc).
-
--   Bind-mounting host files or directories to the container requires users
-    to [manually configure file permissions](storage.md#host-does-not-support-user-and-group-id-shifting-ie-no-shiftfs).
-
-### Auto userns ID mapping
-
-When the container manager does not specify the user-namespace for
-a container, Sysbox automatically enables it and allocates user-ID mappings for
-the container.
-
-For Docker specifically, this occurs when Docker is not configured with
-userns-remap (which is normally the case).
-
-This has the advantage that both of the drawbacks listed in the prior
-section are solved:
-
--   No change in the configuration of the container manager (e.g., Docker) is
-    required, so it can continue to launch regular containers (i.e., with the OCI
-    runc) as usual while at the same time launch system containers with Sysbox.
-
--   Sysbox automatically deals with file permissions for the container's root
-    file system as well as any host files or directories bind-mounted into
-    the container.
-
-#### Dependence on Shiftfs
-
-Auto userns ID mapping requires the presence of the [shiftfs module](design.md#ubuntu-shiftfs-module)
-in the Linux kernel.
-
-Sysbox will check for this. If the module is required but not present in the
-Linux kernel, Sysbox will fail to launch containers and issue an error such as
-[this one](troubleshoot.md#ubuntu-shiftfs-module-not-present).
-
-Note that shiftfs is present in Ubuntu Desktop and Server editions, but is
-not present in RHEL, Fedora, and CentOS. Also, Ubuntu cloud editions don't
-carry shiftfs either, but given that it's a Ubuntu kernel it's fairly easy to [build shiftfs and install it](https://github.com/toby63/shiftfs-dkms).
+In either case, Sysbox uses the kernel's ID-mapped mounts feature or the shiftfs
+kernel module (depending of which is available) to ensure host files mounted
+into the container show up with the proper user-ID and group-ID inside the
+container's user-namespace.
 
 ## Common vs Exclusive Userns ID Mappings
 
@@ -283,7 +221,7 @@ itself.
 
 ## Process Capabilities
 
-A system container's init process configured with user-ID 0 (root)
+By default, a system container's init process configured with user-ID 0 (root)
 always starts with all capabilities enabled.
 
 ```console
@@ -314,7 +252,12 @@ CapBnd: 0000003fffffffff
 CapAmb: 0000000000000000
 ```
 
-This mimics the way capabilities are assigned to users on a physical host or VM.
+This mimics the way capabilities are assigned to processes on a physical host or VM.
+
+Note that starting with Sysbox v0.5.0, it's possible to modify this behavior to
+have Sysbox honor the capabilities passed to it by the higher level container
+manager via the OCI spec. See the [configuration chapter](configuration.md) for
+more on this.
 
 ## System Calls
 
