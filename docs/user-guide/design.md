@@ -165,13 +165,22 @@ Sysbox adds the following namespaces to all system containers:
 
 ### Process Capabilities
 
-Sysbox always enables all process capabilities for the system
-container's init process when owned by the root user.
+By default, Sysbox assigns process capabilities in the container as
+follows:
 
-Sysbox always disables all process capabilities for the system
-container's init process when owned by a non-root user.
+-   Enables all process capabilities for the system container's init process when
+    owned by the root user.
 
-See [here](security.md#process-capabilities) for more info.
+-   Disables all process capabilities for the system container's init process when
+    owned by a non-root user.
+
+This mimics the way capabilities are assigned to processes on a physical host or
+VM. See the [security chapter](security.md#process-capabilities) for more on this.
+
+Note that starting with Sysbox v0.5.0, it's possible to modify this behavior to
+have Sysbox honor the capabilities passed to it by the higher level container
+manager via the OCI spec. See the [configuration chapter](configuration.md) for
+more on this.
 
 ### Procfs and Sysfs
 
