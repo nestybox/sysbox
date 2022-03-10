@@ -11,6 +11,10 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Sysbox Configuration Options](#sysbox-configuration-options)
 -   [Sysbox Log Configuration](#sysbox-log-configuration)
 -   [Sysbox Data Store Configuration \[ v0.3.0+ \]](#sysbox-data-store-configuration--v030-)
+-   [Container Capabilities Configuration \[ v0.5.0+ \]](#container-capabilities-configuration--v050-)
+-   [Speeding up Sysbox by Disallowing Trusted Overlay Xattributes](#speeding-up-sysbox-by-disallowing-trusted-overlay-xattributes)
+-   [Disabling Shiftfs on Sysbox](#disabling-shiftfs-on-sysbox)
+-   [Disabling ID-mapped Mounts on Sysbox](#disabling-id-mapped-mounts-on-sysbox)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Sysbox Systemd Services
@@ -178,6 +182,69 @@ store. This also means that the data can persist across the container's
 life-cycle (i.e., it won't be deleted when the container is removed).
 See [this section in the quickstart guide](../quickstart/dind.md#persistence-of-inner-container-images-using-docker-volumes)
 for an example of how to do this.
+
+## Container Capabilities Configuration \[ v0.5.0+ ]
+
+By default, Sysbox assigns process capabilities in the container as
+follows:
+
+* Enables all process capabilities for the system container's init process when
+  owned by the root user.
+
+* Disables all process capabilities for the system container's init process when
+  owned by a non-root user.
+
+This mimics the way capabilities are assigned to processes on a physical host or
+VM and relieves users of the burden on having to understand what capabilities
+are needed by the processes running inside the container.
+
+Note that the Sysbox container capabilities are isolated from the host via the Linux
+user-namespace, which Sysbox enables on all containers. See
+the [security chapter](security.md#process-capabilities) for more on this.
+
+While this behavior is beneficial in most cases, it has the drawback that it
+does not allow fine-grained control of the capabilities used by the Sysbox
+container init process (e.g., Docker's `--cap-add` and `--cap-drop` don't have
+any effect). In some situations, having such control is beneficial.
+
+To overcome this, starting with Sysbox v0.5.0 it's possible to configure
+Sysbox to honor the capabilities passed to it by the higher level
+container manager via the container's OCI spec.
+
+The configuration can be done on a per-container basis, or globally for
+all containers.
+
+To do this on a per-container basis, pass the `SYSBOX_HONOR_CAPS=TRUE`
+environment variable to the container, as follows:
+
+```
+$ docker run --runtime=sysbox-runc -e SYSBOX_HONOR_CAPS=TRUE --rm -it alpine
+/ # cat /proc/self/status | grep -i cap
+CapInh: 00000000a80425fb
+CapPrm: 00000000a80425fb
+CapEff: 00000000a80425fb
+CapBnd: 00000000a80425fb
+CapAmb: 0000000000000000
+```
+
+To do this globally, configure the sysbox-mgr with the `--honor-caps` command
+line option (see [above](#reconfiguration-procedure).
+
+Note that while this gives users full control over the container's process
+capabilities (which is good for extra security), the drawback is that the user
+must understand all the capabilities required by the processes inside the
+container (e.g., if you run Docker inside the Sysbox container, you must
+understand what capabilities Docker requires in order to operate properly).
+
+## Speeding up Sysbox by Disallowing Trusted Overlay Xattributes
+
+
+## Disabling Shiftfs on Sysbox
+
+
+## Disabling ID-mapped Mounts on Sysbox
+
+
 
 ## Sysbox Kernel Parameter Configurations
 
