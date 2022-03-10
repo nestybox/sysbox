@@ -45,17 +45,20 @@ methods supported, and any other requirements:
 
 ## Shiftfs Requirement
 
-When Sysbox is installed in hosts with Linux kernel < 5.12, the "shiftfs"
-kernel module is required. Otherwise host files mounted into the container will
-show up as owned by `nobody:nogroup` inside the container. See the [user-guide design chapter](user-guide/design.md#ubuntu-shiftfs-module)
+Shiftfs is a Linux kernel module that Sysbox uses to ensure host volumes mounted
+into the (rootless) container show up with proper user and group IDs.
+
+When Sysbox is installed in hosts with Linux kernel < 5.12, shiftfs is
+required. Otherwise host files mounted into the container will show up as owned
+by `nobody:nogroup` inside the container. See the [user-guide design chapter](user-guide/design.md)
 for more info on this.
 
 When Sysbox is installed in hosts with Linux kernel >= 5.12, shiftfs is NOT
-required as Sysbox can leverage a built-in kernel feature called "ID-mapped
+REQUIRED as Sysbox can leverage a built-in kernel feature called "ID-mapped
 mounts" as an alternative to shiftfs.
 
 Having said this, we recommend having shiftfs installed on the host when
-possible, as ID-mapped mounts have some limitations that shiftfs covers (and
+possible as ID-mapped mounts have some limitations that shiftfs overcomes (and
 vice-versa). Sysbox will check for the presence of shiftfs and ID-mapped mounts,
 and use them as needed when setting up the container.
 
@@ -64,9 +67,10 @@ Unfortunately, shiftfs is only available in Ubuntu, Debian, and Flatcar distros
 distros (e.g., Fedora, CentOS, RedHat, etc.) For this reason, in order to use
 Sysbox in these other distros, you must have kernel >= 5.12 (ID-mapped mounts).
 
-Note that in the Ubuntu's desktop and server versions, shiftfs comes pre-installed. In Ubuntu's cloud images
-or in Debian or Flatcar, shiftfs must be manually installed. See the [user-guide installation section on shiftfs](user-guide/install-package.md#installing-shiftfs) for
-info on how to do this.
+Note that in the Ubuntu's desktop and server versions, shiftfs comes
+pre-installed. In Ubuntu's cloud images or in Debian or Flatcar, shiftfs must be
+manually installed. See the [user-guide installation chapter](user-guide/install-package.md)
+for info on how to do this.
 
 ## Kernel Upgrade Procedures
 

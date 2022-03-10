@@ -16,6 +16,7 @@ for reference).
 -   [Deploying containers with Docker + Sysbox](#deploying-containers-with-docker--sysbox)
 -   [Deploying Pods with Kubernetes + Sysbox](#deploying-pods-with-kubernetes--sysbox)
 -   [Sysbox Container Images](#sysbox-container-images)
+-   [Mounting Storage into Sysbox Containers (or Pods)](#mounting-storage-into-sysbox-containers-or-pods)
 -   [Deploying containers with sysbox-runc directly](#deploying-containers-with-sysbox-runc-directly)
 -   [Using Other Container Managers](#using-other-container-managers)
 
@@ -117,64 +118,6 @@ spec:
         command: ["/sbin/init"]
 ```
 
-### Mounting Host Volumes to a Sysbox Pod
-
-To mount host volumes into a K8s pod deployed with Sysbox, the K8s worker node's
-kernel **must include** the `shiftfs` kernel module.
-
-**NOTE: shiftfs is currently only supported on Ubuntu kernels and it's installed
-automatically by the sysbox-deploy-k8 daemonset.**
-
-The need for shiftfs arises because such Sysbox pods are rootless, meaning that
-the root user inside the pod maps to a non-root user on the host (e.g., pod user
-ID 0 maps to host user ID 296608). Without shiftfs, host directories or files
-which are typically owned by users IDs in the range 0->65535 will show up as
-`nobody:nogroup` inside the pod.
-
-The shiftfs module solves this problem, as it allows Sysbox to "shift" user
-and group IDs inside the pod, such that files owned by users 0->65536 on the
-host also show up as owned by users 0->65536 inside the pod.
-
-Once shiftfs is installed, Sysbox will detect this and use it when necessary.
-As a user you don't need to know anything about shiftfs; you just setup the pod
-with volumes as usual.
-
-For example, the following spec creates a Sysbox pod with ubuntu-bionic + systemd +
-docker and mounts host directory `/root/somedir` into the pod's `/mnt/host-dir`.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: ubu-bio-systemd-docker
-  annotations:
-    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
-spec:
-  runtimeClassName: sysbox-runc
-  containers:
-  - name: ubu-bio-systemd-docker
-    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
-    command: ["/sbin/init"]
-    volumeMounts:
-      - mountPath: /mnt/host-dir
-        name: host-vol
-  restartPolicy: Never
-  volumes:
-  - name: host-vol
-    hostPath:
-      path: /root/somedir
-      type: Directory
-```
-
-When this pod is deployed, Sysbox will automatically enable shiftfs on the pod's
-`/mnt/host-dir`. As a result that directory will show up with proper user-ID and
-group-ID ownership inside the pod.
-
-With shiftfs you can even share the same host directory across pods, even if
-the pods each get exclusive Linux user-namespace user-ID and group-ID mappings.
-Each pod will see the files with proper ownership inside the pod (e.g., owned
-by users 0->65536).
-
 ### Sysbox Pod Limitations
 
 See the [limitations section](limitations.md#kubernetes-restrictions) of the
@@ -192,11 +135,15 @@ We usually rely on `registry.nestybox.com` as an image front-end so that Docker
 image pulls are forwarded to the most suitable repository without impacting our
 users.
 
+## Mounting Storage into Sysbox Containers (or Pods)
+
+Refer to the [Storage chapter](storage.md).
+
 ## Deploying containers with sysbox-runc directly
 
 **NOTE: This is not the usual way to deploy containers with Sysbox as the
 interface is low-level (it's defined by the OCI runtime spec). However, we
-include it here for refence because it's useful when wishing to control the
+include it here for reference because it's useful when wishing to control the
 configuration of the system container at the lowest level.**
 
 As the root user, follow these steps:
@@ -205,7 +152,7 @@ As the root user, follow these steps:
 
 ```console
 # mkdir /root/syscontainer
-l# cd /root/syscontainer
+# cd /root/syscontainer
 # mkdir rootfs
 # docker export $(docker create debian:latest) | tar -C rootfs -xvf -
 ```
@@ -231,14 +178,16 @@ A couple of tips:
 -   In step (1):
 
     -   If the `config.json` does not specify the Linux user namespace, the
-        container's rootfs should be owned by `root:root`. This also requires that
-        the [shiftfs module](design.md#ubuntu-shiftfs-module) be present in the
-        kernel.
+        container's rootfs should be owned by `root:root`.
 
     -   If the `config.json` does specify the Linux user namespace and associated
         user-ID and group-ID mappings, the container's rootfs should be owned
-        by the corresponding user-ID and group-ID. In this case, the presence of
-        the shiftfs module is not required.
+        by the corresponding user-ID and group-ID.
+
+    -   In addition, make sure you have support for either [shiftfs](design.md#ubuntu-shiftfs-module)
+        or ID-mapped mounts (kernel >= 5.12) in your host. Without these,
+        host files mounted into the container will show up with `nobody:nogroup`
+        ownership.
 
 -   Feel free to modify the system container's `config.json` to your needs. But
     note that Sysbox ignores a few of the OCI directives in this file (refer to
