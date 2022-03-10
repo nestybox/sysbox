@@ -5,7 +5,9 @@ This document briefly describes some aspects of Sysbox's design.
 ## Contents
 
 -   [Sysbox Components](#sysbox-components)
+-   [ID-Mapped Mounts \[ v0.5.0+ \]](#id-mapped-mounts--v050-)
 -   [Ubuntu Shiftfs Module](#ubuntu-shiftfs-module)
+-   [Overlayfs mounts inside the Sysbox Container](#overlayfs-mounts-inside-the-sysbox-container)
 -   [Sysbox OCI compatibility](#sysbox-oci-compatibility)
 
 ## Sysbox Components
@@ -43,30 +45,68 @@ Users don't normally interact with the Sysbox components directly. Instead,
 they use higher level apps (e.g., Docker) that interact with Sysbox to deploy
 system containers.
 
+## ID-Mapped Mounts \[ v0.5.0+ ]
+
+The Linux kernel >= 5.12 includes a feature called "ID-Mapped mounts" that
+allows remapping of the user and group IDs of files. It was developed primarily
+by Christian Brauner at Canonical (to whom we owe a large debt of gratitude).
+
+Starting with version 0.5.0, Sysbox leverages this feature to to perform
+filesystem user-ID and group-ID mapping between the container's Linux user
+namespace and the host's initial user namespace.
+
+For example, inside a Sysbox container, user-ID range 0->65535 is always mapped
+to unprivileged user-ID range at host level chosen by Sysbox (e.g.,
+100000->165535) via the Linux user-namespace. This way, container processes
+are fully unprivileged at host level.
+
+However, this mapping implies that if a host file with user-ID 1000 is mounted
+into the container, it will show up as `nobody:nogroup` inside the container
+given that user-ID 1000 is outside of the range 100000->165536.
+
+The kernel's "ID-mapped mounts" feature solves this problem. It allows Sysbox to
+ask the kernel to remap the user-IDs (and group-IDs) for host files mounted into
+the container. Following the example above, a host file with user-ID 1000 will
+now show up inside the container with user-ID 1000 too, as the kernel will map
+user-ID 1000->101000 (and vice-versa).
+
+This is beneficial, because from a user's perspective you don't need to worry
+about what user-namespace mappings have been assigned by Sysbox to the
+container. It also means you can now share files between the host and the
+container, or between containers without problem, while enjoying the extra
+isolation & security provided by the Linux user-namespace.
+
+Refer to the user-guide's [storage chapter](storage.md) for more info.
+
+### ID-mapped Mounts Functional Limitations
+
+The Ubuntu shiftfs module is very recent and therefore has some
+functional limitations as this time.
+
+One such limitation is that ID-mapped mounts can't be mounted on top file or
+directories backed by specialized filesystems (e.g., overlayfs, device files).
+
+Sysbox understands these limitations and takes appropriate action to
+overcome them. One such action is to use the kernel's shiftfs module
+(when available) as described in the next section.
+
 ## Ubuntu Shiftfs Module
 
 Recent Ubuntu kernels carry a module called `shiftfs`. The purpose of this
-module is to perform filesystem user-ID and group-ID "shifting" between the
-container's Linux user namespace and the host's initial user namespace.
+module is to perform filesystem user-ID and group-ID remapping between the
+container's Linux user namespace and the host's initial user namespace,
+similar to ID-mapped mounts (see [prior section](#ID-mapped-mounts--v050-).
 
-Without the shiftfs module, the system container would see its root filesystem
-files owned by `nobody:nogroup`, which in essence renders the container
-unusable. The reason is that the container's rootfs is typically owned by
-`root:root` on the host, but the container's root user is not mapped to the root
-on the host; rather it's mapped to an unprivileged host user-ID selected by Sysbox.
+Shiftfs predates the ID-mapped mounts feature but it's not a standard mechanism.
+It's only supported on Ubuntu, Debian, and Flatcar, and in the latter two it
+must be installed manually (i.e., it's not included in the kernel).
 
-The shiftfs module solves this problem: by virtue of mounting shiftfs on the
-system container's root filesystem (as well as on host files or directories
-mounted into the container), system container processes see files with the
-correct ownership (i.e., directories in the container's `/` directory will have
-`root:root` ownership rather than `nobody:nogroup`).
+It is expected that over time ID-mapped mounts will fully replace shiftfs,
+although as of early 2022 shiftfs still has some advantages over ID-mapped
+mounts, such as ID-mapping on top of overlayfs (which is important since the
+container's root filesystem is typically on overlayfs).
 
-Sysbox detects the presence of the shiftfs module and uses it when appropriate
-to ensure the container has access to its (chroot jail) filesystem and any
-host files or directories mounted into the container.
-
-In scenarios where the shiftfs module is required but not present in the kernel,
-Sysbox will fail to launch containers and issue an error such as [this one](troubleshoot.md#ubuntu-shiftfs-module-not-present).
+Sysbox detects the presence of the shiftfs module and uses it when appropriate.
 
 ### Checking for the Shiftfs Module
 
@@ -78,39 +118,18 @@ $ lsmod | grep shiftfs
 shiftfs           24576  0
 ```
 
-### Shiftfs Security Precautions
+## Overlayfs mounts inside the Sysbox Container
 
-When Sysbox uses shiftfs, note the following:
+It is common to run containers (e.g., Docker) inside a Sysbox container.
+These inner containers often use overlayfs, which means that overlayfs
+mounts will be set up inside the Sysbox container (which is itself
+on an overlayfs mount).
 
-**Any host files or directories mounted into the container are writable from
-within the container (unless the mount is "read-only"). Furthermore, when the
-container's root user writes to these mounted files or directories, it will do
-so as if it were the root user on the host.**
-
-In other words, be aware that host files or directories mounted into the
-container are **not isolated** from the container. Thus, make sure to only mount
-host files / directories into the container when it's safe to do so.
-
-Refer to the user-guide's [storage chapter](storage.md) for more info.
-
-### Shiftfs Functional Limitations
-
-The Ubuntu shiftfs module is very recent and therefore has some
-functional limitations as this time.
-
-One such limitation is that overlayfs can't be mounted on top of shiftfs.
-
-This implies that when Sysbox uses shiftfs on a system container, applications
-running inside the system container that use overlayfs mounts may not work
-properly.
-
-Note that one such application is Docker, which mounts overlayfs over portions
-of its `/var/lib/docker` directory. For this specific case however, Sysbox sets
-up the system container such that the limitation above is worked-around,
-allowing Docker to operate properly within the system container.
-
-A similar work-around is applied by Sysbox to ensure other software such as
-Kubernetes and containerd work properly inside the system container.
+Since it's not possible to stack overlayfs mounts, Sysbox works around this by
+creating implicit host mounts into the Sysbox container on specific directories
+where overlayfs mounts are known to take place, such as inside the container's
+`/var/lib/docker`, `/var/lib/kubelet`, and other similar directories.  These
+mounts are managed by Sysbox, which understands when to create and destroy them.
 
 ## Sysbox OCI compatibility
 
