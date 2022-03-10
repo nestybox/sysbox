@@ -17,7 +17,7 @@ systemd, Docker, Kubernetes, K3s, etc., seamlessly & securely (e.g., no
 privileged containers, no complex setups).
 
 While our goal is for Sysbox containers to run **any software that runs on
-bare-metal or VMs**, this is still a work-in-progress. 
+bare-metal or VMs**, this is still a work-in-progress.
 
 Thus, there are some limitations at this time. The table below describes these.
 
@@ -26,19 +26,17 @@ Thus, there are some limitations at this time. The table below describes these.
 | mknod         | Fails with "operation not permitted". | Software that creates devices such as /dev/tun, /dev/tap, /dev/fuse, etc. | WIP |
 | binfmt-misc   | Fails with "permission denied". | Software that uses /proc/sys/fs/binfmt_misc inside the container (e.g., buildx+QEMU for multi-arch builds). | WIP |
 | Nested user-namespace | `unshare -U --mount-proc` fails with "invalid argument". | Software that uses the Linux user-namespace (e.g., Docker + userns-remap). Note that the Sysbox container is rootless already, so this implies nesting Linux user-namespaces. | Yes |
-| Host device access | Host devices exposed to the container (e.g., `docker run --devices ...`) show up with "nobody:nogroup" ownership. Thus, access to them will fail with "permission denied" unless the device grants read/write permissions to "others". | Software that needs access to hardware accelerators. | Yes | 
+| Host device access | Host devices exposed to the container (e.g., `docker run --devices ...`) show up with "nobody:nogroup" ownership. Thus, access to them will fail with "permission denied" unless the device grants read/write permissions to "others". | Software that needs access to hardware accelerators. | Yes |
 | rpc-pipefs    | Mounting rpc-pipefs fails with "permission denied". | Running an NFS server inside the Sysbox container. | Yes |
-| Host sockets  | Host sockets exposed to the container (e.g., `docker run -v /host/socket:/mount/point ...`) don't always work as Sysbox mounts shiftfs on them. | Software that requires host socket access (e.g, VNC). | Yes |
 | insmod        | Fails with "operation not permitted". | Can't load kernel modules from inside containers. | TBD |
 
+**NOTES:**
 
-**NOTES:** 
+-   "WIP" means the fix is being worked-on right now. "TBD" means a
+    decision is yet to be made.
 
-* "WIP" means the fix is being worked-on right now. "TBD" means a
-  decision is yet to be made.
-
-* If you find other software that fails inside the Sysbox container, please open
-  a GitHub issue so we can add it to the list and work on a fix.
+-   If you find other software that fails inside the Sysbox container, please open
+    a GitHub issue so we can add it to the list and work on a fix.
 
 ## Docker Restrictions
 
@@ -56,7 +54,6 @@ running complex workloads in containers. With Sysbox, this is no longer needed.
 | docker --userns=host | Does not work with Sysbox | Breaks container-to-host isolation. |
 | docker --pid=host | Does not work with Sysbox | Breaks container-to-host isolation. |
 | docker --net=host | Does not work with Sysbox | Breaks container-to-host isolation. |
-
 
 ## Kubernetes Restrictions
 
@@ -82,5 +79,4 @@ running complex workloads in pods. With Sysbox, this is no longer needed.
 | ----------    | --------------- | ------- |
 | Sysbox must run as root | Sysbox needs root privileges on the host to perform the advanced OS virtualization it provides (e.g., procfs/sysfs emualtion, syscall trappings, etc.) | TBD |
 | Container Checkpoint/Restore | Not yet supported | Yes |
-| Sysbox Nesting | Running Sysbox inside a Sysbox container is not supported | TBD | 
-
+| Sysbox Nesting | Running Sysbox inside a Sysbox container is not supported | TBD |
