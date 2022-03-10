@@ -1,0 +1,147 @@
+storage:
+  directories:
+    - path: /opt/bin/sysbox
+      filesystem: root
+      mode: 0755
+  files:
+    - path: /opt/bin/sysbox/sysbox-runc
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://github.com/nestybox/sysbox-flatcar-preview/releases/download/test1/sysbox-runc
+    - path: /opt/bin/sysbox/sysbox-fs
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://github.com/nestybox/sysbox-flatcar-preview/releases/download/test1/sysbox-fs
+    - path: /opt/bin/sysbox/sysbox-mgr
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://github.com/nestybox/sysbox-flatcar-preview/releases/download/test1/sysbox-mgr
+    - path: /opt/bin/sysbox/fusermount
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://github.com/nestybox/sysbox-flatcar-preview/releases/download/test1/fusermount
+    - path: /opt/bin/sysbox/shiftfs.ko
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://github.com/nestybox/sysbox-flatcar-preview/releases/download/test1/shiftfs.ko
+    - path: /etc/modules-load.d/50-sysbox-mod.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          configfs
+    - path: /etc/sysctl.d/99-sysbox-sysctl.conf
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          fs.inotify.max_queued_events = 1048576
+          fs.inotify.max_user_watches = 1048576
+          fs.inotify.max_user_instances = 1048576
+          kernel.keys.maxkeys = 20000
+          kernel.keys.maxbytes = 400000
+    - path: /opt/bin/sysbox/docker-cfg
+      filesystem: root
+      mode: 0755
+      contents:
+        remote:
+          url: https://raw.githubusercontent.com/nestybox/sysbox-flatcar-preview/master/scr/docker-cfg
+systemd:
+  units:
+    - name: shiftfs.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Load shiftfs module into kernel
+        Before=sysbox.service
+
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/sh -c "insmod /opt/bin/sysbox/shiftfs.ko || true"
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: sysbox.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Sysbox container runtime
+        Documentation=https://github.com/nestybox/sysbox
+        BindsTo=sysbox-mgr.service sysbox-fs.service
+        After=sysbox-mgr.service sysbox-fs.service
+        Before=docker.service containerd.service
+
+        [Service]
+        Type=exec
+        ExecStart=/bin/sh -c "/opt/bin/sysbox/sysbox-runc --version && /opt/bin/sysbox/sysbox-mgr --version && /opt/bin/sysbox/sysbox-fs --version && /bin/sleep infinity"
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: sysbox-fs.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=sysbox-fs (part of the Sysbox container runtime)
+        PartOf=sysbox.service
+        After=sysbox-mgr.service
+
+        [Service]
+        Type=simple
+        Type=notify
+        Environment=PATH=/opt/bin/sysbox/:$PATH
+        ExecStart=/opt/bin/sysbox/sysbox-fs
+        TimeoutStartSec=10
+        TimeoutStopSec=10
+        StartLimitInterval=0
+        NotifyAccess=main
+        OOMScoreAdjust=-500
+        LimitNOFILE=infinity
+        LimitNPROC=infinity
+
+        [Install]
+        WantedBy=sysbox.service
+    - name: sysbox-mgr.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=sysbox-mgr (part of the Sysbox container runtime)
+        PartOf=sysbox.service
+
+        [Service]
+        Type=simple
+        Type=notify
+        ExecStartPre=/bin/sh -c "useradd sysbox > /dev/null 2>&1  || true"
+        ExecStart=/opt/bin/sysbox/sysbox-mgr
+        TimeoutStartSec=45
+        TimeoutStopSec=90
+        StartLimitInterval=0
+        NotifyAccess=main
+        OOMScoreAdjust=-500
+        LimitNOFILE=infinity
+        LimitNPROC=infinity
+
+        [Install]
+        WantedBy=sysbox.service
+    - name: docker-sysbox-cfg.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Docker config for Sysbox
+        After=docker.service
+
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/sh -c "/opt/bin/sysbox/docker-cfg -v --sysbox-runtime=enable"
+
+        [Install]
+        WantedBy=multi-user.target
