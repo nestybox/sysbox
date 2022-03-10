@@ -192,8 +192,8 @@ more.
 ## Audience
 
 The Sysbox project is intended for anyone looking to experiment, invent, learn,
-and build systems using system containers. It's cutting-edge OS virtualization,
-and contributions are welcomed.
+and build systems using [system containers](#system-containers). It's
+cutting-edge OS virtualization, and contributions are welcomed.
 
 ## Sysbox Enterprise Edition
 
