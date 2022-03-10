@@ -47,8 +47,8 @@ permissions, even though each system container is using the Linux user namespace
 with user-ID and group-ID mappings.
 
 The reason both system containers see the correct `root:root` ownership on the
-shared storage is through the magic of the Ubuntu shiftfs filesystem, which
-Sysbox mounts over the shared storage.
+shared storage is through the magic of the shiftfs filesystem, which Sysbox
+mounts over the shared storage.
 
 From the first system container:
 
@@ -60,3 +60,6 @@ From the first system container:
 In the example above we used a Docker volume as the shared storage. However, we
 can also use an arbitrary host directory as the shared storage. We need to
 simply bind-mount it to the system containers.
+
+Finally, in this example we used shiftfs, but the same would apply to hosts with
+kernel >= 5.12 that use the alternative "ID-mapped mounts" mechanism.
