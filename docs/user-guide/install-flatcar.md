@@ -141,7 +141,7 @@ The [flatcar-config.yaml](flatcar-config.yaml) performs the following configurat
 
     -   This module is present in Ubuntu kernels, but typically not present on other
         distros. It brings multiple functional benefits as described
-        [here](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/design.md#ubuntu-shiftfs-module).
+        [here](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/design.md#shiftfs-module).
 
 -   Configures some kernel sysctl parameters (the `flatcar-config.yaml` has the details).
 

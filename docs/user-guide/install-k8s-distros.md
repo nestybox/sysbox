@@ -127,7 +127,7 @@ the nodes have a minimum of 4 vCPUs each.
     -   Ensure the nodes have a minimum of 4 vCPUs each.
 
     -   Do NOT enable secure-boot on the nodes, as this prevents the
-        sysbox-deploy-k8s daemonset from installing the [shiftfs module](design.md#ubuntu-shiftfs-module)
+        sysbox-deploy-k8s daemonset from installing the [shiftfs module](design.md#shiftfs-module)
         into the kernel. This module is usually present in Ubuntu desktop and
         server images, but not present in Ubuntu cloud images, so the
         sysbox-deploy-k8s daemonset must install it.
