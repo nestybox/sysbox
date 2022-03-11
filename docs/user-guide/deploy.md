@@ -184,7 +184,7 @@ A couple of tips:
         user-ID and group-ID mappings, the container's rootfs should be owned
         by the corresponding user-ID and group-ID.
 
-    -   In addition, make sure you have support for either [shiftfs](design.md#ubuntu-shiftfs-module)
+    -   In addition, make sure you have support for either [shiftfs](design.md#shiftfs-module)
         or ID-mapped mounts (kernel >= 5.12) in your host. Without these,
         host files mounted into the container will show up with `nobody:nogroup`
         ownership.

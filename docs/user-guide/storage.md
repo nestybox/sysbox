@@ -15,7 +15,7 @@ Sysbox containers support all Docker storage mount types:
 [volume, bind, or tmpfs](https://docs.docker.com/storage/).
 
 For bind mounts in particular, Sysbox leverages the Linux [ID-mapped mounts](design.md#id-mapped-mounts--v050-)
-feature (kernel >= 5.12) or alternatively the [shiftfs](design.md#ubuntu-shiftfs-module)
+feature (kernel >= 5.12) or alternatively the [shiftfs](design.md#shiftfs-module)
 kernel module (available on Ubuntu, Debian, and Flatcar) to ensure that the host
 files that are bind-mounted into the container show up with proper user-ID and
 group-ID inside the container. See the [design chapter](design.md) for more info
