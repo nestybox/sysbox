@@ -13,6 +13,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Sysbox Data Store Configuration \[ v0.3.0+ \]](#sysbox-data-store-configuration--v030-)
 -   [Container Capabilities Configuration \[ v0.5.0+ \]](#container-capabilities-configuration--v050-)
 -   [Speeding up Sysbox by Disallowing Trusted Overlay Xattributes](#speeding-up-sysbox-by-disallowing-trusted-overlay-xattributes)
+-   [Ignoring Chowns of Sysfs](#ignoring-chowns-of-sysfs)
 -   [Disabling ID-mapped Mounts on Sysbox](#disabling-id-mapped-mounts-on-sysbox)
 -   [Disabling Shiftfs on Sysbox](#disabling-shiftfs-on-sysbox)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
@@ -303,6 +304,53 @@ option (see [above](#reconfiguration-procedure). If you set
 `--allow-trusted-xattr=false` globally, you can always deploy a Sysbox container
 with the default behavior by passing environment variable
 `SYSBOX_ALLOW_TRUSTED_XATTR=TRUE`.
+
+## Ignoring Chowns of Sysfs
+
+Inside a Sysbox container, the `/sys` directory (i.e., the sysfs mountpoint)
+shows up as owned by `nobody:nogroup` (rather than `root:root`). Moreover,
+changing the ownership of `/sys/` to `root:root` fails with `Operation not
+permitted`. This is due to a technical limitation in Sysbox and the Linux
+kernel.
+
+```
+$ docker run --runtime=sysbox-runc -it --rm alpine
+
+/ # ls -l / | grep sys
+dr-xr-xr-x   13 nobody   nobody           0 Mar 11 23:14 sys
+
+/ # chown root:root  /sys
+chown: /sys: Operation not permitted
+```
+
+Though not common, some application that users run inside Sysbox containers
+(notably the `rpm` package manager) may try to change the ownership of `/sys`
+inside the container. Since this operation fails, the application reports an
+error and exits.
+
+To overcome this, Sysbox can be configured to ignore chowns to `/sys` inside
+the container by passing the `SYSBOX_IGNORE_SYSFS_CHOWN=TRUE` environment variable
+to the container, as shown below:
+
+```
+$ docker run --runtime=sysbox-runc -e SYSBOX_IGNORE_SYSFS_CHOWN=TRUE --rm -it alpine
+
+/ # chown root:root /sys
+/ # echo $?
+0
+
+/ # ls -l / | grep sys
+dr-xr-xr-x   13 nobody   nobody           0 Mar 11 23:17 sys
+```
+
+You can also configure this globally (i.e., for all Sysbox containers), by
+starting the sysbox-mgr with the `--ignore-sysfs-chown` command line
+option (see [above](#reconfiguration-procedure).
+
+Note that configuring Sysbox to ignore chown on sysfs requires that Sysbox
+trap the `chown` syscall. This can slow down the container, in some
+cases significantly (i.e., if the processes inside the container perform
+lots of chown syscalls).
 
 ## Disabling ID-mapped Mounts on Sysbox
 
