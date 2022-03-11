@@ -6,7 +6,7 @@ This document briefly describes some aspects of Sysbox's design.
 
 -   [Sysbox Components](#sysbox-components)
 -   [ID-Mapped Mounts \[ v0.5.0+ \]](#id-mapped-mounts--v050-)
--   [Ubuntu Shiftfs Module](#ubuntu-shiftfs-module)
+-   [Shiftfs Module](#shiftfs-module)
 -   [Overlayfs mounts inside the Sysbox Container](#overlayfs-mounts-inside-the-sysbox-container)
 -   [Sysbox OCI compatibility](#sysbox-oci-compatibility)
 
@@ -90,7 +90,7 @@ Sysbox understands these limitations and takes appropriate action to
 overcome them. One such action is to use the kernel's shiftfs module
 (when available) as described in the next section.
 
-## Ubuntu Shiftfs Module
+## Shiftfs Module
 
 Recent Ubuntu kernels carry a module called `shiftfs`. The purpose of this
 module is to perform filesystem user-ID and group-ID remapping between the

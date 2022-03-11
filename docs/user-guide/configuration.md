@@ -13,8 +13,8 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Sysbox Data Store Configuration \[ v0.3.0+ \]](#sysbox-data-store-configuration--v030-)
 -   [Container Capabilities Configuration \[ v0.5.0+ \]](#container-capabilities-configuration--v050-)
 -   [Speeding up Sysbox by Disallowing Trusted Overlay Xattributes](#speeding-up-sysbox-by-disallowing-trusted-overlay-xattributes)
--   [Disabling Shiftfs on Sysbox](#disabling-shiftfs-on-sysbox)
 -   [Disabling ID-mapped Mounts on Sysbox](#disabling-id-mapped-mounts-on-sysbox)
+-   [Disabling Shiftfs on Sysbox](#disabling-shiftfs-on-sysbox)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Sysbox Systemd Services
@@ -117,7 +117,7 @@ Oct 27 05:18:59 disco1 systemd[1]: Starting Sysbox General Service...
 Oct 27 05:18:59 disco1 systemd[1]: Started Sysbox General Service.
 ```
 
-That's it. You can now start using Sysbox.
+That's it. You can now start using Sysbox with the updated configuration.
 
 ## Sysbox Configuration Options
 
@@ -194,22 +194,25 @@ follows:
 * Disables all process capabilities for the system container's init process when
   owned by a non-root user.
 
-This mimics the way capabilities are assigned to processes on a physical host or
-VM and relieves users of the burden on having to understand what capabilities
+This mimics the way capabilities are assigned to processes on a physical host (or
+a VM) and relieves users of the burden on having to understand what capabilities
 are needed by the processes running inside the container.
 
-Note that the Sysbox container capabilities are isolated from the host via the Linux
-user-namespace, which Sysbox enables on all containers. See
-the [security chapter](security.md#process-capabilities) for more on this.
+Note that with Sysbox, container capabilities are always isolated from the host
+via the Linux user-namespace, which Sysbox enables on all containers. This means
+you can run a root process with full capabilities inside the container in a more
+secure way than with regular containers. See the [security chapter](security.md#process-capabilities)
+for more on this.
 
-While this behavior is beneficial in most cases, it has the drawback that it
-does not allow fine-grained control of the capabilities used by the Sysbox
-container init process (e.g., Docker's `--cap-add` and `--cap-drop` don't have
-any effect). In some situations, having such control is beneficial.
+While Sysbox's default behavior for assigning capabilities is beneficial in most
+cases, it has the drawback that it does not allow fine-grained control of the
+capabilities used by the Sysbox container init process (e.g., Docker's
+`--cap-add` and `--cap-drop` don't have any effect). In some situations, having
+such control is beneficial.
 
 To overcome this, starting with Sysbox v0.5.0 it's possible to configure
 Sysbox to honor the capabilities passed to it by the higher level
-container manager via the container's OCI spec.
+container manager (e.g., Docker or Kubernetes) via the container's OCI spec.
 
 The configuration can be done on a per-container basis, or globally for
 all containers.
@@ -227,24 +230,102 @@ CapBnd: 00000000a80425fb
 CapAmb: 0000000000000000
 ```
 
-To do this globally, configure the sysbox-mgr with the `--honor-caps` command
-line option (see [above](#reconfiguration-procedure).
+To do this globally (i.e., for all Sysbox containers), configure the sysbox-mgr
+with the `--honor-caps` command line option (see [above](#reconfiguration-procedure).
+If you set `--honor-caps` globally, you can always deploy a container with the
+default behavior by passing environment variable `SYSBOX_HONOR_CAPS=FALSE`.
 
-Note that while this gives users full control over the container's process
-capabilities (which is good for extra security), the drawback is that the user
-must understand all the capabilities required by the processes inside the
-container (e.g., if you run Docker inside the Sysbox container, you must
-understand what capabilities Docker requires in order to operate properly).
+Note that while configuring Sysbox to honor capabilities gives you full control
+over the container's process capabilities (which is good for extra security),
+the drawback is that you must understand all the capabilities required by the
+processes inside the container (e.g., if you run Docker inside the Sysbox
+container, you must understand what capabilities Docker requires in order to
+operate properly; same if you run systemd inside the container). This can be
+tricky since such software is complex and may require different capabilities
+depending on what functions it's performing inside the container.
 
 ## Speeding up Sysbox by Disallowing Trusted Overlay Xattributes
 
+The [overlayfs](https://docs.kernel.org/filesystems/overlayfs.html) filesystem
+is commonly used by container managers (e.g., Docker or Kubernetes) to set up
+the container's root filesystem. To support file removal, overlayfs uses a
+concept called [whiteouts](https://docs.kernel.org/filesystems/overlayfs.html#whiteouts-and-opaque-directories)
+which relies on setting the `trusted.overlay.opaque` extended attribute (xattr) on the removed file.
 
-## Disabling Shiftfs on Sysbox
+Setting `trusted.*` xattrs requires a process to have elevated privileges (i.e,
+`CAP_SYS_ADMIN`) since they are expected to be set by admin processes, not by
+ordinary ones. In addition, Linux does not allow `trusted.*` xattrs to be set
+from within a user-namespace (even if a process has `CAP_SYS_ADMIN` within the
+user-namespace), given that otherwise a regular user could create a
+user-namespace and set the `trusted.*` xattr on the file.
 
+This limitation for setting `trusted.*` xattr from within a user-namespace
+creates a problem for containers that are secured with the user-namespace, such
+as Sysbox containers. The reason is that it prevents software such as Docker,
+which commonly uses overlayfs and sets the `trusted.overlay.opaque` xattr on
+files, from working properly inside the Sysbox container.
+
+To overcome this, Sysbox has a mechanism that allows the
+`trusted.overlay.opaque` xattr to be set from within a container. It does this
+by trapping the `*xattr()` syscalls inside the container (e.g., `setxattr`,
+`getxattr`, etc.) and performing the required operation at host level. This is
+pretty safe, given that the container processes can only set the
+`trusted.overlay.opaque` xattr on files within the container's chroot jail.
+
+The drawback however is that this can impact performance (sometimes severely),
+particularly in workloads that perform lots of `*xattr()` syscalls from within
+the container.
+
+Fortunately, starting with Linux kernel 5.11, overlayfs supports whiteouts
+using an alternative `user.overlay.opaque` xattr which can be configured
+from within a user-namespace (see [here](https://docs.kernel.org/filesystems/overlayfs.html#user-xattr))
+In addition, Docker versions >= 20.10.9 include code that takes advantage
+of this feature.
+
+Therefore, if your host has kernel >= 5.11 and you run Docker >= 20.10.9 inside
+a Sysbox container, you don't need Sysbox to trap the `*xattr()` syscalls, which
+in turn improves performance (in some cases significantly).
+
+It's possible to configure Sysbox to not trap the `*xattr()` syscalls. This
+can be done on a per-container basis by passing the `SYSBOX_ALLOW_TRUSTED_XATTR=FALSE`
+environment variable to the container:
+
+```
+$ docker run --runtime=sysbox-runc -e SYSBOX_ALLOW_TRUSTED_XATTR=FALSE --rm -it alpine
+```
+
+In essence, this tells Sysbox to not allow the container to set `trusted.overlay.opaque`
+inside the container, which in turn means it won't trap the `*xattr()` syscalls.
+
+You can also configure this globally (i.e., for all Sysbox containers), by
+starting the sysbox-mgr with the `--allow-trusted-xattr=false` command line
+option (see [above](#reconfiguration-procedure). If you set
+`--allow-trusted-xattr=false` globally, you can always deploy a Sysbox container
+with the default behavior by passing environment variable
+`SYSBOX_ALLOW_TRUSTED_XATTR=TRUE`.
 
 ## Disabling ID-mapped Mounts on Sysbox
 
+As mentioned in the [design chapter](design.md#id-mapped-mounts--v050-), Sysbox
+uses a Linux kernel feature called ID-mapped mounts (available in kernel >= 5.12)
+to expose host files inside the (rootless) container with proper permissions.
 
+While not usually required (except for testing or debugging), it's possible to
+disable Sysbox's usage of ID-mapped mounts by passing the
+`--disable-idmapped-mount` option to the sysbox-mgr's command line. See the
+section on [reconfiguration procedure](#reconfiguration-procedure) above for
+further info on how to do this.
+
+## Disabling Shiftfs on Sysbox
+
+Shiftfs serves a purpose similar to ID-mapped mounts, as described in the
+[design chapter](design.md#shiftfs-module).
+
+While not usually required (except for testing or debugging), it's possible to
+disable Sysbox's usage of shiftfs by passing the
+`--disable-shiftfs` option to the sysbox-mgr's command line. See the
+section on [reconfiguration procedure](#reconfiguration-procedure) above for
+further info on how to do this.
 
 ## Sysbox Kernel Parameter Configurations
 
