@@ -12,17 +12,13 @@
 
 ***
 
-**Security Note (01/21/22)**:
+**Security Note (03/03/11)**:
 
-A vulnerability ([CVE 2022-0185](https://ubuntu.com/security/CVE-2022-0185)) was
-recently found in the Linux kernel, permitting a "User Namespace" escape (i.e.,
-an unprivileged user inside a user-namespace may gain root access to the
-host). This vulnerability affects containers deployed with Sysbox as they always
-use the Linux user-namespace for extra isolation. To mitigate it, check if your
-kernel distro carries the fix. For Ubuntu, the fix has been released and requires
-a [kernel update](https://ubuntu.com/security/notices/USN-5240-1). Reach out to the
-[Sysbox Slack channel][slack] for further questions.
-
+A few vulnerabilities have recently been found in the Linux kernel that
+in some cases reduce or negate the enhanced isolation provided by
+Sysbox containers. Fortunately they are all fixed in recent Linux kernels.
+See the Sysbox User Guide's [Vulnerabilities & CVEs chapter](docs/user-guide/security-cve.md)
+for more info, and reach out on the [Sysbox Slack channel][slack] for further questions.
 ***
 
 ## Introduction
@@ -290,10 +286,11 @@ spec:
 You can choose whatever container image you want, Sysbox places no requirements
 on the image.
 
-The [Sysbox User Guide](docs/user-guide/deploy.md) has more info on this, and
-the [Sysbox Quickstart Guide](docs/quickstart/README.md) and has many usage examples.
-
-You should start there to get familiarized with the use cases enabled by Sysbox.
+Nestybox makes several reference images available in its [Dockerhub](https://hub.docker.com/u/nestybox)
+and [GitHub Container Registry](https://github.com/orgs/nestybox/packages) repos. These are
+images that typically include systemd, Docker, Kubernetes, and more inside the containers.
+The Dockerfiles are [here](https://github.com/nestybox/dockerfiles/tree/master). Feel free
+to use and modify per your needs.
 
 ## Documentation
 
@@ -302,17 +299,18 @@ We strive to provide good documentation; it's a key component of the Sysbox proj
 We have several documents to help you get started and get the best out of
 Sysbox.
 
+*   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
+
+    *   Distro compatibility requirements. Check this out before installing Sysbox.
+
 *   [Sysbox Quick Start Guide](docs/quickstart/README.md)
 
     *   Provides many examples for using Sysbox. New users should start here.
 
 *   [Sysbox User Guide](docs/user-guide/README.md)
 
-    *   Provides more detailed information on Sysbox installation, features and design.
-
-*   [Sysbox Distro Compatibility Doc](docs/distro-compat.md)
-
-    *   Distro compatibility requirements.
+    *   Provides more detailed information on Sysbox installation,
+        configuration, features and design.
 
 *   [Nestybox blog site](https://blog.nestybox.com/)
 
@@ -377,9 +375,12 @@ and [developer's guide](docs/developers-guide/README.md) for more info.
 
 ## Security
 
-Security issues that may expose a Sysbox vulnerability should be reported
-by sending an email to security@nestybox.com. Please do not open security
-issues here.
+See the User Guide's [Security Chapter](docs/user-guide/security.md) for
+info on how Sysbox secures containers.
+
+If you find bugs or issues that may expose a Sysbox vulnerability, please report
+these by sending an email to security@nestybox.com. Please do not open security
+issues in this repo. Thanks!
 
 ## Troubleshooting & Support
 

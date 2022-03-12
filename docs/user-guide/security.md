@@ -2,6 +2,9 @@
 
 This document describes security aspects of Sysbox system containers.
 
+See also the [security vulnerabilities & CVEs](security-cve.md) documentation
+for more on security.
+
 ## Contents
 
 -   [Root Filesystem Jail](#root-filesystem-jail)
