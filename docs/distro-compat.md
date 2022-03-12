@@ -3,6 +3,7 @@
 ## Contents
 
 -   [Supported Linux Distros](#supported-linux-distros)
+-   [Shiftfs Requirement](#shiftfs-requirement)
 -   [Kernel Upgrade Procedures](#kernel-upgrade-procedures)
 
 ## Supported Linux Distros
