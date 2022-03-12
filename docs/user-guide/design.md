@@ -76,7 +76,7 @@ container. It also means you can now share files between the host and the
 container, or between containers without problem, while enjoying the extra
 isolation & security provided by the Linux user-namespace.
 
-Refer to the user-guide's [storage chapter](storage.md) for more info.
+Refer to the [User Guide's Storage Chapter](storage.md) for more info.
 
 ### ID-mapped Mounts Functional Limitations
 
