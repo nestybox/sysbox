@@ -12,4 +12,5 @@ will be installed:
 
 **NOTE: Before installing, see the [distro compatibility doc](../distro-compat.md)
 for the list of Linux distros where Sysbox is supported and the installation
-methods supported for each.**
+methods supported for each. Also, see the [platform architecture doc](../arch-compat.md)
+for the list of supported machine architectures (e.g., amd64, arm64).**

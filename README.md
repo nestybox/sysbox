@@ -234,7 +234,8 @@ More on system containers [here](docs/user-guide/concepts.md#system-container).
 
 The Sysbox host must meet the following requirements:
 
-*   It must be running one of the [supported Linux distros](docs/distro-compat.md).
+*   It must be running one of the [supported Linux distros](docs/distro-compat.md)
+    and be a machine with a [supported architecture](docs/arch-compat.md) (e.g., amd64, arm64).
 
 *   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
     of RAM. Though this is not a hard requirement, smaller configurations may
