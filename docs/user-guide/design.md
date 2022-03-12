@@ -51,7 +51,7 @@ The Linux kernel >= 5.12 includes a feature called "ID-Mapped mounts" that
 allows remapping of the user and group IDs of files. It was developed primarily
 by Christian Brauner at Canonical (to whom we owe a large debt of gratitude).
 
-Starting with version 0.5.0, Sysbox leverages this feature to to perform
+Starting with version 0.5.0, Sysbox leverages this feature to perform
 filesystem user-ID and group-ID mapping between the container's Linux user
 namespace and the host's initial user namespace.
 
@@ -80,26 +80,28 @@ Refer to the [User Guide's Storage Chapter](storage.md) for more info.
 
 ### ID-mapped Mounts Functional Limitations
 
-The Ubuntu shiftfs module is very recent and therefore has some
+ID-mapped mounts is a very recent kernel feature and therefore has some
 functional limitations as this time.
 
 One such limitation is that ID-mapped mounts can't be mounted on top file or
-directories backed by specialized filesystems (e.g., overlayfs, device files).
+directories backed by specialized filesystems at this time (e.g., overlayfs,
+device files).
 
-Sysbox understands these limitations and takes appropriate action to
-overcome them. One such action is to use the kernel's shiftfs module
-(when available) as described in the next section.
+Sysbox understands these limitations and takes appropriate action to overcome
+them, such as using the shiftfs kernel module (when available) as described in
+the next section.
 
 ## Shiftfs Module
 
 Recent Ubuntu kernels carry a module called `shiftfs`. The purpose of this
 module is to perform filesystem user-ID and group-ID remapping between the
 container's Linux user namespace and the host's initial user namespace,
-similar to ID-mapped mounts (see [prior section](#ID-mapped-mounts--v050-).
+similar to ID-mapped mounts (see [prior section](#ID-mapped-mounts--v050-)).
 
-Shiftfs predates the ID-mapped mounts feature but it's not a standard mechanism.
-It's only supported on Ubuntu, Debian, and Flatcar, and in the latter two it
-must be installed manually (i.e., it's not included in the kernel).
+Shiftfs predates the ID-mapped mounts feature but it's not a standard mechanism
+and therefore not available in most Linux distros. It's included with Ubuntu,
+but can also be [installed manually](install-package.md#installing-shiftfs) on
+Debian and Flatcar (i.e., it's not included in the kernel).
 
 It is expected that over time ID-mapped mounts will fully replace shiftfs,
 although as of early 2022 shiftfs still has some advantages over ID-mapped
@@ -110,13 +112,17 @@ Sysbox detects the presence of the shiftfs module and uses it when appropriate.
 
 ### Checking for the Shiftfs Module
 
-To verify the Ubuntu shiftfs module is loaded in your host, type:
+To verify the shiftfs module is loaded in your host, type:
 
 ```console
 $ sudo modprobe shiftfs
 $ lsmod | grep shiftfs
 shiftfs           24576  0
 ```
+
+If shiftfs is not present and you have a Ubuntu, Debian, or Flatcar host, see
+the [User Guide's Installation Chapter](install-package.md#installing-shiftfs)
+for info on how to install it.
 
 ## Overlayfs mounts inside the Sysbox Container
 
