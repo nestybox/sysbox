@@ -127,10 +127,9 @@ that would weaken or break container isolation, even though these processes may
 be running as root with full capabilities inside the container and thus have
 access to the `mount` and `umount` syscalls.
 
-We call these "immutable mounts". The
-[user-guide](../user-guide/security.md#initial-mount-immutability--v030-) has a
-full description of this feature. Here we just show an example of what this
-feature does.
+We call these "immutable mounts". The [User Guide](../user-guide/security.md#initial-mount-immutability--v030-)
+has a full description of this feature. Here we just show an example of what
+this feature does.
 
 1.  Deploy a system container with a read-only mount of host volume `myvol`:
 

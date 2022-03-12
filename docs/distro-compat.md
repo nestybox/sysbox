@@ -57,7 +57,7 @@ into the (rootless) container show up with proper user and group IDs.
 
 When Sysbox is installed in hosts with Linux kernel < 5.12, shiftfs is
 required. Otherwise host files mounted into the container will show up as owned
-by `nobody:nogroup` inside the container. See the [user-guide design chapter](user-guide/design.md)
+by `nobody:nogroup` inside the container. See the [User Guide's Design Chapter](user-guide/design.md)
 for more info on this.
 
 When Sysbox is installed in hosts with Linux kernel >= 5.12, shiftfs is NOT
@@ -76,7 +76,7 @@ Sysbox in these other distros, you must have kernel >= 5.12 (ID-mapped mounts).
 
 Note that in the Ubuntu's desktop and server versions, shiftfs comes
 pre-installed. In Ubuntu's cloud images or in Debian or Flatcar, shiftfs must be
-manually installed. See the [user-guide installation chapter](user-guide/install-package.md)
+manually installed. See the [User Guide's Installation Chapter](user-guide/install-package.md)
 for info on how to do this.
 
 ## Kernel Upgrade Procedures

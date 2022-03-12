@@ -36,7 +36,7 @@ how to do this.
 The [Nestybox Dockerhub repo](https://hub.docker.com/u/nestybox) has several images that
 we provide as reference for users.
 
-We often use these in the examples we provide in this User-Guide and [Quickstart guide](../quickstart/README.md).
+We often use these in the examples we provide in this User Guide and [Quickstart guide](../quickstart/README.md).
 
 The Dockerfiles are [here](https://github.com/nestybox/dockerfiles). Feel free to copy them and adapt them to
 your needs.
