@@ -29,9 +29,9 @@ function teardown() {
    [ "$num_syscont" -ge 1 ]
 
 	# pull image before launching containers (to avoid multiple pulls in parallel)
-	docker pull ${CTR_IMG_REPO}/k8s-node:v1.18.2
+	docker pull ${CTR_IMG_REPO}/k8s-node:v1.20.2
 
-   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} ${CTR_IMG_REPO}/k8s-node:v1.18.2
+   seq 0 $(($num_syscont-1)) | xargs -P${num_syscont} -I {} docker run --runtime=sysbox-runc -d --rm --name syscont{} --hostname syscont{} ${CTR_IMG_REPO}/k8s-node:v1.20.2
 
    # verify all containers are up
    for i in $(seq 0 $((num_syscont-1))); do
