@@ -3,6 +3,7 @@
 ## Contents
 
 -   [Supported Linux Distros](#supported-linux-distros)
+-   [Supported Platform Architectures](#supported-platform-architectures)
 -   [Shiftfs Requirement](#shiftfs-requirement)
 -   [Kernel Upgrade Procedures](#kernel-upgrade-procedures)
 
@@ -43,6 +44,11 @@ methods supported, and any other requirements:
 -   These are the Linux distros we officially support (and test with). However,
     we expect Sysbox to work fine on other Linux distros too, particularly with
     kernel >= 5.12.
+
+## Supported Platform Architectures
+
+* See [here](arch-compat.md) for a list of supported platform architectures
+  (e.g., amd64, arm64).
 
 ## Shiftfs Requirement
 

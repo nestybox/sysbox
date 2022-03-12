@@ -1,4 +1,4 @@
-# Sysbox Architectures Compatibility
+# Sysbox Platform Architecture Compatibility
 
 ## Contents
 
@@ -6,7 +6,8 @@
 
 ## Supported Architectures
 
-The following table summarizes the architectures where Sysbox is currently supported.
+The following table summarizes the platform architectures where Sysbox is
+currently supported.
 
 It is important to highlight that Sysbox implementation is expected to be fully
 platform agnostic. Thus, it should be relatively easy to extend the number of
