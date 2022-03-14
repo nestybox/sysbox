@@ -316,9 +316,9 @@ function main() {
 	cleanup_docker_env
 
 	# Configure & initialize CRI-O in scenarios that support Sysbox-POD feature (currently
-	# only in Ubuntu distros).
+	# only in Ubuntu and Debian distros).
 	local distro=$(get_host_distro)
-	if [[ "${distro}" = "ubuntu" ]]; then
+	if [[ "${distro}" = "ubuntu" ]] || [[ "${distro}" = "debian" ]]; then
 		crio_config
 
 		# Start CRI-O (without systemd, we must start CRI-O manually)
