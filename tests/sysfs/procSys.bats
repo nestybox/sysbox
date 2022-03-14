@@ -735,9 +735,6 @@ EOF
   # verify that a non-root process with CAP_DAC_* is allowed to modify
   # a /proc/sys file
 
-  # build the fileDac program
-  make -C "$SYSBOX_ROOT/tests/scr/capRaise"
-
   # launch sys container, mount the tests/scr/capRaise dir into it.
   local syscont=$(docker_run --rm -v ${SYSBOX_ROOT}/tests/scr/capRaise:/mnt/capRaise ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
