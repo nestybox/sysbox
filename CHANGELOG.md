@@ -13,10 +13,11 @@ All notable changes to this project will be documented in this file.
   * Improved performance of Sysbox's syscall interception code.
   * Improved the way Sysbox releases the seccomp-fd handles for intercept syscalls (kernels >= 5.8).
   * Update to golang 1.16.
-  * Fixed segfault when building Docker image inside Sysbox container (issue 484).
-  * Fixed segfault when running python pip install inside nested sysbox container (issue 485).
-  * Fixed issue with running KinD inside a Sysbox container (issue 415).
-  * Fixed problem with shiftfs mounts on Kubernetes persistent volumes (issue 431).
+  * Allow alternative Docker data-root inside a Sysbox container (if Docker is pre-installed in the Sysbox container image).
+  * Fixed segfault when building Docker image inside Sysbox container (issue #484).
+  * Fixed segfault when running python pip install inside nested sysbox container (issue #485).
+  * Fixed issue with running KinD inside a Sysbox container (issue #415).
+  * Fixed problem with shiftfs mounts on Kubernetes persistent volumes (issue #431).
 
 ### Removed
   * None.
