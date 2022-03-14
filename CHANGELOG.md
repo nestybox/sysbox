@@ -1,10 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.5.0-beta] - 2022-03-05
+## [0.5.0-beta] - 2022-03-11
 ### Added
   * Added support for Linux ID-mapped mounts (shiftfs alternative in kernels >= 5.12).
-  * Added support for ARM hosts.
+  * Added support for ARM64 hosts.
   * Added support for running buildx/buildkit inside Sysbox containers.
   * Added support for running Rancher RKE2 and Mirantis K0s inside Sysbox containers.
   * Added configs to disable trapping chown and xattr* syscalls (improves performance but may reduce functionality).
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
   * Added support for per-container configs via `SYSBOX_*` env vars.
   * Improved performance of Sysbox's syscall interception code.
   * Improved the way Sysbox releases the seccomp-fd handles for intercept syscalls (kernels >= 5.8).
+  * Improved Sysbox's cross-compilation support (artifacts can now be generated from/to either AMD64 or ARM64 hosts).
   * Update to golang 1.16.
   * Allow alternative Docker data-root inside a Sysbox container (if Docker is pre-installed in the Sysbox container image).
   * Fixed segfault when building Docker image inside Sysbox container (issue #484).
