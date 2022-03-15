@@ -34,7 +34,7 @@ ARG k8s_version=v1.20.2
 # CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
 # introduces rootless pod support (via the Linux user-ns)
 ARG crio_version=1.20
-ARG crio_os=xUbuntu_20.04
+ARG crio_os=Debian_11
 ARG crictl_version=v1.20.0
 
 RUN apt-get update && apt-get install -y \
@@ -168,10 +168,10 @@ RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key
     && rm -rf /var/lib/apt/lists/*
 
 # CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
-RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
-    && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
-    && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | apt-key add - \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | apt-key add - \
+RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /"| tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
+    && echo "deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /"| tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
+    && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | sudo apt-key add - \
+    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | sudo apt-key add - \
     && apt-get update && apt-get install -y --no-install-recommends conntrack:${sys_arch} cri-o:${sys_arch} cri-o-runc:${sys_arch} \
     && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${sys_arch}.tar.gz \
     && sudo tar zxvf crictl-${crictl_version}-linux-${sys_arch}.tar.gz -C /usr/local/bin \
