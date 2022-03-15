@@ -19,8 +19,8 @@ methods supported, and any other requirements:
 | Ubuntu Impish (21.10) | ✓               | ✓           | ✓                 | 5.13+      | No (but recommended) | |
 | Debian Buster (10)    | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | [Kernel upgrade notes](#debian-kernel-upgrade) |
 | Debian Bullseye (11)  | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | |
-| Fedora 33             | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | Fedora 34             | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Fedora 35             | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | CentOS Stream         | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | RedHat Enterprise     | WIP             | WIP         |                   | 5.12+      | No | Sysbox-EE only |
 | Flatcar               | ✓               | ✓           |                   | 5.10+      | If kernel < 5.12  | Sysbox-EE only; see [here](user-guide/install-flatcar.md). |
