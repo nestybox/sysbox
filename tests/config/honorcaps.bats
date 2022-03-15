@@ -16,6 +16,8 @@ function teardown() {
 @test "default caps" {
 
 	# Root user process starts with all caps enabled
+	docker pull ${CTR_IMG_REPO}/alpine
+
 	run __docker run --runtime=sysbox-runc --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
