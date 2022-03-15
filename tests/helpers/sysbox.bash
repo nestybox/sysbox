@@ -82,3 +82,12 @@ function sv_runc() {
   echo "sysbox-runc $@ (status=$status):" >&2
   echo "$output" >&2
 }
+
+# Returns the pid of the init process in the container
+function sv_runc_cont_pid() {
+  local cont=$1
+
+  # "sv_runc ps -f json" returns "[pid]", so we must strip the brackets with sed.
+  local pid=$(__sv_runc ps -f json $cont | sed -e "s/\[//" -e "s/\]//")
+  echo "$pid"
+}

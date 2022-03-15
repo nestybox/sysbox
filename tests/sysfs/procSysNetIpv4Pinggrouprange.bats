@@ -45,6 +45,11 @@ function teardown() {
 
 # Write operation.
 @test "/proc/sys/net/ipv4/ping_group_range write() operation" {
+
+  run cat "/proc/sys/net/ipv4/ping_group_range"
+  [ "$status" -eq 0 ]
+  local host_val=$output
+
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -71,7 +76,8 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == "0	2147483647" ]]
 
-  local pid=$(pidof sh)
+  local pid=$(sv_runc_cont_pid syscont)
+
   run nsenter -t "$pid" -p -n -U cat /proc/sys/net/ipv4/ping_group_range
   [ "$status" -eq 0 ]
   [[ "$output" == "0	65535" ]]
@@ -86,7 +92,6 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" = "1000	64000" ]]
 
-  local pid=$(pidof sh)
   run nsenter -t "$pid" -p -n -U cat /proc/sys/net/ipv4/ping_group_range
   [ "$status" -eq 0 ]
   [[ "$output" == "1000	64000" ]]
@@ -95,5 +100,5 @@ function teardown() {
   # modified.
   run cat "/proc/sys/net/ipv4/ping_group_range"
   [ "$status" -eq 0 ]
-  [ "$output" = "1	0" ]
+  [ "$output" == "$host_val" ]
 }
