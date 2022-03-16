@@ -9,6 +9,7 @@ load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/mounts
+load ../../helpers/userns
 load ../../helpers/sysbox-health
 
 function teardown() {
@@ -17,9 +18,11 @@ function teardown() {
 
 @test "*xattr" {
 
+	local subuid=$(sysbox_get_subuid_range_start)
+
 	rm -rf /mnt/scratch/test
 	mkdir -p /mnt/scratch/test
-	chown 165536:165536 /mnt/scratch/test
+	chown $subuid:$subuid /mnt/scratch/test
 
 	# deploy a sys container
 	local syscont=$(docker_run --rm -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -84,9 +87,11 @@ function teardown() {
 	make xattr-test
 	popd
 
+	local subuid=$(sysbox_get_subuid_range_start)
+
 	rm -rf /mnt/scratch/test
 	mkdir -p /mnt/scratch/test
-	chown 165536:165536 /mnt/scratch/test
+	chown $subuid:$subuid /mnt/scratch/test
 
 	# deploy a sys container
 	local syscont=$(docker_run --rm -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -108,9 +113,11 @@ function teardown() {
 
 @test "xattr: trusted.overlay.opaque" {
 
+	local subuid=$(sysbox_get_subuid_range_start)
+
 	rm -rf /mnt/scratch/test
 	mkdir -p /mnt/scratch/test
-	chown 165536:165536 /mnt/scratch/test
+	chown $subuid:$subuid /mnt/scratch/test
 
 	# deploy a sys container
 	local syscont=$(docker_run --rm -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -178,9 +185,11 @@ function teardown() {
 
 @test "listxattr non-root" {
 
+	local subuid=$(sysbox_get_subuid_range_start)
+
 	rm -rf /mnt/scratch/test
 	mkdir -p /mnt/scratch/test
-	chown 166536:166536 /mnt/scratch/test
+	chown $(($subuid+1000)):$(($subuid+1000)) /mnt/scratch/test
 
 	# deploy a sys container
 	local syscont=$(docker_run --rm -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -221,9 +230,11 @@ function teardown() {
 
 @test "allow-trusted-xattr disabled" {
 
+	local subuid=$(sysbox_get_subuid_range_start)
+
 	rm -rf /mnt/scratch/test
 	mkdir -p /mnt/scratch/test
-	chown 165536:165536 /mnt/scratch/test
+	chown $subuid:$subuid /mnt/scratch/test
 
 	# deploy a sys container, turn off "allow-trusted-xattr" for it
 	local syscont=$(docker_run --rm -e "SYSBOX_ALLOW_TRUSTED_XATTR=FALSE" -v /mnt/scratch/test:/mnt ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
