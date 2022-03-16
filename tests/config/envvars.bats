@@ -74,4 +74,7 @@ function teardown() {
 
 	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
 	[ "$status" -ne 0 ]
+
+	run __docker run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWNS=TRUE" ${CTR_IMG_REPO}/alpine-docker-dbg:latest echo "test"
+	[ "$status" -ne 0 ]
 }
