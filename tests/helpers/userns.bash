@@ -32,3 +32,13 @@ function container_get_userns() {
 	local userns=$(echo $link | cut -d ":" -f 2 | tr -d "[]")
 	echo $userns
 }
+
+function sysbox_get_subuid_range_start() {
+	local start=$(grep sysbox /etc/subuid | cut -d ":" -f2)
+	echo $start
+}
+
+function sysbox_get_subuid_range_size() {
+	local size=$(grep sysbox /etc/subuid | cut -d ":" -f3)
+	echo $size
+}
