@@ -49,6 +49,19 @@ EOF
 
   wait_for_nginx
 
+  # Temporary workaround for Linux kernel bug on sendfile()
+  # See:
+  # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=f8ad8187c3b536ee2b10502a8340c014204a1af0
+  # https://github.com/lxc/lxd/issues/8383
+
+  docker exec $SYSCONT_NAME sh -c 'sed -i -e "s/sendfile\s*on/sendfile off/" /etc/nginx/nginx.conf'
+  [ "$status" -eq 0 ]
+
+  docker exec $SYSCONT_NAME sh -c 'nginx -s reload'
+  [ "$status" -eq 0 ]
+
+  sleep 2
+
   # verify the nginx container is up and running
   run wget -O ${tmpdir}/result.html http://localhost:8080
   [ "$status" -eq 0 ]
@@ -77,6 +90,19 @@ EOF
   [ "$status" -eq 0 ]
 
   wait_for_nginx
+
+  # Temporary workaround for Linux kernel bug on sendfile()
+  # See:
+  # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=f8ad8187c3b536ee2b10502a8340c014204a1af0
+  # https://github.com/lxc/lxd/issues/8383
+
+  docker exec $SERVER sh -c 'sed -i -e "s/sendfile\s*on/sendfile off/" /etc/nginx/nginx.conf'
+  [ "$status" -eq 0 ]
+
+  docker exec $SERVER sh -c 'nginx -s reload'
+  [ "$status" -eq 0 ]
+
+  sleep 2
 
   CLIENT=$(docker_run -d --name nginx-client --network nginx-net ${CTR_IMG_REPO}/busybox:latest tail -f /dev/null)
   [ "$status" -eq 0 ]
