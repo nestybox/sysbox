@@ -95,7 +95,7 @@ function dockerd_manual_restart() {
 		dockerd_cmd=$(ps -eo args | grep $dockerd | head -n 1)
 
 		kill -s SIGTERM $dockerd_pid
-		retry 10 1 dockerd_stopped
+		retry 15 2 dockerd_stopped
 		if [ $? -ne 0 ]; then
 			printf "Failed to stop Docker. Please stop and restart manually to apply config.\n"
 			exit 1
@@ -104,7 +104,7 @@ function dockerd_manual_restart() {
 		rm -f /var/run/docker.pid
 		$dockerd_cmd > /var/log/dockerd.log 2>&1 &
 
-		retry 10 1 dockerd_running
+		retry 15 2 dockerd_running
 		if [ $? -ne 0 ]; then
 			printf "Failed to restart Docker. Please restart manually to apply config.\n"
 			exit 1
