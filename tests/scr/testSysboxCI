@@ -187,6 +187,8 @@ function test_with_docker_userns_remap() {
 
 	docker system prune -a -f
 
+	sleep 5
+
 	printf "\nReverting Docker userns-remap config\n"
 	docker-cfg --userns-remap=disable
 }
