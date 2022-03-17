@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #
-# script to run sysbox integration tests for CI
+# Script to run sysbox integration tests for CI.
 #
 
 progName=$(basename "$0")
@@ -67,26 +67,14 @@ function run_ci_tests() {
 	bats --tap tests/docker
 	printf "\nExecuting dind tests ... \n"
 	bats --tap tests/dind
-	printf "\nExecuting cind tests ... \n"
-	bats --tap tests/cind
 	printf "\nExecuting app tests (l1) ... \n"
 	bats --tap tests/apps/l1
 	printf "\nExecuting buildx + buildkit tests ... \n"
 	bats --tap tests/buildx/basic.bats
-	printf "\nExecuting chown syscall tests ... \n"
-	bats --tap tests/syscall/chown
 	printf "\nExecuting xattr syscall tests ... \n"
 	bats --tap tests/syscall/xattr
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
 	bats --tap tests/syscall/mount/mount.bats
-	printf "\nExecuting mount syscall-interception tests for procfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-procfs.bats
-	printf "\nExecuting mount syscall-interception tests for sysfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-sysfs.bats
-	printf "\nExecuting mount syscall-interception tests for overlayfs resources ... \n"
-	bats --tap tests/syscall/mount/mount-overlayfs.bats
-	printf "\nExecuting mount syscall-interception tests for immutable resources ... \n"
-	bats --tap tests/syscall/mount/mount-immutables.bats
 
 	# Launch kind test-suite.
 	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
@@ -107,12 +95,12 @@ function test_with_idmapped_and_shiftfs() {
 
 	if ! idmapped_mount_supported; then
 		printf "\nSkipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
-		return
+		return 1
 	fi
 
 	if ! shiftfs_supported; then
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
-		return
+		return 1
 	fi
 
 	printf "\n"
@@ -131,7 +119,7 @@ function test_with_idmapped_and_shiftfs() {
 function test_with_idmapped_only() {
 	if ! idmapped_mount_supported; then
 		printf "\nSkipping idmapped-mount only tests (not supported on host)\n"
-		return
+		return 1
 	fi
 
 	printf "\n"
@@ -155,7 +143,7 @@ function test_with_idmapped_only() {
 function test_with_shiftfs_only() {
 	if ! shiftfs_supported; then
 		printf "\nSkipping shiftfs only tests (not supported on host)\n"
-		return
+		return 1
 	fi
 
 	printf "\n"
@@ -193,14 +181,6 @@ function test_with_docker_userns_remap() {
 	bats --tap tests/docker
 	printf "\nExecuting dind tests ... \n"
 	bats --tap tests/dind
-	printf "\nExecuting cind tests ... \n"
-	bats --tap tests/cind
-
-	# Launch basic kind-flannel test
-	docker system prune -a -f
-	printf "\nExecuting kind testcases with flannel cni ... \n"
-	bats --tap tests/kind/kind-flannel.bats
-	docker system prune -a -f
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
@@ -227,9 +207,13 @@ function main() {
 		printf "\nExecuting $1 ... \n"
 		bats --tap $1
 	else
-		test_with_idmapped_and_shiftfs
-		test_with_idmapped_only
-		test_with_shiftfs_only
+
+		if ! test_with_idmapped_and_shiftfs; then
+			if ! test_with_idmapped_only; then
+				test_with_shiftfs_only
+			fi
+		fi
+
 		test_with_docker_userns_remap
 		test_sysbox_config
 	fi
