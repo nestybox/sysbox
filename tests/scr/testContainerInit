@@ -269,6 +269,10 @@ function main() {
 	install -D -m0755 scr/docker-cfg /usr/bin/docker-cfg
 	install -D -m0755 tests/scr/sysbox-docker-cp /usr/bin/sysbox-docker-cp
 
+	# In debian systems (apt-based ones) ensure that the basic dir/file layout
+	# is in place right from the start.
+	mkdir -p /var/lib/dpkg/{alternatives,info,parts,triggers,updates} && touch /var/lib/dpkg/status
+
 	# Install sysbox
 	if [[ "$SB_INSTALLER" == "true" ]]; then
 		install_sysbox_pkg
