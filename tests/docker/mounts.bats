@@ -415,9 +415,22 @@ function teardown() {
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
+  # Verify sysbox chowned the testDir at host level
+  local uid=$(docker_root_uid_map $syscont)
+  local gid=$(docker_root_gid_map $syscont)
+
+  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "$uid:$gid" ]]
+
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
   local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
+
+  # Verify the mount source ownership was changed only once (for the first container only)
+  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "$uid:$gid" ]]
 
   docker_stop "$syscont_2"
   docker_stop "$syscont"
