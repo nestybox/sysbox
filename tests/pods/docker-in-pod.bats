@@ -27,7 +27,7 @@ function teardown() {
 	crictl exec $syscont sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
 
 	crictl exec $syscont sh -c "docker pull ${CTR_IMG_REPO}/nginx"
-	crictl exec $syscont sh -c "docker run -p 8080:80 -d --rm nginx"
+	crictl exec $syscont sh -c "docker run -p 8080:80 -d --rm ${CTR_IMG_REPO}/nginx"
 	run crictl exec $syscont sh -c "apk add curl && curl -S localhost:8080"
 	[[ "$output" =~ "Welcome to nginx!" ]]
 
@@ -62,7 +62,7 @@ function teardown() {
 	crictl exec $cli sh -c "docker pull ${CTR_IMG_REPO}/nginx"
 
 	# Run an inner nginx
-	crictl exec $cli sh -c "docker run -p 8080:80 -d --rm nginx"
+	crictl exec $cli sh -c "docker run -p 8080:80 -d --rm ${CTR_IMG_REPO}/nginx"
 
 	# Verify the Docker CLI sees the nginx service
 	run crictl exec $cli sh -c "apk add curl && curl -S ${eng_ip}:8080"
@@ -104,7 +104,7 @@ function teardown() {
 	crictl exec $cli sh -c "docker pull ${CTR_IMG_REPO}/nginx"
 
 	# Run an inner nginx
-	crictl exec $cli sh -c "docker run -p 8080:80 -d --rm nginx"
+	crictl exec $cli sh -c "docker run -p 8080:80 -d --rm ${CTR_IMG_REPO}/nginx"
 
 	# Verify the Docker CLI sees the nginx service
 	run crictl exec $cli sh -c "apk add curl && curl -S ${eng_ip}:8080"
