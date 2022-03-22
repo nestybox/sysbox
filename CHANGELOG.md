@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.5.0-beta] - 2022-03-11
+## [0.5.0] - 2022-03-22
 ### Added
   * Added support for Linux ID-mapped mounts (shiftfs alternative in kernels >= 5.12).
   * Added support for ARM64 hosts.
