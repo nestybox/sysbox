@@ -10,8 +10,6 @@ All notable changes to this project will be documented in this file.
   * Added configs to disable trapping chown and xattr* syscalls (improves performance but may reduce functionality).
   * Added config to strictly honor container capabilities from higher-level container manager.
   * Added support for per-container configs via `SYSBOX_*` env vars.
-  * Added support for CRI-O v1.21 in Sysbox's K8s deployments.
-  * Extended sysbox-k8s-deployment daemonset to allow sysbox-pods to be launched within Lokomotive, RKE2 and Azure (AKS) Kubernetes distributions.
   * Improved performance of Sysbox's syscall interception code.
   * Improved the way Sysbox releases the seccomp-fd handles for intercept syscalls (kernels >= 5.8).
   * Improved Sysbox's cross-compilation support (artifacts can now be generated from/to either AMD64 or ARM64 hosts).
