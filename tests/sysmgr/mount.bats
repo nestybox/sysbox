@@ -480,3 +480,106 @@ load ../helpers/sysbox-health
 
   rm -rf $mnt_src
 }
+
+@test "mounts with submounts" {
+
+  #
+  # Test scenario where sys container is launched with a bind mount of a file
+  # that itself is a mount. We've seen this when running Sysbox on K8s clusters,
+  # when a K8s secret is mounted on the sysbox container.
+  #
+
+  run sh -c 'findmnt | grep -E "shiftfs( |$)"'
+  [ "$status" -eq 1 ]
+
+  local basedir="/mnt/scratch"
+  rm -rf $basedir/t1
+  mkdir $basedir/t1
+  echo "f1" > $basedir/t1/f1
+  echo "f2" > $basedir/t1/f2
+  echo "f3" > $basedir/t1/f3
+  echo "f4" > $basedir/t1/f4
+  echo "f5" > $basedir/t1/f5
+  echo "f6" > $basedir/t1/f6
+
+  rm -rf $basedir/t2
+  mkdir $basedir/t2
+  echo "t2-f5" > $basedir/t2/f5
+
+  rm -rf $basedir/tmpfs
+  mkdir $basedir/tmpfs
+  mount -t tmpfs -o size=10M tmpfs $basedir/tmpfs
+  echo "f1-tmpfs" >> $basedir/tmpfs/f1-tmpfs
+
+  mount --bind $basedir/tmpfs/f1-tmpfs $basedir/t1/f1
+  mount --bind $basedir/t1/f4 $basedir/t1/f3
+  mount --bind $basedir/t2/f5 $basedir/t1/f5
+  mount --bind /dev/null $basedir/t1/f6
+
+  local syscont=$(docker_run --rm \
+									  -v $basedir/t1/f1:/mnt/f1 \
+									  -v $basedir/t1/f2:/mnt/f2 \
+									  -v $basedir/t1/f3:/mnt/f3 \
+									  -v $basedir/t1/f5:/mnt/f5 \
+									  -v $basedir/t1/f6:/mnt/f6 \
+									  ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+  docker exec "$syscont" sh -c "cat /mnt/f1"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "f1-tmpfs" ]]
+
+  # /mnt/f1 is bind-mounted from $basedir/t1/f1, which is bind-mounted from
+  # tmpfs. Since ID-mapped mounts are not yet supported on tmpfs we skip
+  # this check.
+  if sysbox_using_shiftfs_only; then
+	  docker exec "$syscont" sh -c "ls -l /mnt/f1"
+	  [ "$status" -eq 0 ]
+	  verify_owner "root" "root" "$output"
+  fi
+
+  docker exec "$syscont" sh -c "cat /mnt/f2"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "f2" ]]
+
+  docker exec "$syscont" sh -c "ls -l /mnt/f2"
+  [ "$status" -eq 0 ]
+  verify_owner "root" "root" "$output"
+
+  docker exec "$syscont" sh -c "cat /mnt/f3"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "f4" ]]
+
+  docker exec "$syscont" sh -c "ls -l /mnt/f3"
+  [ "$status" -eq 0 ]
+  verify_owner "root" "root" "$output"
+
+  docker exec "$syscont" sh -c "cat /mnt/f5"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "t2-f5" ]]
+
+  docker exec "$syscont" sh -c "ls -l /mnt/f5"
+  [ "$status" -eq 0 ]
+  verify_owner "root" "root" "$output"
+
+  docker exec "$syscont" sh -c "cat /mnt/f6"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "" ]]
+
+  # f6 is bind mounted from /dev/null, owned by the host's root; thus is shows
+  # up as owned by "nobody" in the container.
+  docker exec "$syscont" sh -c "ls -l /mnt/f6"
+  [ "$status" -eq 0 ]
+  verify_owner "nobody" "nobody" "$output"
+
+  docker_stop "$syscont"
+  [ "$status" -eq 0 ]
+
+  umount $basedir/t1/f1
+  umount $basedir/tmpfs
+  umount $basedir/t1/f3
+  umount $basedir/t1/f5
+  umount $basedir/t1/f6
+
+  rm -rf $basedir/t1
+  rm -rf $basedir/tmpfs
+}
