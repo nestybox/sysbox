@@ -8,16 +8,15 @@ TEST_VOL3=$3
 # can't be checked from within the test container since its docker
 # image may be based on another distro)
 
-DISTRO=$(lsb_release -is)
+DISTRO=$(cat /etc/os-release | grep "^ID=" | cut -d "=" -f2)
 
-if [ "$DISTRO" != "Ubuntu" ] &&
-   [ "$DISTRO" != "Debian" ] &&
-   [ "$DISTRO" != "CentOS" ] &&
-   [ "$DISTRO" != "AlmaLinux" ] &&
-   [ "$DISTRO" != "Rocky" ] &&
-   [ "$DISTRO" != "Fedora" ]; then
-    printf "\nError: sysbox is not supported in this distribution: %s.\n\n", $DISTRO
-    exit 1
+if [ "$DISTRO" != "ubuntu" ] &&
+   [ "$DISTRO" != "debian" ] &&
+   [ "$DISTRO" != "centos" ] &&
+   [ "$DISTRO" != "almalinux" ] &&
+   [ "$DISTRO" != "rocky" ] &&
+   [ "$DISTRO" != "fedora" ]; then
+    printf "\nWarning: Sysbox is not supported in this distribution (though it may still work): %s.\n\n", $DISTRO
 fi
 
 # Verify that shiftfs is not mounted at host level (some tests assume this is the case)
