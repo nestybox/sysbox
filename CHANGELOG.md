@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2022-04-06
+### Added
+  * Added support to allow CIFS mounts within Sysbox containers (Sysbox-EE only).
+  * Fixed issue to allow shiftfs mounts over files that are themselves bind-mounts.
+
 ## [0.5.0] - 2022-03-22
 ### Added
   * Added support for Linux ID-mapped mounts (shiftfs alternative in kernels >= 5.12).
