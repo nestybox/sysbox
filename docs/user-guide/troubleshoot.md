@@ -22,49 +22,63 @@ For troubleshooting in Kubernetes clusters, see [here](troubleshoot-k8s.md).
 
 ## Sysbox Installation Problems
 
-When installing the Sysbox package with the `dpkg` command
+When installing the Sysbox package with the `apt-get install` command
 (see the [Installation instructions](../../README.md#installing-sysbox)), the expected output is:
 
 ```console
-$ sudo dpkg -i sysbox_0.2.0-0.ubuntu-eoan_amd64.deb
-Selecting previously unselected package sysbox.
-(Reading database ... 155191 files and directories currently installed.)
-Preparing to unpack sysbox_0.2.0-0.ubuntu-eoan_amd64.deb ...
-Unpacking sysbox (0.1.2-0.ubuntu-eoan) ...
-Setting up sysbox (0.1.2-0.ubuntu-eoan) ...
+$ sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+Note, selecting 'sysbox-ce' instead of './sysbox-ce_0.5.0-0.linux_amd64.deb'
+The following NEW packages will be installed:
+  sysbox-ce
+0 upgraded, 1 newly installed, 0 to remove and 178 not upgraded.
+Need to get 0 B/11.2 MB of archives.
+After this operation, 40.8 MB of additional disk space will be used.
+Get:1 /home/rmolina/wsp/02-26-2020/sysbox/sysbox-ce_0.5.0-0.linux_amd64.deb sysbox-ce amd64 0.5.0-0.linux [11.2 MB]
+Selecting previously unselected package sysbox-ce.
+(Reading database ... 327292 files and directories currently installed.)
+Preparing to unpack .../sysbox-ce_0.5.0-0.linux_amd64.deb ...
+Unpacking sysbox-ce (0.5.0-0.linux) ...
+Setting up sysbox-ce (0.5.0-0.linux) ...
 Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-fs.service → /lib/systemd/system/sysbox-fs.service.
 Created symlink /etc/systemd/system/sysbox.service.wants/sysbox-mgr.service → /lib/systemd/system/sysbox-mgr.service.
 Created symlink /etc/systemd/system/multi-user.target.wants/sysbox.service → /lib/systemd/system/sysbox.service.
 ```
 
-In case an error occurs during installation as a consequence of a missing
-software dependency, proceed to download and install the missing package(s) as
-indicated below. Once this requirement is satisfied, Sysbox's installation
-process will be automatically re-launched to conclude this task.
-
-Missing dependency output:
-
-```console
-...
-dpkg: dependency problems prevent configuration of sysbox:
-sysbox depends on jq; however:
-Package jq is not installed.
-
-dpkg: error processing package sysbox (--install):
-dependency problems - leaving unconfigured
-Errors were encountered while processing:
-sysbox
-```
-
-Install missing package by fixing (-f) system's dependency structures.
+If there is any missing software dependency, the 'apt-get' tool will
+take care of installing it accordingly during the installation process.
+Alternatively, you can manually execute the following instructions to
+install Sysbox's missing dependencies:
 
 ```console
 $ sudo apt-get update
 $ sudo apt-get install -f -y
 ```
 
-Verify that Sysbox's systemd units have been properly installed, and
-associated daemons are properly running:
+There may be other issues observed during installation. For example, in
+Docker environments, the Sysbox installer may complain if there are
+active docker containers during the installation process. In this case,
+proceed to execute the action suggested by the installer and re-launch
+the installation process again.
+
+```
+$ sudo apt-get install ./deb/build/amd64/ubuntu-impish/sysbox-ce_0.5.0-0.linux_amd64.deb
+Reading package lists... Done
+Building dependency tree
+...
+
+The Sysbox installer requires a docker service restart to configure network parameters, but it cannot proceed due to existing Docker containers. Please remove them as indicated below and re-launch the installation process. Refer to Sysbox installation documentation for details.
+	"docker rm $(docker ps -a -q) -f"
+
+dpkg: error processing package sysbox-ce (--configure):
+ installed sysbox-ce package post-installation script subprocess returned error exit status 1
+```
+
+Upon successful completion of the installation task, verify that Sysbox's
+systemd units have been properly installed, and associated daemons are
+properly running:
 
 ```console
 $ systemctl list-units -t service --all | grep sysbox
