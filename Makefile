@@ -31,8 +31,8 @@ endif
 export VERSION := $(shell cat ./VERSION)
 export EDITION := Community Edition (CE)
 export PACKAGE := sysbox-ce
-export HOST_UID := $(shell id -u)
-export HOST_GID := $(shell id -g)
+export HOST_UID ?= $(shell id -u)
+export HOST_GID ?= $(shell id -g)
 
 # Obtain the current system architecture.
 UNAME_M := $(shell uname -m)
@@ -158,6 +158,9 @@ LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
 LIBSECCOMP_DIR := sysbox-libs/libseccomp
 LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
 LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
+LIBSECCOMP_UID := $(shell stat -c %u ./sysbox-libs/libseccomp/README.md)
+LIBSECCOMP_GID := $(shell stat -c %g ./sysbox-libs/libseccomp/README.md)
+
 
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
@@ -229,38 +232,48 @@ sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make
+	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make sysbox-runc-debug
+	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
+	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-fs: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make
+	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-fs-debug: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-debug
+	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-fs-static: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-static
+	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-mgr: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make
+	@cd $(SYSMGR_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-mgr-debug: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make sysbox-mgr-debug
+	@cd $(SYSMGR_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-mgr-static: sysbox-ipc
 	@cd $(SYSMGR_DIR) && make sysbox-mgr-static
+	@cd $(SYSMGR_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
+	@cd $(SYSIPC_DIR) && chown -R $(HOST_UID):$(HOST_GID) *
 
 $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@echo "Building libseccomp ..."
 	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure --host $(HOST_TRIPLE) && make
-	@chown -R $(HOST_UID):$(HOST_GID) ./sysbox-libs/libseccomp
+	@chown -R $(LIBSECCOMP_UID):$(LIBSECCOMP_GID) ./sysbox-libs/libseccomp
 	@echo "Building libseccomp completed."
 
 #
@@ -292,6 +305,8 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 DOCKER_RUN := docker run --privileged --rm --runtime=runc             \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
+			-e HOST_UID=$(HOST_UID)                       \
+			-e HOST_GID=$(HOST_GID)                       \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(TEST_VOL1):/var/lib                      \
 			-v $(TEST_VOL2):/mnt/scratch                  \
@@ -306,6 +321,8 @@ DOCKER_RUN := docker run --privileged --rm --runtime=runc             \
 DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
+			-e HOST_UID=$(HOST_UID)                       \
+			-e HOST_GID=$(HOST_GID)                       \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(TEST_VOL1):/var/lib                      \
 			-v $(TEST_VOL2):/mnt/scratch                  \
@@ -322,6 +339,8 @@ DOCKER_RUN_SYSTEMD := docker run -d --rm --runtime=runc --privileged  \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			--cgroupns private                            \
+			-e HOST_UID=$(HOST_UID)                       \
+			-e HOST_GID=$(HOST_GID)                       \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(TEST_VOL1):/var/lib                      \
 			-v $(TEST_VOL2):/mnt/scratch                  \
@@ -571,6 +590,7 @@ sysbox-runc-recvtty: sysbox-runc/contrib/cmd/recvtty/recvtty
 
 sysbox-runc/contrib/cmd/recvtty/recvtty:
 	@cd $(SYSRUNC_DIR) && make recvtty
+	@cd $(SYSRUNC_DIR) && chown $(HOST_UID):$(HOST_GID) contrib/cmd/recvtty/recvtty
 
 listRuncPkgs:
 	@echo $(runcPkgs)
