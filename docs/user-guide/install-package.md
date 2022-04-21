@@ -47,7 +47,11 @@ The Linux host on which Sysbox runs must meet the following requirements:
 [uninstall it](#uninstallation) first and then follow
 the installation instructions below.
 
-1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page.
+1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
+
+```
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
+```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
@@ -73,8 +77,11 @@ below for more on this.
 4.  Install the Sysbox package and follow the installer instructions:
 
 ```console
+$ sudo apt-get install jq
 $ sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
 ```
+
+NOTE: the `jq` tool is used by the Sysbox installer.
 
 5.  Verify that Sysbox's Systemd units have been properly installed, and
     associated daemons are properly running:
@@ -203,6 +210,7 @@ For example, to install shiftfs on an Ubuntu-based cloud VM with Linux kernel
 version 5.8 or 5.10, follow these simple steps:
 
 ```console
+sudo apt-get install -y make dkms git wget
 git clone -b k5.10 https://github.com/toby63/shiftfs-dkms.git shiftfs-k510
 cd shiftfs-k510
 ./update1
@@ -210,8 +218,7 @@ sudo make -f Makefile.dkms
 modinfo shiftfs
 ```
 
-Note that you'll need to install the `git`, `make`, `dkms`, `wget`, and
-kernel-header packages in order to perform the shiftfs build.
+The last command should show that shiftfs is installed on the host.
 
 ## Miscellaneous Installation Info
 
