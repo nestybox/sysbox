@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/environment
 load ../helpers/sysbox
 load ../helpers/sysbox-health
 
@@ -20,6 +21,7 @@ function teardown() {
 
 	run __docker run --runtime=sysbox-runc --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
+
 	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
@@ -63,7 +65,17 @@ function teardown() {
 	# Honor caps for root user process
 	run __docker run --runtime=sysbox-runc -e "SYSBOX_HONOR_CAPS=TRUE" --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+
+	# Inheritable caps changed in Docker 20.10.14
+	# (see Moby commit dd38613d0c oci: inheritable capability set should be empty)
+
+	local docker_ver=$(docker_engine_version)
+	local expectedCapInh="00000000a80425fb"
+	if semver_ge $docker_ver "20.10.14"; then
+		expectedCapInh="0000000000000000"
+	fi
+
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"00000000a80425fb" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"00000000a80425fb" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -73,7 +85,7 @@ function teardown() {
 	# Honor caps for non root user process
 	run __docker run --runtime=sysbox-runc -e "SYSBOX_HONOR_CAPS=TRUE" -u 1000:1000 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -98,7 +110,7 @@ function teardown() {
 
 	docker exec -e "SYSBOX_HONOR_CAPS=TRUE" "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"00000000a80425fb" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"00000000a80425fb" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -106,7 +118,7 @@ function teardown() {
 
 	docker exec -e "SYSBOX_HONOR_CAPS=TRUE" -u 1000:1000 "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -135,20 +147,33 @@ function teardown() {
 	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
-
 	# If we honor caps, then cap add/drop is honored
+
+	# Inheritable caps changed in Docker 20.10.14
+	# (see Moby commit dd38613d0c oci: inheritable capability set should be empty)
+	local docker_ver=$(docker_engine_version)
+	local expectedCapInh="0000000000200000"
+	if semver_ge $docker_ver "20.10.14"; then
+		expectedCapInh="0000000000000000"
+	fi
+
 	run __docker run --runtime=sysbox-runc --rm -e "SYSBOX_HONOR_CAPS=TRUE" --cap-drop=ALL --cap-add=SYS_ADMIN ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000000000200000" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000200000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000200000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"0000000000200000" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 	local sysbox_root_caps="$output"
 
+	expectedCapInh="0000003fffffffff"
+	if semver_ge $docker_ver "20.10.14"; then
+		expectedCapInh="0000000000000000"
+	fi
+
 	run __docker run --runtime=sysbox-runc --rm -e "SYSBOX_HONOR_CAPS=TRUE" -u 1000:1000 --cap-add=ALL ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
@@ -172,10 +197,18 @@ function teardown() {
 	sysbox_stop
    sysbox_start --honor-caps
 
+	# Inheritable caps changed in Docker 20.10.14
+	# (see Moby commit dd38613d0c oci: inheritable capability set should be empty)
+	local docker_ver=$(docker_engine_version)
+	local expectedCapInh="00000000a80425fb"
+	if semver_ge $docker_ver "20.10.14"; then
+		expectedCapInh="0000000000000000"
+	fi
+
 	# Honor caps for root user process
 	run __docker run --runtime=sysbox-runc --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"00000000a80425fb" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"00000000a80425fb" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -185,7 +218,7 @@ function teardown() {
 	# Honor caps for non root user process
 	run __docker run --runtime=sysbox-runc -u 1000:1000 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -227,7 +260,7 @@ function teardown() {
 
 	docker exec "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"00000000a80425fb" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"00000000a80425fb" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
@@ -235,7 +268,7 @@ function teardown() {
 
 	docker exec -u 1000:1000 "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"00000000a80425fb" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
