@@ -106,3 +106,27 @@ function version_compare() {
 
 	return 0
 }
+
+# Compare semantic versions; takes two semantic version numbers of the form
+# x.y.z (or x.y), and returns 0 if the first is less than the
+# second, and 1 otherwise.
+function semver_lt() {
+	version_compare $1 $2
+	if [ "$?" -eq "2" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Compare semantic versions; takes two semantic version numbers of the form
+# x.y.z (or x.y), and returns 0 if the first is greater than or equal to the
+# second, and 1 otherwise.
+function semver_ge() {
+	version_compare $1 $2
+	if [ "$?" -ne "2" ]; then
+		return 0
+	else
+		return 1
+	fi
+}

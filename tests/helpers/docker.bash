@@ -137,3 +137,8 @@ function docker_ssh_access() {
 
   __docker exec $cont bash -c "mkdir -p ~/.ssh && echo $pubkey > ~/.ssh/authorized_keys"
 }
+
+function docker_engine_version() {
+	local res=$(__docker info --format '{{json .}}' | jq ".ServerVersion" | tr -d '"')
+	echo $res
+}
