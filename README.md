@@ -12,13 +12,16 @@
 
 ***
 
-**Security Note (03/03/11)**:
+**Docker advances container isolation and workloads with acquisition of Nestybox**:
 
-A few vulnerabilities have recently been found in the Linux kernel that
-in some cases reduce or negate the enhanced isolation provided by
-Sysbox containers. Fortunately they are all fixed in recent Linux kernels.
-See the Sysbox User Guide's [Vulnerabilities & CVEs chapter](docs/user-guide/security-cve.md)
-for more info, and reach out on the [Sysbox Slack channel][slack] for further questions.
+Hi everyone, this is Cesar & Rodny, co-founders of [Nestybox](https://www.nestybox.com).
+
+We are humbled and excited to announce that Nestybox is now officially part of
+Docker, Inc! Docker is an excellent home for Sysbox and this will accelerate
+innovation of Sysbox to advance container isolation and workloads.
+
+Please see this [blog](https://www.docker.com/blog/docker-acquires-nestybox-advancing-container-isolation-workloads/) and
+this [Q&A](https://www.nestybox.com/docker-nestybox-qa) for more info. Thanks!
 ***
 
 ## Introduction
@@ -382,6 +385,12 @@ info on how Sysbox secures containers.
 If you find bugs or issues that may expose a Sysbox vulnerability, please report
 these by sending an email to security@nestybox.com. Please do not open security
 issues in this repo. Thanks!
+
+In addition, a few vulnerabilities have recently been found in the Linux kernel
+that in some cases reduce or negate the enhanced isolation provided by Sysbox
+containers. Fortunately they are all fixed in recent Linux kernels. See the
+Sysbox User Guide's [Vulnerabilities & CVEs chapter](docs/user-guide/security-cve.md)
+for more info, and reach out on the [Sysbox Slack channel][slack] for further questions.
 
 ## Troubleshooting & Support
 
