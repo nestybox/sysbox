@@ -20,7 +20,7 @@ We are humbled and excited to announce that Nestybox is now officially part of
 Docker, Inc! Docker is an excellent home for Sysbox and this will accelerate
 innovation of Sysbox to advance container isolation and workloads.
 
-Please see this [blog](https://www.docker.com/blog/docker-acquires-nestybox-advancing-container-isolation-workloads/) and
+Please see this [blog](https://www.docker.com/blog/docker-advances-container-isolation-and-workloads-with-acquisition-of-nestybox/) and
 this [Q&A](https://www.nestybox.com/docker-nestybox-qa) for more info. Thanks!
 ***
 
