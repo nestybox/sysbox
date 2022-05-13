@@ -29,7 +29,7 @@ function get_docker_cgroup_driver() {
 function get_docker_cgroup_v1_fs_paths() {
 	local syscont=$1
 	local -n ___cgp=$2
-	local cgControllers=$(ls /sys/fs/cgroup | grep -v "unified" | grep -v "systemd" | grep -v "rdma" | grep -v "misc")
+	local cgControllers=$(ls /sys/fs/cgroup | grep -v "unified" | grep -v "systemd" | grep -v "misc")
 
 	for controller in ${cgControllers[@]}; do
 		___cgp[$controller]="/sys/fs/cgroup/$controller/docker/$syscont"
@@ -39,7 +39,7 @@ function get_docker_cgroup_v1_fs_paths() {
 function get_docker_cgroup_v1_systemd_paths() {
 	local syscont=$1
 	local -n ___cgp=$2
-	local cgControllers=$(ls /sys/fs/cgroup | grep -v "unified" | grep -v "systemd" | grep -v "rdma" | grep -v "misc")
+	local cgControllers=$(ls /sys/fs/cgroup | grep -v "unified" | grep -v "systemd" | grep -v "misc")
 
 	for controller in ${cgControllers[@]}; do
 		___cgp[$controller]="/sys/fs/cgroup/$controller/system.slice/docker-$syscont.scope"
