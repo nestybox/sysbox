@@ -208,11 +208,17 @@ function test_cgroup_memory() {
 	#
 	# Verify docker stats looks good
 	#
-	docker stats --no-stream
-	[ "$status" -eq 0 ]
+	# NOTE: for some reason, "docker stat" does not show the mem consumption with Docker >= 20.10.0
+	# inside the test container. It's not related to Sysbox in any way, occurs with the OCI runc too.
+	#
+	local docker_ver=$(docker_engine_version)
+	if semver_lt $docker_ver "20.10.0"; then
+		docker stats --no-stream
+		[ "$status" -eq 0 ]
 
-	local mem_limit=$(echo "${lines[1]}" | awk '{print $6}')
-	[[ "$mem_limit" == "16MiB" ]]
+		local mem_limit=$(echo "${lines[1]}" | awk '{print $6}')
+		[[ "$mem_limit" == "16MiB" ]]
+	fi
 
 	#
 	# Inside the sys container, use more mem than what was allocated to it
