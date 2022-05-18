@@ -28,7 +28,7 @@ export num_workers=2
 export KUBECONFIG=${HOME}/.kube/${cluster}-config
 
 # Cluster's node image.
-export k8s_version="v1.20.2"
+export k8s_version="v1.21.12"
 export node_image="${CTR_IMG_REPO}/k8s-node-test:${k8s_version}"
 
 function teardown() {
