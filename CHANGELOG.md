@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.2] - 2022-05-18
+### Added
+  * Fixed issue #544 preventing containers initialization within sysbox containers when running latest oci-runc releases (1.1.0-rc.1+).
+
 ## [0.5.1] - 2022-04-06
 ### Added
   * Added support to allow CIFS mounts within Sysbox containers (Sysbox-EE only).
