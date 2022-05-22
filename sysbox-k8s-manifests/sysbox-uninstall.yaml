@@ -46,7 +46,7 @@ spec:
           sysbox-runtime: running
       containers:
       - name: sysbox-cleanup-k8s
-        image: registry.nestybox.com/nestybox/sysbox-deploy-k8s:v0.5.1
+        image: registry.nestybox.com/nestybox/sysbox-deploy-k8s:v0.5.2
         imagePullPolicy: Always
         command: [ "bash", "-c", "/opt/sysbox/scripts/sysbox-deploy-k8s.sh ce cleanup" ]
         env:
