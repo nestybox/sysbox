@@ -15,7 +15,7 @@ function idmapped_mount_supported() {
 	local kernel_rel=$(uname -r)
 	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
 	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
-	[ ${rel_major} -gt 5 ] || ( [ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ] )
+	[ ${rel_major} -gt 5 ] || ([ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ])
 }
 
 function shiftfs_supported() {
@@ -59,6 +59,8 @@ function set_sysbox_shiftfs() {
 }
 
 function run_all_tests() {
+	printf "\nExecuting life-cycle tests ... \n"
+	bats --tap tests/lifecycle
 	printf "\nExecuting sysbox-mgr tests ... \n"
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
