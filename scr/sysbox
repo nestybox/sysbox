@@ -19,6 +19,7 @@ NO_IDMAPPED_MOUNT=0
 NO_ROOTFS_CLONING=0
 IGNORE_SYSFS_CHOWN=0
 HONOR_CAPS=0
+SYSCONT_MODE="true"
 ALLOW_TRUSTED_XATTR="true"
 SET_DATA_ROOT=0
 SET_SECCOMP_FD_REL=0
@@ -232,6 +233,10 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--honor-caps")
 	fi
 
+	if [ $SYSCONT_MODE == "false" ]; then
+		options+=("--syscont-mode=false")
+	fi
+
 	if [[ $ALLOW_TRUSTED_XATTR == "false" ]]; then
 		options+=("--allow-trusted-xattr=false")
 	fi
@@ -357,13 +362,14 @@ function show_usage() {
 	printf "      --ignore-sysfs-chown       Ignore chown of /sys inside all Sysbox containers; may be needed to run a few apps that chown /sys inside the container (e.g,. rpm). Causes Sysbox to trap the chown syscall inside the container, slowing it down (default = false).\n"
 	printf "      --allow-trusted-xattr      Allows the overlayfs trusted.overlay.opaque xattr to be set inside all Sysbox containers; needed when running Docker inside Sysbox on hosts with kernel < 5.11. Causes Sysbox to trap the *xattr syscalls inside the container, slowing it down (default = true).\n"
 	printf "      --honor-caps               Honor the container's process capabilities passed to Sysbox by the higher level container manager (e.g., Docker/containerd). Without this, Sysbox always gives the container's root user full capabilities and other users no capabilities to mimic a VM-like environment. Note that the container's capabilities are isolated from the host via the Linux user-namespace. (default = false).\n"
+	printf "      --syscont-mode             Causes Sysbox to run in \"system container\" mode. In this mode, it sets up the container to run system workloads (e.g., systemd, Docker, Kubernetes, etc.) seamlessly and securely. Without this, Sysbox operates in \"regular container\" mode where it sets up the container per its OCI spec (usually for microservices), with the exception of the Linux 'user' and 'cgroup' namespaces which Sysbox always enables for extra container isolation. (default = true)\n"
 	printf "      --seccomp-fd-release <pol> Policy to close syscall interception handles; useful in kernels < 5.8; allowed values are \"proc-exit\" and \"cont-exit\" (default = \"proc-exit\")\n"
 	printf "  -h, --help                     Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-rootfs-cloning,ignore-sysfs-chown,honor-caps,allow-trusted-xattr:,data-root:,seccomp-fd-release:,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-rootfs-cloning,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,help -- "$@")
 
 	eval set -- "$options"
 
@@ -393,6 +399,10 @@ function parse_args() {
 				;;
 			--honor-caps)
 				HONOR_CAPS=1
+				;;
+			--syscont-mode)
+				shift
+				SYSCONT_MODE=$1
 				;;
 			--allow-trusted-xattr)
 				shift
