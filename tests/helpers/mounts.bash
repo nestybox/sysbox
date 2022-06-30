@@ -10,6 +10,14 @@
 . $(dirname ${BASH_SOURCE[0]})/run.bash
 . $(dirname ${BASH_SOURCE[0]})/sysbox-cfg.bash
 
+syscont_special_dirs=("/var/lib/docker" \
+								 "/var/lib/kubelet" \
+								 "/var/lib/k0s" \
+								 "/var/lib/rancher/k3s" \
+								 "/var/lib/rancher/rke2" \
+								 "/var/lib/buildkit" \
+								 "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs")
+
 function allow_immutable_remounts() {
 	local options
 
