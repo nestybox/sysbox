@@ -14,7 +14,7 @@ function teardown() {
   sysbox_log_check
 }
 
-function checkSysboxDaemon() {
+function checkSysboxPidFile() {
     local pidFile=$1
     local daemonPid=$2
     local pidFilePath=${sysboxRunDir}/${pidFile}
@@ -24,7 +24,7 @@ function checkSysboxDaemon() {
     fi
 
     local pid=$(cat $pidFilePath)
-    if [ -z $pid ]; then
+    if [ -z $pid ] || [ "$pid" -ne "$daemonPid" ]; then
         return 1
     fi
 
@@ -64,14 +64,14 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 }
 
 # Verify that sysbox-mgr pid file is properly generated and eliminated in scenarios
-# where sysbox-mgr is gracefully shutdowned.
+# where sysbox-mgr is gracefully shutdown.
 @test "sysbox-mgr graceful restart" {
 
     # Verify that sysbox daemons are running and that the corresponding pid
@@ -79,30 +79,30 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Send sigterm to sysbox-mgr and verify that the old pid file is eliminated.
     # No changes are expected in sysbox-fs front.
     daemonStop "sysbox-mgr" "true"
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -ne 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Re-initialize sysbox-mgr and verify that a new pid file is generated.
     sysboxMgrStart
     local sysboxMgrPid=$(pgrep sysbox-mgr)
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 }
 
 # Verify that sysbox-fs pid file is properly generated and eliminated in scenarios
-# where sysbox-fs is gracefully shutdowned.
+# where sysbox-fs is gracefully shutdown.
 @test "sysbox-fs graceful restart" {
 
     # Verify that sysbox daemons are running and that the corresponding pid
@@ -110,25 +110,25 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Send sigterm to sysbox-fs and verify that the old pid file is eliminated.
     # No changes are expected in sysbox-mgr front.
     daemonStop "sysbox-fs" "true"
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -ne 0 ]
 
     # Re-initialize sysbox-fs and verify that a new pid file is generated.
     sysboxFsStart
     local sysboxFsPid=$(pgrep sysbox-fs)
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 }
 
@@ -141,31 +141,31 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Send sigkill to sysbox-mgr and verify that the old pid file is still in place.
     # No changes are expected in sysbox-fs front.
     daemonStop "sysbox-mgr" "false"
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Re-initialize sysbox-mgr and verify that the old pid file has been overwritten
     # with the new pid value.
     sysboxMgrStart
     local sysboxMgrPid=$(pgrep sysbox-mgr)
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 }
 
 # Verify that sysbox-fs pid file is properly generated and eliminated in scenarios
-# where sysbox-fs is ungracefully shutdowned.
+# where sysbox-fs is ungracefully shutdown.
 @test "sysbox-fs ungraceful restart" {
 
     # Verify that sysbox daemons are running and that the corresponding pid
@@ -173,26 +173,26 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Send sigkill to sysbox-fs and verify that the old pid file is still in place.
     # No changes are expected in sysbox-mgr front.
     daemonStop "sysbox-fs" "false"
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid ]
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid ]
     [ "$status" -eq 0 ]
 
     # Re-initialize sysbox-fs and verify that the old pid file has been overwritten
     # with the new pid value.
     sysboxFsStart
     local sysboxFsPid=$(pgrep sysbox-fs)
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]    
 }
 
@@ -204,16 +204,16 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Attempt to initialize a second instance of sysbox-mgr and verify that this
     # is not allowed.
     sysboxMgrStart
     local newSysboxMgrPid=$(pgrep sysbox-mgr)
-    run checkSysboxDaemon "sysmgr.pid" $newSysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $newSysboxMgrPid
     [ "$status" -eq 0 ]
 }
 
@@ -225,15 +225,15 @@ function sysboxFsStart() {
     local sysboxMgrPid=$(pgrep sysbox-mgr)
     local sysboxFsPid=$(pgrep sysbox-fs)
 
-    run checkSysboxDaemon "sysmgr.pid" $sysboxMgrPid
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxDaemon "sysfs.pid" $sysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Attempt to initialize a second instance of sysbox-fs and verify that this
     # is not allowed.
     sysboxFsStart
     local newSysboxFsPid=$(pgrep sysbox-fs)
-    run checkSysboxDaemon "sysfs.pid" $newSysboxFsPid
+    run checkSysboxPidFile "sysfs.pid" $newSysboxFsPid
     [ "$status" -eq 0 ]
 }
