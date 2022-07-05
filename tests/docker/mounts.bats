@@ -217,6 +217,85 @@ function teardown() {
   rm -rf /mnt/scratch/testfile
 }
 
+@test "use shiftfs if idmapped mount not possible" {
+
+  if ! sysbox_using_all_uid_shifting; then
+	  skip "Requires shiftfs and idmapped mounts."
+  fi
+
+  # setup a temporary overlayfs mount; we will mount this into the container.
+  rm -rf /mnt/scratch/ovfs
+  mkdir /mnt/scratch/ovfs
+  mkdir /mnt/scratch/ovfs/lower
+  mkdir /mnt/scratch/ovfs/upper
+  mkdir /mnt/scratch/ovfs/work
+  mkdir /mnt/scratch/ovfs/diff
+
+  pushd .
+  cd /mnt/scratch/ovfs
+  mount -t overlay overlay -o lowerdir=lower,upperdir=upper,workdir=work diff
+  popd
+
+  # setup a test file; we will also mount this into the container
+  rm -rf /mnt/scratch/testfile
+  touch /mnt/scratch/testfile
+
+  # launch a Docker container, mount the scratch overlayfs dir and testfile into
+  # it; since idmapped-mounts don't work on top of overlayfs, Sysbox should
+  # instead mount shiftfs on top of the overlayfs-backed dir, yet still
+  # ID-map-mount the testfile. This will verify that Sysbox is choosing the
+  # best option (ID-map-mount or shiftfs) on a per bind-mount basis.
+
+  local syscont=$(docker_run --rm -v /mnt/scratch/testfile:/mnt/testfile -v /mnt/scratch/ovfs/diff:/mnt/ovfs ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null)
+
+  # verify the /mnt/ovfs mount has shiftfs on it
+  docker exec "$syscont" sh -c "mount | grep \"/mnt/ovfs\""
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "shiftfs" ]]
+
+  docker exec "$syscont" sh -c "stat -c %u /mnt/ovfs"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec "$syscont" sh -c "stat -c %g /mnt/ovfs"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec "$syscont" sh -c "echo data > /mnt/ovfs/testfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "cat /mnt/ovfs/testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  # verify the testfile is idmapped
+  docker exec "$syscont" sh -c "mount | grep testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "idmapped" ]]
+
+  docker exec "$syscont" sh -c "stat -c %u /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  docker exec "$syscont" sh -c "stat -c %g /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+
+  # verify the container can read and write the file
+  docker exec "$syscont" sh -c "echo data > /mnt/testfile"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "cat /mnt/testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "data" ]]
+
+  # cleanup
+  docker_stop "$syscont"
+  umount /mnt/scratch/ovfs/diff
+  rm -rf /mnt/scratch/ovfs
+  rm -rf /mnt/scratch/testfile
+}
+
 @test "docker bind mount skip uid-shift" {
 
   if ! sysbox_using_uid_shifting; then
