@@ -73,7 +73,7 @@ RUN apt-get update && apt-get install -y \
     libnet-dev \
     protobuf-c-compiler \
     protobuf-compiler \
-    python2 \
+    python3 \
     uidmap \
     kmod \
     unzip \
