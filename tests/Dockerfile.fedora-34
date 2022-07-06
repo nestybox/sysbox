@@ -52,7 +52,7 @@ RUN dnf update -y && dnf install -y \
     libnl3-devel \
     libseccomp \
     libseccomp-devel \
-    python2 \
+    python3 \
     kmod \
     unzip \
     time \

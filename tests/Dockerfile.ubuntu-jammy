@@ -77,7 +77,7 @@ RUN apt-get update && apt-get install -y \
     libseccomp-dev \
     protobuf-c-compiler \
     protobuf-compiler \
-    python2 \
+    python3 \
     uidmap \
     kmod \
     unzip \

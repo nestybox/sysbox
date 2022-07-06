@@ -22,7 +22,7 @@
 FROM ubuntu:focal
 
 # K8s version for k8s-in-docker (i.e., this is the version of K8s running inside
-# the k8s-in-docker container). 
+# the k8s-in-docker container).
 ARG k8s_version=v1.20.2
 
 # Desired platform architecture to build upon.
@@ -77,7 +77,7 @@ RUN apt-get update && apt-get install -y \
     libseccomp-dev \
     protobuf-c-compiler \
     protobuf-compiler \
-    python2 \
+    python3 \
     uidmap \
     kmod \
     unzip \
