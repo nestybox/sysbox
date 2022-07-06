@@ -20,7 +20,7 @@ We are humbled and excited to announce that Nestybox is now officially part of
 Docker, Inc! Docker is an excellent home for Sysbox and this will accelerate
 innovation of Sysbox to advance container isolation and workloads.
 
-Please see this [blog](https://www.docker.com/blog/docker-advances-container-isolation-and-workloads-with-acquisition-of-nestybox/) and
+Please see this [blog][docker-acquisition] and
 this [Q&A](https://www.nestybox.com/docker-nestybox-qa) for more info. Thanks!
 ***
 
@@ -196,30 +196,30 @@ cutting-edge OS virtualization, and contributions are welcomed.
 
 ## Sysbox Enterprise Edition
 
-The Sysbox project is **not** meant for people looking for a commercially
-supported solution. For such a solution, use the **Sysbox Enterprise Edition
-(Sysbox-EE)**.
+Prior to the [acquisition by Docker][docker-acquisition] on 05/2022, Nestybox
+offered [Sysbox Enterprise][sysbox-ee-repo] as an enhanced version of Sysbox
+(e.g., more security, more workloads, and official support).
 
-Sysbox-EE uses Sysbox at its core, but complements it with enterprise-level
-features for improved security, functionality, and performance, as well as
-Nestybox support (see next section). It has a 30-day free trial and a paid
-subscription after that.
+After the acquisition however, Sysbox Enterprise is no longer offered as a
+standalone product but will instead be incorporated into Docker Desktop
+(see [Docker Hardened Desktop](https://docs.docker.com/desktop/hardened-desktop/)).
 
-For more info on Sysbox-EE, refer to the [Nestybox website][sysbox-ee].
+**NOTE:** As Sysbox Enterprise is no longer offered as a standalone product, Docker
+plans to make some Sysbox Enterprise features available in Sysbox Community
+Edition. The features are TBD and [your feedback](#contact) on this is welcome.
 
 ## Sysbox Features
 
-The table below summarizes the key features of the Sysbox container
-runtime. It also provides a comparison between the Sysbox Community
-Edition (i.e., this repo) and the Sysbox Enterprise Edition.
+The table below summarizes the key features of the Sysbox container runtime.
+
+It also provides a comparison between the Sysbox Community Edition (i.e., this
+repo) and the previously available Sysbox Enterprise Edition.
 
 <p align="center">
     <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000" />
 </p>
 
 More on the Sysbox features [here](docs/user-guide/features.md).
-
-More on Sysbox Enterprise [here](https://www.nestybox.com/sysbox-ee).
 
 If you have questions, you can reach us [here](#contact).
 
@@ -430,31 +430,15 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 *   Exposing host devices inside system containers with proper permissions.
 
-## Relationship to Nestybox
+## Relationship to Nestybox & Docker
 
-Sysbox was initially developed by [Nestybox](https://www.nestybox.com), and Nestybox is
-the main sponsor of the Sysbox open-source project.
+Sysbox was initially developed by [Nestybox](https://www.nestybox.com). As
+[Nestybox is now part of Docker][docker-acquisition], Docker is the main sponsor
+of the Sysbox project.
 
-Having said this, we encourage participation from the community to help evolve
-and improve it, with the goal of increasing the use cases and benefits it
-enables. External maintainers and contributors are welcomed.
-
-Nestybox uses Sysbox as the core of it's Sysbox enterprise product (Sysbox-EE),
-which consists of Sysbox plus proprietary features meant for enterprise use.
-
-To ensure synergy between the Sysbox project and commercial entities such as
-Nestybox, we use the following criteria when considering adding functionality to
-Sysbox:
-
-Any features that mainly benefit individual practitioners are made part of the
-Sysbox open-source project. Any features that mainly address enterprise-level
-needs are reserved for the Sysbox Enterprise Edition.
-
-The Sysbox project maintainers will make this determination on a feature by
-feature basis, with total transparency. The goal is to create a balanced
-approach that enables the Sysbox open-source community to benefit and thrive
-while creating opportunities for Nestybox to create a healthy viable business
-around the technology.
+We encourage participation from the community to help evolve and improve Sysbox,
+with the goal of increasing the use cases and benefits it enables. External
+maintainers and contributors are welcomed.
 
 ## Contact
 
@@ -477,3 +461,9 @@ ways.
 [oci-runc]: https://github.com/opencontainers/runc
 
 [sysbox-ee]: https://www.nestybox.com/sysbox-ee
+
+[sysbox-ee-repo]: https://github.com/nestybox/sysbox-ee
+
+[docker-acquisition]: https://www.docker.com/blog/docker-advances-container-isolation-and-workloads-with-acquisition-of-nestybox/
+
+[docker-desktop]: https://www.docker.com/products/
