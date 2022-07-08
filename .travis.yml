@@ -11,7 +11,7 @@ before_install:
 
   # Build shiftfs kernel module (not available in GCP's ubuntu-focal machines).
   - sudo apt-get install dkms -y
-  - git clone -b k5.11 https://github.com/nestybox/shiftfs-dkms.git shiftfs
+  - git clone -b k5.13 https://github.com/nestybox/shiftfs-dkms.git shiftfs
   - cd shiftfs
   - ./update1
   - sudo make -f Makefile.dkms
