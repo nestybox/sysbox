@@ -193,7 +193,7 @@ function wait_for_status_up() {
 	fi
 
 	docker_stop $syscont
-	docker rm testVol
+	docker volume rm testVol
 }
 
 @test "syscont-mode=false: bind mount over special dir" {
@@ -287,10 +287,15 @@ function wait_for_status_up() {
 	# system container carries other setups that allow it to run system workloads
 	# too.
 
+	docker volume rm testVol
+	docker volume create testVol
+	[ "$status" -eq 0 ]
+
 	local syscont=$(docker_run --runtime=sysbox-runc \
 										-e "SYSBOX_SYSCONT_MODE=FALSE" \
 										--privileged \
 										--rm \
+										-v testVol:/mnt/testVol \
 										${CTR_IMG_REPO}/alpine tail -f /dev/null)
 
 	local syscont_pid=$(docker_cont_pid $syscont)
@@ -316,7 +321,37 @@ function wait_for_status_up() {
 	docker exec "$syscont" sh -c 'mount | grep "sysboxfs on /proc/uptime type fuse (rw"'
 	[ "$status" -eq 0 ]
 
+	# Verify sysbox traps the mount syscall still
+	docker exec "$syscont" sh -c "mkdir /root/proc && mount -t proc proc /root/proc"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "sysboxfs on /root/proc/swaps type fuse (rw"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "sysboxfs on /root/proc/sys type fuse (rw"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "sysboxfs on /root/proc/uptime type fuse (rw"'
+	[ "$status" -eq 0 ]
+
+	# Verify immutable mounts work (with runc this would pass since container is
+	# privileged; with sysbox it will fail because for security reasons all
+	# mounts that make the container are immutable, always).
+	docker exec "$syscont" sh -c 'mount -o remount,rw /mnt/testVol'
+	[ "$status" -eq 1 ]
+
+	# Verify *xattr syscalls are not trapped in this case
+	docker exec "$syscont" sh -c "apk add attr"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "touch /mnt/testVol/tfile"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'setfattr -n trusted.overlay.opaque -v "y" /mnt/testVol/tfile'
+	[ "$status" -eq 1 ]
+
 	docker_stop $syscont
+	docker volume rm testVol
 }
 
 @test "syscont-mode=false: env-var invalid" {
