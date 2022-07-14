@@ -84,7 +84,7 @@ else
 INSTALL_DIR := ${DESTDIR}
 endif
 
-IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2)
+IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
@@ -94,7 +94,7 @@ export KERNEL_REL
 
 # Sysbox image-generation globals utilized during the sysbox's building and testing process.
 ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat almalinux rocky))
-	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2)
+	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2 | tr -d '"' | cut -d "." -f1)
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
 else
 	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_CODENAME" | cut -d "=" -f2)
