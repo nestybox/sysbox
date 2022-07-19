@@ -61,6 +61,11 @@ function load_required_modules() {
       echo "Could not load configfs kernel module. Exiting ..."
       return 1
 	fi
+        if ! modprobe ip_tables &> /dev/null; then
+      echo "Could not load ip_tables kernel module. Exiting ..."
+      return 1
+        fi
+
 
 	return 0
 }
