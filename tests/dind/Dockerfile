@@ -1,7 +1,7 @@
-# Note: we use alpine-docker-dbg:3.11 as it comes with Docker 19.03 and helps
-# us avoid sysbox issue #187 (lchown error when Docker v20+ pulls inner images
-# with special devices)
-FROM ghcr.io/nestybox/alpine-docker-dbg:3.11
+# Note: we use alpine-docker-dbg:3.11 or later as it comes with >= Docker 19.03
+# and helps us avoid sysbox issue #187 (lchown error when Docker v20+ pulls
+# inner images with special devices)
+FROM ghcr.io/nestybox/alpine-docker-dbg:3.16
 
 COPY docker-pull.sh /usr/bin
 RUN chmod +x /usr/bin/docker-pull.sh && docker-pull.sh
