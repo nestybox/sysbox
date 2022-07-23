@@ -4,11 +4,12 @@
 # Integration test for the sysbox-mgr shiftfs manager
 #
 
-load ../helpers/run
-load ../helpers/fs
-load ../helpers/uid-shift
 load ../helpers/docker
+load ../helpers/environment
+load ../helpers/fs
+load ../helpers/run
 load ../helpers/sysbox-health
+load ../helpers/uid-shift
 
 function setup() {
   if ! sysbox_using_shiftfs_only; then
@@ -27,6 +28,7 @@ function teardown() {
 @test "shiftfsMgr basic" {
 
   local kernel_rel=$(uname -r)
+  local kernel_headers_path=$(get_kernel_headers_path)
 
   run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
@@ -51,18 +53,18 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/lib/modules/${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  docker exec "$SYSCONT_NAME" sh -c "findmnt | grep \"${kernel_headers_path}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
+  [[ "$output" =~ "${kernel_headers_path}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
   # verify things look good on the host
   run sh -c "findmnt | grep shiftfs | grep \"/lib/modules/${kernel_rel}\""
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"/lib/modules/${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c "findmnt | grep shiftfs | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  run sh -c "findmnt | grep shiftfs | grep \"${kernel_headers_path}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
+  [[ "$output" =~ "/var/lib/sysbox/shiftfs/".+"${kernel_headers_path}".+"shiftfs" ]]
 
   run sh -c "findmnt | grep shiftfs | grep \"/var/lib/docker/containers\""
   [ "$status" -eq 0 ]
@@ -82,6 +84,7 @@ function teardown() {
 @test "shiftfsMgr multiple syscont" {
 
   local kernel_rel=$(uname -r)
+  local kernel_headers_path=$(get_kernel_headers_path)
 
   run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
@@ -110,9 +113,9 @@ function teardown() {
     [ "$status" -eq 0 ]
 	 [[ "$output" =~ "/lib/modules/${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
 
-    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"/usr/src/linux-headers-${kernel_rel}\""
+    docker exec "${syscont_name[$i]}" sh -c "findmnt | grep \"${kernel_headers_path}\""
     [ "$status" -eq 0 ]
-	 [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
+	 [[ "$output" =~ "${kernel_headers_path}".+"/var/lib/sysbox/shiftfs/".+"shiftfs ro,relatime" ]]
   done
 
   # verify mounts on host look good; there should only be one shiftfs mount on
@@ -120,7 +123,7 @@ function teardown() {
   run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"/lib/modules/${kernel_rel}\" | wc -l"
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
-  run sh -c "mount | grep \"/var/lib/sysbox/shiftfs\" | grep \"/usr/src/linux-headers-${kernel_rel}\" | wc -l"
+  run sh -c "mount | grep \"/var/lib/sysbox/shiftfs\" | grep \"${kernel_headers_path}\" | wc -l"
   [ "$status" -eq 0 ] &&  [ "$output" -eq 1 ]
 
   # and there should be a per-container shiftfs mount on /var/lib/docker/containers
@@ -140,9 +143,9 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ "/lib/modules/${kernel_rel}".+"shiftfs" ]]
 
-  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"/usr/src/linux-headers-${kernel_rel}\""
+  run sh -c "findmnt | grep \"/var/lib/sysbox/shiftfs\" | grep \"${kernel_headers_path}\""
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "/usr/src/linux-headers-${kernel_rel}".+"shiftfs" ]]
+  [[ "$output" =~ "${kernel_headers_path}".+"shiftfs" ]]
 
   run sh -c 'findmnt | grep "/var/lib/sysbox/shiftfs" | grep "/var/lib/docker/containers" | wc -l'
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]

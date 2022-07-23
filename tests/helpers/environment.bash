@@ -28,7 +28,7 @@ function egress_iface_mtu() {
 }
 
 function get_distro() {
-	lsb_release -is | tr '[:upper:]' '[:lower:]'
+	cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"'
 }
 
 function get_distro_release() {
@@ -36,10 +36,12 @@ function get_distro_release() {
 
 	if [[ ${distro} == centos || \
 		${distro} == redhat || \
+		${distro} == almalinux || \
+		${distro} == rockylinux || \
 		${distro} == fedora ]]; then
-		lsb_release -ds | tr -dc '0-9.' | cut -d'.' -f1
+		cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2 | tr -d '"' | cut -d "." -f1
 	else
-		lsb_release -cs
+		cat /etc/os-release | grep "^VERSION_CODENAME" | cut -d "=" -f2
 	fi
 }
 
@@ -58,6 +60,21 @@ function get_platform() {
 		echo "arm"
 	else
 		echo "unsupported"
+	fi
+}
+
+function get_kernel_headers_path() {
+	local distro=$(get_distro)
+	local kernel_rel=$(get_kernel_release)
+
+	if [[ ${distro} == "centos" || \
+		${distro} == "redhat" || \
+		${distro} == "almalinux" || \
+		${distro} == "rockylinux" || \
+		${distro} == "fedora" ]]; then
+		echo "/usr/src/kernels/${kernel_rel}"
+	else
+		echo "/usr/src/linux-headers-${kernel_rel}"
 	fi
 }
 
