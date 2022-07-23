@@ -73,6 +73,8 @@ RUN dnf update -y && dnf install -y \
     attr \
     tree \
     strace \
+    # Package required to build local test sysbox image
+    --enablerepo=crb glibc-static \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
