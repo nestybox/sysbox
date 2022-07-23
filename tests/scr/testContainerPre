@@ -8,7 +8,7 @@ TEST_VOL3=$3
 # can't be checked from within the test container since its docker
 # image may be based on another distro)
 
-DISTRO=$(cat /etc/os-release | grep "^ID=" | cut -d "=" -f2)
+DISTRO=$(cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
 
 if [ "$DISTRO" != "ubuntu" ] &&
    [ "$DISTRO" != "debian" ] &&
