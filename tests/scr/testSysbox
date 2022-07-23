@@ -16,6 +16,7 @@ function idmapped_mount_supported() {
 	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
 	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
 	[ ${rel_major} -gt 5 ] || ([ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ])
+	[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ] && return 0
 }
 
 function shiftfs_supported() {
@@ -59,8 +60,6 @@ function set_sysbox_shiftfs() {
 }
 
 function run_all_tests() {
-	printf "\nExecuting life-cycle tests ... \n"
-	bats --tap tests/lifecycle
 	printf "\nExecuting sysbox-mgr tests ... \n"
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
@@ -94,6 +93,8 @@ function run_all_tests() {
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
+	printf "\nExecuting life-cycle tests ... \n"
+	bats --tap tests/lifecycle
 
 	docker system prune -a -f
 }

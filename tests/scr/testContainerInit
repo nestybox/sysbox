@@ -280,15 +280,6 @@ function main() {
 		build_sysbox
 	fi
 
-	# Start Sysbox.
-	if [ -n "$DEBUG_ON" ]; then
-		echo "Starting sysbox in debug mode ..."
-		sysbox -d -t
-	else
-		echo "Starting sysbox in test mode ..."
-		sysbox -t
-	fi
-
 	# Start docker (without systemd, we must start Docker manually)
 	if ! systemd_env; then
 		dockerd=$(which dockerd)
@@ -297,6 +288,26 @@ function main() {
 
 	echo "Waiting for Docker to be ready ..."
 	wait_docker_ready || exit 1
+
+	# Start Sysbox.
+	if [ -n "$DEBUG_ON" ]; then
+		if [[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ]]; then
+			echo "Starting sysbox in debug mode ..."
+			sysbox -d -t
+		else
+			echo "Starting sysbox in debug mode with idmapped-mount disabled ..."
+			sysbox -d -t --disable-idmapped-mount
+		fi
+	else
+		if [[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ]]; then
+			echo "Starting sysbox in test mode ..."
+			sysbox -t
+		else
+			echo "Starting sysbox in test mode with idmapped-mount disabled ..."
+			sysbox -t --disable-idmapped-mount
+		fi
+
+	fi
 
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
 	common_opt="--config-only --sysbox-runtime=enable --default-runtime=sysbox-runc"
