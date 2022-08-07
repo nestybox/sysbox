@@ -19,7 +19,7 @@
 # docker build -t sysbox-test .
 #
 
-FROM almalinux:8.5
+FROM almalinux:8
 
 ARG k8s_version=v1.18.2
 
@@ -75,6 +75,8 @@ RUN dnf update -y && dnf install -y \
     attr \
     tree \
     strace \
+    # Package required to build local test sysbox image
+    --enablerepo=powertools glibc-static \
     && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
