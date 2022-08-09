@@ -15,8 +15,8 @@ function idmapped_mount_supported() {
 	local kernel_rel=$(uname -r)
 	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
 	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
-	[ ${rel_major} -gt 5 ] || ([ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ])
-	[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ] && return 0
+	[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ] && \
+		([ ${rel_major} -gt 5 ] || ([ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ]))
 }
 
 function shiftfs_supported() {
