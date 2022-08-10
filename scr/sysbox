@@ -25,6 +25,7 @@ SYSCONT_MODE="true"
 ALLOW_TRUSTED_XATTR="true"
 SET_DATA_ROOT=0
 SET_SECCOMP_FD_REL=0
+FSUID_MAP_FAIL_ON_ERR=0
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
@@ -260,8 +261,11 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--data-root ${DATA_ROOT}")
 	fi
 
-	options+=("--log /var/log/sysbox-mgr.log")
+	if [ $FSUID_MAP_FAIL_ON_ERR -eq 1 ]; then
+		options+=("--fsuid-map-fail-on-error")
+	fi
 
+	options+=("--log /var/log/sysbox-mgr.log")
 }
 
 function sysbox_mgr_start() {
@@ -381,13 +385,13 @@ function show_usage() {
 	printf "      --honor-caps                      Honor the container's process capabilities passed to Sysbox by the higher level container manager (e.g., Docker/containerd). When set to false (default), Sysbox always gives the container's root user full capabilities and other users no capabilities to mimic a VM-like environment. Note that the container's capabilities are isolated from the host via the Linux user-namespace. (default = false).\n"
 	printf "      --syscont-mode                    Causes Sysbox to run in \"system container\" mode. In this mode, it sets up the container to run system workloads (e.g., systemd, Docker, Kubernetes, etc.) seamlessly and securely. When set to false, Sysbox operates in \"regular container\" mode where it sets up the container per its OCI spec (usually for microservices), with the exception of the Linux 'user' and 'cgroup' namespaces which Sysbox always enables for extra container isolation. (default = true)\n"
 	printf "      --seccomp-fd-release <pol>        Policy to close syscall interception handles; useful in kernels < 5.8; allowed values are \"proc-exit\" and \"cont-exit\" (default = \"proc-exit\")\n"
+	printf "      --fsuid-map-fail-on-error         When set to true, fail to launch a container whenever filesystem uid-mapping (needed for files to show proper ownership inside the container's user-namespace) hits an error; when set to false, launch the container anyway (files may show up owned by nobody:nogroup) (default = false)\n"
 	printf "  -h, --help                            Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,help -- "$@")
-
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,help -- "$@")
 	eval set -- "$options"
 
 	while true; do
@@ -440,6 +444,9 @@ function parse_args() {
 				SET_SECCOMP_FD_REL=1
 				shift
 				SECCOMP_FD_REL=$1
+				;;
+			--fsuid-map-fail-on-error)
+				FSUID_MAP_FAIL_ON_ERR=1
 				;;
 			--)
 				shift
