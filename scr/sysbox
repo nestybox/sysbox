@@ -26,6 +26,8 @@ ALLOW_TRUSTED_XATTR="true"
 SET_DATA_ROOT=0
 SET_SECCOMP_FD_REL=0
 FSUID_MAP_FAIL_ON_ERR=0
+ALLOW_IMMUTABLE_UNMOUNTS="true"
+ALLOW_IMMUTABLE_REMOUNTS="false"
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
@@ -301,6 +303,14 @@ function sysbox_fs_set_cmdline_opts() {
 		options+=("--seccomp-fd-release=${SECCOMP_FD_REL}")
 	fi
 
+	if [ $ALLOW_IMMUTABLE_UNMOUNTS == "false" ]; then
+		options+=("--allow-immutable-unmounts=false")
+	fi
+
+	if [ $ALLOW_IMMUTABLE_REMOUNTS == "true" ]; then
+		options+=("--allow-immutable-remounts=true")
+	fi
+
 	options+=("--log /var/log/sysbox-fs.log")
 }
 
@@ -386,12 +396,14 @@ function show_usage() {
 	printf "      --syscont-mode                    Causes Sysbox to run in \"system container\" mode. In this mode, it sets up the container to run system workloads (e.g., systemd, Docker, Kubernetes, etc.) seamlessly and securely. When set to false, Sysbox operates in \"regular container\" mode where it sets up the container per its OCI spec (usually for microservices), with the exception of the Linux 'user' and 'cgroup' namespaces which Sysbox always enables for extra container isolation. (default = true)\n"
 	printf "      --seccomp-fd-release <pol>        Policy to close syscall interception handles; useful in kernels < 5.8; allowed values are \"proc-exit\" and \"cont-exit\" (default = \"proc-exit\")\n"
 	printf "      --fsuid-map-fail-on-error         When set to true, fail to launch a container whenever filesystem uid-mapping (needed for files to show proper ownership inside the container's user-namespace) hits an error; when set to false, launch the container anyway (files may show up owned by nobody:nogroup) (default = false)\n"
+	printf "      --allow-immutable-remounts        A container's initial mounts are considered immutable by Sysbox; this option allows them to be remounted from within the container (default: \"false\")\n"
+	printf "      --allow-immutable-unmounts        A container's initial mounts are considered immutable by Sysbox; this option allows them to be unmounted from within the container (default: \"true\")\n"
 	printf "  -h, --help                            Display usage.\n"
 	printf "\n"
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
 	eval set -- "$options"
 
 	while true; do
@@ -447,6 +459,14 @@ function parse_args() {
 				;;
 			--fsuid-map-fail-on-error)
 				FSUID_MAP_FAIL_ON_ERR=1
+				;;
+			--allow-immutable-unmounts)
+				shift
+				ALLOW_IMMUTABLE_UNMOUNTS=$1
+				;;
+			--allow-immutable-remounts)
+				shift
+				ALLOW_IMMUTABLE_REMOUNTS=$1
 				;;
 			--)
 				shift
