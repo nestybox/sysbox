@@ -42,11 +42,17 @@ function stringToArray() {
   stringToArray "${outputList}" outputArray
   declare -p outputArray
 
-  # Iterate through each listed node to ensure that a "kernel" entry is found
-  # and its attributes are the expected ones.
+  # Iterate through each listed node to ensure that both the emulated
+  # and the non-emulated resources display the expected file attributes.
   for (( i=0; i<${#outputArray[@]}; i++ )); do
     if echo "${outputArray[$i]}" | egrep -q "kernel"; then
       verify_perm_owner "drwxr-xr-x" "root" "root" "${outputArray[$i]}"
+
+    # We can rule out "/sys/firmware" node coz even though its uid/gid matches
+    # the container's root, this node is always mounted RO as part of a tmpfs
+    # file-system.
+    elif !$(echo "${outputArray[$i]}" | egrep -q "firmware"); then
+      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
     fi
   done
 }
@@ -142,24 +148,26 @@ function stringToArray() {
     # host fs for non-emulated resources. If that's the case, inodes for each
     # node should fully match.
 
-    local hostInode=$(stat -c %i /sys/kernel/mm/ksm/$node)
+    run sh -c "stat -c %i /sys/kernel/mm/ksm/$node"
     [ "$status" -eq 0 ]
+    local hostInode="$output"
 
     sv_runc exec syscont sh -c "stat -c %i /sys/kernel/mm/ksm/$node"
     [ "$status" -eq 0 ]
-    local syscontInode="${output}"
+    local syscontInode="$output"
 
     [[ "$hostInode" == "$syscontInode" ]]
 
     # Verify that content outside and inside the container matches for
     # non-emulated nodes.
 
-    local hostNodeContent=$(cat /sys/kernel/mm/ksm/$node)
+    run sh -c "cat /sys/kernel/mm/ksm/$node"
     [ "$status" -eq 0 ]
+    local hostNodeContent="$output"
 
     sv_runc exec syscont sh -c "cat /sys/kernel/mm/ksm/$node"
     [ "$status" -eq 0 ]
-    local syscontNodeContent="${output}"
+    local syscontNodeContent="$output"
 
     [[ "$hostNodeContent" == "$syscontNodeContent" ]]
 
@@ -167,8 +175,8 @@ function stringToArray() {
     #
     # TODO: Not sure why this isn't working, double-check...
     #
-    # sv_runc exec syscont sh -c "echo 1 > /sys/kernel/mm/ksm/$node"
-    # [ "$status" -eq 1 ]
-    # [[ "$output" =~ "Permission denied" ]]
+    sv_runc exec syscont sh -c "echo 1 > /sys/kernel/mm/ksm/$node"
+    [ "$status" -ne 0 ]
+    [[ "${output}" =~ "Permission denied" ]]
   done
 }
