@@ -172,9 +172,6 @@ function stringToArray() {
     [[ "$hostNodeContent" == "$syscontNodeContent" ]]
 
     # Verify that no regular (non-emulated) node is writable through this handler.
-    #
-    # TODO: Not sure why this isn't working, double-check...
-    #
     sv_runc exec syscont sh -c "echo 1 > /sys/kernel/mm/ksm/$node"
     [ "$status" -ne 0 ]
     [[ "${output}" =~ "Permission denied" ]]
