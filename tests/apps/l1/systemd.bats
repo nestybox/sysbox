@@ -44,15 +44,11 @@ function check_systemd_mounts() {
   #
   # - /run                tmpfs   tmpfs    rw
   # - /run/lock           tmpfs   tmpfs    rw
-  # - /sys/kernel/config  tmpfs   tmpfs    rw
-  # - /sys/kernel/debug   tmpfs   tmpfs    rw
   #
   docker exec "$SYSCONT_NAME" sh -c \
          "findmnt | egrep -e \"\/run .*tmpfs.*rw\" \
                    -e \"\/run\/lock .*tmpfs.*rw\" \
-                   -e \"\/sys\/kernel\/config.*tmpfs.*rw\" \
-                   -e \"\/sys\/kernel\/debug.*tmpfs.*rw\" \
-                   | wc -l | egrep -q 4"
+                   | wc -l | egrep -q 2"
 
   [ "$status" -eq 0 ]
 }
@@ -231,8 +227,6 @@ function check_systemd_mounts() {
   SYSCONT_NAME=$(docker_run -d --rm \
                             --mount source=testVol,destination=/run \
                             --mount source=testVol,destination=/run/lock \
-                            --mount source=testVol,destination=/sys/kernel/config \
-                            --mount source=testVol,destination=/sys/kernel/debug \
                             --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
