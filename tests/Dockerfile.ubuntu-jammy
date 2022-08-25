@@ -89,6 +89,7 @@ RUN apt-get update && apt-get install -y \
     iproute2 \
     iputils-ping \
     ca-certificates \
+    bc \
     ssh-client \
     shellcheck \
     gperf \
