@@ -54,7 +54,7 @@ two key ways:
     *   No privileged containers, no complex images, no tricky entrypoints, no
         special volume mounts, etc.
 
-Think of it as a **"container supercharger"**: it enables your exisiting container
+Think of it as a **"container supercharger"**: it enables your existing container
 managers / orchestrators (e.g., Docker, Kubernetes, etc.) to deploy containers
 that have hardened isolation and can run almost any workload that runs in VMs.
 
@@ -115,7 +115,7 @@ Version 2.0. See the [LICENSE](LICENSE) file for details.
 Sysbox solves problems such as:
 
 *   Enhancing the isolation of containerized microservices
-    (root in the container maps to an uprivileged user on the host).
+    (root in the container maps to an unprivileged user on the host).
 
 *   Enabling a highly capable root user inside the container without
     compromising host security.
