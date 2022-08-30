@@ -3,6 +3,7 @@
 load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
+load ../helpers/shell
 load ../helpers/sysbox-health
 
 # Container name.
@@ -27,17 +28,7 @@ function teardown() {
   sysbox_log_check
 }
 
-function stringToArray() {
-  local str="$1"
-  local -n arr="$2"
-
-  SAVEIFS=$IFS       # Save current IFS
-  IFS=$'\n'          # Change IFS to newline char
-  arr=($str)         # split the `str` string into an array
-  IFS=$SAVEIFS       # Restore original IFS
-}
-
-# Verifies the proper beahvior of the sysDevicesVirtualDmiId handler for
+# Verifies the proper behavior of the sysDevicesVirtualDmiId handler for
 # "/sys/devices/virtual/dmi/id" path operations.
 @test "/sys/devices/virtual/dmi/id file ops" {
 
