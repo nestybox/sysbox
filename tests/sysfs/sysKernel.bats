@@ -3,6 +3,7 @@
 load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
+load ../helpers/shell
 load ../helpers/sysbox-health
 
 # Container name.
@@ -15,16 +16,6 @@ function setup() {
 function teardown() {
   teardown_busybox syscont
   sysbox_log_check
-}
-
-function stringToArray() {
-  local str="$1"
-  local -n arr="$2"
-
-  SAVEIFS=$IFS       # Save current IFS
-  IFS=$'\n'          # Change IFS to newline char
-  arr=($str)         # split the `str` string into an array
-  IFS=$SAVEIFS       # Restore original IFS
 }
 
 # Verify proper operation of the Sys handler.
