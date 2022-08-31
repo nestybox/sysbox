@@ -218,7 +218,10 @@ function test_with_docker_userns_remap() {
 # and "--disable-shiftfs" options used by the other sections of this test
 # script.
 function test_sysbox_config() {
-	printf "\nExecuting sysbox config tests ... \n"
+	printf "\n"
+	printf "*****************************\n"
+	printf "Executing sysbox config tests\n"
+	printf "*****************************\n"
 	bats --tap tests/config
 }
 
