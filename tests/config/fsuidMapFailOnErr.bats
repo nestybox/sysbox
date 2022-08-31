@@ -21,35 +21,45 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "fsuid-map-fail-on-error=true" {
+@test "fsuid-map-fail-on-error set" {
 
 	sysbox_stop
-	sysbox_start -t --fsuid-map-fail-on-error=true
+	sysbox_start -t --fsuid-map-fail-on-error
 
-	# When fsuid-map-fail-on-err is set, bind-mounting /var/lib into the container
-	# will fail when Sysbox tries to ID-map-mount on it because /var/lib has
-	# submounts on filesystems on which ID-mapping are not supported (e.g.,
-	# /var/lib/sysboxfs, /var/lib/sysbox/shiftfs, etc.)
-	docker run --runtime=sysbox-runc --rm -v /var/lib:/mnt/host-var-lib ${CTR_IMG_REPO}/alpine tail -f /dev/null
+	mkdir -p /mnt/scratch/test
+	mount -t shiftfs -o mark /mnt/scratch/test /mnt/scratch/test
+
+	# When fsuid-map-fail-on-err is set, bind-mounting a shiftfs mountpoint
+	# will fail when Sysbox tries to ID-map-mount on it (because it can't
+	# mount shiftfs or use ID-mapped-mounts on it).
+	docker run --runtime=sysbox-runc --rm -v /mnt/scratch/test:/mnt/test ${CTR_IMG_REPO}/alpine tail -f /dev/null
 	[ "$status" -ne 0 ]
+
+	umount /mnt/scratch/test
+	rm -rf /mnt/scratch/test
 
 	sysbox_stop
 	sysbox_start -t
 }
 
-@test "fsuid-map-fail-on-error=false" {
+@test "fsuid-map-fail-on-error unset" {
 
-	# When fsuid-map-fail-on-err is not set (Sysbox's default), bind-mounting
-	# /var/lib into the container will work but files will show up as
-	# nobody:nogroup inside the container. That's because ID-mapped mounts won't
-	# be mounted on it because of the /var/lib submounts (see explanation in
-	# prior test).
+   sysbox_start -t
 
-	local syscont=$(docker_run --runtime=sysbox-runc --rm -v /var/lib:/mnt/host-var-lib ${CTR_IMG_REPO}/alpine tail -f /dev/null)
+	mkdir -p /mnt/scratch/test
+	mount -t shiftfs -o mark /mnt/scratch/test /mnt/scratch/test
 
-	docker exec $syscont sh -c "ls -l /mnt | grep host-var-lib"
+	# When fsuid-map-fail-on-err is not set (Sysbox's default), bind-mounting a
+	# shiftfs mountpoint will fail but Sysbox will ignore the failure and move
+	# on. The mount will show up as "nobody:nogroup" inside the container.
+	local syscont=$(docker_run --runtime=sysbox-runc --rm -v /mnt/scratch/test:/mnt/test ${CTR_IMG_REPO}/alpine tail -f /dev/null)
+
+	docker exec $syscont sh -c "ls -l /mnt | grep test"
 	[ "$status" -eq 0 ]
 
 	verify_owner "nobody" "nobody" "$output"
 	docker_stop $syscont
+
+	umount /mnt/scratch/test
+	rm -rf /mnt/scratch/test
 }
