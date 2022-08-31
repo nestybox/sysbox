@@ -606,6 +606,15 @@ load ../helpers/sysbox-health
   run sh -c 'findmnt | grep -E "shiftfs( |$)"'
   [ "$status" -eq 1 ]
 
+  # Create the following mounts:
+  #
+  # |-/mnt/scratch                  /dev/nvme0n1p5[/var/tmp/sysbox-test-scratch]        ext4    rw,relatime,errors=remount-ro
+  # | |-/mnt/scratch/tmpfs          tmpfs                                               tmpfs   rw,relatime,size=10240k,inode64
+  # | |-/mnt/scratch/t1/f1          tmpfs[/f1-tmpfs]                                    tmpfs   rw,relatime,size=10240k,inode64
+  # | |-/mnt/scratch/t1/f3          /dev/nvme0n1p5[/var/tmp/sysbox-test-scratch/t1/f4]  ext4    rw,relatime,errors=remount-ro
+  # | |-/mnt/scratch/t1/f5          /dev/nvme0n1p5[/var/tmp/sysbox-test-scratch/t2/f5]  ext4    rw,relatime,errors=remount-ro
+  # | `-/mnt/scratch/t1/f6          tmpfs[/null]                                        tmpfs   rw,nosuid,size=65536k,mode=755,inode64
+
   local basedir="/mnt/scratch"
   rm -rf $basedir/t1
   mkdir $basedir/t1

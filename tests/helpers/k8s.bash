@@ -102,10 +102,8 @@ function k8s_del_pod() {
 }
 
 # Determines pod readiness (Running) state.
-#  $1 - K8s cluster pod belongs to
-#  $2 - k8s node to extract info from
-#  $3 - k8s pod to query
-#  $4 - k8s namespace where pod is expected (optional)
+#  $1 - k8s pod to query
+#  $2 - k8s namespace where pod is expected (optional)
 function k8s_pod_ready() {
   local pod=$1
   local ns

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Checks that the given container is "rootless" by checking that it's assigned
+# uid is within the range of the given user subuid.
 function container_is_rootless() {
 
 	local container_pid=$1
@@ -8,18 +10,17 @@ function container_is_rootless() {
 	local uid=$(cat /proc/${container_pid}/uid_map | awk '{print $2}')
 	local gid=$(cat /proc/${container_pid}/gid_map | awk '{print $2}')
 
-	# TODO: improve this by checking that the given container's uid is within the
-	# range of the subuid; currently this only checks that the container's uid
-	# matches the first subuid in the range
-
    local subuid=$(grep ${subid_user} /etc/subuid | cut -d":" -f2)
    local subgid=$(grep ${subid_user} /etc/subgid | cut -d":" -f2)
 
-	if [ $uid -ne $subuid ]; then
+	local subuid_size=$(grep ${subid_user} /etc/subuid | cut -d":" -f3)
+	local subgid_size=$(grep ${subid_user} /etc/subuid | cut -d":" -f3)
+
+	if [ $uid -lt $subuid ] || [ $uid -ge $(( $subuid + $subuid_size )) ]; then
 		return 1
 	fi
 
-	if [ $gid -ne $subgid ]; then
+	if [ $gid -lt $subgid ] || [ $gid -ge $(( $subgid + $subgid_size )) ]; then
 		return 1
 	fi
 
