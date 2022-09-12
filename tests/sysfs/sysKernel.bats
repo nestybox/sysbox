@@ -36,13 +36,10 @@ function teardown() {
   # Iterate through each listed node to ensure that both the emulated
   # and the non-emulated resources display the expected file attributes.
   for (( i=0; i<${#outputArray[@]}; i++ )); do
-    if echo "${outputArray[$i]}" | egrep -q "kernel"; then
-      verify_perm_owner "drwxr-xr-x" "root" "root" "${outputArray[$i]}"
-
     # We can rule out "/sys/firmware" node coz even though its uid/gid matches
     # the container's root, this node is always mounted RO as part of a tmpfs
     # file-system.
-    elif !$(echo "${outputArray[$i]}" | egrep -q "firmware"); then
+    if !$(echo "${outputArray[$i]}" | egrep -q "firmware"); then
       verify_owner "nobody" "nogroup" "${outputArray[$i]}"
     fi
   done
