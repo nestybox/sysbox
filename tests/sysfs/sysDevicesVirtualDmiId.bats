@@ -7,8 +7,6 @@ load ../helpers/shell
 load ../helpers/environment
 load ../helpers/sysbox-health
 
-# Container name.
-SYSCONT_NAME=""
 
 # Default cap_last_cap value in host fs.
 SYS_DMI_PRODUCT_UUID_DEFAULT_VAL=""
