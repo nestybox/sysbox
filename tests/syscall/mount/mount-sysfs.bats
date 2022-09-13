@@ -405,8 +405,6 @@ function teardown() {
 
   # test read-write sysfs mount with read-only remounts of submounts
   local mnt_path=/root/sys
-  local node=module/nf_conntrack/parameters
-
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
   docker exec "$syscont" bash -c "mkdir -p $mnt_path"
