@@ -60,18 +60,10 @@ function retry() {
 # Ensure that kernel-modules expected by system-level apps (running within sys
 # containers) are properly loaded.
 function load_required_modules() {
-
-	# Sysbox requires 'configfs' module to ensure proper operation of containerized
-	# apps requiring access to kernel's config file (e.g. kubeadm).
-	if ! modprobe configfs &> /dev/null; then
-      echo "Could not load configfs kernel module. Exiting ..."
-      return 1
+	if ! modprobe ip_tables &> /dev/null; then
+		echo "Could not load ip_tables kernel module. Exiting ..."
+		return 1
 	fi
-        if ! modprobe ip_tables &> /dev/null; then
-      echo "Could not load ip_tables kernel module. Exiting ..."
-      return 1
-        fi
-
 
 	return 0
 }
