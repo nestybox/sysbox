@@ -106,7 +106,7 @@ RUN echo "deb http://ftp.debian.org/debian buster-backports main" > /etc/apt/sou
     && apt-get update && apt-get -t buster-backports install -y libseccomp-dev
 
 # Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://golang.org/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
+RUN wget https://go.dev/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
     tar -C /usr/local -xzf go1.16.4.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
