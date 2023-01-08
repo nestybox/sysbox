@@ -12,6 +12,8 @@
 
 ***
 
+**May 2022:**
+
 **Docker advances container isolation and workloads with acquisition of Nestybox**:
 
 Hi everyone, this is Cesar & Rodny, co-founders of [Nestybox](https://www.nestybox.com).
@@ -194,14 +196,14 @@ The Sysbox project is intended for anyone looking to experiment, invent, learn,
 and build systems using [system containers](#system-containers). It's
 cutting-edge OS virtualization, and contributions are welcomed.
 
-## Sysbox Enterprise Edition
+## Sysbox Enterprise Edition [DEPRECATED]
 
 Prior to the [acquisition by Docker][docker-acquisition] on 05/2022, Nestybox
 offered [Sysbox Enterprise][sysbox-ee-repo] as an enhanced version of Sysbox
 (e.g., more security, more workloads, and official support).
 
 After the acquisition however, Sysbox Enterprise is no longer offered as a
-standalone product but will instead be incorporated into Docker Desktop
+standalone product but has instead been incorporated into [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 (see [Docker Hardened Desktop](https://docs.docker.com/desktop/hardened-desktop/)).
 
 **NOTE:** As Sysbox Enterprise is no longer offered as a standalone product, Docker
