@@ -7,6 +7,7 @@
 	sysbox-runc sysbox-runc-static sysbox-runc-debug \
 	sysbox-fs sysbox-fs-static sysbox-fs-debug \
 	sysbox-mgr sysbox-mgr-static sysbox-mgr-debug \
+	shiftfs-test \
 	sysbox-ipc \
 	install uninstall \
 	test \
@@ -73,6 +74,7 @@ SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
 SYSLIBS_DIR     := sysbox-libs
 LIB_SECCOMP_DIR := $(SYSLIBS_DIR)/libseccomp-golang
+SHIFTFS_TEST_DIR := shiftfs-test
 SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
 PROJECT := /root/nestybox/sysbox
@@ -223,12 +225,12 @@ sysbox-static: test-img
 	$(DOCKER_SYSBOX_BLD) /bin/bash -c "export HOST_UID=$(HOST_UID) && \
 		export HOST_GID=$(HOST_GID) && buildContainerInit sysbox-static-local"
 
-sysbox-local: sysbox-ipc sysbox-runc sysbox-fs sysbox-mgr
+sysbox-local: sysbox-ipc sysbox-runc sysbox-fs sysbox-mgr shiftfs-test
 	@echo $(HOSTNAME)-$(TARGET_ARCH) > .buildinfo
 
-sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
+sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug shiftfs-test
 
-sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
+sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static shiftfs-test
 
 sysbox-runc: $(LIBSECCOMP) sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make
@@ -276,6 +278,10 @@ $(LIBSECCOMP): $(LIBSECCOMP_SRC)
 	@chown -R $(LIBSECCOMP_UID):$(LIBSECCOMP_GID) ./sysbox-libs/libseccomp
 	@echo "Building libseccomp completed."
 
+shiftfs-test:
+	@cd $(SHIFTFS_TEST_DIR) && make
+	@cd $(SHIFTFS_TEST_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
+
 #
 # install targets (require root privileges)
 #
@@ -286,6 +292,7 @@ install: ## Install all sysbox binaries (requires root privileges)
 	install -D -m0755 sysbox-fs/build/$(TARGET_ARCH)/sysbox-fs $(INSTALL_DIR)/sysbox-fs
 	install -D -m0755 sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr $(INSTALL_DIR)/sysbox-mgr
 	install -D -m0755 sysbox-runc/build/$(TARGET_ARCH)/sysbox-runc $(INSTALL_DIR)/sysbox-runc
+	install -D -m0755 shiftfs-test/build/$(TARGET_ARCH)/shiftfs-test $(INSTALL_DIR)/sysbox-shiftfs-test
 	install -D -m0755 scr/sysbox $(INSTALL_DIR)/sysbox
 
 uninstall: ## Uninstall all sysbox binaries (requires root privileges)
@@ -293,6 +300,7 @@ uninstall: ## Uninstall all sysbox binaries (requires root privileges)
 	rm -f $(INSTALL_DIR)/sysbox-fs
 	rm -f $(INSTALL_DIR)/sysbox-mgr
 	rm -f $(INSTALL_DIR)/sysbox-runc
+	rm -f $(INSTALL_DIR)/sysbox-shiftfs-test
 
 #
 # Test targets
@@ -613,6 +621,7 @@ gomod-tidy:
 	@cd $(SYSRUNC_DIR) && make gomod-tidy
 	@cd $(SYSMGR_DIR) && make gomod-tidy
 	@cd $(SYSFS_DIR) && make gomod-tidy
+	@cd $(SHIFTFS_TEST_DIR) && make gomod-tidy
 
 clean: ## Eliminate sysbox binaries
 clean: clean-libseccomp
@@ -620,6 +629,7 @@ clean: clean-libseccomp
 	cd $(SYSFS_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
 	cd $(SYSMGR_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
 	cd $(SYSIPC_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
+	cd $(SHIFTFS_TEST_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
 	rm -rf ./build/$(TARGET_ARCH)
 
 
