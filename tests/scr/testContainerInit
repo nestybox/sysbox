@@ -108,17 +108,22 @@ function cleanup_docker_env() {
 
 function crio_config() {
 
+	# NOTE: we want to run dasel < v2.0.0 as the later introduces breaking
+	# changes; running old versions of dasel is easiest when dasel runs inside a
+	# docker container.
+	dasel_cmd="docker run --runtime=runc --rm -v /etc/crio/crio.conf:/etc/crio/crio.conf ghcr.io/tomwright/dasel:v1.27.3"
+
 	cp /etc/crio/crio.conf /etc/crio/crio.conf.orig
 
 	# Add Sysbox to CRI-O's list of runtimes
-	ret=$(dasel put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
+	ret=$($dasel_cmd put object -f /etc/crio/crio.conf -p toml -t string -t string "crio.runtime.runtimes.sysbox-runc" \
 		"runtime_path=/usr/bin/sysbox-runc" "runtime_type=oci")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
 	fi
 
-	ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.runtimes.sysbox-runc.allowed_annotations.[0]" \
+	ret=$($dasel_cmd put string -f /etc/crio/crio.conf -p toml "crio.runtime.runtimes.sysbox-runc.allowed_annotations.[0]" \
 		"io.kubernetes.cri-o.userns-mode")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
@@ -126,13 +131,13 @@ function crio_config() {
 	fi
 
 	# Configure CRI-O storage driver (overlayfs)
-	ret=$(dasel put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_driver' "overlay")
+	ret=$($dasel_cmd put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_driver' "overlay")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
 	fi
 
-	ret=$(dasel put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_option.[]' "overlay.mountopt=metacopy=on")
+	ret=$($dasel_cmd put string -f /etc/crio/crio.conf -p toml -m 'crio.storage_option.[]' "overlay.mountopt=metacopy=on")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure CRI-O: $ret"
 		exit 1
@@ -140,13 +145,13 @@ function crio_config() {
 
 	# If we are not using systemd, configure CRI-O with the cgroupfs driver
 	if ! systemd_env; then
-		ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.cgroup_manager" "cgroupfs")
+		ret=$($dasel_cmd put string -f /etc/crio/crio.conf -p toml "crio.runtime.cgroup_manager" "cgroupfs")
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to configure CRI-O: $ret"
 			exit 1
 		fi
 
-		ret=$(dasel put string -f /etc/crio/crio.conf -p toml "crio.runtime.conmon_cgroup" "pod")
+		ret=$($dasel_cmd put string -f /etc/crio/crio.conf -p toml "crio.runtime.conmon_cgroup" "pod")
 		if [[ $? -ne 0 ]]; then
 			echo "Failed to configure CRI-O: $ret"
 			exit 1
@@ -154,13 +159,15 @@ function crio_config() {
 	fi
 
 	# Configure crictl to use CRI-O
-	ret=$(dasel put string -f /etc/crictl.yaml -p yaml -m '.runtime-endpoint' "unix:///var/run/crio/crio.sock")
+	dasel_cmd="docker run --runtime=runc --rm -v /etc/crictl.yaml:/etc/crictl.yaml ghcr.io/tomwright/dasel:v1.27.3"
+
+	ret=$($dasel_cmd put string -f /etc/crictl.yaml -p yaml -m '.runtime-endpoint' "unix:///var/run/crio/crio.sock")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure crictl: $ret"
 		exit 1
 	fi
 
-	ret=$(dasel put string -f /etc/crictl.yaml -p yaml -m '.image-endpoint' "unix:///var/run/crio/crio.sock")
+	ret=$($dasel_cmd put string -f /etc/crictl.yaml -p yaml -m '.image-endpoint' "unix:///var/run/crio/crio.sock")
 	if [[ $? -ne 0 ]]; then
 		echo "Failed to configure crictl: $ret"
 		exit 1
