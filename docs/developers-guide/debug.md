@@ -269,13 +269,29 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
    (dlv) config max-array-values 600
    ```
 
-- For unit tests, use `dlv test <package> -test.run <test-name>`:
+## Unit Test Running & Debugging
 
-    ```console
-    dlv test github.com/nestybox/sysbox-runc/libcontainer/integration -test.run TestSysctl
-    ```
+For unit tests, use `dlv test <package> -test.run <test-name>`:
 
-  Then set a breakpoint at the desired test line and press `c` (continue).
+```console
+dlv test github.com/nestybox/sysbox-runc/libcontainer/integration -test.run TestSysctl
+```
+
+Then set a breakpoint at the desired test line and press `c` (continue).
+
+In some cases you need the test to be built with special tags:
+
+```console
+go test -tags idmapped_mnt
+```
+
+Or if you want to attach the Delve debugger to it, first build the test then run
+it with the debugger.
+
+```console
+go test -c -tags idmapped_mnt -gcflags="all=-N -l"
+sudo env "PATH=$PATH" env "GOROOT=$GOROOT" env "GOPATH=$GOPATH" env "PWD=$PWD" $(which dlv) --check-go-version=false exec <path-to-compiled-test>.test
+```
 
 ## Core-dump Debugging
 
