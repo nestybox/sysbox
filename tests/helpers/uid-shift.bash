@@ -4,79 +4,78 @@
 # Uid shifting helper functions
 #
 
+SYSBOX_LOG_FILE="/var/log/sysbox-mgr.log"
+
+function sysbox_mgr_log_search {
+	local search_term=$1
+
+	if [ -n "$SB_INSTALLER" ]; then
+		journalctl -u sysbox-mgr | grep -iq "$search_term"
+	else
+		grep -iq "$search_term" $SYSBOX_LOG_FILE
+	fi
+}
+
 function kernel_supports_shiftfs() {
-	modprobe shiftfs >/dev/null 2>&1 && lsmod | grep -q shiftfs
+	sysbox_mgr_log_search "Shiftfs works properly: yes"
+}
+
+function kernel_supports_shiftfs_on_overlayfs() {
+	sysbox_mgr_log_search "Shiftfs-on-overlayfs works properly: yes"
 }
 
 function kernel_supports_idmapped_mnt() {
+	sysbox_mgr_log_search "ID-mapped mounts supported by kernel: yes"
+}
 
-	local kernel_rel=$(uname -r)
-	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
-	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
-
-	[ ${rel_major} -gt 5 ] || ( [ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ] )
+function kernel_supports_overlayfs_on_idmapped_mnt() {
+	sysbox_mgr_log_search "Overlayfs on ID-mapped mounts supported by kernel: yes"
 }
 
 function sysbox_idmapped_mnt_disabled {
-	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-idmapped-mount"
+	sysbox_mgr_log_search "Use of ID-mapped mounts disabled"
 }
 
 function sysbox_idmapped_mnt_enabled {
-	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -qv "disable-idmapped-mount"
+	! sysbox_idmapped_mnt_disabled
 }
 
 function sysbox_shiftfs_disabled {
-	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-shiftfs"
+	sysbox_mgr_log_search "Use of shiftfs disabled"
 }
 
 function sysbox_shiftfs_enabled {
-	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -qv "disable-shiftfs"
+	! sysbox_shiftfs_disabled
 }
 
-function sysbox_using_idmapped_mnt() {
-	if kernel_supports_idmapped_mnt && sysbox_idmapped_mnt_enabled; then
-		return 0
-	else
-		return 1
-	fi
+function sysbox_using_shiftfs {
+	sysbox_shiftfs_enabled && kernel_supports_shiftfs
 }
 
-function sysbox_using_shiftfs() {
-	if kernel_supports_shiftfs && sysbox_shiftfs_enabled; then
-		return 0
-	else
-		return 1
-	fi
+function sysbox_using_shiftfs_on_overlayfs {
+	sysbox_shiftfs_enabled && kernel_supports_shiftfs_on_overlayfs
+}
+
+function sysbox_using_idmapped_mnt {
+	sysbox_idmapped_mnt_enabled && kernel_supports_idmapped_mnt
+}
+
+function sysbox_using_overlayfs_on_idmapped_mnt {
+	sysbox_idmapped_mnt_enabled && kernel_supports_overlayfs_on_idmapped_mnt
 }
 
 function sysbox_using_uid_shifting() {
-	if sysbox_using_idmapped_mnt || sysbox_using_shiftfs; then
-		return 0
-	else
-		return 1
-	fi
+	sysbox_using_idmapped_mnt || sysbox_using_shiftfs
 }
 
 function sysbox_using_all_uid_shifting() {
-	if sysbox_using_idmapped_mnt && sysbox_using_shiftfs; then
-		return 0
-	else
-		return 1
-	fi
+	sysbox_using_idmapped_mnt && sysbox_using_shiftfs
 }
 
 function sysbox_using_idmapped_mnt_only() {
-	if sysbox_using_idmapped_mnt && ! sysbox_using_shiftfs; then
-		return 0
-	else
-		return 1
-	fi
+	sysbox_using_idmapped_mnt && ! sysbox_using_shiftfs
 }
 
 function sysbox_using_shiftfs_only() {
-	if ! sysbox_using_idmapped_mnt && sysbox_using_shiftfs; then
-		return 0
-	else
-		return 1
-	fi
+	sysbox_using_idmapped_mnt && sysbox_using_shiftfs
 }
