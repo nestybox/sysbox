@@ -22,11 +22,11 @@ function teardown() {
 	run __docker run --runtime=sysbox-runc --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	# Non-root user process starts with all caps disabled
 	run __docker run --runtime=sysbox-runc -u 1000:1000 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
@@ -34,7 +34,7 @@ function teardown() {
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	# Verify exec into container behaves the same
@@ -43,18 +43,18 @@ function teardown() {
 
 	docker exec "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	docker exec -u 1000:1000 "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	docker_stop $syscont
@@ -133,18 +133,18 @@ function teardown() {
 
 	run __docker run --runtime=sysbox-runc --rm --cap-drop=ALL ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	run __docker run --runtime=sysbox-runc --rm -u 1000:1000 --cap-add=ALL ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	# If we honor caps, then cap add/drop is honored
@@ -166,7 +166,7 @@ function teardown() {
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 	local sysbox_root_caps="$output"
 
-	expectedCapInh="0000003fffffffff"
+	expectedCapInh="000001ffffffffff"
 	if semver_ge $docker_ver "20.10.14"; then
 		expectedCapInh="0000000000000000"
 	fi
@@ -176,7 +176,7 @@ function teardown() {
 	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 	local sysbox_non_root_caps="$output"
 
@@ -240,18 +240,18 @@ function teardown() {
 	# Verify global config can be overriden by per-container config
 	run __docker run --runtime=sysbox-runc -e "SYSBOX_HONOR_CAPS=FALSE" --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	run __docker run --runtime=sysbox-runc -e "SYSBOX_HONOR_CAPS=FALSE" -u 1000:1000 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	# Verify exec into container behaves properly
@@ -276,18 +276,18 @@ function teardown() {
 
 	docker exec -e "SYSBOX_HONOR_CAPS=FALSE" "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	docker exec -e "SYSBOX_HONOR_CAPS=FALSE" -u 1000:1000 "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	docker_stop $syscont

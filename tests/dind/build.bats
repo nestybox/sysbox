@@ -36,7 +36,7 @@ function teardown() {
   # do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
-  docker build --no-cache -t sc-with-inner-img:latest .
+  DOCKER_BUILDKIT=0 docker build --no-cache -t sc-with-inner-img:latest .
   [ "$status" -eq 0 ]
 
   docker image prune -f

@@ -18,8 +18,8 @@ export CTR_IMG_REPO="ghcr.io/nestybox"
 # fails to launch with "permission-denied" when not using uid-shifting
 # (not sure why, probably related to the tmpfs mount uid(gid)
 # setting).
-mkdir -p /work
-WORK_DIR="/work"
+WORK_DIR="/mnt/scratch/work"
+mkdir -p $WORK_DIR
 
 INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
 SYSBOX_ROOT="${INTEGRATION_ROOT}/../../"

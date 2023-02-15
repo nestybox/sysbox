@@ -4,23 +4,16 @@
 # script to run sysbox integration tests
 #
 
+progDir="$(dirname "$0")"
 progName=$(basename "$0")
+
+helpersDir="${progDir}/../helpers/"
+
+source "$helpersDir/uid-shift.bash"
 
 function usage() {
 	printf "\nUsage: $progName [testName]\n"
 	exit 1
-}
-
-function idmapped_mount_supported() {
-	local kernel_rel=$(uname -r)
-	local rel_major=$(echo ${kernel_rel} | cut -d'.' -f1)
-	local rel_minor=$(echo ${kernel_rel} | cut -d'.' -f2)
-	[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ] && \
-		([ ${rel_major} -gt 5 ] || ([ ${rel_major} -eq 5 ] && [ ${rel_minor} -ge 12 ]))
-}
-
-function shiftfs_supported() {
-	modprobe shiftfs >/dev/null 2>&1 && lsmod | grep -q shiftfs
 }
 
 function set_sysbox_idmapped_mount() {
@@ -99,17 +92,16 @@ function run_all_tests() {
 	docker system prune -a -f
 }
 
-# Test sysbox on when using idmapped-mounts and shiftfs (e.g., Ubuntu with
-# kernel >= 5.12). Sysbox will use shiftfs for the rootfs and idmapped-mounts
-# for the bind-mounts.
+# Test sysbox on when using idmapped-mounts and shiftfs (kernels 5.12+ with a
+# working shiftfs module).
 function test_with_idmapped_and_shiftfs() {
 
-	if ! idmapped_mount_supported; then
+	if ! sysbox_using_idmapped_mnt; then
 		printf "\nSkipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
 		return
 	fi
 
-	if ! shiftfs_supported; then
+	if ! sysbox_using_shiftfs; then
 		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
 		return
 	fi
@@ -124,11 +116,11 @@ function test_with_idmapped_and_shiftfs() {
 	return 0
 }
 
-# Test sysbox when using idmapped-mounts only (e.g., RedHat, Fedora, CentOS).
-# Sysbox will use chown for the rootfs and idmapped-mounts for the container
-# bind-mounts.
+# Test sysbox when using idmapped-mounts only (e.g., kernels 5.12+ without
+# shiftfs, or with a non-working shiftfs).
 function test_with_idmapped_only() {
-	if ! idmapped_mount_supported; then
+
+	if ! sysbox_using_idmapped_mnt; then
 		printf "\nSkipping idmapped-mount only tests (not supported on host)\n"
 		return
 	fi
@@ -152,7 +144,7 @@ function test_with_idmapped_only() {
 # Test sysbox when using shiftfs only (e.g., Ubuntu with kernel < 5.12).
 # Sysbox will use shiftfs for the rootfs and for the container bind-mounts.
 function test_with_shiftfs_only() {
-	if ! shiftfs_supported; then
+	if ! sysbox_using_shiftfs; then
 		printf "\nSkipping shiftfs only tests (not supported on host)\n"
 		return
 	fi
