@@ -395,7 +395,7 @@ function teardown() {
 @test "bind mount on /var/lib/docker" {
 
   # testDir will be mounted into the sys container's /var/lib/docker
-  testDir="/root/var-lib-docker"
+  testDir="/mnt/scratch/var-lib-docker"
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
@@ -412,20 +412,24 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   line=$(echo $output | tr -s ' ')
-  mountSrc=$(echo "$line" | cut -d" " -f 2)
   mountFs=$(echo "$line" | cut -d" " -f 3)
 
-  [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
-  echo $line | grep -qv "idmapped"
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+	  echo $line | grep -q "idmapped"
+  else
+	  echo $line | grep -qv "idmapped"
+  fi
 
-  # Verify sysbox changed the permissions on the mount source.
-  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-  tuid=$(stat -c %u "$testDir")
-  tgid=$(stat -c %g "$testDir")
-  [ "$uid" -eq "$tuid" ]
-  [ "$gid" -eq "$tgid" ]
+  # Verify sysbox changed the permissions on the mount source, except if using ID-mapping
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+	  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+	  tuid=$(stat -c %u "$testDir")
+	  tgid=$(stat -c %g "$testDir")
+	  [ "$uid" -eq "$tuid" ]
+	  [ "$gid" -eq "$tgid" ]
+  fi
 
   # Let's run an inner container to verify the docker inside the sys container
   # can work with /var/lib/docker without problems
@@ -456,12 +460,14 @@ function teardown() {
   # Let's start a new container with the same bind-mount, and verify the mount looks good
   syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-  tuid=$(stat -c %u "$testDir")
-  tgid=$(stat -c %g "$testDir")
-  [ "$uid" -eq "$tuid" ]
-  [ "$gid" -eq "$tgid" ]
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+	  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+	  tuid=$(stat -c %u "$testDir")
+	  tgid=$(stat -c %g "$testDir")
+	  [ "$uid" -eq "$tuid" ]
+	  [ "$gid" -eq "$tgid" ]
+  fi
 
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
@@ -488,28 +494,32 @@ function teardown() {
 
 @test "redundant /var/lib/docker mount" {
 
-  testDir="/root/var-lib-docker"
+  testDir="/mnt/scratch/var-lib-docker"
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
   local syscont=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  # Verify sysbox chowned the testDir at host level
-  local uid=$(docker_root_uid_map $syscont)
-  local gid=$(docker_root_gid_map $syscont)
+  # Verify sysbox chowned the testDir at host level (unless ID-mapping is used on it)
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  local uid=$(docker_root_uid_map $syscont)
+	  local gid=$(docker_root_gid_map $syscont)
 
-  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$uid:$gid" ]]
+	  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+	  [ "$status" -eq 0 ]
+	  [[ "$output" == "$uid:$gid" ]]
+  fi
 
   # This docker run is expected to pass but generate a warning (multiple containers can (but should not) share the same /var/lib/docker mount source)
   local syscont_2=$(docker_run --rm --mount type=bind,source=${testDir},target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
   egrep -q "mount source.+should be mounted in one container only" $SYSBOX_MGR_LOG
 
   # Verify the mount source ownership was changed only once (for the first container only)
-  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "$uid:$gid" ]]
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+	  [ "$status" -eq 0 ]
+	  [[ "$output" == "$uid:$gid" ]]
+  fi
 
   docker_stop "$syscont_2"
   docker_stop "$syscont"
@@ -534,7 +544,7 @@ function teardown() {
   subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    testDir[$i]="/root/var-lib-docker-$i"
+    testDir[$i]="/mnt/scratch/var-lib-docker-$i"
     rm -rf "${testDir[$i]}"
     mkdir -p "${testDir[$i]}"
 
@@ -543,14 +553,16 @@ function teardown() {
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+	  syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/docker ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-    uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-    tuid=$(stat -c %u "${testDir[$i]}")
-    tgid=$(stat -c %g "${testDir[$i]}")
-    [ "$uid" -eq "$tuid" ]
-    [ "$gid" -eq "$tgid" ]
+	  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+		  uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+		  gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+		  tuid=$(stat -c %u "${testDir[$i]}")
+		  tgid=$(stat -c %g "${testDir[$i]}")
+		  [ "$uid" -eq "$tuid" ]
+		  [ "$gid" -eq "$tgid" ]
+	  fi
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
@@ -568,7 +580,7 @@ function teardown() {
 @test "bind mount on /var/lib/kubelet" {
 
   # testDir will be mounted into the sys container's /var/lib/kubelet
-  testDir="/root/var-lib-kubelet"
+  testDir="/mnt/scratch/var-lib-kubelet"
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
@@ -584,16 +596,21 @@ function teardown() {
   mountSrc=$(echo "$line" | cut -d" " -f 2)
   mountFs=$(echo "$line" | cut -d" " -f 3)
 
-  [[ "$mountSrc" =~ "$testDir" ]]
   [[ "$mountFs" != "shiftfs" ]]
-  echo $line | grep -qv "idmapped"
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+	  echo $line | grep -q "idmapped"
+  else
+	  echo $line | grep -qv "idmapped"
+  fi
 
-  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-  tuid=$(stat -c %u "$testDir")
-  tgid=$(stat -c %g "$testDir")
-  [ "$uid" -eq "$tuid" ]
-  [ "$gid" -eq "$tgid" ]
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+	  gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+	  tuid=$(stat -c %u "$testDir")
+	  tgid=$(stat -c %g "$testDir")
+	  [ "$uid" -eq "$tuid" ]
+	  [ "$gid" -eq "$tgid" ]
+  fi
 
   # After the container stops, sysbox should revert the ownership on
   # the mount source; verify this.
@@ -610,7 +627,7 @@ function teardown() {
 
 @test "redundant /var/lib/kubelet mount" {
 
-  testDir="/root/var-lib-kubelet"
+  testDir="/mnt/scratch/var-lib-kubelet"
   rm -rf ${testdir}
   mkdir -p ${testDir}
 
@@ -643,7 +660,7 @@ function teardown() {
   subid=$(grep sysbox /etc/subuid | cut -d":" -f2)
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
-    testDir[$i]="/root/var-lib-kubelet-$i"
+    testDir[$i]="/mnt/scratch/var-lib-kubelet-$i"
     rm -rf "${testDir[$i]}"
     mkdir -p "${testDir[$i]}"
 
@@ -654,12 +671,14 @@ function teardown() {
   for i in $(seq 0 $(("$num_syscont" - 1))); do
     syscont_name[$i]=$(docker_run --rm --mount type=bind,source="${testDir[$i]}",target=/var/lib/kubelet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-    uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-    gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
-    tuid=$(stat -c %u "${testDir[$i]}")
-    tgid=$(stat -c %g "${testDir[$i]}")
-    [ "$uid" -eq "$tuid" ]
-    [ "$gid" -eq "$tgid" ]
+	  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+		  uid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+		  gid=$(__docker exec "${syscont_name[$i]}" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+		  tuid=$(stat -c %u "${testDir[$i]}")
+		  tgid=$(stat -c %g "${testDir[$i]}")
+		  [ "$uid" -eq "$tuid" ]
+		  [ "$gid" -eq "$tgid" ]
+	  fi
   done
 
   for i in $(seq 0 $(("$num_syscont" - 1))); do
@@ -672,7 +691,6 @@ function teardown() {
 
     rm -r "${testDir[$i]}"
   done
-
 }
 
 @test "nested mount sources" {

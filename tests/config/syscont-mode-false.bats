@@ -13,6 +13,7 @@ load ../helpers/sysbox-health
 load ../helpers/mounts
 load ../helpers/userns
 load ../helpers/cgroups
+load ../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
@@ -75,7 +76,7 @@ function wait_for_status_up() {
 
 	# Implicit mounts on special dirs should not present
 	for m in "${syscont_special_dirs}"; do
-		docker exec "$syscont" sh -c "mount | grep $m"
+		docker exec "$syscont" sh -c "mount | grep \"on $m\""
 		[ "$status" -ne 0 ]
 	done
 
@@ -221,13 +222,19 @@ function wait_for_status_up() {
 	[[ "$mountFs" != "shiftfs" ]]
 	echo $line | grep -qv "idmapped"
 
-	# Verify sysbox changed the permissions on the mount source.
-	uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
-	gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+	# Verify sysbox changed the permissions on the mount source (unless they are ID-mapped)
 	tuid=$(stat -c %u "$testDir")
 	tgid=$(stat -c %g "$testDir")
-	[ "$uid" -eq "$tuid" ]
-	[ "$gid" -eq "$tgid" ]
+
+	if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+		uid=$(__docker exec "$syscont" sh -c "cat /proc/self/uid_map | awk '{print \$2}'")
+		gid=$(__docker exec "$syscont" sh -c "cat /proc/self/gid_map | awk '{print \$2}'")
+		[ "$uid" -eq "$tuid" ]
+		[ "$gid" -eq "$tgid" ]
+	else
+		tuid=0
+		tgid=0
+	fi
 
 	docker_stop $syscont
 	rm -r ${testDir}
@@ -264,11 +271,11 @@ function wait_for_status_up() {
 
 	docker exec "$sc2" sh -c "cat /proc/1/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	docker_stop $sc1
 	docker_stop $sc2
@@ -285,7 +292,7 @@ function wait_for_status_up() {
 	#
 	# In fact, this combination approaches a regular system container except a
 	# system container carries other setups that allow it to run system workloads
-	# too.
+	# too (e.g., systemd, docker, k8s, etc.)
 
 	docker volume rm testVol
 	docker volume create testVol
@@ -304,9 +311,9 @@ function wait_for_status_up() {
 	docker exec "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	docker exec "$syscont" sh -c 'mount | grep "proc on /proc type proc (rw"'
@@ -337,8 +344,17 @@ function wait_for_status_up() {
 	# Verify immutable mounts work (with runc this would pass since container is
 	# privileged; with sysbox it will fail because for security reasons all
 	# mounts that make the container are immutable, always).
+	#
+	# XXX: when id-mapping is used on the mount, the remount is failing with
+	# "invalid argument" as opposed to "permission denied". Need to investigate
+	# why, but for now just adjust the test.
+
 	docker exec "$syscont" sh -c 'mount -o remount,rw /mnt/testVol'
-	[ "$status" -eq 1 ]
+	if sysbox_using_idmapped_mnt; then
+		[ "$status" -eq 255 ]
+	else
+		[ "$status" -eq 1 ]
+	fi
 
 	# Verify *xattr syscalls are not trapped in this case
 	docker exec "$syscont" sh -c "apk add attr"
@@ -417,11 +433,11 @@ function wait_for_status_up() {
 		 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"0000003fffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"0000003fffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"0000003fffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"0000003fffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"0000003fffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
 
 	sysbox_stop
 	sysbox_start

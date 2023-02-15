@@ -16,7 +16,7 @@ function sysbox_rootfs_cloning_disabled() {
 }
 
 function setup() {
-  if sysbox_using_shiftfs || docker_userns_remap || sysbox_rootfs_cloning_disabled; then
+  if sysbox_using_overlayfs_on_idmapped_mnt || sysbox_using_shiftfs || docker_userns_remap || sysbox_rootfs_cloning_disabled; then
 	  skip "rootfs cloning not active"
   fi
 }

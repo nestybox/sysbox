@@ -40,13 +40,13 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ ${lines[0]} =~ "$SYSCONT_NAME" ]]
 
-  # and that dir should have ownership matching the sysbox user
-  run sh -c "cat /etc/subuid | grep sysbox | cut -d\":\" -f2"
-  [ "$status" -eq 0 ]
-  SYSBOX_UID="$output"
+  # and that dir should have ownership matching the sysbox user (unless overlayfs ID-mapping is in use)
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
+	  local syscont_uid=$(docker_root_uid_map $syscont)
 
-  run sh -c "stat /var/lib/sysbox/kubelet/\"$SYSCONT_NAME\"* | grep Uid | grep \"$SYSBOX_UID\""
-  [ "$status" -eq 0 ]
+	  run sh -c "stat /var/lib/sysbox/kubelet/\"$SYSCONT_NAME\"* | grep Uid | grep \"$syscont_uid\""
+	  [ "$status" -eq 0 ]
+  fi
 
   docker_stop "$SYSCONT_NAME"
 }

@@ -57,7 +57,9 @@ function show_usage() {
 	 printf "sysbox-docker-cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH\n"
 	 printf "\n"
 	 printf "This tool is a wrapper for \"docker cp\" for containers created with Docker + Sysbox.\n"
-	 printf "Usage is identical to \"docker cp\"; refer to the \"docker cp --help\" for further info.\n"
+	 printf "It's needed to copy with correct user:group ID's within the Sysbox container's \n"
+	 printf "user-namespace (\"docker cp\" does not do this). Usage is identical to \"docker cp\".\n"
+	 printf "Refer to the \"docker cp --help\" for further info.\n"
 	 printf "\n"
 }
 
