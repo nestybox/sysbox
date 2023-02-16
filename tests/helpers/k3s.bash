@@ -115,8 +115,16 @@ function k3s_cluster_setup() {
   [ "$status" -eq 0 ]
   kubectl config set-context default
   [ "$status" -eq 0 ]
-  docker cp ${master_node}:/etc/rancher/k3s/k3s.yaml kubeconfig
+
+  # TODO: for some reason "docker cp" is failing to copy to/from subdirs in the
+  # container (possibly related to rootfs ID-mapping by sysbox). As a
+  # workaround, we move the file to the container's "/" and copy from there.
+  docker exec ${master_node} sh -c "mv /etc/rancher/k3s/k3s.yaml /k3s.yaml"
   [ "$status" -eq 0 ]
+
+  docker cp ${master_node}:/k3s.yaml kubeconfig
+  [ "$status" -eq 0 ]
+
   run sed -i "s/127.0.0.1/${controller_ip}/" kubeconfig
   [ "$status" -eq 0 ]
 
