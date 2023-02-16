@@ -101,7 +101,17 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	# copy the xattr-test file into the container
-	docker cp tests/syscall/xattr/xattr-test $syscont:/bin/xattr-test
+	#
+	# XXX: for some reason "docker cp" fails to copy to /bin/. Not sure why since
+	# there is nothing special about that dir (no mounts on it, no symlinks,
+	# etc.) To work-around this, we copy to the container's "/" and then move it
+	# to "/bin/."
+
+	docker cp tests/syscall/xattr/xattr-test $syscont:/xattr-test
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" bash -c "mv /xattr-test /bin/."
+	[ "$status" -eq 0 ]
 
 	# run the test
 	docker exec "$syscont" sh -c "xattr-test /mnt/tdir/tfile"

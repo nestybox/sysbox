@@ -50,7 +50,7 @@ function teardown() {
   verify_syscont_sysfs_mnt $syscont $mnt_path ro
 
   for node in "${SYSFS_EMU[@]}"; do
-    docker exec "$syscont" bash -c "echo 0 > $mnt_path/$node"
+    docker exec "$syscont" bash -c "touch $mnt_path/$node"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Read-only file system" ]]
   done
@@ -405,7 +405,7 @@ function teardown() {
 
   # test read-write sysfs mount with read-only remounts of submounts
   local mnt_path=/root/sys
-  local node=module/nf_conntrack/parameters/hashsize
+  local node=module/nf_conntrack/parameters
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -583,7 +583,7 @@ function teardown() {
 
   # Verify sysbox-fs ignores bind-to-self on submounts
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local node=/sys/module/nf_conntrack/parameters/hashsize
+  local node=/sys/module/nf_conntrack/parameters
 
   docker exec "$syscont" bash -c "mount --bind $node $node"
   [ "$status" -eq 0 ]
@@ -606,10 +606,13 @@ function teardown() {
 @test "bind over sysfs submount" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local node=/sys/module/nf_conntrack/parameters/hashsize
+  local node=/sys/module/nf_conntrack/parameters
+
+  docker exec "$syscont" bash -c "mkdir /root/empty"
+  [ "$status" -eq 0 ]
 
   # Verify bind-mount over submount managed by sysbox-fs
-  docker exec "$syscont" bash -c "mount --bind /dev/null $node"
+  docker exec "$syscont" bash -c "mount --bind /root/empty $node"
   [ "$status" -eq 0 ]
 
   # At this point we should have stacked mounts over $node
@@ -676,10 +679,10 @@ function teardown() {
   # submounts.
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local submount=/sys/module/nf_conntrack/parameters/hashsize
-  local mnt_path=/root/hashsize
+  local submount=/sys/module/nf_conntrack/parameters
+  local mnt_path=/root/parameters
 
-  docker exec "$syscont" bash -c "touch $mnt_path"
+  docker exec "$syscont" bash -c "mkdir $mnt_path"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "mount --bind $submount $mnt_path"

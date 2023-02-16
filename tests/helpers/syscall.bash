@@ -22,7 +22,7 @@ PROCFS_MASKED=( "keys" "timer_list" "sched_debug" )
 PROCFS_TMPFS=( "acpi")
 
 # List of files or dirs under sysfs emulated by sysbox-fs
-SYSFS_EMU=( "module/nf_conntrack/parameters/hashsize" )
+SYSFS_EMU=( "kernel" "devices/virtual" "module/nf_conntrack/parameters" )
 
 # verifies the given sys container path contains a procfs mount backed by sysbox-fs
 function verify_syscont_procfs_mnt() {
