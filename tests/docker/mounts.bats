@@ -505,7 +505,7 @@ function teardown() {
 	  local uid=$(docker_root_uid_map $syscont)
 	  local gid=$(docker_root_gid_map $syscont)
 
-	  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+	  run sh -c "ls -l /mnt/scratch | grep -w 'var-lib-docker$' | awk '{print \$3\":\"\$4}'"
 	  [ "$status" -eq 0 ]
 	  [[ "$output" == "$uid:$gid" ]]
   fi
@@ -516,7 +516,7 @@ function teardown() {
 
   # Verify the mount source ownership was changed only once (for the first container only)
   if ! sysbox_using_overlayfs_on_idmapped_mnt; then
-	  run sh -c "ls -l /root | grep var-lib-docker | awk '{print \$3\":\"\$4}'"
+	  run sh -c "ls -l /mnt/scratch | grep -w 'var-lib-docker$' | awk '{print \$3\":\"\$4}'"
 	  [ "$status" -eq 0 ]
 	  [[ "$output" == "$uid:$gid" ]]
   fi

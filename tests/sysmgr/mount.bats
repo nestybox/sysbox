@@ -48,7 +48,7 @@ load ../helpers/sysbox-health
 	fi
 
 	# Verify implicit bind mounts use idmapping or shiftfs or chown
-   local kernel_rel=$(uname -r)
+	local kernel_rel=$(uname -r)
 	docker exec "$syscont" sh -c "mount | grep \"/lib/modules/${kernel_rel}\""
 	[ "$status" -eq 0 ]
 
@@ -62,12 +62,16 @@ load ../helpers/sysbox-health
 
 	# Verify implicit bind mounts over special dirs use idmapping or chown, but
 	# never shiftfs (since an inner Docker or K8s can't mount overlayfs on it).
-	if sysbox_using_idmapped_mnt; then
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
 		docker exec "$syscont" sh -c "mount | grep $mnt_dst2 | grep idmapped"
 		[ "$status" -eq 0 ]
-	elif sysbox_using_shiftfs; then
+	else
 		docker exec "$syscont" sh -c "mount | grep $mnt_dst2 | grep -v shiftfs"
 		[ "$status" -eq 0 ]
+		mnt_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst2")
+		mnt_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst2")
+		[ "$mnt_uid" -eq 0 ]
+		[ "$mnt_gid" -eq 0 ]
 	fi
 
 	# Verify explicit bind mounts use idmapping or shiftfs; never chowned.
@@ -82,12 +86,12 @@ load ../helpers/sysbox-health
 		[ "$status" -eq 0 ]
 		mnt_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst1")
 		mnt_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst1")
-		[ "$file_uid" -eq 65534 ]
-		[ "$file_gid" -eq 65534 ]
+		[ "$mnt_uid" -eq 65534 ]
+		[ "$mnt_gid" -eq 65534 ]
 	fi
 
 	# Verify explicit bind mounts over special dirs use idmapping or chown, never shiftfs
-	if sysbox_using_idmapped_mnt; then
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
 		docker exec "$syscont" sh -c "mount | grep $mnt_dst2 | grep idmapped"
 		[ "$status" -eq 0 ]
 	else
@@ -95,8 +99,8 @@ load ../helpers/sysbox-health
 		[ "$status" -eq 0 ]
 		mnt_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" $mnt_dst2")
 		mnt_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" $mnt_dst2")
-		[ "$file_uid" -eq 0 ]
-		[ "$file_gid" -eq 0 ]
+		[ "$mnt_uid" -eq 0 ]
+		[ "$mnt_gid" -eq 0 ]
 	fi
 
 	# cleanup
