@@ -515,7 +515,7 @@ test-sysbox-local-installer: sysbox-runc-recvtty
 	$(TEST_DIR)/scr/testSysboxInstaller $(TESTPATH)
 
 test-sysbox-local-ci: sysbox-runc-recvtty
-	$(TEST_DIR)/scr/testSysboxCI $(TESTPATH)
+	TEST_SYSBOX_CI=true $(TEST_DIR)/scr/testSysbox $(TESTPATH)
 
 test-fs-local: sysbox-ipc
 	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
