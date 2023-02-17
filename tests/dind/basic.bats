@@ -23,6 +23,9 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
+  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  [ "$status" -eq 0 ]
+
   docker exec "$SYSCONT_NAME" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
 
@@ -37,6 +40,9 @@ SYSCONT_NAME=""
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd $SYSCONT_NAME
+
+  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -72,6 +78,9 @@ EOF
   [ "$status" -eq 0 ]
 
   wait_for_inner_dockerd $SYSCONT_NAME
+
+  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  [ "$status" -eq 0 ]
 
   image="test_nginx"
 
