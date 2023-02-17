@@ -8,49 +8,27 @@ load ../../helpers/run
 load ../../helpers/docker
 load ../../helpers/sysbox-health
 load ../../helpers/environment
+load ../../helpers/systemd
 
 function teardown() {
 	sysbox_log_check
 }
 
-function wait_for_init() {
-  #
-  # For systemd to be deemed as fully initialized, we must have at least
-  # these four processes running.
-  #
-  # admin@sys-cont:~$ ps -ef | grep systemd
-  # root       273     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-journald
-  # systemd+   481     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-resolved
-  # message+   844     1  0 Oct22 ?        00:00:00 /usr/bin/dbus-daemon --system --systemd-activation
-  # root       871     1  0 Oct22 ?        00:00:00 /lib/systemd/systemd-logind
-  #
-
-  # XXX: For some reason the following retry is not working under
-  # bats, which complains with "BATS_ERROR_STACK_TRACE: bad array
-  # subscript" every so often. It's related to the pipe into grep.
-  # As a work-around, we just wait for a few seconds for Systemd to
-  # initialize.
-
-  #retry 10 1 __docker exec "$SYSCONT_NAME" \
-    #    sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
-
-  sleep 20
-}
-
 function check_systemd_mounts() {
-  #
-  # Check that the following resources are properly mounted to satisfy systemd
-  # requirements:
-  #
-  # - /run                tmpfs   tmpfs    rw
-  # - /run/lock           tmpfs   tmpfs    rw
-  #
-  docker exec "$SYSCONT_NAME" sh -c \
-         "findmnt | egrep -e \"\/run .*tmpfs.*rw\" \
+	#
+	# Check that the following resources are properly mounted to satisfy systemd
+	# requirements:
+	#
+	# - /run                tmpfs   tmpfs    rw
+	# - /run/lock           tmpfs   tmpfs    rw
+	#
+	local syscont=$1
+	docker exec "$syscont" sh -c \
+          "findmnt | egrep -e \"\/run .*tmpfs.*rw\" \
                    -e \"\/run\/lock .*tmpfs.*rw\" \
                    | wc -l | egrep -q 2"
 
-  [ "$status" -eq 0 ]
+	[ "$status" -eq 0 ]
 }
 
 @test "systemd ubuntu bionic" {
@@ -61,48 +39,48 @@ function check_systemd_mounts() {
   fi
 
   # Launch systemd container.
-  SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
+  syscont=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-bionic-systemd)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
-  check_systemd_mounts
+  check_systemd_mounts $syscont
 
   # Verify that the hostname was properly set during container initialization,
   # which would confirm that 'hostnamectl' feature and its systemd dependencies
   # (i.e. dbus) are working as expected.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "hostnamectl | egrep -q \"hostname: sys-cont-systemd\""
   [ "$status" -eq 0 ]
 
   # verify virtualization type
-  docker exec "$SYSCONT_NAME" systemd-detect-virt
+  docker exec "$syscont" systemd-detect-virt
   [ "$status" -eq 0 ]
   [[ "$output" == "container-other" ]]
 
   # Restart a systemd service (journald) and verify it returns to 'running'
   # state.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" systemctl restart systemd-journald.service
+  docker exec "$syscont" systemctl restart systemd-journald.service
   [ "$status" -eq 0 ]
 
   sleep 2
 
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 }
 
@@ -113,48 +91,48 @@ function check_systemd_mounts() {
   # bind mount), otherwise systemd fails to initialize.
 
   # Launch systemd container.
-  SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
+  syscont=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
-  check_systemd_mounts
+  check_systemd_mounts $syscont
 
   # Verify that the hostname was properly set during container initialization,
   # which would confirm that 'hostnamectl' feature and its systemd dependencies
   # (i.e. dbus) are working as expected.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "hostnamectl | egrep -q \"hostname: sys-cont-systemd\""
   [ "$status" -eq 0 ]
 
   # verify virtualization type
-  docker exec "$SYSCONT_NAME" systemd-detect-virt
+  docker exec "$syscont" systemd-detect-virt
   [ "$status" -eq 0 ]
   [[ "$output" == "container-other" ]]
 
   # Restart a systemd service (journald) and verify it returns to 'running'
   # state.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" systemctl restart systemd-journald.service
+  docker exec "$syscont" systemctl restart systemd-journald.service
   [ "$status" -eq 0 ]
 
   sleep 2
 
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 }
 
@@ -171,48 +149,48 @@ function check_systemd_mounts() {
   fi
 
   # Launch systemd container.
-  SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
+  syscont=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/archlinux-systemd)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
-  check_systemd_mounts
+  check_systemd_mounts $syscont
 
   # Verify that the hostname was properly set during container initialization,
   # which would confirm that 'hostnamectl' feature and its systemd dependencies
   # (i.e. dbus) are working as expected.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "hostnamectl | egrep -q \"hostname: sys-cont-systemd\""
   [ "$status" -eq 0 ]
 
   # verify virtualization type
-  docker exec "$SYSCONT_NAME" systemd-detect-virt
+  docker exec "$syscont" systemd-detect-virt
   [ "$status" -eq 0 ]
   [[ "$output" == "container-other" ]]
 
   # Restart a systemd service (journald) and verify it returns to 'running'
   # state.
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" systemctl restart systemd-journald.service
+  docker exec "$syscont" systemctl restart systemd-journald.service
   [ "$status" -eq 0 ]
 
   sleep 2
 
-  docker exec "$SYSCONT_NAME" sh -c \
+  docker exec "$syscont" sh -c \
          "systemctl status systemd-journald.service | egrep \"active \(running\)\""
   [ "$status" -eq 0 ]
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 
   docker image rm ${CTR_IMG_REPO}/archlinux-systemd
@@ -230,25 +208,25 @@ function check_systemd_mounts() {
   [ "$status" -eq 0 ]
 
   # Launch systemd container.
-  SYSCONT_NAME=$(docker_run -d --rm \
+  syscont=$(docker_run -d --rm \
                             --mount source=testVol,destination=/run \
                             --mount source=testVol,destination=/run/lock \
                             --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
   # Verify that mount overlaps have been identified and replaced as per systemd
   # demands.
-  check_systemd_mounts
+  check_systemd_mounts $syscont
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 
   docker volume rm testVol
@@ -264,16 +242,16 @@ function check_systemd_mounts() {
   [ "$status" -eq 0 ]
 
   # Launch systemd container.
-  SYSCONT_NAME=$(docker_run -d --rm \
+  syscont=$(docker_run -d --rm \
                             --tmpfs /run:rw,noexec,nosuid,size=256m \
                             --tmpfs /run/lock:rw,noexec,nosuid,size=8m \
                             --name=sys-cont-systemd \
                             ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
@@ -283,14 +261,14 @@ function check_systemd_mounts() {
   # |-/run           tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=262144k,uid=268666528,gid=268666528
   # | `-/run/lock    tmpfs   tmpfs    rw,nosuid,nodev,noexec,relatime,size=8192k,uid=268666528,gid=268666528
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run .*tmpfs.*rw.*size=262144k\""
+  docker exec "$syscont" sh -c "findmnt | egrep -e \"\/run .*tmpfs.*rw.*size=262144k\""
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "findmnt | egrep -e \"\/run\/lock .*tmpfs.*rw.*size=8192k\""
+  docker exec "$syscont" sh -c "findmnt | egrep -e \"\/run\/lock .*tmpfs.*rw.*size=8192k\""
   [ "$status" -eq 0 ]
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 
   docker volume rm testVol
@@ -301,24 +279,24 @@ function check_systemd_mounts() {
   # Verify that /proc nodes that we expose for systemd (/proc/kcore,
   # /proc/kallsyms, /proc/kmsg) do not present a security hole.
 
-  SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
+  syscont=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/ubuntu-focal-systemd)
 
-  wait_for_init
+  wait_for_systemd_init $syscont
 
-  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
+  docker exec "$syscont" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
   [[ "$output" =~ "State: running" ]]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /proc/kcore"
+  docker exec "$syscont" sh -c "cat /proc/kcore"
   [ "$status" -eq 1 ]
   [[ "$output" =~ "Permission denied" ]]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /proc/kmsg"
+  docker exec "$syscont" sh -c "cat /proc/kmsg"
   [ "$status" -eq 1 ]
   [[ "$output" =~ "Permission denied" ]]
 
-  docker exec "$SYSCONT_NAME" sh -c "cat /proc/kallsyms | head -n 10 | cut -d ' ' -f1"
+  docker exec "$syscont" sh -c "cat /proc/kallsyms | head -n 10 | cut -d ' ' -f1"
   [ "$status" -eq 0 ]
 
   for line in "${lines[@]}"; do
@@ -326,6 +304,6 @@ function check_systemd_mounts() {
   done
 
   # Cleanup
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   [ "$status" -eq 0 ]
 }
