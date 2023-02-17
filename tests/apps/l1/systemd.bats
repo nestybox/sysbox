@@ -34,7 +34,7 @@ function wait_for_init() {
   #retry 10 1 __docker exec "$SYSCONT_NAME" \
     #    sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
 
-  sleep 15
+  sleep 20
 }
 
 function check_systemd_mounts() {
@@ -67,9 +67,9 @@ function check_systemd_mounts() {
   wait_for_init
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
   check_systemd_mounts
@@ -119,9 +119,9 @@ function check_systemd_mounts() {
   wait_for_init
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
   check_systemd_mounts
@@ -164,6 +164,12 @@ function check_systemd_mounts() {
      skip "archlinux supported only in amd64 architecture"
   fi
 
+  local cur_kernel=$(get_kernel_release_semver)
+  version_compare ${cur_kernel} "5.19.0" && :
+  if [[ $? -eq 2 ]]; then
+     skip "systemd takes > 1 min to boot on kernel < 5.19"
+  fi
+
   # Launch systemd container.
   SYSCONT_NAME=$(docker_run -d --rm --name=sys-cont-systemd \
                             --hostname=sys-cont-systemd ${CTR_IMG_REPO}/archlinux-systemd)
@@ -171,9 +177,9 @@ function check_systemd_mounts() {
   wait_for_init
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   # Verify that systemd's required resources are properly mounted.
   check_systemd_mounts
@@ -233,9 +239,9 @@ function check_systemd_mounts() {
   wait_for_init
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   # Verify that mount overlaps have been identified and replaced as per systemd
   # demands.
@@ -267,9 +273,9 @@ function check_systemd_mounts() {
   wait_for_init
 
   # Verify that systemd has been properly initialized (no major errors observed).
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   # Verify that mount overrides have been honored. We are looking for
   # something like this inside the container:
@@ -300,9 +306,9 @@ function check_systemd_mounts() {
 
   wait_for_init
 
-  docker exec "$SYSCONT_NAME" sh -c "systemctl status"
+  docker exec "$SYSCONT_NAME" sh -c 'systemctl status | egrep "^ +State:"'
   [ "$status" -eq 0 ]
-  [[ "${lines[1]}" =~ "State: running" ]]
+  [[ "$output" =~ "State: running" ]]
 
   docker exec "$SYSCONT_NAME" sh -c "cat /proc/kcore"
   [ "$status" -eq 1 ]
