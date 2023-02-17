@@ -104,19 +104,18 @@ function run_ci_tests() {
 function test_with_idmapped_and_shiftfs() {
 
 	if ! sysbox_using_idmapped_mnt; then
-		printf "\nSkipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
+		printf "\nNOTE: Skipping idmapped and shiftfs tests (idmapped mount not supported on host)\n"
 		return
 	fi
 
 	if ! sysbox_using_shiftfs; then
-		printf "\nSkipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
+		printf "\nNOTE: Skipping idmapped and shiftfs tests (shiftfs not supported on host)\n"
 		return
 	fi
 
 	printf "\n"
-	printf "*******************************************\n"
 	printf "Executing Sysbox tests (idmapped + shiftfs)\n"
-	printf "*******************************************\n"
+	printf -- "-------------------------------------------\n"
 
 	if [ -n "$TEST_SYSBOX_CI" ]; then
 		run_ci_tests
@@ -132,14 +131,13 @@ function test_with_idmapped_and_shiftfs() {
 function test_with_idmapped_only() {
 
 	if ! sysbox_using_idmapped_mnt; then
-		printf "\nSkipping idmapped-mount only tests (not supported on host)\n"
+		printf "\nNOTE: Skipping idmapped-mount only tests (not supported on host)\n"
 		return
 	fi
 
 	printf "\n"
-	printf "*********************************************\n"
 	printf "Executing Sysbox tests (idmapped mounts only)\n"
-	printf "*********************************************\n"
+	printf -- "---------------------------------------------\n"
 
 	printf "\nDisabling Sysbox shiftfs.\n"
 	declare -a sysbox_cmdline
@@ -164,14 +162,13 @@ function test_with_idmapped_only() {
 function test_with_shiftfs_only() {
 
 	if ! sysbox_using_shiftfs; then
-		printf "\nSkipping shiftfs only tests (not supported on host)\n"
+		printf "\nNOTE: Skipping shiftfs only tests (not supported on host)\n"
 		return
 	fi
 
 	printf "\n"
-	printf "*************************************\n"
 	printf "Executing Sysbox tests (shiftfs only)\n"
-	printf "*************************************\n"
+	printf -- "-------------------------------------\n"
 
 	printf "\nDisabling Sysbox idmapped-mounts.\n"
 	declare -a sysbox_cmdline
@@ -198,14 +195,13 @@ function test_with_rootfs_cloning() {
 
 	# ID-mapping must still be supported by the kernel
 	if ! sysbox_using_idmapped_mnt; then
-		printf "\nSkipping rootfs cloning tests (ID-mapping not supported on host)\n"
+		printf "\nNOTE: Skipping rootfs cloning tests (ID-mapping not supported on host)\n"
 		return
 	fi
 
 	printf "\n"
-	printf "*********************************************\n"
 	printf "Executing Sysbox tests (with rootfs cloning) \n"
-	printf "*********************************************\n"
+	printf -- "---------------------------------------------\n"
 
 	printf "\nDisabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
 
@@ -231,9 +227,8 @@ function test_with_rootfs_cloning() {
 function test_with_docker_userns_remap() {
 
 	printf "\n"
-	printf "********************************************\n"
 	printf "Executing Sysbox tests (docker-userns-remap)\n"
-	printf "********************************************\n"
+	printf -- "--------------------------------------------\n"
 
 	printf "\nConfiguring Docker with userns-remap\n"
 	docker system prune -a -f
@@ -288,9 +283,15 @@ function main() {
 	else
 
 		if [ -n "$TEST_SYSBOX_CI" ]; then
-			printf "\nExecuting Sysbox tests (CI) ... \n"
+			printf "\n"
+			printf "********************************************\n"
+			printf "Executing Sysbox tests (CI) ... \n"
+			printf "********************************************\n"
 		else
-			printf "\nExecuting Sysbox tests (full) ... \n"
+			printf "\n"
+			printf "********************************************\n"
+			printf "Executing Sysbox tests (ALL) ... \n"
+			printf "********************************************\n"
 		fi
 
 		test_with_idmapped_and_shiftfs
