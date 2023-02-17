@@ -6,13 +6,19 @@
 
 SYSBOX_LOG_FILE="/var/log/sysbox-mgr.log"
 
-function sysbox_mgr_log_search {
-	local search_term=$1
+function sysbox_mgr_log_search() {
 
+	# Because Sysbox may restart multiple times during the tests (with difference
+	# cmd line flags in each restart), this function only searches the sysbox-mgr
+	# log since the last restart.
+
+	local search_term=$1
 	if [ -n "$SB_INSTALLER" ]; then
-		journalctl -u sysbox-mgr | grep -iq "$search_term"
+		lastStartLine=$(journalctl -u sysbox-mgr | grep -n "Starting ..." | tail -1 | cut -f1 -d:)
+		journalctl -u sysbox-mgr | tail -n +$lastStartLine | grep -iq "$search_term"
 	else
-		grep -iq "$search_term" $SYSBOX_LOG_FILE
+		lastStartLine=$(grep -n "Starting ..." /var/log/sysbox-mgr.log | tail -1 | cut -f1 -d:)
+		tail -n +$lastStartLine $SYSBOX_LOG_FILE | grep -iq "$search_term"
 	fi
 }
 
