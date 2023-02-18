@@ -42,7 +42,11 @@ load ../helpers/sysbox-health
 	elif sysbox_using_shiftfs_on_overlayfs; then
 		docker exec "$syscont" sh -c "findmnt | egrep \"^/\" | grep shiftfs"
 		[ "$status" -eq 0 ]
+	elif docker_userns_remap; then
+		docker exec "$syscont" sh -c "findmnt | egrep \"^/\" | grep \"/var/lib/docker\""
+		[ "$status" -eq 0 ]
 	else
+		# rootfs cloning
 		docker exec "$syscont" sh -c "findmnt | egrep \"^/\" | grep \"/var/lib/sysbox\""
 		[ "$status" -eq 0 ]
 	fi
