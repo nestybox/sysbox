@@ -177,8 +177,9 @@ RUN cd /root \
     && mkdir -p /opt/cni/bin \
     && cp bin/* /opt/cni/bin/
 
-# Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
-RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${sys_arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${sys_arch} dasel && chmod +x dasel \
+# Dasel (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
+# Note: manually download Dasel v1 as our testContainerInit script does not yet support Dasel v2.
+RUN wget https://github.com/TomWright/dasel/releases/download/v1.27.2/dasel_linux_${sys_arch} &&  mv dasel_linux_${sys_arch} dasel && chmod +x dasel \
     && mv ./dasel /usr/local/bin/dasel
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
