@@ -4,6 +4,7 @@ load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
 load ../helpers/shell
+load ../helpers/environment
 load ../helpers/sysbox-health
 
 # Container name.
@@ -40,7 +41,11 @@ function teardown() {
     # the container's root, this node is always mounted RO as part of a tmpfs
     # file-system.
     if ! $(echo "${outputArray[$i]}" | egrep -q "firmware"); then
-      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 if [[ $(get_platform) == "arm64" ]]; then
+			 verify_owner "nobody" "nobody" "${outputArray[$i]}"
+		 else
+			 verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 fi
     fi
   done
 }
@@ -72,7 +77,11 @@ function teardown() {
          echo ${outputArray[$i]} | egrep -q "tracing"; then
       verify_perm_owner "drwx------" "root" "root" "${outputArray[$i]}"
     else
-      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 if [[ $(get_platform) == "arm64" ]]; then
+			 verify_owner "nobody" "nobody" "${outputArray[$i]}"
+		 else
+			 verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 fi
 
       # sysKernel handler is expected to fetch node attrs directly from the
       # host fs for non-emulated resources. If that's the case, inodes for each
@@ -130,7 +139,12 @@ function teardown() {
   for (( i=0; i<${#outputArray[@]}; i++ )); do
     local node=$(echo "${outputArray[i]}" | awk '{print $9}')
 
-    verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+	 if [[ $(get_platform) == "arm64" ]]; then
+		 verify_owner "nobody" "nobody" "${outputArray[$i]}"
+	 else
+		 verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+	 fi
+
 
     # sysKernel handler is expected to fetch node attrs directly from the
     # host fs for non-emulated resources. If that's the case, inodes for each

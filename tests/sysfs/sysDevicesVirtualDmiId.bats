@@ -4,6 +4,7 @@ load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
 load ../helpers/shell
+load ../helpers/environment
 load ../helpers/sysbox-health
 
 # Container name.
@@ -53,7 +54,11 @@ function teardown() {
       verify_perm_owner "-r--------" "root" "root" "${outputArray[$i]}"
 
     else
-      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 if [[ $(get_platform) == "arm64" ]]; then
+			 verify_owner "nobody" "nobody" "${outputArray[$i]}"
+		 else
+			 verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+		 fi
 
       # sysDevicesVirtualDmiId handler is expected to fetch node attrs directly
       # from the host fs for non-emulated resources. If that's the case, inodes
@@ -99,7 +104,11 @@ function teardown() {
   for (( i=0; i<${#outputArray[@]}; i++ )); do
     local node=$(echo "${outputArray[i]}" | awk '{print $9}')
 
-    verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+	 if [[ $(get_platform) == "arm64" ]]; then
+		 verify_owner "nobody" "nobody" "${outputArray[$i]}"
+	 else
+		 verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+	 fi
 
     # Looks like there's a kernel bug preventing this sysfs node from being
     # read (failure occurs at host level too), so let's skip it here.
@@ -182,4 +191,3 @@ function teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ $SYS_DMI_PRODUCT_UUID_DEFAULT_VAL ]]
 }
-
