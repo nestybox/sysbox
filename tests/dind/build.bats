@@ -9,6 +9,7 @@ load ../helpers/docker
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
 load ../helpers/cgroups
+load ../helpers/environment
 
 function teardown() {
   sysbox_log_check
@@ -211,6 +212,10 @@ function teardown() {
 }
 
 @test "commit with removed inner image" {
+
+  if [[ $(get_platform) == "arm64" ]]; then
+	  skip "syscont-inner-img not supported on arm64."
+  fi
 
   # launch a sys container that comes with inner images baked-in
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img tail -f /dev/null)
