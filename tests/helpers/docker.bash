@@ -120,6 +120,12 @@ function docker_cont_rootfs() {
   echo $rootfs
 }
 
+function docker_cont_rootfs_upper_dir() {
+  local cont=$1
+  local rootfs=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.UpperDir | tr -d '"')
+  echo $rootfs
+}
+
 function docker_cont_pid() {
   local cont=$1
   local pid=$(__docker inspect -f '{{.State.Pid}}' $cont)
