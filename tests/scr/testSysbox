@@ -31,7 +31,6 @@ function restart_sysbox() {
 function run_all_tests() {
 	printf "\nExecuting sysbox-mgr tests ... \n"
 	bats --tap tests/sysmgr
-
 	printf "\nExecuting sysbox-fs tests ... \n"
 	bats --tap tests/sysfs
 	printf "\nExecuting docker tests ... \n"
