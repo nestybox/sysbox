@@ -10,6 +10,7 @@ load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox-health
 load ../helpers/uid-shift
+load ../helpers/setup
 
 function setup() {
   if ! sysbox_using_shiftfs_only; then
@@ -237,7 +238,7 @@ function teardown() {
 
 @test "shiftfsMgr shiftfs no-exec on host" {
 
-  bind_src=$(mktemp -d "/work/bind_src.XXXXXX")
+  bind_src=$(mktemp -d "$WORK_DIR/bind_src.XXXXXX")
   test_file="$bind_src/testFile"
 
   run touch "$test_file"
