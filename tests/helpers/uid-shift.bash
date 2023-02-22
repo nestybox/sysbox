@@ -83,5 +83,5 @@ function sysbox_using_idmapped_mnt_only() {
 }
 
 function sysbox_using_shiftfs_only() {
-	sysbox_using_idmapped_mnt && sysbox_using_shiftfs
+	sysbox_using_shiftfs && ! sysbox_using_idmapped_mnt
 }
