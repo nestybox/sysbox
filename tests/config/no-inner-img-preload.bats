@@ -56,7 +56,7 @@ function teardown() {
 	docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
 	[ "$status" -eq 0 ]
 
-  wait_for_inner_dockerd $syscont
+	wait_for_inner_dockerd $syscont
 
 	docker exec "$syscont" sh -c "docker image ls | wc -l"
 	[ "$status" -eq 0 ]
