@@ -60,7 +60,7 @@ function retry() {
 # Ensure that kernel-modules expected by system-level apps (running within sys
 # containers) are properly loaded.
 function load_required_modules() {
-	if ! modprobe ip_tables &> /dev/null; then
+	if ! modprobe ip_tables &> /dev/null && ! iptables -L &> /dev/null ; then
 		echo "Could not load ip_tables kernel module. Exiting ..."
 		return 1
 	fi
