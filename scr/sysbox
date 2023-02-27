@@ -74,6 +74,11 @@ function get_host_distro() {
 	echo $distro
 }
 
+# Returns linux kernerl version in the system.
+function get_kernel_version() {
+	echo $(uname -r)
+}
+
 # Ensures user "sysbox" is present on the host
 function setup_sysbox_user() {
    local exit_code=0
@@ -99,10 +104,15 @@ function check_distro() {
 # Ensures unprivileged user-ns's are allowed.
 function setup_userns() {
 	local distro=$1
+	local kver=$2
 
-	if [[ "${distro}" == "ubuntu" ]] ||
-			[[ "${distro}" == "debian" ]]; then
-      echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+	local out=$(echo "$kver" | grep -q "WSL")
+	local isWSL=$?
+
+	if [ $isWSL -ne 0 ]; then
+		if [[ "${distro}" == "ubuntu" ]] ||[[ "${distro}" == "debian" ]]; then
+			echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+		fi
 	fi
 
    # Setting user-ns max value.
@@ -177,6 +187,10 @@ function setup_maxs() {
 function sysbox_setup() {
 
 	local distro=$(get_host_distro)
+	local kver=$(get_kernel_version)
+
+	echo "Host Linux distro: $distro"
+	echo "Host Linux kernel: $kver"
 
 	check_distro "$distro"
 
@@ -185,7 +199,7 @@ function sysbox_setup() {
 	fi
 
 	setup_sysbox_user
-	setup_userns "$distro"
+	setup_userns "$distro" "$kver"
 	setup_kernel_config "$distro"
 	setup_maxs
 }
