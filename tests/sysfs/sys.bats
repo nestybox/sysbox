@@ -31,6 +31,11 @@ function teardown() {
     file=${e[0]}
     type=${e[1]}
 
+    sv_runc exec syscont sh -c "[ -f $file ]"
+	 if [ "$status" -eq 1 ]; then
+		 continue
+	 fi
+
     sv_runc exec syscont sh -c "cat $file"
     [ "$status" -eq 0 ]
     sc_orig="$output"
@@ -69,6 +74,11 @@ function teardown() {
     eval $entry
     file=${e[0]}
     type=${e[1]}
+
+    sv_runc exec syscont sh -c "[ -f $file ]"
+	 if [ "$status" -eq 1 ]; then
+		 continue
+	 fi
 
     sv_runc exec syscont sh -c "cat $file"
     [ "$status" -eq 0 ]
