@@ -14,6 +14,10 @@ SYS_DMI_PRODUCT_UUID_DEFAULT_VAL=""
 function setup() {
   setup_busybox
 
+  if [ ! -d /sys/device/virtual/dmi/id ]; then
+	  skip "/sys/device/virtual/dmi/id not present on host"
+  fi
+
   # Define default cap_last_cap value to utilize during testing.
   run cat /sys/devices/virtual/dmi/id/product_uuid
   [ "$status" -eq 0 ]
