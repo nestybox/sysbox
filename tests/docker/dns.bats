@@ -168,6 +168,7 @@ function teardown() {
 
   [[ "$inner_dns" == "$syscont_dns" ]]
 
+  # NOTE: on WSL hosts, tests hungs here (networking issue)
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 

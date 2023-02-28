@@ -171,12 +171,15 @@ function teardown() {
 		expectedCapInh="0000000000000000"
 	fi
 
+	local root_caps=$(get_root_capabilities)
+	echo "ROOT_CAPS=$root_caps"
+
 	run __docker run --runtime=sysbox-runc --rm -e "SYSBOX_HONOR_CAPS=TRUE" -u 1000:1000 --cap-add=ALL ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"$expectedCapInh" ]]
 	[[ "${lines[1]}" =~ "CapPrm:".+"0000000000000000" ]]
 	[[ "${lines[2]}" =~ "CapEff:".+"0000000000000000" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"$root_caps" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 	local sysbox_non_root_caps="$output"
 

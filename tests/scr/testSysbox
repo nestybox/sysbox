@@ -87,6 +87,8 @@ function run_ci_tests() {
 	bats --tap tests/syscall/mount/mount.bats
 
 	# Launch kind test-suite.
+	printf "\n"
+	docker system prune -a -f
 	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
 
 	# Launch sysbox-pod test-suite.

@@ -23,6 +23,10 @@ function teardown() {
 
 @test "fsuid-map-fail-on-error set" {
 
+	if ! kernel_supports_shiftfs; then
+		skip "shiftfs not supported on host."
+	fi
+
 	sysbox_stop
 	sysbox_start -t --fsuid-map-fail-on-error
 
@@ -43,6 +47,10 @@ function teardown() {
 }
 
 @test "fsuid-map-fail-on-error unset" {
+
+	if ! kernel_supports_shiftfs; then
+		skip "shiftfs not supported on host."
+	fi
 
    sysbox_start -t
 

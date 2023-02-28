@@ -147,3 +147,7 @@ function semver_ge() {
 		return 1
 	fi
 }
+
+function get_root_capabilities() {
+	echo "$(sudo cat /proc/self/status | grep CapEff | awk '{print $2}')"
+}
