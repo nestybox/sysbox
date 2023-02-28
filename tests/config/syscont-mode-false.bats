@@ -269,13 +269,15 @@ function wait_for_status_up() {
 	[[ "${lines[3]}" =~ "CapBnd:".+"00000000a80425fb" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
+	local root_caps=$(get_root_capabilities)
+
 	docker exec "$sc2" sh -c "cat /proc/1/status | grep -i cap"
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$root_caps" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"$root_caps" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"$root_caps" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"$root_caps" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"$root_caps" ]]
 
 	docker_stop $sc1
 	docker_stop $sc2
@@ -425,17 +427,19 @@ function wait_for_status_up() {
 
 	docker_stop $syscont
 
+	local root_caps=$(get_root_capabilities)
+
 	# Verify global config can be overriden by per-container config
 	run __docker run --runtime=sysbox-runc \
 		 -e "SYSBOX_SYSCONT_MODE=TRUE" \
 		 --rm ${CTR_IMG_REPO}/alpine sh -c "cat /proc/self/status | grep -i cap"
 
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" =~ "CapInh:".+"000001ffffffffff" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
-	[[ "${lines[4]}" =~ "CapAmb:".+"000001ffffffffff" ]]
+	[[ "${lines[0]}" =~ "CapInh:".+"$root_caps" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"$root_caps" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"$root_caps" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"$root_caps" ]]
+	[[ "${lines[4]}" =~ "CapAmb:".+"$root_caps" ]]
 
 	sysbox_stop
 	sysbox_start
