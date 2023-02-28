@@ -24,8 +24,14 @@ function main() {
 	printf "\nExecuting kind testcases with flannel cni ... \n"
 	bats --tap tests/kind/kind-flannel.bats
 
+	printf "\n"
+	docker system prune -a -f
+
 	printf "\nExecuting kind testcases with custom docker networks ... \n"
 	bats --tap tests/kind/kind-custom-net.bats
+
+	printf "\n"
+	docker system prune -a -f
 
 	printf "\nExecuting k3s testcases with flannel cni ... \n"
 	bats --tap tests/kind/k3s-flannel.bats

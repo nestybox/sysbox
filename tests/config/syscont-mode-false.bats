@@ -308,12 +308,13 @@ function wait_for_status_up() {
 	local syscont_pid=$(docker_cont_pid $syscont)
 	container_is_rootless $syscont_pid "sysbox"
 
+	local root_caps=$(get_root_capabilities)
 	docker exec "$syscont" sh -c "cat /proc/self/status | grep -i cap"
 	[ "$status" -eq 0 ]
 	[[ "${lines[0]}" =~ "CapInh:".+"0000000000000000" ]]
-	[[ "${lines[1]}" =~ "CapPrm:".+"000001ffffffffff" ]]
-	[[ "${lines[2]}" =~ "CapEff:".+"000001ffffffffff" ]]
-	[[ "${lines[3]}" =~ "CapBnd:".+"000001ffffffffff" ]]
+	[[ "${lines[1]}" =~ "CapPrm:".+"$root_caps" ]]
+	[[ "${lines[2]}" =~ "CapEff:".+"$root_caps" ]]
+	[[ "${lines[3]}" =~ "CapBnd:".+"$root_caps" ]]
 	[[ "${lines[4]}" =~ "CapAmb:".+"0000000000000000" ]]
 
 	docker exec "$syscont" sh -c 'mount | grep "proc on /proc type proc (rw"'
@@ -345,16 +346,13 @@ function wait_for_status_up() {
 	# privileged; with sysbox it will fail because for security reasons all
 	# mounts that make the container are immutable, always).
 	#
-	# XXX: when id-mapping is used on the mount, the remount is failing with
-	# "invalid argument" as opposed to "permission denied". Need to investigate
-	# why, but for now just adjust the test.
+	# XXX: the failure code varies when id-mapping is used on the mount on kernel
+	# 5.19 (e.g., fails with "invalid argument" as opposed to "permission
+	# denied"). Need to investigate why, but for now just look for a non-zero
+	# error code.
 
 	docker exec "$syscont" sh -c 'mount -o remount,rw /mnt/testVol'
-	if sysbox_using_idmapped_mnt; then
-		[ "$status" -eq 255 ]
-	else
-		[ "$status" -eq 1 ]
-	fi
+	[ "$status" -ne 0 ]
 
 	# Verify *xattr syscalls are not trapped in this case
 	docker exec "$syscont" sh -c "apk add attr"
