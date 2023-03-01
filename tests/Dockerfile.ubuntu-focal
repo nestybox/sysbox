@@ -107,9 +107,9 @@ RUN apt-get update && apt-get install -y \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
-# Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://go.dev/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.16.4.linux-${sys_arch}.tar.gz && \
+# Install Golang
+RUN wget https://go.dev/dl/go1.19.6.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.19.6.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
@@ -146,7 +146,7 @@ RUN curl -fsSL https://get.docker.com -o get-docker.sh \
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
 # Go Dlv for debugging
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release

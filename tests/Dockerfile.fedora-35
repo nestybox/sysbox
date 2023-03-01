@@ -89,9 +89,9 @@ RUN dnf copr enable -y lantw44/aarch64-linux-gnu-toolchain \
     aarch64-linux-gnu-glibc \
     aarch64-linux-gnu-binutils
 
-# Install Golang 1.16.4 release and explicitly activate modules functionality.
-RUN wget https://go.dev/dl/go1.16.4.linux-${sys_arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.16.4.linux-${sys_arch}.tar.gz && \
+# Install Golang
+RUN wget https://go.dev/dl/go1.19.6.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.19.6.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH /go
@@ -137,7 +137,7 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
     /etc/bash_completion.d/docker.sh
 
 # Go Dlv for debugging
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
