@@ -1,0 +1,32 @@
+[amzn2-core]
+name=Amazon Linux 2 core repository
+mirrorlist=$awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/$product/$target/$basearch/mirror.list
+priority=10
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+enabled=1
+metadata_expire=300
+mirrorlist_expire=300
+report_instanceid=yes
+
+[amzn2-core-source]
+name=Amazon Linux 2 core repository - source packages
+mirrorlist=$awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/$product/$target/SRPMS/mirror.list
+priority=10
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+enabled=0
+metadata_expire=300
+mirrorlist_expire=300
+report_instanceid=yes
+
+[amzn2-core-debuginfo]
+name=Amazon Linux 2 core repository - debuginfo packages
+mirrorlist=$awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/$product/$target/debuginfo/$basearch/mirror.list
+priority=10
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+enabled=0
+metadata_expire=300
+mirrorlist_expire=300
+report_instanceid=yes
