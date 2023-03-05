@@ -21,7 +21,27 @@ The Sysbox test suite is made up of the following:
 All tests run inside a privileged Docker container (i.e., Sysbox as well as the
 tests that exercise it execute inside that container).
 
-## Running the entire suite
+## Prepare the host
+
+Host must have kernel >= 5.12.
+
+Install the following tools:
+
+* Docker
+* Make
+
+### Amazon Linux 2 hosts
+
+Upgrade the kernel: see https://aws.amazon.com/premiumsupport/knowledge-center/amazon-linux-2-kernel-upgrade/
+
+Install the kernel headers into the host:
+
+```
+sudo yum install kernel-devel-$(uname -r)
+```
+
+
+## Running the test suite
 
 To run the entire Sysbox test suite:
 
