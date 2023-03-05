@@ -291,22 +291,11 @@ function main() {
 
 	# Start Sysbox.
 	if [ -n "$DEBUG_ON" ]; then
-		if [[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ]]; then
-			echo "Starting sysbox in debug mode ..."
-			sysbox -d -t
-		else
-			echo "Starting sysbox in debug mode with idmapped-mount disabled ..."
-			sysbox -d -t --disable-idmapped-mount
-		fi
+		echo "Starting sysbox in debug mode ..."
+		sysbox -d -t
 	else
-		if [[ $(docker info | grep "Backing Filesystem" | cut -d " " -f5) != "xfs" ]]; then
-			echo "Starting sysbox in test mode ..."
-			sysbox -t
-		else
-			echo "Starting sysbox in test mode with idmapped-mount disabled ..."
-			sysbox -t --disable-idmapped-mount
-		fi
-
+		echo "Starting sysbox in test mode ..."
+		sysbox -t
 	fi
 
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
