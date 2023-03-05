@@ -518,12 +518,12 @@ test-sysbox-local-ci: sysbox-runc-recvtty
 	TEST_SYSBOX_CI=true $(TEST_DIR)/scr/testSysbox $(TESTPATH)
 
 test-fs-local: sysbox-ipc
-	cd $(SYSFS_DIR) && go test -timeout 3m -v $(fsPkgs)
+	cd $(SYSFS_DIR) && go test -buildvcs=false -timeout 3m -v $(fsPkgs)
 
 test-mgr-local: sysbox-ipc
 	dockerd > /var/log/dockerd.log 2>&1 &
 	sleep 2
-	cd $(SYSMGR_DIR) && go test -timeout 3m -v $(mgrPkgs)
+	cd $(SYSMGR_DIR) && go test -buildvcs=false -timeout 3m -v $(mgrPkgs)
 
 
 ##@ Sysbox-In-Docker targets
@@ -641,11 +641,11 @@ clean-sysbox-in-docker:
 
 # memoize all packages once
 
-_runcPkgs = $(shell cd $(SYSRUNC_DIR) && go list ./... | grep -v vendor)
+_runcPkgs = $(shell cd $(SYSRUNC_DIR) && go list -buildvcs=false ./... | grep -v vendor)
 runcPkgs = $(if $(__runcPkgs),,$(eval __runcPkgs := $$(_runcPkgs)))$(__runcPkgs)
 
-_fsPkgs = $(shell cd $(SYSFS_DIR) && go list ./... | grep -v vendor)
+_fsPkgs = $(shell cd $(SYSFS_DIR) && go list -buildvcs=false ./... | grep -v vendor)
 fsPkgs = $(if $(__fsPkgs),,$(eval __fsPkgs := $$(_fsPkgs)))$(__fsPkgs)
 
-_mgrPkgs = $(shell cd $(SYSMGR_DIR) && go list ./... | grep -v vendor)
+_mgrPkgs = $(shell cd $(SYSMGR_DIR) && go list -buildvcs=false ./... | grep -v vendor)
 mgrPkgs = $(if $(__mgrPkgs),,$(eval __mgrPkgs := $$(_mgrPkgs)))$(__mgrPkgs)
