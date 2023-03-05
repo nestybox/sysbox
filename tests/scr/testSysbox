@@ -194,7 +194,8 @@ function test_with_shiftfs_only() {
 # are disabled, Sysbox must clone & chown the container's rootfs.
 function test_with_rootfs_cloning() {
 
-	# ID-mapping must still be supported by the kernel
+	# ID-mapping must still be supported by the kernel (otherwise host mounts
+	# into sysbox containers won't show up with proper ownership)
 	if ! sysbox_using_idmapped_mnt; then
 		printf "\nNOTE: Skipping rootfs cloning tests (ID-mapping not supported on host)\n"
 		return
