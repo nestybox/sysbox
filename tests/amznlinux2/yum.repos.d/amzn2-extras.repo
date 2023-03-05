@@ -1,0 +1,115 @@
+
+
+
+
+### This file is managed with amazon-linux-extras. Please manage with that tool.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[amzn2extra-docker-source]
+enabled = 0
+name = Amazon Extras source repo for docker
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/docker/latest/SRPMS/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-docker-debuginfo]
+enabled = 0
+name = Amazon Extras debuginfo repo for docker
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/docker/latest/debuginfo/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-docker]
+enabled = 1
+name = Amazon Extras repo for docker
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/docker/latest/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.10-source]
+enabled = 0
+name = Amazon Extras source repo for kernel-5.10
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.10/latest/SRPMS/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.10-debuginfo]
+enabled = 0
+name = Amazon Extras debuginfo repo for kernel-5.10
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.10/latest/debuginfo/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.10]
+enabled = 1
+name = Amazon Extras repo for kernel-5.10
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.10/latest/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.15-source]
+enabled = 0
+name = Amazon Extras source repo for kernel-5.15
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.15/latest/SRPMS/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.15-debuginfo]
+enabled = 0
+name = Amazon Extras debuginfo repo for kernel-5.15
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.15/latest/debuginfo/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
+[amzn2extra-kernel-5.15]
+enabled = 1
+name = Amazon Extras repo for kernel-5.15
+mirrorlist = $awsproto://$amazonlinux.$awsregion.$awsdomain/$releasever/extras/kernel-5.15/latest/$basearch/mirror.list
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2
+priority = 10
+skip_if_unavailable = 1
+report_instanceid = yes
+
