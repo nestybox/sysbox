@@ -10,6 +10,13 @@ load ../helpers/k8s
 load ../helpers/run
 load ../helpers/sysbox-health
 
+function setup() {
+	run which crictl
+	if [ $status -ne 0 ]; then
+		skip "crictl not installed"
+	fi
+}
+
 function teardown() {
   sysbox_log_check
 }
