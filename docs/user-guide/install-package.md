@@ -50,15 +50,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.5.2/sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.5.0-0.linux_amd64.deb
-eeacd9ae0e08ee5e5637e3b93e4f0cf78f20f9590ef2e7ab08347700682422f0  sysbox-ce_0.5.0-0.linux_amd64.deb
+$ sha256sum sysbox-ce_0.5.2-0.linux_amd64.deb
+f13fc0e156f72c6f8bd48e206c59482f83f19acc229701c74e0f23baafa724d8 sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -78,7 +78,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -99,26 +99,26 @@ $ sudo systemctl status sysbox -n20
              ├─1581946 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
              └─1581965 /bin/sleep infinity
 
-Mar 26 15:14:39 dev-vm1 systemd[1]: Started Sysbox container runtime.
-Mar 26 15:14:39 dev-vm1 sh[1581948]: sysbox-runc
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         edition:         Community Edition (CE)
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         version:         0.5.0
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         commit:         c85420f1d1a426949047eb55e4112a3bc310aec2
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         built at:         Wed Mar 23 23:34:40 UTC 2022
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         built by:         Rodny Molina
-Mar 26 15:14:39 dev-vm1 sh[1581948]:         oci-specs:         1.0.2-dev
-Mar 26 15:14:39 dev-vm1 sh[1581953]: sysbox-mgr
-Mar 26 15:14:39 dev-vm1 sh[1581953]:         edition:         Community Edition (CE)
-Mar 26 15:14:39 dev-vm1 sh[1581953]:         version:         0.5.0
-Mar 26 15:14:39 dev-vm1 sh[1581953]:         commit:         bf4140a678de2cdb4d7f02f50c5e71348d2d2335
-Mar 26 15:14:39 dev-vm1 sh[1581953]:         built at:         Wed Mar 23 23:35:12 UTC 2022
-Mar 26 15:14:39 dev-vm1 sh[1581953]:         built by:         Rodny Molina
-Mar 26 15:14:39 dev-vm1 sh[1581957]: sysbox-fs
-Mar 26 15:14:39 dev-vm1 sh[1581957]:         edition:         Community Edition (CE)
-Mar 26 15:14:39 dev-vm1 sh[1581957]:         version:         0.5.0
-Mar 26 15:14:39 dev-vm1 sh[1581957]:         commit:         95a773a6ea3920f7ab454f1583465c7aea4c701f
-Mar 26 15:14:39 dev-vm1 sh[1581957]:         built at:         Wed Mar 23 23:35:06 UTC 2022
-Mar 26 15:14:39 dev-vm1 sh[1581957]:         built by:         Rodny Molina
+Mar 06 06:33:23 whaleux systemd[1]: Started Sysbox container runtime.
+Mar 06 06:33:23 whaleux sh[267618]: sysbox-runc
+Mar 06 06:33:23 whaleux sh[267618]:         edition:         Community Edition (CE)
+Mar 06 06:33:23 whaleux sh[267618]:         version:         0.5.2
+Mar 06 06:33:23 whaleux sh[267618]:         commit:         d91c42c2125fd7aaf46f66307eb5c2a025f30289
+Mar 06 06:33:23 whaleux sh[267618]:         built at:         Wed May 18 19:49:04 UTC 2022
+Mar 06 06:33:23 whaleux sh[267618]:         built by:         Rodny Molina
+Mar 06 06:33:23 whaleux sh[267618]:         oci-specs:         1.0.2-dev
+Mar 06 06:33:23 whaleux sh[267625]: sysbox-mgr
+Mar 06 06:33:23 whaleux sh[267625]:         edition:         Community Edition (CE)
+Mar 06 06:33:23 whaleux sh[267625]:         version:         0.5.2
+Mar 06 06:33:23 whaleux sh[267625]:         commit:         ea1b7db91031355cb10b850125e0d6502dc38962
+Mar 06 06:33:23 whaleux sh[267625]:         built at:         Wed May 18 19:49:36 UTC 2022
+Mar 06 06:33:23 whaleux sh[267625]:         built by:         Rodny Molina
+Mar 06 06:33:23 whaleux sh[267630]: sysbox-fs
+Mar 06 06:33:23 whaleux sh[267630]:         edition:         Community Edition (CE)
+Mar 06 06:33:23 whaleux sh[267630]:         version:         0.5.2
+Mar 06 06:33:23 whaleux sh[267630]:         commit:         95a773a6ea3920f7ab454f1583465c7aea4c701f
+Mar 06 06:33:23 whaleux sh[267630]:         built at:         Wed May 18 19:49:30 UTC 2022
+Mar 06 06:33:23 whaleux sh[267630]:         built by:         Rodny Molina
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
@@ -445,8 +445,8 @@ To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
 
 You can find the latest versions of Sysbox here:
 
--   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.5.0).
--   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.0).
+-   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.5.2).
+-   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.2).
 
 Note that you must stop all Sysbox containers on the host prior to uninstalling
 Sysbox (see previous section).
