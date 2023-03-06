@@ -15,7 +15,8 @@ if [ "$DISTRO" != "ubuntu" ] &&
    [ "$DISTRO" != "centos" ] &&
    [ "$DISTRO" != "almalinux" ] &&
    [ "$DISTRO" != "rocky" ] &&
-   [ "$DISTRO" != "fedora" ]; then
+   [ "$DISTRO" != "fedora" ] &&
+   [ "$DISTRO" != "amzn" ]; then
     printf "\nWarning: Sysbox is not supported in this distribution (though it may still work): %s.\n\n", $DISTRO
 fi
 

@@ -174,7 +174,8 @@ load ../helpers/sysbox-health
       [[ "${distro}" == "fedora" ]] ||
       [[ "${distro}" == "rocky" ]] ||
       [[ "${distro}" == "almalinux" ]] ||
-      [[ "${distro}" == "redhat" ]]; then
+      [[ "${distro}" == "redhat" ]] ||
+      [[ "${distro}" == "amzn" ]]; then
 
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
@@ -228,7 +229,8 @@ load ../helpers/sysbox-health
       [[ "${distro}" == "fedora" ]] ||
       [[ "${distro}" == "rocky" ]] ||
       [[ "${distro}" == "almalinux" ]] ||
-      [[ "${distro}" == "redhat" ]]; then
+      [[ "${distro}" == "redhat" ]] ||
+      [[ "${distro}" == "amzn" ]]; then
 
       docker exec "$syscont" sh -c "mount | grep \"/usr/src/kernels/${kernel_rel}\""
       [ "$status" -eq 0 ]
