@@ -122,6 +122,10 @@ function teardown() {
 # resources within an inner hierarchy (e.g., "/sys/kernel/mm/ksm").
 @test "/sys/kernel/mm/ksm file ops" {
 
+	if [ ! -d "/sys/kernel/mm/ksm" ]; then
+		skip "/sys/kernel/mm/ksm not present on host"
+	fi
+
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
