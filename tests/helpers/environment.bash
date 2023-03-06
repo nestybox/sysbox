@@ -38,7 +38,8 @@ function get_distro_release() {
 		${distro} == redhat || \
 		${distro} == almalinux || \
 		${distro} == rockylinux || \
-		${distro} == fedora ]]; then
+		${distro} == fedora ]] || \
+		${distro} == amzn ]]; then
 		cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2 | tr -d '"' | cut -d "." -f1
 	else
 		cat /etc/os-release | grep "^VERSION_CODENAME" | cut -d "=" -f2
@@ -71,7 +72,8 @@ function get_kernel_headers_path() {
 		${distro} == "redhat" || \
 		${distro} == "almalinux" || \
 		${distro} == "rockylinux" || \
-		${distro} == "fedora" ]]; then
+		${distro} == "fedora" ]] || \
+		${distro} == "amzn" ]]; then
 		echo "/usr/src/kernels/${kernel_rel}"
 	else
 		echo "/usr/src/linux-headers-${kernel_rel}"

@@ -88,7 +88,7 @@ function setup_sysbox_user() {
    fi
 }
 
-function check_distro() {
+function check_distro_support() {
 	local distro=$1
 
 	if [[ "${distro}" != "ubuntu" ]] &&
@@ -96,7 +96,8 @@ function check_distro() {
 			[[ "${distro}" != "centos" ]] &&
 			[[ "${distro}" != "almalinux" ]] &&
 			[[ "${distro}" != "rocky" ]] &&
-			[[ "${distro}" != "fedora" ]]; then
+			[[ "${distro}" != "fedora" ]] &&
+			[[ "${distro}" != "amzn" ]]; then
       echo "Unsupported Linux distribution: $distro. Sysbox may not operate as expected."
 	fi
 }
@@ -132,7 +133,8 @@ function kernel_header_path() {
 			[[ "${distro}" == "fedora" ]] ||
 			[[ "${distro}" == "almalinux" ]] ||
 			[[ "${distro}" == "rocky" ]] ||
-			[[ "${distro}" == "redhat" ]]; then
+			[[ "${distro}" == "redhat" ]] ||
+			[[ "${distro}" == "amzn" ]]; then
       path="/usr/src/kernels/$(uname -r)"
 	else
       path="/usr/src/linux-headers-$(uname -r)"
@@ -192,7 +194,7 @@ function sysbox_setup() {
 	echo "Host Linux distro: $distro"
 	echo "Host Linux kernel: $kver"
 
-	check_distro "$distro"
+	check_distro_support "$distro"
 
 	if ! load_required_modules; then
       exit 1
