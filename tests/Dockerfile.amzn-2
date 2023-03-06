@@ -159,6 +159,19 @@ RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#
 # Libc needed to statically compile Sysbox
 RUN yum update -y && yum install -y glibc-static
 
+# Upgrade to bash > 4.2 (needed to run sysbox tests); build from source as there
+# is no repo for it in amazon linux 2.
+RUN mkdir -p /tmp/bash-update \
+    && cd /tmp/bash-update \
+    && wget https://ftp.gnu.org/gnu/bash/bash-5.2.15.tar.gz \
+    && tar -xvf bash-5.2.15.tar.gz \
+    && cd bash-5.2.15 \
+    && ./configure \
+    && make \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/bash-update
+
 # sysbox env
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
@@ -172,4 +185,7 @@ COPY bin/userns_child_exec_${sys_arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
-CMD /bin/bash
+
+# The newly installed bash is under /usr/local/bin
+RUN rm /usr/bin/bash && ln -s /usr/local/bin/bash /usr/bin/bash
+CMD /usr/local/bin/bash
