@@ -112,6 +112,8 @@ function teardown() {
 	  skip "Requires Sysbox idmapped mount support"
   fi
 
+  local docker_group=$(docker_group_id)
+
   # start the container
   docker_run --rm --name syscont -v /var/run/docker.sock:/var/run/docker.sock ${CTR_IMG_REPO}/alpine-docker-dbg tail -f /dev/null
 
@@ -125,7 +127,7 @@ function teardown() {
 
   docker exec syscont sh -c "stat -c %g /var/run/docker.sock"
   [ "$status" -eq 0 ]
-  [ "$output" -eq 999 ]
+  [ "$output" -eq "$docker_group" ]
 
   # verify the docker inside the container can access the mounted socket; it
   # should see the container itself.

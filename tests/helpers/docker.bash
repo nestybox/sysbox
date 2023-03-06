@@ -148,3 +148,8 @@ function docker_engine_version() {
 	local res=$(__docker info --format '{{json .}}' | jq ".ServerVersion" | tr -d '"')
 	echo $res
 }
+
+function docker_group_id() {
+	res=$(grep docker /etc/group | cut -d ":" -f 3)
+	echo $res
+}
