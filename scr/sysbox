@@ -191,9 +191,6 @@ function sysbox_setup() {
 	local distro=$(get_host_distro)
 	local kver=$(get_kernel_version)
 
-	echo "Host Linux distro: $distro"
-	echo "Host Linux kernel: $kver"
-
 	check_distro_support "$distro"
 
 	if ! load_required_modules; then
