@@ -58,6 +58,11 @@ EOF
 # buildkit runs at L1 level).
 @test "L0 buildx + L1 buildkit container (docker-container driver)" {
 
+  docker buildx version
+  if [ "$status" -ne 0 ]; then
+	  skip "docker buildx command not supported; update to latest docker version when available"
+  fi
+
   cat << EOF > ${file}
 FROM ${CTR_IMG_REPO}/alpine
 MAINTAINER Nestybox
@@ -100,6 +105,11 @@ EOF
 # Test basic buildkit features when this one is launched within a sysbox container
 # (i.e., buildkit runs at L2 level).
 @test "L0 buildx + L2 buildkit container (docker-container driver)" {
+
+  docker buildx version
+  if [ "$status" -ne 0 ]; then
+	  skip "docker buildx command not supported; update to latest docker version when available"
+  fi
 
   cat << EOF > ${file}
 FROM ${CTR_IMG_REPO}/alpine
