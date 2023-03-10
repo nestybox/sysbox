@@ -54,6 +54,14 @@ function sysbox_shiftfs_enabled {
 	! sysbox_shiftfs_disabled
 }
 
+function sysbox_rootfs_cloning_disabled() {
+	ps -fu root | grep "$(pidof sysbox-mgr)" | grep -q "disable-rootfs-cloning"
+}
+
+function sysbox_rootfs_cloning_enabled() {
+	! sysbox_rootfs_cloning_disabled
+}
+
 function sysbox_using_shiftfs {
 	sysbox_shiftfs_enabled && kernel_supports_shiftfs
 }
@@ -84,4 +92,8 @@ function sysbox_using_idmapped_mnt_only() {
 
 function sysbox_using_shiftfs_only() {
 	sysbox_using_shiftfs && ! sysbox_using_idmapped_mnt
+}
+
+function sysbox_using_rootfs_cloning() {
+	! sysbox_using_overlayfs_on_idmapped_mnt && ! sysbox_using_shiftfs && ! sysbox_rootfs_cloning_disabled
 }
