@@ -8,6 +8,7 @@ load ../helpers/run
 load ../helpers/docker
 load ../helpers/containerd
 load ../helpers/sysbox-health
+load ../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
@@ -47,6 +48,10 @@ function teardown() {
 }
 
 @test "commit with inner images" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -119,6 +124,10 @@ function teardown() {
 }
 
 @test "build with inner containerd images" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
 
   # do a docker build with appropriate dockerfile
   pushd .

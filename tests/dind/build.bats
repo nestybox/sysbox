@@ -17,6 +17,10 @@ function teardown() {
 
 @test "build with inner images" {
 
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
+
   # Needs cgroups v1 because the sys container carries docker 19.03 which does not support cgroups v2.
   if host_is_cgroup_v2; then
 	  skip "requires host in cgroup v1"
@@ -106,6 +110,10 @@ function teardown() {
 }
 
 @test "commit with inner images" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
 
   # Needs cgroups v1 because the sys container carries docker 19.03 which does
   # not support cgroups v2.
@@ -212,6 +220,10 @@ function teardown() {
 }
 
 @test "commit with removed inner image" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
 
   if [[ $(get_platform) == "arm64" ]]; then
 	  skip "syscont-inner-img not supported on arm64."
