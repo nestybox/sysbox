@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright 2022 Nestybox, Inc.
+# Copyright 2022-2023 Nestybox, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@
 # Note: options are identical to "docker cp"; refer to the "docker cp --help"
 # for further info.
 #
-# "sysbox-docker-cp" implements "docker cp" for Sysbox containers. It solves the
-# problem where "docker cp" does not work well in hosts where shiftfs is not
-# present (unless Docker is configured with userns-remap).
+# "sysbox-docker-cp" implements "docker cp" for Sysbox containers. It's needed
+# because "docker cp" does not work well in hosts where shiftfs is not present
+# and kernel < 5.19 (unless Docker is configured with userns-remap, which is
+# uncommon).
 #
-# The reason "docker cp" does not work well in hosts without shiftfs (even if
-# the host supports idmapped mounts) is that in such hosts Sysbox need to chown
-# the container's rootfs to the unprivileged uid:gid associated with the
-# container's user-namespace. Since "docker cp" is not aware that the Sysbox
+# The reason "docker cp" does not work well in such hosts is that Sysbox needs
+# to chown the container's rootfs to the unprivileged uid:gid associated with
+# the container's user-namespace. Since "docker cp" is not aware that the Sysbox
 # container uses the user-ns, it performs the copy but not the chown. Thus, the
 # file shows up as "nobody:nogroup" inside the container, which is not as
 # intended. Furthermore, the file can't be chowned from within the container
@@ -39,9 +39,9 @@
 # As a work-around, this tool (docker-sysbox-cp) peforms the copy and chown. It
 # simply calls "docker cp" and then performs the chown of the file.
 #
-# This tool is expected to be temporary: once Linux supports idmapped-mounts
-# over overlayfs, "docker cp" should work normally and this tool would become
-# obsolete.
+# This tool is expected to be temporary: once kernel 5.19+ is common across
+# Linux distros, "docker cp" should work normally and this tool shouldn't
+# be needed.
 #
 
 # Globals
@@ -151,7 +151,7 @@ function get_container_uid() {
 }
 
 function chown_container_file() {
-	local rootfs_path="${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID}/top/merged/${DST_PATH}"
+	local rootfs_path="${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID}/overlay2/merged/${DST_PATH}"
 
 	if [[ -d ${rootfs_path} ]]; then
 		local src_base=$(basename ${SRC_PATH})
