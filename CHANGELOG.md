@@ -135,7 +135,7 @@ All notable changes to this project will be documented in this file.
   * Increased list of kernels supported by nbox-shiftfs module (refer to nbox-shiftfs module documentation).
   * Add changelog info to the debian package installer.
 
-## [0.0.1] - 2019-07-23
+## [0.0.1] - unreleased
 ### Added
   * Internal release (non-public).
   * Supports launching system containers with Docker.
