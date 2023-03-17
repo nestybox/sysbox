@@ -86,10 +86,12 @@ function run_ci_tests() {
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
 	bats --tap tests/syscall/mount/mount.bats
 
+	# Skip in CI for now, as it fails to setup the cluster on the CI VM.
+	#
 	# Launch kind test-suite.
-	printf "\n"
-	docker system prune -a -f
-	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
+	# printf "\n"
+	# docker system prune -a -f
+	# ./tests/kind/kind.sh tests/kind/kind-flannel.bats
 
 	# Launch sysbox-pod test-suite.
 	./tests/pods/pods.sh
