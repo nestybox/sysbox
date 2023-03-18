@@ -19,7 +19,7 @@
 # docker build -t sysbox-test .
 #
 
-FROM amazonlinux:latest
+FROM amazonlinux:2
 
 # Desired platform architecture to build upon.
 ARG sys_arch
