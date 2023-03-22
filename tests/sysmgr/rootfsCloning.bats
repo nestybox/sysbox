@@ -12,7 +12,7 @@ load ../helpers/uid-shift
 load ../helpers/sysbox-health
 
 function setup() {
-	if ! sysbox_using_rootfs_cloning && ! docker_userns_remap; then
+	if ! sysbox_using_rootfs_cloning || docker_userns_remap; then
 		skip "rootfs cloning not active"
 	fi
 }

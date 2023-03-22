@@ -15,7 +15,7 @@ function teardown() {
 @test "uid alloc basic" {
 
   if docker_userns_remap; then
-    skip "uid shifting disabled"
+    skip "uid alloc disabled (docker userns-remap)"
   fi
 
   num_syscont=5
