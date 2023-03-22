@@ -123,3 +123,112 @@ function teardown() {
 
 	docker_stop "$syscont"
 }
+
+@test "docker pause & unpause" {
+
+	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	docker exec "$syscont" sh -c "touch /root/test-file.txt"
+	[ "$status" -eq 0 ]
+
+	docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+	[ "$status" -eq 0 ]
+
+	wait_for_inner_dockerd $syscont
+
+	docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/busybox"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/alpine"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "docker image ls | tail -n +2 | wc -l"
+	[ "$status" -eq 0 ]
+	[ "$output" -eq 2 ]
+
+	for i in $(seq 1 4); do
+		docker pause "$syscont"
+		[ "$status" -eq 0 ]
+
+		docker unpause "$syscont"
+		[ "$status" -eq 0 ]
+
+		docker exec "$syscont" sh -c "docker image ls | tail -n +2 | wc -l"
+		[ "$status" -eq 0 ]
+		[ "$output" -eq 2 ]
+
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/overlay2")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/overlay2")
+		[ "$file_uid" -eq 0 ]
+		[ "$file_gid" -eq 0 ]
+
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /root/test-file.txt")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /root/test-file.txt")
+		[ "$file_uid" -eq 0 ]
+		[ "$file_gid" -eq 0 ]
+	done
+
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
+}
+
+@test "docker stop & restart" {
+
+	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	docker exec "$syscont" sh -c "touch /root/test-file.txt"
+	[ "$status" -eq 0 ]
+
+	docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+	[ "$status" -eq 0 ]
+
+	wait_for_inner_dockerd $syscont
+
+	docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/busybox"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "docker pull ${CTR_IMG_REPO}/alpine"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "docker image ls | tail -n +2 | wc -l"
+	[ "$status" -eq 0 ]
+	[ "$output" -eq 2 ]
+
+	for i in $(seq 1 4); do
+		docker_stop "$syscont"
+		[ "$status" -eq 0 ]
+
+		docker start "$syscont"
+		[ "$status" -eq 0 ]
+
+		docker exec "$syscont" sh -c "rm -f /var/run/docker.pid"
+		[ "$status" -eq 0 ]
+
+		docker exec "$syscont" sh -c "rm -f /run/docker/containerd/containerd.pid"
+		[ "$status" -eq 0 ]
+
+		docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+		[ "$status" -eq 0 ]
+
+		wait_for_inner_dockerd $syscont
+
+		docker exec "$syscont" sh -c "docker image ls | tail -n +2 | wc -l"
+		[ "$status" -eq 0 ]
+		[ "$output" -eq 2 ]
+
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/overlay2")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/overlay2")
+		[ "$file_uid" -eq 0 ]
+		[ "$file_gid" -eq 0 ]
+
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /root/test-file.txt")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /root/test-file.txt")
+		[ "$file_uid" -eq 0 ]
+		[ "$file_gid" -eq 0 ]
+	done
+
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker rm "$syscont"
+}

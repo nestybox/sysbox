@@ -112,31 +112,6 @@ function teardown() {
   [ "$status" -eq 1 ]
 }
 
-@test "dockerVolMgr consecutive restart" {
-
-  SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-
-  docker exec "$SYSCONT_NAME" sh -c "echo data > /var/lib/docker/test"
-  [ "$status" -eq 0 ]
-
-  docker_stop "$SYSCONT_NAME"
-  [ "$status" -eq 0 ]
-
-  for i in $(seq 1 4); do
-    docker start "$SYSCONT_NAME"
-    [ "$status" -eq 0 ]
-
-    docker exec "$SYSCONT_NAME" sh -c "cat /var/lib/docker/test"
-    [ "$status" -eq 0 ]
-    [[ "$output" == "data" ]]
-
-    docker_stop "$SYSCONT_NAME"
-    [ "$status" -eq 0 ]
-  done
-
-  docker rm "$SYSCONT_NAME"
-}
-
 @test "dockerVolMgr sync-out" {
 
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
