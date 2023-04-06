@@ -71,7 +71,8 @@ function teardown() {
   for (( i=0; i<${#outputArray[@]}; i++ )); do
     local node=$(echo "${outputArray[i]}" | awk '{print $9}')
 
-    if echo ${outputArray[$i]} | egrep -q "config"; then
+    if echo ${outputArray[$i]} | egrep -q "config" ||
+       echo ${outputArray[$i]} | egrep -q "security"; then
       verify_perm_owner "drwxr-xr-x" "root" "root" "${outputArray[$i]}"
     elif echo ${outputArray[$i]} | egrep -q "debug" ||
          echo ${outputArray[$i]} | egrep -q "tracing"; then
@@ -112,6 +113,12 @@ function teardown() {
   [[ "$outputList" == "total 0" ]]
 
   sv_runc exec syscont sh -c "ls -l /sys/kernel/tracing"
+  [ "$status" -eq 0 ]
+  local outputList="${output}"
+  echo "$outputList"
+  [[ "$outputList" == "total 0" ]]
+
+  sv_runc exec syscont sh -c "ls -l /sys/kernel/security"
   [ "$status" -eq 0 ]
   local outputList="${output}"
   echo "$outputList"
