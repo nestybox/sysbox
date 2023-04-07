@@ -4,6 +4,7 @@ load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
 load ../helpers/shell
+load ../helpers/environment
 load ../helpers/sysbox-health
 
 
@@ -38,13 +39,21 @@ function teardown() {
     local node=$(echo "${outputArray[i]}" | awk '{print $9}')
 
     if echo ${outputArray[$i]} | egrep -q "id"; then
-      verify_perm_owner "drwxr-xr-x" "nobody" "nogroup" "${outputArray[$i]}"
+      if [[ $(get_platform) == "arm64" ]]; then
+        verify_perm_owner "drwxr-xr-x" "nobody" "nobody" "${outputArray[$i]}"
+      else
+        verify_perm_owner "drwxr-xr-x" "nobody" "nogroup" "${outputArray[$i]}"
+      fi
     else
       # Currently, no other file/dir is expected in this path, but i'm leaving
       # this checkmark here just in case new sysfs nodes are exposed by in the
       # future.
 
-      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+      if [[ $(get_platform) == "arm64" ]]; then
+        verify_owner "nobody" "nobody" "${outputArray[$i]}"
+      else
+        verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+      fi
 
       # sysDevicesVirtualDmi handler is expected to fetch node attrs directly
       # from the host fs for non-emulated resources. If that's the case, inodes

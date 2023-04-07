@@ -4,6 +4,7 @@ load ../helpers/fs
 load ../helpers/run
 load ../helpers/sysbox
 load ../helpers/shell
+load ../helpers/environment
 load ../helpers/sysbox-health
 
 
@@ -38,9 +39,17 @@ function teardown() {
     local node=$(echo "${outputArray[i]}" | awk '{print $9}')
 
     if echo ${outputArray[$i]} | egrep -q "dmi"; then
-      verify_perm_owner "drwxr-xr-x" "nobody" "nogroup" "${outputArray[$i]}"
+      if [[ $(get_platform) == "arm64" ]]; then
+        verify_perm_owner "drwxr-xr-x" "nobody" "nobody" "${outputArray[$i]}"
+      else
+        verify_perm_owner "drwxr-xr-x" "nobody" "nogroup" "${outputArray[$i]}"
+      fi
     else
-      verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+      if [[ $(get_platform) == "arm64" ]]; then
+        verify_owner "nobody" "nobody" "${outputArray[$i]}"
+      else
+        verify_owner "nobody" "nogroup" "${outputArray[$i]}"
+      fi
 
       # sysDevicesVirtual handler is expected to fetch node attrs directly
       # from the host fs for non-emulated resources. If that's the case, inodes
