@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2023-04-06
+### Added
+  * Added support for ID-mapped overlayfs lower layers; eliminates need for shiftfs and Sysbox rootfs chown; requires kernel 5.19+.
+  * Have Sysbox perform shiftfs and ID-mapping functional checks during init (issue #596).
+  * Fix rootfs cloning to prevent inode leakage (for hosts with kernel < 5.19 and no shiftfs) (issue #570).
+  * Added --disable-inner-image-preload flag to sysbox-mgr (speeds up Sysbox container startup).
+  * Added --syscont-mode flag to sysbox-mgr; allows Sysbox to work in system container mode (default) or regular container mode; the latter is meant for running microservices with stronger isolation.
+  * Added --disable-shiftfs-on-fuse flag to sysbox-mgr; prevents Sysbox from mounting shiftfs on top of FUSE-backed filesystems (some of which don't work with shiftfs).
+  - Fix emulation of /sys/module/nf_conntrack/parameters inside containers.
+  - Add emulation of /sys/devices/virtual/dmi/id inside containers (for hosts where that resource is not present).
+  - Hide /sys/kernel/security inside containers (issue #662)
+  * Don't assign more capabilities to the container than those given to Sysbox itself.
+  * Don't fail in kernel distros without /lib/modules/<kernel-release>.
+
 ## [0.5.2] - 2022-05-18
 ### Added
   * Fixed issue #544 preventing containers initialization within sysbox containers when running latest oci-runc releases (1.1.0-rc.1+).
