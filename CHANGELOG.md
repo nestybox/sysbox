@@ -1,19 +1,29 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.6.1] - 2023-04-06
+## [0.6.1] - 2023-04-07
 ### Added
   * Added support for ID-mapped overlayfs lower layers; eliminates need for shiftfs and Sysbox rootfs chown; requires kernel 5.19+.
   * Have Sysbox perform shiftfs and ID-mapping functional checks during init (issue #596).
-  * Fix rootfs cloning to prevent inode leakage (for hosts with kernel < 5.19 and no shiftfs) (issue #570).
+  * Fixed rootfs cloning to prevent inode leakage (for hosts with kernel < 5.19 and no shiftfs) (issue #570).
+  * Added support for Kubernetes v1.24 to v1.26.
   * Added --disable-inner-image-preload flag to sysbox-mgr (speeds up Sysbox container startup).
   * Added --syscont-mode flag to sysbox-mgr; allows Sysbox to work in system container mode (default) or regular container mode; the latter is meant for running microservices with stronger isolation.
   * Added --disable-shiftfs-on-fuse flag to sysbox-mgr; prevents Sysbox from mounting shiftfs on top of FUSE-backed filesystems (some of which don't work with shiftfs).
-  * Fix emulation of /sys/module/nf_conntrack/parameters inside containers.
-  * Add emulation of /sys/devices/virtual/dmi/id inside containers (for hosts where that resource is not present).
+  * Added few optimizations to expedite I/O operations in procfs/sysfs emulated resources.
+  * Enhanced life-cycle management of Sysbox daemons in Systemd-free scenarios.
+  * Prevented concurrent execution of Sysbox daemons (multi-instance problem).
+  * Improved the handling of ungraceful shutdown scenarios.
+  * Eliminated Sysbox dependencies on configfs kernel module presence.
+  * Fixed emulation of /sys/module/nf_conntrack/parameters inside containers.
+  * Added emulation of /sys/devices/virtual/dmi branch inside containers (for hosts where this or inner resources is not present).
   * Hide /sys/kernel/security inside containers (issue #662)
   * Don't assign more capabilities to the container than those given to Sysbox itself.
   * Don't fail in kernel distros without /lib/modules/<kernel-release>.
+  * Extended kubelet config-detection process to multiple drop-in files in sysbox-deploy-k8s daemon-set.
+  * Incorporated taints during sysbox-deploy-k8s installation process.
+  * Fixed issue preventing sysbox-deploy-k8s installation in rke2 environments (issue #614).
+  * Fixed issue preventing proper sysbox-deploy-k8s installation in Azure (issue #612).
 
 ## [0.5.2] - 2022-05-18
 ### Added
