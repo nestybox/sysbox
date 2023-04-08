@@ -14,15 +14,22 @@ see the [Sysbox developer's guide](../developers-guide/README.md).
 
 ## Contents
 
--   [Available Sysbox Packages](#available-sysbox-packages)
--   [Host Requirements](#host-requirements)
--   [Installing Sysbox](#installing-sysbox)
--   [Installing Sysbox Enterprise Edition (Sysbox-EE)](#installing-sysbox-enterprise-edition-sysbox-ee)
--   [Installing Shiftfs](#installing-shiftfs)
--   [Miscellaneous Installation Info](#miscellaneous-installation-info)
--   [Uninstallation](#uninstallation)
--   [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
--   [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
+- [Sysbox User Guide: Installation with the Sysbox Package](#sysbox-user-guide-installation-with-the-sysbox-package)
+  - [Contents](#contents)
+  - [Available Sysbox Packages](#available-sysbox-packages)
+  - [Host Requirements](#host-requirements)
+  - [Installing Sysbox](#installing-sysbox)
+  - [Installing Sysbox Enterprise Edition (Sysbox-EE)](#installing-sysbox-enterprise-edition-sysbox-ee)
+  - [Installing Shiftfs](#installing-shiftfs)
+  - [Miscellaneous Installation Info](#miscellaneous-installation-info)
+    - [Docker Runtime Configuration](#docker-runtime-configuration)
+    - [Docker Userns-Remap](#docker-userns-remap)
+    - [Configuring Docker's Default Runtime to Sysbox](#configuring-dockers-default-runtime-to-sysbox)
+    - [Installing Sysbox without Restarting Docker](#installing-sysbox-without-restarting-docker)
+    - [Avoiding the Docker Snap Package](#avoiding-the-docker-snap-package)
+  - [Uninstallation](#uninstallation)
+  - [Upgrading Sysbox or Sysbox Enterprise](#upgrading-sysbox-or-sysbox-enterprise)
+  - [Replacing Sysbox with Sysbox Enterprise](#replacing-sysbox-with-sysbox-enterprise)
 
 ## Available Sysbox Packages
 
@@ -50,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.5.2/sysbox-ce_0.5.2-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.1/sysbox-ce_0.6.1-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.5.2-0.linux_amd64.deb
-f13fc0e156f72c6f8bd48e206c59482f83f19acc229701c74e0f23baafa724d8 sysbox-ce_0.5.2-0.linux_amd64.deb
+$ sha256sum sysbox-ce_0.6.1-0.linux_amd64.deb
+d57dc297c60902d4f7316e4f641af00a2a9424e24dde88bb2bb7d3bc419b0f04  sysbox-ce_0.6.1-0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -78,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.5.2-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.6.1-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -90,35 +97,36 @@ NOTE: the `jq` tool is used by the Sysbox installer.
 $ sudo systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Sat 2022-03-26 15:14:39 EDT; 44s ago
+     Active: active (running) since Sat 2023-04-08 23:02:12 JST; 10min ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 1581946 (sh)
-      Tasks: 2 (limit: 9463)
-     Memory: 384.0K
+   Main PID: 264 (sh)
+      Tasks: 2 (limit: 38407)
+     Memory: 13.1M
+        CPU: 30ms
      CGroup: /system.slice/sysbox.service
-             ├─1581946 /bin/sh -c /usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity
-             └─1581965 /bin/sleep infinity
+             ├─264 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs -->
+             └─290 /bin/sleep infinity
 
-Mar 06 06:33:23 whaleux systemd[1]: Started Sysbox container runtime.
-Mar 06 06:33:23 whaleux sh[267618]: sysbox-runc
-Mar 06 06:33:23 whaleux sh[267618]:         edition:         Community Edition (CE)
-Mar 06 06:33:23 whaleux sh[267618]:         version:         0.5.2
-Mar 06 06:33:23 whaleux sh[267618]:         commit:         d91c42c2125fd7aaf46f66307eb5c2a025f30289
-Mar 06 06:33:23 whaleux sh[267618]:         built at:         Wed May 18 19:49:04 UTC 2022
-Mar 06 06:33:23 whaleux sh[267618]:         built by:         Rodny Molina
-Mar 06 06:33:23 whaleux sh[267618]:         oci-specs:         1.0.2-dev
-Mar 06 06:33:23 whaleux sh[267625]: sysbox-mgr
-Mar 06 06:33:23 whaleux sh[267625]:         edition:         Community Edition (CE)
-Mar 06 06:33:23 whaleux sh[267625]:         version:         0.5.2
-Mar 06 06:33:23 whaleux sh[267625]:         commit:         ea1b7db91031355cb10b850125e0d6502dc38962
-Mar 06 06:33:23 whaleux sh[267625]:         built at:         Wed May 18 19:49:36 UTC 2022
-Mar 06 06:33:23 whaleux sh[267625]:         built by:         Rodny Molina
-Mar 06 06:33:23 whaleux sh[267630]: sysbox-fs
-Mar 06 06:33:23 whaleux sh[267630]:         edition:         Community Edition (CE)
-Mar 06 06:33:23 whaleux sh[267630]:         version:         0.5.2
-Mar 06 06:33:23 whaleux sh[267630]:         commit:         95a773a6ea3920f7ab454f1583465c7aea4c701f
-Mar 06 06:33:23 whaleux sh[267630]:         built at:         Wed May 18 19:49:30 UTC 2022
-Mar 06 06:33:23 whaleux sh[267630]:         built by:         Rodny Molina
+Apr 08 23:02:12 whaleux systemd[1]: Started Sysbox container runtime.
+Apr 08 23:02:12 whaleux sh[265]: sysbox-runc
+Apr 08 23:02:12 whaleux sh[265]:         edition:         Community Edition (CE)
+Apr 08 23:02:12 whaleux sh[265]:         version:         0.6.1
+Apr 08 23:02:12 whaleux sh[265]:         commit:         278997aab055ad6eec9e48a555b90eef877596b7
+Apr 08 23:02:12 whaleux sh[265]:         built at:         Sat Apr  8 06:08:15 UTC 2023
+Apr 08 23:02:12 whaleux sh[265]:         built by:         Rodny Molina
+Apr 08 23:02:12 whaleux sh[265]:         oci-specs:         1.0.2-dev
+Apr 08 23:02:12 whaleux sh[278]: sysbox-mgr
+Apr 08 23:02:12 whaleux sh[278]:         edition:         Community Edition (CE)
+Apr 08 23:02:12 whaleux sh[278]:         version:         0.6.1
+Apr 08 23:02:12 whaleux sh[278]:         commit:         ba99c0e7088f1e1ab51f95551f50de9524176655
+Apr 08 23:02:12 whaleux sh[278]:         built at:         Sat Apr  8 06:08:57 UTC 2023
+Apr 08 23:02:12 whaleux sh[278]:         built by:         Rodny Molina
+Apr 08 23:02:12 whaleux sh[283]: sysbox-fs
+Apr 08 23:02:12 whaleux sh[283]:         edition:         Community Edition (CE)
+Apr 08 23:02:12 whaleux sh[283]:         version:         0.6.1
+Apr 08 23:02:12 whaleux sh[283]:         commit:         a2631f69c62722c67dfd3aa97a8412b5c4db6a8a
+Apr 08 23:02:12 whaleux sh[283]:         built at:         Sat Apr  8 06:08:45 UTC 2023
+Apr 08 23:02:12 whaleux sh[283]:         built by:         Rodny Molina
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
