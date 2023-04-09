@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
   * Hide /sys/kernel/security inside containers (issue #662)
   * Don't assign more capabilities to the container than those given to Sysbox itself.
   * Don't fail in kernel distros without /lib/modules/<kernel-release>.
+  * Increased the pods-per-node limit from 16 to 4K (Sysbox-CE now matches Sysbox-EE on this regard).
   * Extended kubelet config-detection process to multiple drop-in files in sysbox-deploy-k8s daemon-set.
   * Incorporated taints during sysbox-deploy-k8s installation process.
   * Fixed issue preventing sysbox-deploy-k8s installation in rke2 environments (issue #614).
