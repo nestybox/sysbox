@@ -78,7 +78,7 @@ Other versions of Kubernetes are not supported.
 Prior to installing Sysbox, ensure each K8s worker node where you will install
 Sysbox meets the following requirement:
 
--   The node's OS must be Ubuntu Focal or Bionic (with a 5.3+ kernel).
+-   The node's OS must be Ubuntu Jammy, Focal, or Bionic (with a 5.4+ kernel).
 
 -   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
     of RAM in each worker node. Though this is not a hard requirement, smaller
