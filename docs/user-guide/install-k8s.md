@@ -80,6 +80,8 @@ Sysbox meets the following requirement:
 
 -   The node's OS must be Ubuntu Jammy, Focal, or Bionic (with a 5.4+ kernel).
 
+-   The node's platform architecture must match one of the Sysbox's [supported architectures](../arch-compat.md).
+
 -   We recommend a minimum of 4 CPUs (e.g., 2 cores with 2 hyperthreads) and 4GB
     of RAM in each worker node. Though this is not a hard requirement, smaller
     configurations may slow down Sysbox.
