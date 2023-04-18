@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/dind
 load ../helpers/environment
 load ../helpers/sysbox-health
 
@@ -147,7 +148,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "$output" -eq 2 ]
 
-        local backing_fs=$(get_sysbox_backing_fs)
+	inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
 	for i in $(seq 1 4); do
 		docker pause "$syscont"
@@ -160,8 +161,8 @@ function teardown() {
 		[ "$status" -eq 0 ]
 		[ "$output" -eq 2 ]
 
-		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/$backing_fs")
-		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/$backing_fs")
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/$inner_docker_graphdriver")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/$inner_docker_graphdriver")
 		[ "$file_uid" -eq 0 ]
 		[ "$file_gid" -eq 0 ]
 
@@ -197,7 +198,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "$output" -eq 2 ]
 
-        local backing_fs=$(get_sysbox_backing_fs)
+	local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
 	for i in $(seq 1 4); do
 		docker_stop "$syscont"
@@ -221,8 +222,8 @@ function teardown() {
 		[ "$status" -eq 0 ]
 		[ "$output" -eq 2 ]
 
-		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/$backing_fs")
-		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/$backing_fs")
+		file_uid=$(__docker exec "$syscont" sh -c "stat -c \"%u\" /var/lib/docker/$inner_docker_graphdriver")
+		file_gid=$(__docker exec "$syscont" sh -c "stat -c \"%g\" /var/lib/docker/$inner_docker_graphdriver")
 		[ "$file_uid" -eq 0 ]
 		[ "$file_gid" -eq 0 ]
 

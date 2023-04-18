@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/dind
 load ../helpers/environment
 load ../helpers/sysbox-health
 
@@ -24,9 +25,9 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  backing_fs=$(get_sysbox_backing_fs)
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
@@ -44,9 +45,9 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  backing_fs=$(get_sysbox_backing_fs)
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
@@ -84,9 +85,9 @@ EOF
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  backing_fs=$(get_sysbox_backing_fs)
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   image="test_nginx"
