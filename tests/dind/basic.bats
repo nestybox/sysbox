@@ -6,6 +6,7 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/environment
 load ../helpers/sysbox-health
 
 function teardown() {
@@ -23,7 +24,9 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  backing_fs=$(get_sysbox_backing_fs)
+
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
@@ -41,7 +44,9 @@ SYSCONT_NAME=""
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  backing_fs=$(get_sysbox_backing_fs)
+
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
@@ -79,7 +84,9 @@ EOF
 
   wait_for_inner_dockerd $SYSCONT_NAME
 
-  docker exec "$SYSCONT_NAME" sh -c 'grep "graphdriver(s)=overlay2" /var/log/dockerd.log'
+  backing_fs=$(get_sysbox_backing_fs)
+
+  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$backing_fs\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   image="test_nginx"

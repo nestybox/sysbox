@@ -9,6 +9,13 @@
 
 load ../helpers/sysbox-health
 
+function setup() {
+   local distro=$(get_distro)
+   if [[ "$distro" == "fedora" ]]; then
+      skip "lsof hangs in fedora test container."
+   fi
+}
+
 @test "sysboxfs_health" {
   run sysboxfs_health_check
   echo "output = ${output}"
