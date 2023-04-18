@@ -110,7 +110,7 @@ $ sudo make install
 
 This copies the Sysbox binaries to your machine's `/usr/bin` directory.
 
-## Cross-compilation (only needed when building for ARM64 on X86)
+## Cross-compilation
 
 By default, the generated Sysbox binaries will match the hardware architecture
 of the build-server being utilized. However, users can create Sysbox artifacts
