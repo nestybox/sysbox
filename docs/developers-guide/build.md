@@ -29,21 +29,26 @@ or Focal) so that you can properly test your changes with and without `shiftfs`.
 Refer to the cross-compilation section for more details if working on heterogenous
 scenarios.
 
-3) Docker must be installed natively (i.e., **not** with the Docker snap package).
+3) The following utilities must be installed:
 
--   See [below](#docker-installation) if you have a Docker snap installation and
+* Docker (installed natively, **not** with the Docker snap package).
+
+  - See [below](#docker-installation) if you have a Docker snap installation and
     need to change it to a native installation.
+
+* Make
+* Git
 
 ## Cloning the Sysbox Repo
 
-Clone the repo with:
+Clone the repo with; don't forget the `--recursive` flag:
 
 ```
 git clone --recursive https://github.com/nestybox/sysbox.git
 ```
 
-Sysbox uses Go modules, so you should clone this into a directory that is
-outside your $GOPATH.
+Note: Sysbox uses Golang modules, so you should clone this into a directory that
+is outside your $GOPATH.
 
 ## The Sysbox Makefile
 
@@ -90,24 +95,22 @@ Usage:
 Build Sysbox with:
 
 ```
-$ make sysbox
+$ make sysbox-static
 ```
 
-This target creates a temporary container and builds the binaries for the Sysbox
-components inside that container. The resulting binaries are then placed in the
-sysbox-fs, sysbox-mgr, and sysbox-runc sub-directories.
+This creates a temporary "build container" and builds the binaries for the Sysbox
+components inside that container. This way the host is not polluted in any way.
 
-Once you've built Sysbox, you install it with:
+The resulting binaries are then placed in the sysbox-fs, sysbox-mgr, and
+sysbox-runc sub-directories. You can install them on your host with:
 
 ```
 $ sudo make install
 ```
 
-This last target simply copies the Sysbox binaries to your machine's
-`/usr/bin` directory; we don't have a package installer for Sysbox
-(unlike the Sysbox version distributed by Nestybox).
+This copies the Sysbox binaries to your machine's `/usr/bin` directory.
 
-## Cross-compilation
+## Cross-compilation (only needed when building for ARM64 on X86)
 
 By default, the generated Sysbox binaries will match the hardware architecture
 of the build-server being utilized. However, users can create Sysbox artifacts
@@ -142,7 +145,10 @@ sysbox-runc/build
 
 ## Starting Sysbox
 
-Once Sysbox is installed, you start it with:
+In the packaged version, Sysbox installs systemd units, such that systemd starts Sysbox.
+
+When building from source, this is not supported yet. Therefore, you must start it manually
+using a script:
 
 ```
 $ sudo ./scr/sysbox
@@ -181,8 +187,9 @@ This will add the sysbox-runtime in the `/etc/docker/daemon.json` as follows:
 ```
 
 The script will also configure Docker networking to avoid conflicts between
-host and inner container subnets, and will restart Docker (unless it's told
-not to).
+host and inner container subnets.
+
+Finally the script will restart Docker (unless it's told not to).
 
 This script takes several other configuration options, and you can use it to
 configure Docker with userns-remap mode (e.g., to use Sysbox in hosts where
