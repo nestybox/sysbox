@@ -153,3 +153,7 @@ function semver_ge() {
 function get_root_capabilities() {
 	echo "$(sudo cat /proc/self/status | grep CapEff | awk '{print $2}')"
 }
+
+function get_sysbox_backing_fs() {
+   echo "$(mount | grep "on /var/lib type" | cut -d" " -f 5)"
+}

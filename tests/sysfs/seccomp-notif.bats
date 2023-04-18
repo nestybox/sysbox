@@ -6,7 +6,15 @@
 
 load ../helpers/run
 load ../helpers/docker
+load ../helpers/environment
 load ../helpers/sysbox-health
+
+function setup() {
+   local distro=$(get_distro)
+   if [[ "$distro" == "fedora" ]]; then
+      skip "lsof hangs in fedora test container."
+   fi
+}
 
 function teardown() {
   sysbox_log_check
