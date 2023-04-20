@@ -51,9 +51,9 @@ function teardown() {
         verify_owner "nobody" "nogroup" "${outputArray[$i]}"
       fi
 
-      # sysDevicesVirtual handler is expected to fetch node attrs directly
-      # from the host fs for non-emulated resources. If that's the case, inodes
-      # for each node should fully match.
+      # sysDevicesVirtual handler is expected to fetch node attrs from the
+      # container for non-emulated resources. Since sysfs is a global
+      # filessystem, inodes for each node should fully match those of the host.
 
       nodePath="/sys/devices/virtual/$node"
       hostInode=$(stat -c %i $nodePath)
@@ -65,4 +65,21 @@ function teardown() {
       [[ "$hostInode" == "$syscontInode" ]]
     fi
   done
+}
+
+# Verifies the proper behavior of the sysDevicesVirtual handler for
+# "/sys/devices/virtual/net" path operations.
+@test "/sys/devices/virtual/net" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  # This should only shows the devices inside the container
+  sv_runc exec syscont sh -c "ls /sys/devices/virtual/net"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "lo" ]]
+
+  # The /sys/class/net/ softlink should work fine
+  sv_runc exec syscont sh -c "stat -L /sys/class/net/lo"
+  [ "$status" -eq 0 ]
 }
