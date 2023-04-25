@@ -131,8 +131,8 @@ endif
 export KERNEL_HEADERS
 export KERNEL_HEADERS_MOUNTS
 
-PACKAGE_FILE_PATH ?= sysbox-pkgr/deb/build/amd64/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
-PACKAGE_FILE_NAME := $(PACKAGE)_$(VERSION)-0.linux_$(TARGET_ARCH).deb
+PACKAGE_FILE_PATH ?= sysbox-pkgr/deb/build/$(TARGET_ARCH)/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
+PACKAGE_FILE_NAME := $(PACKAGE)_$(VERSION).linux_$(TARGET_ARCH).deb
 
 # Volumes to mount into the privileged test container. These are
 # required because certain mounts inside the test container can't
