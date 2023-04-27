@@ -16,6 +16,7 @@ TEST_MODE=0
 DEBUG_MODE=0
 NO_SHIFTFS=0
 NO_SHIFTFS_ON_FUSE=0
+NO_SHIFTFS_PRECHECK=0
 NO_IDMAPPED_MOUNT=0
 NO_OVFS_ON_IDMAPPED_MOUNT=0
 NO_ROOTFS_CLONING=0
@@ -237,6 +238,10 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--disable-shiftfs-on-fuse")
 	fi
 
+	if [ $NO_SHIFTFS_PRECHECK -eq 1 ]; then
+		options+=("--disable-shiftfs-precheck")
+	fi
+
 	if [ $NO_IDMAPPED_MOUNT -eq 1 ]; then
 		options+=("--disable-idmapped-mount")
 	fi
@@ -397,6 +402,7 @@ function show_usage() {
 	printf "      --data-root <dir>                 Path to Sysbox data store (defaults to /var/lib/sysbox).\n"
 	printf "      --disable-shiftfs                 Disables Sysbox's use of shiftfs (defaut = false).\n"
 	printf "      --disable-shiftfs-on-fuse         Disables shiftfs on top of FUSE-based filesystems; FUSE-backed files mounted into the Sysbox container may show with nobody:nogroup ownership inside the container. (default = false).\n"
+	printf "      --disable-shiftfs-precheck        Disables Sysbox's preflight functional check of shiftfs; use this only if you want Sysbox to use shiftfs (e.g., kernel < 5.12) and you know it works properly (default = false).\n"
 	printf "      --disable-idmapped-mount          Disables Sysbox's use of ID-mapped mounts (default = false).\n"
 	printf "      --disable-ovfs-on-idmapped-mount  Disables Sysbox's use of overlayfs on ID-mapped mounts (default = false).\n"
 	printf "      --disable-rootfs-cloning          Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time (default = false).\n"
@@ -414,7 +420,7 @@ function show_usage() {
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-shiftfs-precheck,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
 	eval set -- "$options"
 
 	while true; do
@@ -434,6 +440,9 @@ function parse_args() {
 				;;
 			--disable-shiftfs-on-fuse)
 				NO_SHIFTFS_ON_FUSE=1
+				;;
+			--disable-shiftfs-precheck)
+				NO_SHIFTFS_PRECHECK=1
 				;;
 			--disable-idmapped-mount)
 				NO_IDMAPPED_MOUNT=1
