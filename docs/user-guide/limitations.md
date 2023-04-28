@@ -67,7 +67,6 @@ running complex workloads in pods. With Sysbox, this is no longer needed.
 
 | Limitation    | Description     | Comment |
 | ----------    | --------------- | ------- |
-| 16 pods /node | Sysbox-CE is limited to 16 pods per node | Sysbox Enterprise removes this limitation. |
 | privileged: true  | Not supported in pod security context | Breaks container-to-host isolation. |
 | hostNetwork: true  | Not supported in pod security context | Breaks container-to-host isolation. |
 | hostIPC: true  | Not supported in pod security context | Breaks container-to-host isolation. |
