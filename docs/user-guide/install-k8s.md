@@ -186,18 +186,6 @@ See [here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more info.
 
 ## Limitations
 
-Pods launched with the Sysbox Community Edition are **limited to \*\*16 pods per worker node\*\***.
-
-Once this limit is reached, new pods scheduled on the node will remain in the
-"ContainerCreating" state. Such pods need to be terminated and re-created once
-there is sufficient capacity on the node.
-
-#### \*\* --- Sysbox-EE Feature Highlight --- \*\*
-
-With Sysbox Enterprise (Sysbox-EE) this limitation is removed, as it's designed
-for greater scalability. Thus, you can launch as many pods as will fit on the
-Kubernetes node, allowing you to get the best utilization of the hardware.
-
 Note that the number of pods that can be deployed on a node depends on many
 factors such as the number of CPUs on the node, the memory size on the node, the
 the amount of storage, the type of workloads running in the pods, resource
