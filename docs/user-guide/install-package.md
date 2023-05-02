@@ -137,7 +137,7 @@ Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
 
 If you hit problems during installation, see the [Troubleshooting doc](troubleshoot.md).
 
-## Installing Sysbox Enterprise Edition (Sysbox-EE)
+## Installing Sysbox Enterprise Edition (Sysbox-EE) [DEPRECATED]
 
 Sysbox Enterprise Edition (Sysbox-EE) is the enterprise version of Sysbox, with
 improved security, functionality, performance, life-cycle, and Nestybox support.

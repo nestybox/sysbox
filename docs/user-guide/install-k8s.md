@@ -138,7 +138,7 @@ Additional notes:
 
 -   If you hit problems, refer to the [troubleshooting sysbox-deploy-k8s](troubleshoot-k8s.md) doc.
 
-## Installation of Sysbox Enterprise Edition (Sysbox-EE)
+## Installation of Sysbox Enterprise Edition (Sysbox-EE) [DEPRECATED]
 
 Sysbox Enterprise Edition (Sysbox-EE) is the enterprise version of Sysbox, with
 improved security, functionality, performance, life-cycle, and Nestybox support.
@@ -186,7 +186,7 @@ See [here](deploy.md#deploying-pods-with-kubernetes--sysbox) for more info.
 
 ## Limitations
 
-Note that the number of pods that can be deployed on a node depends on many
+The number of Sysbox pods that can be deployed on a node depends on many
 factors such as the number of CPUs on the node, the memory size on the node, the
 the amount of storage, the type of workloads running in the pods, resource
 limits on the pod, etc.)
@@ -232,7 +232,7 @@ NOTES:
 -   The 'sleep' instructions above ensure that kubelet has a chance to launch
     and execute the daemonsets before the subsequent step.
 
-## Upgrading Sysbox or Sysbox Enterprise
+## Upgrading Sysbox or Sysbox Enterprise [DEPRECATED]
 
 The [sysbox-install manifest](../../sysbox-k8s-manifests/sysbox-install.yaml) points to
 a container image that carries the Sysbox binaries that are installed
@@ -248,7 +248,7 @@ and [re-install](#installation-of-sysbox) the updated version.
 **NOTE:** You must stop all Sysbox pods on the K8s cluster prior to uninstalling
 Sysbox.
 
-## Replacing Sysbox with Sysbox Enterprise
+## Replacing Sysbox with Sysbox Enterprise [DEPRECATED]
 
 Sysbox Enterprise Edition (Sysbox-EE) is a drop-in replacement for Sysbox.
 

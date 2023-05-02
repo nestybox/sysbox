@@ -1,9 +1,9 @@
 # Sysbox Documentation
 
-This directory contains the Sysbox documentation for both
+This directory contains the Sysbox documentation for both:
 
 -   **Sysbox Community Edition (Sysbox-CE)**
--   **Sysbox Enterprise Edition (Sysbox-EE)**
+-   **Sysbox Enterprise Edition (Sysbox-EE) [DEPRECATED]**
 
 In general, the features and limitations described in these docs apply equally
 to Sysbox-CE and Sysbox-EE.
@@ -19,12 +19,12 @@ Sysbox release v0.1.2 and beyond).
 
 -   [Sysbox Distro Compatibility doc](distro-compat.md)
 
-    -   Shows Linux distros supported by Sysbox.
+-   [Sysbox Installation](user-guide/install.md)
 
 -   [Sysbox Quick Start Guide](quickstart/README.md)
 
     -   Start here if new to Sysbox; has lots of examples on how to use
-        it. Assumes you've already [installed it](user-guide/install.md).
+        it. Assumes you've already installed it.
 
 -   [Sysbox User Guide](user-guide/README.md)
 
@@ -32,7 +32,7 @@ Sysbox release v0.1.2 and beyond).
 
 -   [Sysbox Developers Guide](developers-guide/README.md)
 
-    -   For users that wish to contribute to Sysbox, or build & install Sysbox from source.
+    -   For users that wish to contribute to Sysbox, or build and install Sysbox from source.
 
 In addition to these docs, you can also find articles on practical uses of Sysbox
 in the [Nestybox blog site](https://blog.nestybox.com/).
