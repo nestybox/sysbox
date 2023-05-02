@@ -16,13 +16,14 @@ methods supported, and any other requirements:
 | --------------------- | :-------------: | :---------: | :---------------: | :--------: | :--------------: | ----- |
 | Ubuntu Bionic (18.04) | ✓               | ✓           | ✓                 | 5.3+       | If kernel < 5.12 | [Kernel upgrade notes](#ubuntu-kernel-upgrade) |
 | Ubuntu Focal  (20.04) | ✓               | ✓           | ✓                 | 5.4+       | If kernel < 5.12 | |
-| Ubuntu Impish (21.10) | ✓               | ✓           | ✓                 | 5.13+      | No (but recommended) | |
 | Ubuntu Jammy (22.04)  | ✓               | ✓           | ✓                 | 5.15+      | No (but recommended) | |
 | Debian Buster (10)    | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | [Kernel upgrade notes](#debian-kernel-upgrade) |
 | Debian Bullseye (11)  | ✓               | WIP         | ✓                 | 5.5+       | If kernel < 5.12 | |
-| Fedora 34             | WIP             | WIP         | ✓                 | 5.12+      | No | |
-| Fedora 35             | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Fedora (34 to 37)     | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Rocky Linux 8         | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Alma Linux (8, 9)     | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | CentOS Stream         | WIP             | WIP         | ✓                 | 5.12+      | No | |
+| Amazon Linux 2        | WIP             | WIP         | ✓                 | 5.12+      | No | [Kernel upgrade notes](https://repost.aws/knowledge-center/amazon-linux-2-kernel-upgrade) |
 | RedHat Enterprise     | WIP             | WIP         |                   | 5.12+      | No | Sysbox-EE only |
 | Flatcar               | ✓               | ✓           |                   | 5.10+      | If kernel < 5.12  | Sysbox-EE only; see [here](user-guide/install-flatcar.md). |
 
@@ -54,30 +55,34 @@ methods supported, and any other requirements:
 ## Shiftfs Requirement
 
 Shiftfs is a Linux kernel module that Sysbox uses to ensure host volumes mounted
-into the (rootless) container show up with proper user and group IDs.
+into the (rootless) container show up with proper user and group IDs (rather
+than `nobody:nogroup`); see the [User Guide's Design Chapter](user-guide/design.md)
+for more info.
 
-When Sysbox is installed in hosts with Linux kernel < 5.12, shiftfs is
-required. Otherwise host files mounted into the container will show up as owned
-by `nobody:nogroup` inside the container. See the [User Guide's Design Chapter](user-guide/design.md)
-for more info on this.
+Sysbox's requirement for shiftfs is as follows:
 
-When Sysbox is installed in hosts with Linux kernel >= 5.12, shiftfs is NOT
-REQUIRED as Sysbox can leverage a built-in kernel feature called "ID-mapped
-mounts" as an alternative to shiftfs.
+| Linux Kernel Version | Shiftfs Required by Sysbox |
+| -------------------- | :------------------------: |
+| < 5.12               | Yes |
+| 5.12 to 5.18         | No (but recommended) |
+| >= 5.19              | No |
 
-Having said this, we recommend having shiftfs installed on the host when
-possible as ID-mapped mounts have some limitations that shiftfs overcomes (and
-vice-versa). Sysbox will check for the presence of shiftfs and ID-mapped mounts,
-and use them as needed when setting up the container.
+In kernels 5.12 to 5.18, shiftfs is not required but having it causes Sysbox to
+setup the container's filesystem more efficiently, so it's recommended.
 
 Unfortunately, shiftfs is only available in Ubuntu, Debian, and Flatcar distros
-(and possibly derivatives of these). It's not currently available in other
-distros (e.g., Fedora, CentOS, RedHat, etc.) For this reason, in order to use
-Sysbox in these other distros, you must have kernel >= 5.12 (ID-mapped mounts).
+(and possibly derivatives of these). Therefore, if your host has kernel < 5.12
+and you wish to use Sysbox, it must be one of these distros.
 
-Note that in the Ubuntu's desktop and server versions, shiftfs comes
-pre-installed. In Ubuntu's cloud images or in Debian or Flatcar, shiftfs must be
-manually installed. See the [User Guide's Installation Chapter](user-guide/install-package.md)
+Shiftfs is not available in other distros (e.g., Fedora, CentOS, RedHat, Amazon
+Linux 2, etc.) For this reason, in order to use Sysbox in these other distros,
+you must have kernel >= 5.12.
+
+### Shiftfs Installation
+
+In the Ubuntu's desktop and server versions, shiftfs comes pre-installed. In
+Ubuntu's cloud images or in Debian or Flatcar, shiftfs must be manually
+installed. See the [User Guide's Installation Chapter](user-guide/install-package.md)
 for info on how to do this.
 
 ## Kernel Upgrade Procedures

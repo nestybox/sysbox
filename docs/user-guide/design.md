@@ -80,35 +80,42 @@ Refer to the [User Guide's Storage Chapter](storage.md) for more info.
 
 ### ID-mapped Mounts Functional Limitations
 
-ID-mapped mounts is a very recent kernel feature and therefore has some
+ID-mapped mounts is a fairly recent kernel feature and therefore has some
 functional limitations as this time.
 
 One such limitation is that ID-mapped mounts can't be mounted on top file or
-directories backed by specialized filesystems at this time (e.g., overlayfs,
-device files).
+directories backed by specialized filesystems at this time (e.g., device files).
 
 Sysbox understands these limitations and takes appropriate action to overcome
 them, such as using the shiftfs kernel module (when available) as described in
 the next section.
 
+Note that as of kernel 5.19+, ID-mapped mounts provide an almost full
+replacement for shiftfs.
+
 ## Shiftfs Module
 
-Recent Ubuntu kernels carry a module called `shiftfs`. The purpose of this
-module is to perform filesystem user-ID and group-ID remapping between the
-container's Linux user namespace and the host's initial user namespace,
-similar to ID-mapped mounts (see [prior section](#ID-mapped-mounts--v050-)).
+Ubuntu kernels carry a module called `shiftfs` that has a similar purpose to
+ID-mapped mounts (see prior section) but predates it.
 
-Shiftfs predates the ID-mapped mounts feature but it's not a standard mechanism
-and therefore not available in most Linux distros. It's included with Ubuntu,
-but can also be [installed manually](install-package.md#installing-shiftfs) on
-Debian and Flatcar (i.e., it's not included in the kernel).
+However, shiftfs is not a standard mechanism and therefore not available in most
+Linux distros. It's only included with Ubuntu, but can also be [installed
+manually](install-package.md#installing-shiftfs) on Debian and Flatcar.
 
-It is expected that over time ID-mapped mounts will fully replace shiftfs,
-although as of early 2022 shiftfs still has some advantages over ID-mapped
-mounts, such as ID-mapping on top of overlayfs (which is important since the
-container's root filesystem is typically on overlayfs).
+Sysbox detects the presence of the shiftfs module and uses it when appropriate
+(e.g., when ID-mapped mounts are not available or can't be used on top of a
+particular filesystem).
 
-Sysbox detects the presence of the shiftfs module and uses it when appropriate.
+Sysbox's requirement for shiftfs is as follows:
+
+| Linux Kernel Version | Shiftfs Required by Sysbox |
+| -------------------- | :------------------------: |
+| < 5.12               | Yes |
+| 5.12 to 5.18         | No (but recommended) |
+| >= 5.19              | No |
+
+In kernels 5.12 to 5.18, shiftfs is not required but having it causes Sysbox to
+setup the container's filesystem more efficiently, so it's recommended.
 
 ### Checking for the Shiftfs Module
 

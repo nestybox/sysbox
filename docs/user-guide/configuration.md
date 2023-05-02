@@ -305,6 +305,39 @@ option (see [above](#reconfiguration-procedure). If you set
 with the default behavior by passing environment variable
 `SYSBOX_ALLOW_TRUSTED_XATTR=TRUE`.
 
+## Speeding up Sysbox by Disabling Image Preloading
+
+Sysbox has a feature that allows preloading of container images into Sysbox
+container images. That is, when you launch a Sysbox container, it will come
+preloaded with inner Docker images for example.
+
+This feature is enabled by default in Sysbox containers, and it's useful when
+running Docker inside Sysbox containers, as the Docker instance inside the
+Sysbox container will find preloaded container images so it does not have to
+pull them from the web, thereby saving time and network bandwidth.
+
+Image preloading is done when building the Sysbox container image (e.g., via
+`docker build`) or by snapshotting a running Sysbox container (e.g., via `docker
+commit`). More info [here](images.md#preloading-inner-container-images-into-a-system-container--v012-).
+
+However, this feature increases the container startup and stop latency, and the
+delay can be significant even if you don't have a need for preloading inner
+container images into Sysbox containers.
+
+For example, if you launch a Sysbox container with Docker inside, and that inner
+Docker engine pulls lots of container images, then when the Sysbox container
+stops there may be a delay of several seconds. This delay occurs because Sysbox
+is moving data from the `/var/lib/sysbox` directory to the container's root
+filesystem on the assumption that it may be needed as part of a `docker build`
+or `docker commit` of the Sysbox container (unless the container was launched
+with the Docker `--rm` option, in which case Sysbox won't move any data since it
+knows the container will be deleted immediately after stopping).
+
+To speed up Sysbox, if you have no need to create or run Sysbox container images
+that come preloaded with inner containers, you can disable the feature by
+passing the `--disable-inner-image-preload` to sysbox-mgr. See
+[above](#reconfiguration-procedure) for more info how to do this.
+
 ## Ignoring Chowns of Sysfs
 
 Inside a Sysbox container, the `/sys` directory (i.e., the sysfs mountpoint)
