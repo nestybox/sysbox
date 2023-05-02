@@ -10,27 +10,11 @@
     <img src="https://img.shields.io/badge/chat-on%20slack-FF3386"></a>
 </p>
 
-***
-
-**May 2022:**
-
-**Docker advances container isolation and workloads with acquisition of Nestybox**:
-
-Hi everyone, this is Cesar & Rodny, co-founders of [Nestybox](https://www.nestybox.com).
-
-We are humbled and excited to announce that Nestybox is now officially part of
-Docker, Inc! Docker is an excellent home for Sysbox and this will accelerate
-innovation of Sysbox to advance container isolation and workloads.
-
-Please see this [blog][docker-acquisition] and
-this [Q&A](https://www.nestybox.com/docker-nestybox-qa) for more info. Thanks!
-***
-
 ## Introduction
 
 **Sysbox** is an open-source and free container runtime (a specialized "runc"),
-developed by [Nestybox](https://www.nestybox.com), that enhances containers in
-two key ways:
+developed by [Nestybox](https://www.nestybox.com) ([acquired by Docker][docker-acquisition] on
+05/2022), that enhances containers in two key ways:
 
 *   **Improves container isolation:**
 
@@ -160,8 +144,9 @@ For example, this simple Docker command creates a container with Sysbox:
 
     $ docker run --runtime=sysbox-runc -it any_image
 
-You get a well isolated container capable of seamlessly running most software
-that runs in a VM (e.g., systemd, Docker, Kubernetes, etc).
+You get a well isolated container capable of seamlessly running microservices as
+well as system-level software that normally that runs on VMs (e.g., systemd,
+Docker, Kubernetes, etc).
 
 More on how to use Sysbox [here](#using-sysbox).
 
@@ -185,7 +170,7 @@ the need for insecure privileged containers in many scenarios, it does not (yet)
 provide the same level of isolation as VM-based alternatives or user-space OSes
 like gVisor. Therefore, for scenarios where the highest level of isolation is
 required, alternatives such as KubeVirt may be preferable (at the expense of
-lower performance and efficiency, and higher complexity and cost).
+lower performance and efficiency and higher complexity and cost).
 
 See this [blog post](https://blog.nestybox.com/2020/10/06/related-tech-comparison.html) for
 more.
@@ -215,7 +200,7 @@ Edition. The features are TBD and [your feedback](#contact) on this is welcome.
 The table below summarizes the key features of the Sysbox container runtime.
 
 It also provides a comparison between the Sysbox Community Edition (i.e., this
-repo) and the previously available Sysbox Enterprise Edition.
+repo) and the previously available Sysbox Enterprise Edition (now deprecated).
 
 <p align="center">
     <img alt="sysbox" src="./docs/figures/sysbox-features.png" width="1000" />
@@ -396,10 +381,16 @@ for more info, and reach out on the [Sysbox Slack channel][slack] for further qu
 
 ## Troubleshooting & Support
 
-Refer to the [Troubleshooting document](docs/user-guide/troubleshoot.md)
-and to the [issues](https://github.com/nestybox/sysbox/issues) for help.
+Support is currently offered on a best-effort basis.
 
-Reach us at our [slack channel][slack] for any questions.
+If you have a question or comment, we love to hear it. You can reach us at our
+[slack channel][slack] or file an issue on this GitHub repo.
+
+If you spot a problem with Sysbox, please search the existing
+[issues](https://github.com/nestybox/sysbox/issues) as they may describe the
+problem and provide a work-around.
+
+Check also the [Troubleshooting document](docs/user-guide/troubleshoot.md).
 
 ## Uninstallation
 
