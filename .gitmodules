@@ -13,6 +13,9 @@
 [submodule "sysbox-libs"]
 	path = sysbox-libs
 	url = ../sysbox-libs.git
+[submodule "sysbox-pkgr"]
+	path = sysbox-pkgr
+	url = ../sysbox-pkgr.git
 [submodule "sysbox-dockerfiles"]
 	path = sysbox-dockerfiles
 	url = ../dockerfiles.git
