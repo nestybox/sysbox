@@ -9,9 +9,6 @@ build
 image/deb/debbuild/
 image/deb/sources/
 
-# Ignore the sysbox pkgr repo
-sysbox-pkgr
-
 # GNU Global Tags
 GPATH
 GRTAGS
