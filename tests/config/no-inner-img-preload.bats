@@ -19,7 +19,7 @@ function teardown() {
    sysbox_start --disable-inner-image-preload
 }
 
-@test "disable-inner-image-preload: basic" {
+@test "disable-inner-image-preload: can't preload images into sysbox container" {
 
 	# start sys container with docker inside, and have the inner docker pull some images
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:3.11 tail -f /dev/null)
@@ -66,7 +66,7 @@ function teardown() {
 	docker rm "$syscont"
 }
 
-@test "disable-inner-image-preload: syscont preloaded images are not visible" {
+@test "disable-inner-image-preload: container with preloaded images works" {
 
   # launch a sys container that comes with inner images baked-in
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/syscont-inner-img tail -f /dev/null)
@@ -80,11 +80,10 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  # verify inner images are NOT present (they were not sync'd into Sysbox's
-  # /var/lib/sysbox/docker/<uuid>).
+  # verify inner images are present
   docker exec "$syscont" sh -c "docker image ls | wc -l"
   [ "$status" -eq 0 ]
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 3 ]
 
   docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
