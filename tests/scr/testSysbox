@@ -62,8 +62,6 @@ function run_all_tests() {
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
-	printf "\nExecuting life-cycle tests ... \n"
-	bats --tap tests/lifecycle
 
 	docker system prune -a -f
 }
@@ -278,6 +276,13 @@ function test_sysbox_config() {
 	bats --tap tests/config
 }
 
+function test_sysbox_lifecycle() {
+	printf "\n"
+	printf "\nExecuting life-cycle tests ... \n"
+	printf -- "--------------------------------\n"
+	bats --tap tests/lifecycle
+}
+
 function main() {
 
 	# argument testName is optional; if present, only that test is executed.
@@ -304,6 +309,7 @@ function main() {
 		test_with_rootfs_cloning
 		test_with_docker_userns_remap
 		test_sysbox_config
+		test_sysbox_lifecycle
 	fi
 }
 
