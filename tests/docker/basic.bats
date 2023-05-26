@@ -5,6 +5,7 @@
 #
 
 load ../helpers/run
+load ../helpers/fs
 load ../helpers/docker
 load ../helpers/dind
 load ../helpers/environment
@@ -232,6 +233,42 @@ function teardown() {
 		[ "$file_uid" -eq 0 ]
 		[ "$file_gid" -eq 0 ]
 	done
+
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker rm "$syscont"
+}
+
+@test "docker -w" {
+	local syscont=$(docker_run -w /dir ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	docker exec "$syscont" sh -c "ls -l / | grep dir"
+	[ "$status" -eq 0 ]
+
+   verify_perm_owner "drwxr-xr-x" "root" "root" "$output"
+
+	docker_stop "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker start "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "ls -l / | grep dir"
+	[ "$status" -eq 0 ]
+
+   verify_perm_owner "drwxr-xr-x" "root" "root" "$output"
+
+	docker pause "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker unpause "$syscont"
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "ls -l / | grep dir"
+	[ "$status" -eq 0 ]
+
+   verify_perm_owner "drwxr-xr-x" "root" "root" "$output"
 
 	docker_stop "$syscont"
 	[ "$status" -eq 0 ]
