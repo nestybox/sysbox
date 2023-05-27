@@ -5,6 +5,7 @@
 #
 
 load ../helpers/run
+load ../helpers/fs
 load ../helpers/docker
 load ../helpers/uid-shift
 load ../helpers/sysbox-health
@@ -359,6 +360,42 @@ function teardown() {
 
   # cleanup
   docker_stop "$syscont"
+}
+
+@test "docker tmpfs bind mount" {
+  local tmpfs_dir="/mnt/scratch/temp"
+
+  rm -rf $tmpfs_dir
+  mkdir $tmpfs_dir
+  mount -t tmpfs -o size=64K tmpfs $tmpfs_dir
+
+  # start container with tmpfs mount
+  local syscont=$(docker_run --rm --mount type=bind,source=${tmpfs_dir},target=/mnt ${CTR_IMG_REPO}/alpine tail -f /dev/null)
+
+  docker exec "$syscont" sh -c "mount | grep /mnt"
+  [ "$status" -eq 0 ]
+
+  if sysbox_using_idmapped_mnt && kernel_supports_idmapping_tmpfs; then
+	  [[ "$output" =~ "idmapped" ]]
+  elif sysbox_using_shiftfs; then
+	  [[ "$output" =~ "shiftfs" ]]
+  fi
+
+  # verify the mount permissions show up correctly inside the container
+  docker exec "$syscont" sh -c "ls -l / | grep mnt"
+  [ "$status" -eq 0 ]
+  if sysbox_using_idmapped_mnt && kernel_supports_idmapping_tmpfs; then
+	  verify_perm_owner "drwxrwxrwt" "root" "root" "$output"
+  elif sysbox_using_shiftfs; then
+	  verify_perm_owner "drwxrwxrwt" "root" "root" "$output"
+  else
+	  verify_perm_owner "drwxrwxrwt" "nobody" "nobody" "$output"
+  fi
+
+  # cleanup
+  docker_stop "$syscont"
+  umount $tmpfs_dir
+  rm -rf $tmpfs_dir
 }
 
 @test "vol mount on /var/lib/docker" {

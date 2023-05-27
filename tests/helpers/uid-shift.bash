@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. $(dirname ${BASH_SOURCE[0]})/environment.bash
+
 #
 # Uid shifting helper functions
 #
@@ -36,6 +38,11 @@ function kernel_supports_idmapped_mnt() {
 
 function kernel_supports_overlayfs_on_idmapped_mnt() {
 	sysbox_mgr_log_search "Overlayfs on ID-mapped mounts supported by kernel: yes"
+}
+
+function kernel_supports_idmapping_tmpfs() {
+	local cur_kernel=$(get_kernel_release_semver)
+	semver_ge ${cur_kernel} "6.3.0"
 }
 
 function sysbox_idmapped_mnt_disabled {
