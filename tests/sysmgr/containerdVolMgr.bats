@@ -105,7 +105,7 @@ function teardown() {
   docker rm "$syscont"
 
   # wait for sysbox to detect the container removal
-  sleep 1
+  sleep 0.5
 
   run cat "/var/lib/sysbox/containerd/$sc_id/test"
   [ "$status" -eq 1 ]
