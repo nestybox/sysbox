@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2023-06-09
+### Added
+  * Fix bug in Sysbox's checking of host support for idmapping and shiftfs.
+  * Fix storage leak in /var/lib/sysbox when using Sysbox on K8s clusters.
+  * Fix bug in Sysbox's handling of "docker run -w" flag.
+  * Change disable-inner-image-preload flag to allow running (but not committing) sysbox containers with preloaded inner images.
+  * Set disable-inner-image-preload flag in Sysbox K8s deployments to improve performance when stopping pods.
+
 ## [0.6.1] - 2023-04-07
 ### Added
   * Added support for ID-mapped overlayfs lower layers; eliminates need for shiftfs and Sysbox rootfs chown; requires kernel 5.19+.
