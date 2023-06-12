@@ -9,6 +9,7 @@ load ../helpers/sysbox
 load ../helpers/docker
 load ../helpers/sysbox-health
 load ../helpers/environment
+load ../helpers/cgroups
 
 function teardown() {
   sysbox_log_check
