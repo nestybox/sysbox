@@ -14,54 +14,52 @@ function teardown() {
   sysbox_log_check
 }
 
-SYSCONT_NAME=""
-
 @test "dind basic" {
 
-  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_inner_dockerd $SYSCONT_NAME
+  wait_for_inner_dockerd $syscont
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
+  docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 }
 
 @test "dind busybox" {
 
-  SYSCONT_NAME=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_inner_dockerd $SYSCONT_NAME
+  wait_for_inner_dockerd $syscont
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker ps --format \"{{.ID}}\""
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
   [ "$status" -eq 0 ]
   INNER_CONT_NAME="$output"
 
-  docker exec "$SYSCONT_NAME" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
+  docker exec "$syscont" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
 }
 
 @test "dind docker build" {
@@ -78,28 +76,28 @@ EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  SYSCONT_NAME=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec -d "$SYSCONT_NAME" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
   [ "$status" -eq 0 ]
 
-  wait_for_inner_dockerd $SYSCONT_NAME
+  wait_for_inner_dockerd $syscont
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$SYSCONT_NAME" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   image="test_nginx"
 
-  docker exec "$SYSCONT_NAME" sh -c "cd /mnt && docker build -t ${image} ."
+  docker exec "$syscont" sh -c "cd /mnt && docker build -t ${image} ."
   [ "$status" -eq 0 ]
 
-  docker exec "$SYSCONT_NAME" sh -c "docker run ${image}"
+  docker exec "$syscont" sh -c "docker run ${image}"
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Image created" ]]
 
-  docker_stop "$SYSCONT_NAME"
+  docker_stop "$syscont"
   docker image rm ${image}
   rm ${file}
 }
@@ -154,4 +152,65 @@ EOF
   docker_stop "$syscont"
   docker image rm sc-with-non-default-docker-data-root:latest
   docker image prune -f
+}
+
+@test "dind with docker official image" {
+
+  # Pre-cleanup
+  docker network rm some-network
+  docker volume rm some-docker-certs-ca
+  docker volume rm some-docker-certs-client
+
+  # Setup
+  docker network create some-network
+  [ "$status" -eq 0 ]
+
+  # Launch docker:dind image with Sysbox (i.e., docker engine container), per
+  # https://hub.docker.com/_/docker. Notice we don't need the `--privileged`
+  # flag anymore.
+  local syscont=$(docker_run --rm --name some-docker \
+									  --network some-network --network-alias docker \
+									  -e DOCKER_TLS_CERTDIR=/certs \
+									  -v some-docker-certs-ca:/certs/ca \
+									  -v some-docker-certs-client:/certs/client \
+									  docker:dind)
+
+  wait_for_inner_dockerd $syscont
+
+  # Launch docker CLI container with Sysbox
+  local client=$(docker_run --rm --network some-network \
+									 -e DOCKER_TLS_CERTDIR=/certs \
+									 -v some-docker-certs-client:/certs/client:ro \
+									 docker:latest version)
+
+  # Verify the inner docker is using the correct graph driver (e.g., overlayfs, not vfs)
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
+
+  docker logs "$syscont"
+  [ "$status" -eq 0 ]
+
+  echo $output | grep "graphdriver=$inner_docker_graphdriver"
+
+  # Verify we can launch an inner container
+  docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "docker ps --format \"{{.ID}}\""
+  [ "$status" -eq 0 ]
+  local inner_container="$output"
+
+  docker exec "$syscont" sh -c "docker exec $inner_container sh -c \"busybox | head -1\""
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" =~ "BusyBox" ]]
+
+  # cleanup
+  docker_stop "$client"
+  docker_stop "$syscont"
+
+  docker network rm some-network
+  [ "$status" -eq 0 ]
+  docker volume rm some-docker-certs-ca
+  [ "$status" -eq 0 ]
+  docker volume rm some-docker-certs-client
+  [ "$status" -eq 0 ]
 }
