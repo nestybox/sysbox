@@ -2,11 +2,11 @@
 
 load ../helpers/fs
 load ../helpers/run
+load ../helpers/docker
 load ../helpers/sysbox
 load ../helpers/shell
 load ../helpers/environment
 load ../helpers/sysbox-health
-
 
 function setup() {
   setup_busybox
@@ -68,18 +68,37 @@ function teardown() {
 }
 
 # Verifies the proper behavior of the sysDevicesVirtual handler for
-# "/sys/devices/virtual/net" path operations.
+# "/sys/devices/virtual/net" path operations. The handler is expected to enter
+# the container namespaces to retrieve the list of network devices.
 @test "/sys/devices/virtual/net" {
 
-  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
-  [ "$status" -eq 0 ]
+	docker network rm testnet
+	docker network create testnet
+	[ "$status" -eq 0 ]
 
-  # This should only shows the devices inside the container
-  sv_runc exec syscont sh -c "ls /sys/devices/virtual/net"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "lo" ]]
+	local syscont=$(docker_run --rm --net=testnet ${CTR_IMG_REPO}/alpine:latest tail -f /dev/null)
 
-  # The /sys/class/net/ softlink should work fine
-  sv_runc exec syscont sh -c "stat -L /sys/class/net/lo"
-  [ "$status" -eq 0 ]
+	docker network connect bridge $syscont
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c "ls /sys/devices/virtual/net"
+	[ "$status" -eq 0 ]
+	[[ "$output" =~ "eth0".+"eth1".+"lo" ]]
+
+	for dev in eth0 eth1 lo; do
+		docker exec "$syscont" sh -c "ls /sys/devices/virtual/net/${dev}/addr_len"
+		[ "$status" -eq 0 ]
+
+		docker exec "$syscont" sh -c "cat /sys/devices/virtual/net/${dev}/addr_len"
+		[ "$status" -eq 0 ]
+		[[ "$output" == "6" ]]
+
+		# expected to fail with EPERM
+		docker exec "$syscont" sh -c "echo 7 > /sys/devices/virtual/net/${dev}/addr_len"
+		[ "$status" -eq 1 ]
+	done
+
+	docker_stop "$syscont"
+
+	docker network rm testnet
 }
