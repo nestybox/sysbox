@@ -101,8 +101,10 @@ Version 2.0. See the [LICENSE](LICENSE) file for details.
 Sysbox was originally developed by Nestybox. As [Nestybox is now part of
 Docker][docker-acquisition], Docker is the main sponsor of the Sysbox project.
 
-However, Sysbox is a community open-source project and it's **not officially
-supported by Docker** (i.e., Docker subscriptions do not include Sysbox support).
+Having said this, Sysbox is a community open-source project and it's **not
+officially supported by Docker** (i.e., Docker subscriptions do not include
+Sysbox support).  Support is provided on a **best effort basis** via this Github
+repo or via the [Sysbox Slack Workspace][slack].
 
 We encourage participation from the community to help evolve and improve Sysbox,
 with the goal of increasing the use cases and benefits it enables. External
@@ -437,7 +439,7 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 ## Contact
 
-Slack: [Nestybox Slack Workspace][slack]
+Slack: [Sysbox Slack Workspace][slack]
 
 Email: contact@nestybox.com
 
