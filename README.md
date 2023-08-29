@@ -13,7 +13,7 @@
 ## Introduction
 
 **Sysbox** is an open-source and free container runtime (a specialized "runc"),
-developed by [Nestybox](https://www.nestybox.com) ([acquired by Docker][docker-acquisition] on
+originally developed by Nestybox ([acquired by Docker][docker-acquisition] on
 05/2022), that enhances containers in two key ways:
 
 *   **Improves container isolation:**
@@ -70,6 +70,7 @@ or pods to run with each, depending on your needs.
 ## Contents
 
 *   [License](#license)
+*   [Relationship to Nestybox & Docker](#relationship-to-nestybox--docker)
 *   [Motivation](#motivation)
 *   [How it Works](#how-it-works)
 *   [Comparison to Related Technologies](#comparison-to-related-technologies)
@@ -87,7 +88,6 @@ or pods to run with each, depending on your needs.
 *   [Troubleshooting & Support](#troubleshooting--support)
 *   [Uninstallation](#uninstallation)
 *   [Roadmap](#roadmap)
-*   [Relationship to Nestybox](#relationship-to-nestybox)
 *   [Contact](#contact)
 *   [Thank You](#thank-you)
 
@@ -95,6 +95,18 @@ or pods to run with each, depending on your needs.
 
 Sysbox is free and open-source, licensed under the Apache License,
 Version 2.0. See the [LICENSE](LICENSE) file for details.
+
+## Relationship to Nestybox & Docker
+
+Sysbox was originally developed by Nestybox. As [Nestybox is now part of
+Docker][docker-acquisition], Docker is the main sponsor of the Sysbox project.
+
+However, Sysbox is a community open-source project and it's **not officially
+supported by Docker** (i.e., Docker subscriptions do not include Sysbox support).
+
+We encourage participation from the community to help evolve and improve Sysbox,
+with the goal of increasing the use cases and benefits it enables. External
+maintainers and contributors are welcomed.
 
 ## Motivation
 
@@ -423,16 +435,6 @@ Here is a short list; the Sysbox issue tracker has many more.
 
 *   Exposing host devices inside system containers with proper permissions.
 
-## Relationship to Nestybox & Docker
-
-Sysbox was initially developed by [Nestybox](https://www.nestybox.com). As
-[Nestybox is now part of Docker][docker-acquisition], Docker is the main sponsor
-of the Sysbox project.
-
-We encourage participation from the community to help evolve and improve Sysbox,
-with the goal of increasing the use cases and benefits it enables. External
-maintainers and contributors are welcomed.
-
 ## Contact
 
 Slack: [Nestybox Slack Workspace][slack]
@@ -452,8 +454,6 @@ ways.
 [perf-blog]: https://blog.nestybox.com/2020/09/23/perf-comparison.html
 
 [oci-runc]: https://github.com/opencontainers/runc
-
-[sysbox-ee]: https://www.nestybox.com/sysbox-ee
 
 [sysbox-ee-repo]: https://github.com/nestybox/sysbox-ee
 

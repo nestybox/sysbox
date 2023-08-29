@@ -19,7 +19,7 @@
 # secure).
 #
 # NOTE: you must install the Sysbox container runtime in your host before using
-# this script. Download instructions are in www.nestybox.com.
+# this script.
 #
 # Enjoy,
 # - The Nestybox Team
@@ -220,7 +220,7 @@ function calico_config() {
   if [[ $? -ne 0 ]]; then
     echo "$output"
     return 1
-  fi  
+  fi
 }
 
 function calico_unconfig() {
@@ -1189,7 +1189,7 @@ function show_usage() {
   printf "using Docker + the Sysbox container runtime.\n"
   printf "\n"
   printf "NOTE: you must install the Sysbox container runtime in your host before using\n"
-  printf "this program. Download instructions are at www.nestybox.com.\n"
+  printf "this program.\n"
   printf "\n"
   printf "The cluster is composed of one master node and a configurable number of worker nodes.\n"
   printf "Each node is a Docker container; the nodes are connected via a Docker bridge network.\n"
