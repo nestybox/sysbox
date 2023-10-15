@@ -57,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.1/sysbox-ce_0.6.1-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.2/sysbox-ce_0.6.2-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.6.1-0.linux_amd64.deb
-d57dc297c60902d4f7316e4f641af00a2a9424e24dde88bb2bb7d3bc419b0f04  sysbox-ce_0.6.1-0.linux_amd64.deb
+$ sha256sum sysbox-ce_0.6.2-0.linux_amd64.deb
+fd287f2f3b5a072b62c378f9e1eeeeaa2ccad22bb48cb381d30d8c855c51b401  sysbox-ce_0.6.2-0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -85,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.6.1-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.6.2-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -97,36 +97,36 @@ NOTE: the `jq` tool is used by the Sysbox installer.
 $ sudo systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Sat 2023-04-08 23:02:12 JST; 10min ago
+     Active: active (running) since Sun 2023-10-15 13:03:50 PDT; 10s ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 264 (sh)
-      Tasks: 2 (limit: 38407)
-     Memory: 13.1M
-        CPU: 30ms
+   Main PID: 1549 (sh)
+      Tasks: 2 (limit: 9357)
+     Memory: 424.0K
+        CPU: 18ms
      CGroup: /system.slice/sysbox.service
-             ├─264 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs -->
-             └─290 /bin/sleep infinity
+             ├─1549 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
+             └─1568 /bin/sleep infinity
 
-Apr 08 23:02:12 whaleux systemd[1]: Started Sysbox container runtime.
-Apr 08 23:02:12 whaleux sh[265]: sysbox-runc
-Apr 08 23:02:12 whaleux sh[265]:         edition:         Community Edition (CE)
-Apr 08 23:02:12 whaleux sh[265]:         version:         0.6.1
-Apr 08 23:02:12 whaleux sh[265]:         commit:         278997aab055ad6eec9e48a555b90eef877596b7
-Apr 08 23:02:12 whaleux sh[265]:         built at:         Sat Apr  8 06:08:15 UTC 2023
-Apr 08 23:02:12 whaleux sh[265]:         built by:         Rodny Molina
-Apr 08 23:02:12 whaleux sh[265]:         oci-specs:         1.0.2-dev
-Apr 08 23:02:12 whaleux sh[278]: sysbox-mgr
-Apr 08 23:02:12 whaleux sh[278]:         edition:         Community Edition (CE)
-Apr 08 23:02:12 whaleux sh[278]:         version:         0.6.1
-Apr 08 23:02:12 whaleux sh[278]:         commit:         ba99c0e7088f1e1ab51f95551f50de9524176655
-Apr 08 23:02:12 whaleux sh[278]:         built at:         Sat Apr  8 06:08:57 UTC 2023
-Apr 08 23:02:12 whaleux sh[278]:         built by:         Rodny Molina
-Apr 08 23:02:12 whaleux sh[283]: sysbox-fs
-Apr 08 23:02:12 whaleux sh[283]:         edition:         Community Edition (CE)
-Apr 08 23:02:12 whaleux sh[283]:         version:         0.6.1
-Apr 08 23:02:12 whaleux sh[283]:         commit:         a2631f69c62722c67dfd3aa97a8412b5c4db6a8a
-Apr 08 23:02:12 whaleux sh[283]:         built at:         Sat Apr  8 06:08:45 UTC 2023
-Apr 08 23:02:12 whaleux sh[283]:         built by:         Rodny Molina
+Oct 15 13:03:50 xps15 systemd[1]: Started Sysbox container runtime.
+Oct 15 13:03:50 xps15 sh[1550]: sysbox-runc
+Oct 15 13:03:50 xps15 sh[1550]:         edition:         Community Edition (CE)
+Oct 15 13:03:50 xps15 sh[1550]:         version:         0.6.2
+Oct 15 13:03:50 xps15 sh[1550]:         commit:          60ca93c783b19c63581e34aa183421ce0b9b26b7
+Oct 15 13:03:50 xps15 sh[1550]:         built at:        Mon Jun 12 03:49:19 UTC 2023
+Oct 15 13:03:50 xps15 sh[1550]:         built by:        Cesar Talledo
+Oct 15 13:03:50 xps15 sh[1550]:         oci-specs:       1.0.2-dev
+Oct 15 13:03:50 xps15 sh[1557]: sysbox-mgr
+Oct 15 13:03:50 xps15 sh[1557]:         edition:         Community Edition (CE)
+Oct 15 13:03:50 xps15 sh[1557]:         version:         0.6.2
+Oct 15 13:03:50 xps15 sh[1557]:         commit:          4b5fb1def9abe6a256cfe62bacaf2a7d333d81d2
+Oct 15 13:03:50 xps15 sh[1557]:         built at:        Mon Jun 12 03:49:55 UTC 2023
+Oct 15 13:03:50 xps15 sh[1557]:         built by:        Cesar Talledo
+Oct 15 13:03:50 xps15 sh[1562]: sysbox-fs
+Oct 15 13:03:50 xps15 sh[1562]:         edition:         Community Edition (CE)
+Oct 15 13:03:50 xps15 sh[1562]:         version:         0.6.2
+Oct 15 13:03:50 xps15 sh[1562]:         commit:          30fd49edbd51048fed8b2ad0af327598d30b29eb
+Oct 15 13:03:50 xps15 sh[1562]:         built at:        Mon Jun 12 03:49:46 UTC 2023
+Oct 15 13:03:50 xps15 sh[1562]:         built by:        Cesar Talledo
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
