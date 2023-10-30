@@ -413,8 +413,8 @@ function show_usage() {
 	printf "      --syscont-mode                    Causes Sysbox to run in \"system container\" mode. In this mode, it sets up the container to run system workloads (e.g., systemd, Docker, Kubernetes, etc.) seamlessly and securely. When set to false, Sysbox operates in \"regular container\" mode where it sets up the container per its OCI spec (usually for microservices), with the exception of the Linux 'user' and 'cgroup' namespaces which Sysbox always enables for extra container isolation. (default = true)\n"
 	printf "      --seccomp-fd-release <pol>        Policy to close syscall interception handles; useful in kernels < 5.8; allowed values are \"proc-exit\" and \"cont-exit\" (default = \"proc-exit\")\n"
 	printf "      --fsuid-map-fail-on-error         When set to true, fail to launch a container whenever filesystem uid-mapping (needed for files to show proper ownership inside the container's user-namespace) hits an error; when set to false, launch the container anyway (files may show up owned by nobody:nogroup) (default = false)\n"
-	printf "      --allow-immutable-remounts        A container's initial mounts are considered immutable by Sysbox; this option allows them to be remounted from within the container (default: \"false\")\n"
-	printf "      --allow-immutable-unmounts        A container's initial mounts are considered immutable by Sysbox; this option allows them to be unmounted from within the container (default: \"true\")\n"
+	printf "      --allow-immutable-remounts <val>  A container's initial mounts are considered immutable by Sysbox; this option allows them to be remounted from within the container (default: \"false\")\n"
+	printf "      --allow-immutable-unmounts <val>  A container's initial mounts are considered immutable by Sysbox; this option allows them to be unmounted from within the container (default: \"true\")\n"
 	printf "  -h, --help                            Display usage.\n"
 	printf "\n"
 }
