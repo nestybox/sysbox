@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/dind
+load ../helpers/sysbox
 load ../helpers/environment
 load ../helpers/sysbox-health
 
@@ -32,6 +33,66 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
+}
+
+@test "dind official image" {
+	local dind_img="docker:24-dind"
+
+	docker pull $dind_img
+	docker network create some-network
+
+	syscont=$(docker_run --privileged --name some-docker -d \
+								--network some-network --network-alias docker \
+								-e DOCKER_TLS_CERTDIR=/certs \
+								-v some-docker-certs-ca:/certs/ca \
+								-v some-docker-certs-client:/certs/client \
+								$dind_img)
+
+	docker run --rm --network some-network \
+			 -e DOCKER_TLS_CERTDIR=/certs \
+			 -v some-docker-certs-client:/certs/client:ro \
+			 docker:latest pull -q nginx
+
+	# cleanup
+	docker_stop "$syscont"
+	docker rm "$syscont"
+	docker network rm some-network
+	docker image rm $dind_img
+}
+
+# Same as dind official, but with Sysbox configured to disallow unmounts of
+# immutable container mounts. In the past we had a bug where dind would fail in
+# this scenario when the inner Docker engine (v24+) would execute a pivot-root
+# while setting up the container.
+@test "dind official (w/ allow-immutable-unmounts=false)" {
+	local dind_img="docker:24-dind"
+
+	sysbox_stop
+	sysbox_start -t --allow-immutable-unmounts=false
+
+	docker pull $dind_img
+	docker network create some-network
+
+	syscont=$(docker_run --privileged --name some-docker -d \
+								--network some-network --network-alias docker \
+								-e DOCKER_TLS_CERTDIR=/certs \
+								-v some-docker-certs-ca:/certs/ca \
+								-v some-docker-certs-client:/certs/client \
+								$dind_img)
+
+	docker run --rm --network some-network \
+			 -e DOCKER_TLS_CERTDIR=/certs \
+			 -v some-docker-certs-client:/certs/client:ro \
+			 docker:latest pull -q nginx
+
+	# cleanup
+	docker_stop "$syscont"
+	docker rm "$syscont"
+	docker network rm some-network
+	docker image rm $dind_img
+
+	sysbox_stop
+	sysbox_start -t
 }
 
 @test "dind busybox" {
