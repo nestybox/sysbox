@@ -48,3 +48,9 @@ bats --tap tests/syscall/mount/mount-immutables-unshare-chroot.bats
 
 printf "\nExecuting mount syscall-interception tests for immutable resources in unshare() + pivot() ctx ... \n"
 bats --tap tests/syscall/mount/mount-immutables-unshare-pivot.bats
+
+printf "\nExecuting pivot-root tests ... \n"
+bats --tap tests/syscall/pivot-root
+
+printf "\nExecuting umount-root tests ... \n"
+bats --tap tests/syscall/umount-root
