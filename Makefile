@@ -32,6 +32,11 @@ export PACKAGE := sysbox-ce
 export HOST_UID ?= $(shell id -u)
 export HOST_GID ?= $(shell id -g)
 
+# Set default distro-release for scenarios in which this can't be easily determined (e.g., 'lsb_release'
+# isn't available -- OSX).
+DEFAULT_DISTRO := ubuntu
+DEFAULT_DISTRO_RELEASE := jammy
+
 # Obtain the current system architecture.
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
@@ -42,6 +47,8 @@ else ifeq ($(UNAME_M),arm)
 	SYS_ARCH := armhf
 else ifeq ($(UNAME_M),armel)
 	SYS_ARCH := armel
+else
+	SYS_ARCH := $(UNAME_M)
 endif
 
 # Set target architecture if not explicitly defined by user.
@@ -105,7 +112,11 @@ else
 	endif
 	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
 	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | egrep -v "^\.\." | head -1)
+else
+	# If lsb-release isn't available, then assume the default-distro-release.
+	IMAGE_BASE_RELEASE := $(DEFAULT_DISTRO_RELEASE)
 endif
+
 
 TEST_DIR := $(CURDIR)/tests
 TEST_IMAGE := sysbox-test-$(TARGET_ARCH)
@@ -117,16 +128,26 @@ TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
 TEST_FILES := $(shell find tests -type f | egrep "\.bats")
 TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
 
-ifeq ($(KERNEL_HEADERS_BASE), )
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
-else
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
-				 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+# Set the kernel-header mounts for the test container.
+KERNEL_HEADERS_PRESENT := $(shell stat /usr/src/$(KERNEL_HEADERS) >/dev/null 2>&1; echo $$?)
+ifeq ($(KERNEL_HEADERS_PRESENT),0)
+	ifeq ($(KERNEL_HEADERS_BASE), )
+		KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
+	else
+		KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
+					 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+	endif
 endif
-
 export KERNEL_HEADERS
 export KERNEL_HEADERS_MOUNTS
 
+# Set the lib-modules mounts for the test container.
+LIBMODULES_PRESENT := $(shell stat /lib/modules/$(KERNEL_REL)/kernel >/dev/null 2>&1; echo $$?)
+ifeq ($(LIBMODULES_PRESENT),0)
+	LIBMODULES_MOUNTS := -v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro
+endif
+
+# Set the sysbox package file path and name.
 PACKAGE_FILE_PATH ?= sysbox-pkgr/deb/build/$(TARGET_ARCH)/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 PACKAGE_FILE_NAME := $(PACKAGE)_$(VERSION).linux_$(TARGET_ARCH).deb
 
@@ -146,8 +167,26 @@ export TEST_VOL3
 
 # In scenarios where the egress-interface's mtu is lower than expected (1500 bytes),
 # we must explicitly configure dockerd with such a value.
-EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
-EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
+IP_CMD_PRESENT := $(shell command -v ip >/dev/null 2>&1; echo $$?)
+ifeq ($(IP_CMD_PRESENT),0)
+	EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
+	EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
+endif
+
+# libseccomp (used by Sysbox components)
+LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
+LIBSECCOMP_DIR := sysbox-libs/libseccomp
+FIND_CMD_PRESENT := $(shell command -v find >/dev/null 2>&1; echo $$?)
+ifeq ($(FIND_CMD_PRESENT),0)
+	LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
+	LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
+endif
+STAT_CMD_PRESENT := $(shell command -v stat 2> /dev/null; echo $$?)
+ifeq ($(STAT_CMD_PRESENT),0)
+	LIBSECCOMP_UID := $(shell stat -c %u ./sysbox-libs/libseccomp/README.md)
+	LIBSECCOMP_GID := $(shell stat -c %g ./sysbox-libs/libseccomp/README.md)
+endif
+
 
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
@@ -174,7 +213,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
+			$(LIBMODULES_MOUNTS) \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -293,13 +332,13 @@ DOCKER_RUN := docker run --privileged --rm --runtime=runc             \
 			-v $(TEST_VOL2):/mnt/scratch                  \
 			-v $(TEST_VOL3):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
-			$(KERNEL_HEADERS_MOUNTS) \
+			$(LIBMODULES_MOUNTS)                          \
+			$(KERNEL_HEADERS_MOUNTS)                      \
 			$(TEST_IMAGE)
 
 # For interactive targets
-DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
+DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc \
 			--hostname sysbox-test                        \
 			--name sysbox-test                            \
 			-e HOST_UID=$(HOST_UID)                       \
@@ -309,9 +348,9 @@ DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL2):/mnt/scratch                  \
 			-v $(TEST_VOL3):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
-			$(KERNEL_HEADERS_MOUNTS) \
+			$(LIBMODULES_MOUNTS)                          \
+			$(KERNEL_HEADERS_MOUNTS)                      \
 			$(TEST_IMAGE)
 
 # Must use "--cgroups private" as otherwise the inner Docker may get confused
