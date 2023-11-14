@@ -90,6 +90,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	# Cleanup
+	crictl stop -t 10 $k8s_master_syscont $k8s_worker_syscont
 	crictl stopp $k8s_master_pod $k8s_worker_pod
 	crictl rmp $k8s_master_pod $k8s_worker_pod
 }
