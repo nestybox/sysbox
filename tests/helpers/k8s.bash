@@ -91,7 +91,7 @@ function k8s_create_pod() {
 
 function k8s_del_pod() {
   local pod=$1
-  local ns
+  local ns=""
 
   if [ $# -eq 2 ]; then
     ns="-n $2"
@@ -106,7 +106,7 @@ function k8s_del_pod() {
 #  $2 - k8s namespace where pod is expected (optional)
 function k8s_pod_ready() {
   local pod=$1
-  local ns
+  local ns=""
 
   if [ $# -eq 2 ]; then
     ns="-n $2"
@@ -151,7 +151,7 @@ function k8s_pod_array_ready() {
 # "running" or "completed" state).
 # $1 - k8s namespace (optional)
 function k8s_all_pods_ready() {
-  local ns
+  local ns=""
 
   if [ $# -eq 1 ]; then
     ns="-n $1"
@@ -175,7 +175,7 @@ function k8s_pod_absent() {
   local cluster_name=$1
   local k8s_master=$2
   local pod=$3
-  local ns
+  local ns=""
 
   if [ $# -eq 4 ]; then
     ns="-n $4"
@@ -288,7 +288,6 @@ function k8s_deployment_rollout_ready() {
   local k8s_master=$2
   local ns=$3
   local deployment=$4
-  local i
 
   kubectl --namespace $ns rollout status deployment.v1.apps/$deployment
   [ "$status" -eq 0 ]
