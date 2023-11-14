@@ -56,6 +56,7 @@ function teardown() {
 	# verify systemd started docker and all is well
 	crictl exec $syscont sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
 
+	crictl stop -t 5 $syscont
 	crictl stopp $pod
 	crictl rmp $pod
 }

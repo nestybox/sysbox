@@ -38,6 +38,7 @@ function teardown() {
 	run crictl exec $syscont sh -c "apk add curl && curl -S localhost:8080"
 	[[ "$output" =~ "Welcome to nginx!" ]]
 
+	crictl stop -t 5 $syscont
 	crictl stopp $pod
 	crictl rmp $pod
 }
@@ -81,6 +82,7 @@ function teardown() {
 
 	crictl exec $cli sh -c "docker stop -t0 \$(docker ps -aq)"
 
+	crictl stop -t 5 $eng $cli
 	crictl stopp $pod1 $pod2
 	crictl rmp $pod1 $pod2
 }
@@ -123,6 +125,7 @@ function teardown() {
 
 	crictl exec $cli sh -c "docker stop -t0 \$(docker ps -aq)"
 
+	crictl stop -t 5 $eng $cli
 	crictl stopp $pod1 $pod2
 	crictl rmp $pod1 $pod2
 }
