@@ -21,9 +21,9 @@
 
 FROM ubuntu:jammy
 
-# K8s version for k8s-in-docker (i.e., this is the version of K8s running inside
-# the k8s-in-docker container).
-ARG k8s_version=v1.20.2
+# K8s version for k8s-in-docker (i.e., this should be equal or greater than the
+# version of K8s running inside the k8s-in-docker container).
+ARG k8s_version=v1.28.2
 
 # Desired platform architecture to build upon.
 ARG sys_arch
@@ -31,11 +31,10 @@ ENV SYS_ARCH=${sys_arch}
 ARG target_arch
 ENV TARGET_ARCH=${target_arch}
 
-# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
-# introduces rootless pod support (via the Linux user-ns)
-ARG crio_version=1.20
-ARG crio_os=xUbuntu_20.04
-ARG crictl_version=v1.20.0
+# CRI-O & crictl version for testing sysbox pods; should match K8s version.
+ARG crio_version=1.28
+ARG crio_os=xUbuntu_22.04
+ARG crictl_version=v1.28.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -151,20 +150,32 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 # Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in the K8s-in-docker nodes (L2).
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
-    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
-    && apt-get update \
-    && apt-get install kubectl:${sys_arch}="${k8s_version#v}"-00 \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm /tmp/kubectl
 
-# CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
-RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
-    && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.list \
-    && curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/Release.key | apt-key add - \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | apt-key add - \
-    && apt-get update && apt-get install -y --no-install-recommends conntrack:${sys_arch} cri-o:${sys_arch} cri-o-runc:${sys_arch} \
-    && wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${sys_arch}.tar.gz \
+# Install the upstream CRI-O so we get the cri-o binary plus all config files,
+# etc. Later we will replace the binary with our forked Nestybox CRI-O that
+# works with Sysbox.
+RUN echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
+    && echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list \
+    && mkdir -p /usr/share/keyrings \
+    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg \
+    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg \
+    && apt-get update \
+    && apt-get install -y cri-o cri-o-runc
+
+# Build and install the Nestybox CRI-O (for testing deployment of pods with sysbox (aka "sysbox pods"))
+RUN apt-get update && apt-get install -y --no-install-recommends libgpgme-dev \
+    && mkdir -p /tmp/crio-build \
+    && git clone https://github.com/nestybox/cri-o.git /tmp/crio-build/cri-o \
+    && git -C /tmp/crio-build/cri-o checkout -b v${crio_version}-sysbox origin/v${crio_version}-sysbox \
+    && cd /tmp/crio-build/cri-o && make binaries \
+    && mv /usr/bin/crio /usr/bin/crio.orig \
+    && cp /tmp/crio-build/cri-o/bin/crio-static /usr/bin/crio \
+    && rm -rf /tmp/crio-build
+
+RUN wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${sys_arch}.tar.gz \
     && sudo tar zxvf crictl-${crictl_version}-linux-${sys_arch}.tar.gz -C /usr/local/bin \
     && rm -f crictl-${crictl_version}-linux-${sys_arch}.tar.gz
 
@@ -172,7 +183,7 @@ RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontai
 RUN cd /root \
     && git clone https://github.com/containernetworking/plugins \
     && cd plugins \
-    && git checkout -b v0.9.1 v0.9.1 \
+    && git checkout -b v1.3.0 v1.3.0 \
     && ./build_linux.sh \
     && mkdir -p /opt/cni/bin \
     && cp bin/* /opt/cni/bin/
