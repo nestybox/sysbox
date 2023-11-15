@@ -41,7 +41,7 @@ function teardown() {
 	docker pull $dind_img
 	docker network create some-network
 
-	syscont=$(docker_run --privileged --name some-docker -d \
+	syscont=$(docker_run --name some-docker -d \
 								--network some-network --network-alias docker \
 								-e DOCKER_TLS_CERTDIR=/certs \
 								-v some-docker-certs-ca:/certs/ca \
@@ -73,7 +73,7 @@ function teardown() {
 	docker pull $dind_img
 	docker network create some-network
 
-	syscont=$(docker_run --privileged --name some-docker -d \
+	syscont=$(docker_run --name some-docker -d \
 								--network some-network --network-alias docker \
 								-e DOCKER_TLS_CERTDIR=/certs \
 								-v some-docker-certs-ca:/certs/ca \
