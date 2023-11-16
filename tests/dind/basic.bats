@@ -15,7 +15,7 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "dind basic" {
+@test "dind basic alpine" {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
@@ -26,7 +26,27 @@ function teardown() {
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "egrep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
+  [ "$status" -eq 0 ]
+
+  docker_stop "$syscont"
+}
+
+@test "dind basic ubuntu" {
+
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-jammy-docker:latest tail -f /dev/null)
+
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_inner_dockerd $syscont
+
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
+
+  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
@@ -106,7 +126,7 @@ function teardown() {
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
@@ -119,6 +139,26 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec $INNER_CONT_NAME sh -c \"busybox | head -1\""
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "BusyBox" ]]
+
+  docker_stop "$syscont"
+}
+
+@test "dind --net=host" {
+
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-jammy-docker:latest tail -f /dev/null)
+
+  docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$status" -eq 0 ]
+
+  wait_for_inner_dockerd $syscont
+
+  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
+
+  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  [ "$status" -eq 0 ]
+
+  docker exec "$syscont" sh -c "docker run --net=host ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
+  [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
 }
@@ -146,7 +186,7 @@ EOF
 
   local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
-  docker exec "$syscont" sh -c "grep \"graphdriver(s)=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
   [ "$status" -eq 0 ]
 
   image="test_nginx"
