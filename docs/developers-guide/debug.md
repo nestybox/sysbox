@@ -257,6 +257,12 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
     NOTE: Use `goroutines -t` to show a full stack trace for each goroutine. Then use `frame X` to switch to the desired frame.
 
+- Get a list of DLV configs:
+
+    ```console
+    (dlv) config -list
+    ```
+
 - Configure print length of strings:
 
     ```console
@@ -267,6 +273,12 @@ GDB ones, so I will mainly concentrate on those that (slightly) deviate.
 
    ```console
    (dlv) config max-array-values 600
+   ```
+
+- Configure depth of variable recursion:
+
+   ```console
+   (dlv) config max-variable-recurse 2
    ```
 
 ## Unit Test Running & Debugging
