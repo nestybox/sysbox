@@ -72,7 +72,6 @@ SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
 SYSLIBS_DIR     := sysbox-libs
-LIB_SECCOMP_DIR := $(SYSLIBS_DIR)/libseccomp-golang
 SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
 PROJECT := /root/nestybox/sysbox
@@ -153,15 +152,6 @@ export TEST_VOL3
 EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
 EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
 
-# libseccomp (used by Sysbox components)
-LIBSECCOMP := sysbox-libs/libseccomp/src/.libs/libseccomp.a
-LIBSECCOMP_DIR := sysbox-libs/libseccomp
-LIBSECCOMP_SRC := $(shell find $(LIBSECCOMP_DIR)/src 2>&1 | grep -E '.*\.(c|h)')
-LIBSECCOMP_SRC += $(shell find $(LIBSECCOMP_DIR)/include 2>&1 | grep -E '.*\.h')
-LIBSECCOMP_UID := $(shell stat -c %u ./sysbox-libs/libseccomp/README.md)
-LIBSECCOMP_GID := $(shell stat -c %g ./sysbox-libs/libseccomp/README.md)
-
-
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
 
@@ -230,27 +220,27 @@ sysbox-debug-local: sysbox-runc-debug sysbox-fs-debug sysbox-mgr-debug
 
 sysbox-static-local: sysbox-runc-static sysbox-fs-static sysbox-mgr-static
 
-sysbox-runc: $(LIBSECCOMP) sysbox-ipc
+sysbox-runc: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make
 	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
-sysbox-runc-debug: $(LIBSECCOMP) sysbox-ipc
+sysbox-runc-debug: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make sysbox-runc-debug
 	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
-sysbox-runc-static: $(LIBSECCOMP) sysbox-ipc
+sysbox-runc-static: sysbox-ipc
 	@cd $(SYSRUNC_DIR) && make static
 	@cd $(SYSRUNC_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
-sysbox-fs: $(LIBSECCOMP) sysbox-ipc
+sysbox-fs: sysbox-ipc
 	@cd $(SYSFS_DIR) && make
 	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
-sysbox-fs-debug: $(LIBSECCOMP) sysbox-ipc
+sysbox-fs-debug: sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-debug
 	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
-sysbox-fs-static: $(LIBSECCOMP) sysbox-ipc
+sysbox-fs-static: sysbox-ipc
 	@cd $(SYSFS_DIR) && make sysbox-fs-static
 	@cd $(SYSFS_DIR) && chown -R $(HOST_UID):$(HOST_GID) build
 
@@ -269,12 +259,6 @@ sysbox-mgr-static: sysbox-ipc
 sysbox-ipc:
 	@cd $(SYSIPC_DIR) && make sysbox-ipc
 	@cd $(SYSIPC_DIR) && chown -R $(HOST_UID):$(HOST_GID) *
-
-$(LIBSECCOMP): $(LIBSECCOMP_SRC)
-	@echo "Building libseccomp ..."
-	@cd $(LIBSECCOMP_DIR) && ./autogen.sh && ./configure --host $(HOST_TRIPLE) && make
-	@chown -R $(LIBSECCOMP_UID):$(LIBSECCOMP_GID) ./sysbox-libs/libseccomp
-	@echo "Building libseccomp completed."
 
 #
 # install targets (require root privileges)
@@ -615,7 +599,7 @@ gomod-tidy:
 	@cd $(SYSFS_DIR) && make gomod-tidy
 
 clean: ## Eliminate sysbox binaries
-clean: clean-libseccomp
+clean:
 	cd $(SYSRUNC_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
 	cd $(SYSFS_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
 	cd $(SYSMGR_DIR) && make clean TARGET_ARCH=$(TARGET_ARCH)
@@ -624,16 +608,12 @@ clean: clean-libseccomp
 
 
 distclean: ## Eliminate all sysbox binaries
-distclean: clean-libseccomp
+distclean:
 	cd $(SYSRUNC_DIR) && make distclean
 	cd $(SYSFS_DIR) && make distclean
 	cd $(SYSMGR_DIR) && make distclean
 	cd $(SYSIPC_DIR) && make distclean
 	rm -rf ./build
-
-clean-libseccomp: ## Clean libseccomp
-clean-libseccomp:
-	cd $(LIBSECCOMP_DIR) && ([ -f ./Makefile ] && make distclean || true)
 
 clean-sysbox-in-docker: ## Clean sysbox-in-docker
 clean-sysbox-in-docker:
