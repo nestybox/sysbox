@@ -119,7 +119,7 @@ the nodes have a minimum of 4 vCPUs each.
 
 ## Google Kubernetes Engine (GKE)
 
-1.  Create a cluster with Kubernetes v1.21-v1.23 releases.
+1.  Create a cluster with a [supported Kubernetes version](install-k8s.md#kubernetes-version-requirements).
 
 2.  Create the K8s worker nodes where Sysbox will be installed using the "Ubuntu
     with Containerd" image templates.
