@@ -70,7 +70,7 @@ function teardown() {
 # Verifies the proper behavior of the sysDevicesVirtual handler for
 # "/sys/devices/virtual/net" path operations. The handler is expected to enter
 # the container namespaces to retrieve the list of network devices.
-@test "/sys/devices/virtual/net" {
+@test "/sys/devices/virtual/net file ops" {
 
 	docker network rm testnet
 	docker network create testnet
@@ -101,4 +101,57 @@ function teardown() {
 	docker_stop "$syscont"
 
 	docker network rm testnet
+}
+
+# Verifies the proper behavior of the sysDevicesVirtual handler for
+# soft-link nodes within the "/sys/devices/virtual/block" hierarchy.
+@test "/sys/devices/virtual/block file ops softlink nodes" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/block/loop0 | egrep -q \"subsystem -> ../../../../class/block\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "stat /sys/devices/virtual/block/loop0/subsystem | egrep -q \"../../../../class/block\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/block/loop0/subsystem | egrep -q \"/sys/devices/virtual/block/loop0/subsystem -> ../../../../class/block\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/block/loop0/subsystem/ | egrep -q \"loop0 -> ../../devices/virtual/block/loop0\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/block/loop0/subsystem/loop0/ | egrep -q \"subsystem -> ../../../../class/block\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "stat /sys/devices/virtual/block/loop0/subsystem/loop0/subsystem | egrep -q \"../../../../class/block\""
+  [ "$status" -eq 0 ]
+}
+
+# Verifies the proper behavior of the sysDevicesVirtual handler for
+# soft-link nodes within the "/sys/devices/virtual/net" hierarchy
+# (passthrough nodes).
+@test "/sys/devices/virtual/net file ops softlink nodes (passthrough)" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/net/lo | egrep -q \"subsystem -> ../../../../class/net\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "stat /sys/devices/virtual/net/lo/subsystem | egrep -q \"../../../../class/net\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/net/lo/subsystem | egrep -q \"/sys/devices/virtual/net/lo/subsystem -> ../../../../class/net\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/net/lo/subsystem/ | egrep -q \"lo -> ../../devices/virtual/net/lo\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/devices/virtual/net/lo/subsystem/lo/ | egrep -q \"subsystem -> ../../../../class/net\""
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "stat /sys/devices/virtual/net/lo/subsystem/lo/subsystem | egrep -q \"../../../../class/net\""
+  [ "$status" -eq 0 ]
 }
