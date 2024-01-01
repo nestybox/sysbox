@@ -10,10 +10,16 @@ load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/mounts
 load ../../helpers/userns
+load ../../helpers/sysbox
 load ../../helpers/sysbox-health
 
 function teardown() {
   sysbox_log_check
+}
+
+@test "enable allow-trusted-xattr" {
+	sysbox_stop
+	sysbox_start -t --allow-trusted-xattr
 }
 
 @test "*xattr" {
@@ -285,4 +291,9 @@ function teardown() {
 	[[ "$output" =~ "created 39 symlinks in user environment" ]]
 
 	docker_stop "$syscont"
+}
+
+@test "disable allow-trusted-xattr" {
+	sysbox_stop
+	sysbox_start -t
 }
