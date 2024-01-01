@@ -24,7 +24,7 @@ NO_INNER_IMG_PRELOAD=0
 IGNORE_SYSFS_CHOWN=0
 HONOR_CAPS=0
 SYSCONT_MODE="true"
-ALLOW_TRUSTED_XATTR="true"
+ALLOW_TRUSTED_XATTR=0
 SET_DATA_ROOT=0
 SET_SECCOMP_FD_REL=0
 FSUID_MAP_FAIL_ON_ERR=0
@@ -270,8 +270,8 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--syscont-mode=false")
 	fi
 
-	if [[ $ALLOW_TRUSTED_XATTR == "false" ]]; then
-		options+=("--allow-trusted-xattr=false")
+	if [[ $ALLOW_TRUSTED_XATTR -eq 1 ]]; then
+		options+=("--allow-trusted-xattr")
 	fi
 
 	if [ $SET_DATA_ROOT -eq 1 ]; then
@@ -408,7 +408,7 @@ function show_usage() {
 	printf "      --disable-rootfs-cloning          Disables rootfs cloning on hosts without shiftfs; setting this option will significantly slow down container startup time (default = false).\n"
 	printf "      --disable-inner-image-preload     Disables the Sysbox feature that allows users to preload inner container images into system container images (e.g., via Docker commit or build); this makes container stop faster; running system container images that come preloaded with inner container images continue to work fine; (default = false).\n"
 	printf "      --ignore-sysfs-chown              Ignore chown of /sys inside all Sysbox containers; may be needed to run a few apps that chown /sys inside the container (e.g,. rpm). Causes Sysbox to trap the chown syscall inside the container, slowing it down (default = false).\n"
-	printf "      --allow-trusted-xattr             Allows the overlayfs trusted.overlay.opaque xattr to be set inside all Sysbox containers; needed when running Docker inside Sysbox on hosts with kernel < 5.11. Causes Sysbox to trap the *xattr syscalls inside the container, slowing it down (default = true).\n"
+	printf "      --allow-trusted-xattr             Allows the overlayfs trusted.overlay.opaque xattr to be set inside all Sysbox containers; needed when running Docker inside Sysbox on hosts with kernel < 5.11. Causes Sysbox to trap the *xattr syscalls inside the container, slowing it down (default = false).\n"
 	printf "      --honor-caps                      Honor the container's process capabilities passed to Sysbox by the higher level container manager (e.g., Docker/containerd). When set to false (default), Sysbox always gives the container's root user full capabilities and other users no capabilities to mimic a VM-like environment. Note that the container's capabilities are isolated from the host via the Linux user-namespace. (default = false).\n"
 	printf "      --syscont-mode                    Causes Sysbox to run in \"system container\" mode. In this mode, it sets up the container to run system workloads (e.g., systemd, Docker, Kubernetes, etc.) seamlessly and securely. When set to false, Sysbox operates in \"regular container\" mode where it sets up the container per its OCI spec (usually for microservices), with the exception of the Linux 'user' and 'cgroup' namespaces which Sysbox always enables for extra container isolation. (default = true)\n"
 	printf "      --seccomp-fd-release <pol>        Policy to close syscall interception handles; useful in kernels < 5.8; allowed values are \"proc-exit\" and \"cont-exit\" (default = \"proc-exit\")\n"
@@ -420,7 +420,7 @@ function show_usage() {
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-shiftfs-precheck,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr:,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-shiftfs-precheck,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
 	eval set -- "$options"
 
 	while true; do
@@ -467,8 +467,7 @@ function parse_args() {
 				SYSCONT_MODE=$1
 				;;
 			--allow-trusted-xattr)
-				shift
-				ALLOW_TRUSTED_XATTR=$1
+				ALLOW_TRUSTED_XATTR=1
 				;;
 			--data-root)
 				SET_DATA_ROOT=1
