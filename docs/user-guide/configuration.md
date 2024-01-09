@@ -16,6 +16,7 @@ Note that usually you don't need to modify Sysbox's default configuration.
 -   [Ignoring Chowns of Sysfs](#ignoring-chowns-of-sysfs)
 -   [Disabling ID-mapped Mounts on Sysbox](#disabling-id-mapped-mounts-on-sysbox)
 -   [Disabling Shiftfs on Sysbox](#disabling-shiftfs-on-sysbox)
+-   [Disabling ID-mapping and Shiftfs on Container Bind Mounts](#disabling-id-mapping-and-shiftfs-on-container-bind-mounts)
 -   [Sysbox Kernel Parameter Configurations](#sysbox-kernel-parameter-configurations)
 
 ## Sysbox Systemd Services
@@ -245,7 +246,7 @@ operate properly; same if you run systemd inside the container). This can be
 tricky since such software is complex and may require different capabilities
 depending on what functions it's performing inside the container.
 
-## Speeding up Sysbox by Disallowing Trusted Overlay Xattributes
+## Speeding up Sysbox by Disallowing Trusted Overlay Xattributes \[ v0.6.2 or earlier \]
 
 The [overlayfs](https://docs.kernel.org/filesystems/overlayfs.html) filesystem
 is commonly used by container managers (e.g., Docker or Kubernetes) to set up
@@ -304,6 +305,25 @@ option (see [above](#reconfiguration-procedure). If you set
 `--allow-trusted-xattr=false` globally, you can always deploy a Sysbox container
 with the default behavior by passing environment variable
 `SYSBOX_ALLOW_TRUSTED_XATTR=TRUE`.
+
+**NOTE:**
+
+Starting with Sysbox v0.6.3, Sysbox starts with `--allow-trusted-xattr=false` by
+default. This improves performance (sometimes significantly) because Sysbox need
+not trap `*xattr()` syscalls.However, it also means that applications that want
+to use `trusted.*` extended file attributes won't work (i.e., they'll receive an
+EPERM when trying to access such attributes), unless the user explicitly starts
+the container with `SYSBOX_ALLOW_TRUSTED_XATTR=TRUE`.
+
+This change was done because applications such as Docker Engine (version
+20.10.9+) no longer use `trusted.*` extended file attributes when they run
+inside a Linux user-namespace (e.g., as in Sysbox containers), so having Sysbox
+intercept all `*xattr()` syscalls was unnecessarily adding a performance
+penalty. Nonetheless, other applications may still rely on `trusted.*`
+attributes, and those will not work properly inside Sysbox containers unless the
+container is started with `SYSBOX_ALLOW_TRUSTED_XATTR=TRUE` as described above
+(or unless the sysbox-mgr is configured with `--allow-trusted-xattr=true` in the
+respective Sysbox systemd unit file).
 
 ## Speeding up Sysbox by Disabling Image Preloading
 
@@ -407,6 +427,66 @@ disable Sysbox's usage of shiftfs by passing the
 `--disable-shiftfs` option to the sysbox-mgr's command line. See the
 section on [reconfiguration procedure](#reconfiguration-procedure) above for
 further info on how to do this.
+
+## Disabling ID-mapping and Shiftfs on Container Bind Mounts
+
+Although uncommon, in some scenarios it's desirable to tell Sysbox to not use
+ID-mapped-mounts or shiftfs on files or directories bind-mounted into the
+container. This is useful when neither of these mechanisms works well with the
+filesystem where the file to be bind-mounted resides.
+
+To tell Sysbox to not use ID-mapped-mounts or shiftfs on a bind-mounted directory
+or file, set the `SYSBOX_SKIP_UID_SHIFT=<bind-mount-path>` environment variable
+when creating the container.
+
+For example, normally when you create a bind-mount into a container, Sysbox will
+use ID-mapped-mounts or shiftfs to ensure the bind-mounted file shows up with
+proper ownership inside the rootless Sysbox container:
+
+```
+$ docker run --runtime=sysbox-runc -it --rm -v /path/to/somefile:/mnt/somefile alpine
+
+# This shows the container is rootless (root in container is unprivileged user 165536 on the host):
+/ # cat /proc/self/uid_map
+         0     165536      65536
+
+# This shows that Sysbox id-map-mounts the bind-mounted file so it shows up with proper ownership:
+/ # mount | grep somefile
+/dev/nvme0n1p5 on /mnt/somefile type ext4 (rw,relatime,idmapped,errors=remount-ro)
+
+# This verifies that ownership looks good inside the container:
+/ # ls -l /mnt
+total 4
+-rw-rw-r--    1 1000     1000             6 Jan  9 22:04 somefile
+```
+
+In contrast, if we pass `-e SYSBOX_SKIP_UID_SHIFT=/mnt/somefile`, this happens:
+
+
+```
+$ docker run --runtime=sysbox-runc -it --rm -v /path/to/somefile:/mnt/somefile -e SYSBOX_SKIP_UID_SHIFT=/mnt/somefile alpine
+
+# This shows the container is rootless:
+/ # cat /proc/self/uid_map
+         0     165536      65536
+
+# This shows Sysbox no longer id-maps the file (nor uses shiftfs on it):
+/ # mount | grep somefile
+/dev/nvme0n1p5 on /mnt/somefile type ext4 (rw,relatime,errors=remount-ro)
+
+# As a result, the file is owned by "nobody" inside the container:
+/ # ls -l /mnt
+total 4
+-rw-rw-r--    1 nobody   nobody           6 Jan  9 22:04 somefile
+```
+
+Though this feature is usually not needed, it is sometimes useful if the file
+being bind-mounted resides on a file-system where id-mapped-mounts or shiftfs
+does not work properly.
+
+Finally, the `SYSBOX_SKIP_UID_SHIFT=<path>` flag only applies to bind-mounts.
+That is, `<path>` has to be a path inside the container that is a bind-mount
+target.
 
 ## Sysbox Kernel Parameter Configurations
 
