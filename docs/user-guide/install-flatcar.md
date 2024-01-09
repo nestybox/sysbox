@@ -1,4 +1,4 @@
-# Flatcar Installation
+# Flatcar Installation [SYSBOX-EE ONLY FEATURE - DEPRECATED]
 
 The document outlines the set of instructions that are required to install Sysbox
 on Kinvolk's Flatcar Linux distribution.
