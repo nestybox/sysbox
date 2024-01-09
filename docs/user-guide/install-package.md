@@ -57,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.2/sysbox-ce_0.6.2-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.3/sysbox-ce_0.6.3-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.6.2-0.linux_amd64.deb
-fd287f2f3b5a072b62c378f9e1eeeeaa2ccad22bb48cb381d30d8c855c51b401  sysbox-ce_0.6.2-0.linux_amd64.deb
+$ sha256sum sysbox-ce_0.6.3-0.linux_amd64.deb
+cfce811006a27305071b1634ca8fe690392f5dcc205612e7b4e5bde411b7701e  sysbox-ce_0.6.3-0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -85,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.6.2-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.6.3-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -95,38 +95,39 @@ NOTE: the `jq` tool is used by the Sysbox installer.
 
 ```console
 $ sudo systemctl status sysbox -n20
+
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Sun 2023-10-15 13:03:50 PDT; 10s ago
+     Active: active (running) since Tue 2024-01-09 11:49:57 PST; 31min ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 1549 (sh)
-      Tasks: 2 (limit: 9357)
-     Memory: 424.0K
-        CPU: 18ms
+   Main PID: 1141652 (sh)
+      Tasks: 2 (limit: 38078)
+     Memory: 376.0K
+        CPU: 22ms
      CGroup: /system.slice/sysbox.service
-             ├─1549 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
-             └─1568 /bin/sleep infinity
+             ├─1141652 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
+             └─1141672 /bin/sleep infinity
 
-Oct 15 13:03:50 xps15 systemd[1]: Started Sysbox container runtime.
-Oct 15 13:03:50 xps15 sh[1550]: sysbox-runc
-Oct 15 13:03:50 xps15 sh[1550]:         edition:         Community Edition (CE)
-Oct 15 13:03:50 xps15 sh[1550]:         version:         0.6.2
-Oct 15 13:03:50 xps15 sh[1550]:         commit:          60ca93c783b19c63581e34aa183421ce0b9b26b7
-Oct 15 13:03:50 xps15 sh[1550]:         built at:        Mon Jun 12 03:49:19 UTC 2023
-Oct 15 13:03:50 xps15 sh[1550]:         built by:        Cesar Talledo
-Oct 15 13:03:50 xps15 sh[1550]:         oci-specs:       1.0.2-dev
-Oct 15 13:03:50 xps15 sh[1557]: sysbox-mgr
-Oct 15 13:03:50 xps15 sh[1557]:         edition:         Community Edition (CE)
-Oct 15 13:03:50 xps15 sh[1557]:         version:         0.6.2
-Oct 15 13:03:50 xps15 sh[1557]:         commit:          4b5fb1def9abe6a256cfe62bacaf2a7d333d81d2
-Oct 15 13:03:50 xps15 sh[1557]:         built at:        Mon Jun 12 03:49:55 UTC 2023
-Oct 15 13:03:50 xps15 sh[1557]:         built by:        Cesar Talledo
-Oct 15 13:03:50 xps15 sh[1562]: sysbox-fs
-Oct 15 13:03:50 xps15 sh[1562]:         edition:         Community Edition (CE)
-Oct 15 13:03:50 xps15 sh[1562]:         version:         0.6.2
-Oct 15 13:03:50 xps15 sh[1562]:         commit:          30fd49edbd51048fed8b2ad0af327598d30b29eb
-Oct 15 13:03:50 xps15 sh[1562]:         built at:        Mon Jun 12 03:49:46 UTC 2023
-Oct 15 13:03:50 xps15 sh[1562]:         built by:        Cesar Talledo
+Jan 09 11:49:57 lenovo systemd[1]: Started Sysbox container runtime.
+Jan 09 11:49:57 lenovo sh[1141653]: sysbox-runc
+Jan 09 11:49:57 lenovo sh[1141653]:         edition:         Community Edition (CE)
+Jan 09 11:49:57 lenovo sh[1141653]:         version:         0.6.3
+Jan 09 11:49:57 lenovo sh[1141653]:         commit:         e6ca9b930c43c0f20bb93ef3ef6af5bd49fd88ce
+Jan 09 11:49:57 lenovo sh[1141653]:         built at:         Tue Jan  9 17:59:49 UTC 2024
+Jan 09 11:49:57 lenovo sh[1141653]:         built by:         Cesar Talledo
+Jan 09 11:49:57 lenovo sh[1141653]:         oci-specs:         1.1.0+dev
+Jan 09 11:49:57 lenovo sh[1141662]: sysbox-mgr
+Jan 09 11:49:57 lenovo sh[1141662]:         edition:         Community Edition (CE)
+Jan 09 11:49:57 lenovo sh[1141662]:         version:         0.6.3
+Jan 09 11:49:57 lenovo sh[1141662]:         commit:         03f5d7bc584fdcb2319b2c1831bd58581185fc1c
+Jan 09 11:49:57 lenovo sh[1141662]:         built at:         Tue Jan  9 18:00:02 UTC 2024
+Jan 09 11:49:57 lenovo sh[1141662]:         built by:         Cesar Talledo
+Jan 09 11:49:57 lenovo sh[1141666]: sysbox-fs
+Jan 09 11:49:57 lenovo sh[1141666]:         edition:         Community Edition (CE)
+Jan 09 11:49:57 lenovo sh[1141666]:         version:         0.6.3
+Jan 09 11:49:57 lenovo sh[1141666]:         commit:         ff6e109d64856db9b4bce8d10226371d7797ba96
+Jan 09 11:49:57 lenovo sh[1141666]:         built at:         Tue Jan  9 17:59:58 UTC 2024
+Jan 09 11:49:57 lenovo sh[1141666]:         built by:         Cesar Talledo
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
