@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2024-01-08
+### Added
+  * Fix to ensure "docker --net=host" works inside Sysbox containers (issue #712).
+  * Fix bug when mounting host kernel headers into containers (issue #727).
+  * Fix emulation of /sys/devices/virtual/* inside containers (issue #719).
+  * Don't intercept *xattr syscalls by default (improves performance).
+  * Add feature to skip shiftfs and idmapping on specific container files/dirs (via `SYSBOX_SKIP_UID_SHIFT` container env var).
+  * Fix bug with fsuid-map-fail-on-error config option.
+  * Fix bug with pivot-root inside Sysbox containers (ensures docker:24-dind image can run inside Sysbox containers).
+  * sysbox-deploy-k8s: add support for Kubernetes v1.27 and v1.28.
+  * sysbox-deploy-k8s: automatically detect installation on GKE clusters and set up configs accordingly.
+  * sysbox-deploy-k8s: support installation on Debian-based K8s nodes.
+  * sysbox-deploy-k8s: don't install shiftfs on K8s nodes with kernel >= 5.19.
+### Removed
+  * sysbox-deploy-k8s: deprecated support for K8s v1.24 and v1.25 (EOL'd).
+
 ## [0.6.2] - 2023-06-09
 ### Added
   * Fix bug in Sysbox's checking of host support for idmapping and shiftfs.
