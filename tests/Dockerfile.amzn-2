@@ -1,5 +1,5 @@
 #
-# Sysbox Test Container Dockerfile (Fedora-35 image)
+# Sysbox Test Container Dockerfile (Amazonlinux-2 image)
 #
 # This Dockerfile creates the sysbox test container image. The image
 # contains all dependencies needed to build, run, and test sysbox.
@@ -56,6 +56,7 @@ RUN yum update -y && yum install -y \
     libnl3-devel \
     libseccomp \
     libseccomp-devel \
+    libseccomp-static \
     kernel-headers.x86_64 \
     python3 \
     kmod \
