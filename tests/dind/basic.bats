@@ -24,10 +24,9 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker exec "$syscont" sh -c "egrep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "cat /var/log/dockerd.log"
   [ "$status" -eq 0 ]
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
@@ -44,10 +43,9 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "cat /var/log/dockerd.log"
   [ "$status" -eq 0 ]
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   docker exec "$syscont" sh -c "docker run ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
@@ -124,10 +122,9 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "cat /var/log/dockerd.log"
   [ "$status" -eq 0 ]
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"
   [ "$status" -eq 0 ]
@@ -152,10 +149,9 @@ function teardown() {
 
   wait_for_inner_dockerd $syscont
 
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "cat /var/log/dockerd.log"
   [ "$status" -eq 0 ]
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   docker exec "$syscont" sh -c "docker run --net=host ${CTR_IMG_REPO}/hello-world | grep \"Hello from Docker!\""
   [ "$status" -eq 0 ]
@@ -184,10 +180,9 @@ EOF
 
   wait_for_inner_dockerd $syscont
 
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker exec "$syscont" sh -c "grep \"graphdriver.*=$inner_docker_graphdriver\" /var/log/dockerd.log"
+  docker exec "$syscont" sh -c "cat /var/log/dockerd.log"
   [ "$status" -eq 0 ]
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   image="test_nginx"
 
@@ -285,12 +280,9 @@ EOF
 									 docker:latest version)
 
   # Verify the inner docker is using the correct graph driver (e.g., overlayfs, not vfs)
-  local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
-
-  docker logs "$syscont"
+  docker logs $syscont
   [ "$status" -eq 0 ]
-
-  echo $output | grep "graphdriver=$inner_docker_graphdriver"
+  check_inner_docker_graphdriver "$syscont" "$output"
 
   # Verify we can launch an inner container
   docker exec "$syscont" sh -c "docker run --rm -d ${CTR_IMG_REPO}/busybox tail -f /dev/null"

@@ -10,3 +10,10 @@ function get_inner_docker_graphdriver() {
 		echo "overlay2"
 	fi
 }
+
+function check_inner_docker_graphdriver() {
+	local syscont=$1
+	local docker_logs=$2
+	local expect_graphdriver=$(get_inner_docker_graphdriver)
+	echo "$docker_logs" | egrep "graphdriver.*=$expect_graphdriver|storage-driver=$expect_graphdriver"
+}
