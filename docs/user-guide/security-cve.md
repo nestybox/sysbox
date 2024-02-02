@@ -10,6 +10,7 @@ CRI-O (when Sysbox is installed in Kubernetes clusters), or in the Linux kernel.
 
 | CVE          | Date     | Severity | Affects Sysbox | Details |
 | ------------ | -------- | -------- | -------------- | ------- |
+| 2024-21626   | 01/31/24 | High     | No             | [CVE-2022-21626 (runc container breakout through process.cwd trickery and leaked fds)](#cve-2022-21626-runc-container-breakout-through-process-cwd-trickery-and-leaked-fds) |
 | 2022-0811    | 03/15/22 | High     | Yes            | [CVE-2022-0811 (Privilege Escalation in CRI-O via sysctl)](#cve-2022-0811-privilege-escalation-in-cri-o-via-sysctl) |
 | 2022-0847    | 03/03/22 | High     | Yes            | [CVE-2022-0847 (Privilege Escalation via Pipes (aka Dirty Pipe))](#cve-2022-0847-privilege-escalation-via-pipes-aka-dirty-pipe) |
 | 2022-0492    | 02/06/22 | Medium   | No             | [CVE 2022-0492 (Privilege Escalation via Cgroups v1)](#cve-2022-0492-privilege-escalation-via-cgroups-v1) |
@@ -131,6 +132,33 @@ v0.5.1 or later (e.g., run `systemctl status sysbox` on the K8s node).
 If you have a prior version of Sysbox installed in your cluster, then your CRI-O
 is vulnerable. In this case we recommend upgrading the Sysbox version on your
 Kubernetes cluster, using the steps described [here](install-k8s.md#upgrading-sysbox-or-sysbox-enterprise).
+
+
+## CVE 2022-21626 (runc container breakout through process cwd trickery and leaked fds)
+
+**Date:** 01/31/24
+
+**Severity:** High
+
+**Problem:**
+
+[CVE 2024-21626](https://www.cve.org/CVERecord?id=CVE-2024-21626) is a
+vulnerability in the OCI runc runtime that allows a container escape that gives
+it access to the host filesystem. Details can be found in [this runc security advisory](https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv)
+The vulnerability impacts runc versions between v1.0.0-rc93 and 1.1.11 (inclusive),
+and has been fixed in runc 1.1.12.
+
+Though Sysbox is a modified fork of the OCI runc runtime, it's NOT affected by
+the same vulnerability because:
+
+* Sysbox does not leak host file descriptors into the container as the
+  vulnerable runc versions do.
+
+* Sysbox always enables the Linux user-namespace on containers; thus, even if a
+  host file descriptor had been leaked allowing the container to escape into the
+  host filesystem, the container process would be quite limited on the actions
+  it can take on the host (e.g., it would not have permissions to modify root or
+  user owned files, unless these files have permissions enabled for "others").
 
 
 [cve-2022-0185-commit]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=722d94847de29310e8aa03fcbdb41fc92c521756
