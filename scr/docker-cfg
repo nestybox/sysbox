@@ -101,9 +101,7 @@ function dockerd_manual_restart() {
 			exit 1
 		fi
 
-		rm -f /var/run/docker.pid
-		rm -f /var/run/docker/containerd/containerd.pid
-		rm -f /var/run/containerd/containerd.pid
+		sleep 1
 
 		$dockerd_cmd > /var/log/dockerd.log 2>&1 &
 
