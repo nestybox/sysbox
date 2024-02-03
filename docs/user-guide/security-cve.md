@@ -10,7 +10,7 @@ CRI-O (when Sysbox is installed in Kubernetes clusters), or in the Linux kernel.
 
 | CVE          | Date     | Severity | Affects Sysbox | Details |
 | ------------ | -------- | -------- | -------------- | ------- |
-| 2024-21626   | 01/31/24 | High     | No             | [CVE-2022-21626 (runc container breakout through process.cwd trickery and leaked fds)](#cve-2022-21626-runc-container-breakout-through-process-cwd-trickery-and-leaked-fds) |
+| 2024-21626   | 01/31/24 | High     | No             | [CVE-2024-21626 (runc container breakout through process.cwd trickery and leaked fds)](#cve-2022-21626-runc-container-breakout-through-process-cwd-trickery-and-leaked-fds) |
 | 2022-0811    | 03/15/22 | High     | Yes            | [CVE-2022-0811 (Privilege Escalation in CRI-O via sysctl)](#cve-2022-0811-privilege-escalation-in-cri-o-via-sysctl) |
 | 2022-0847    | 03/03/22 | High     | Yes            | [CVE-2022-0847 (Privilege Escalation via Pipes (aka Dirty Pipe))](#cve-2022-0847-privilege-escalation-via-pipes-aka-dirty-pipe) |
 | 2022-0492    | 02/06/22 | Medium   | No             | [CVE 2022-0492 (Privilege Escalation via Cgroups v1)](#cve-2022-0492-privilege-escalation-via-cgroups-v1) |
@@ -134,7 +134,7 @@ is vulnerable. In this case we recommend upgrading the Sysbox version on your
 Kubernetes cluster, using the steps described [here](install-k8s.md#upgrading-sysbox-or-sysbox-enterprise).
 
 
-## CVE 2022-21626 (runc container breakout through process cwd trickery and leaked fds)
+## CVE 2024-21626 (runc container breakout through process cwd trickery and leaked fds)
 
 **Date:** 01/31/24
 
