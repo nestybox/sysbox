@@ -54,6 +54,9 @@ function run_all_tests() {
 	# Launch kind test-suite.
 	./tests/kind/kind.sh
 
+	printf "\nExecuting security tests ... \n"
+	bats --tap tests/security
+
 	printf "\nExecuting perf tests ... \n"
 	bats --tap tests/perf
 
@@ -91,6 +94,9 @@ function run_ci_tests() {
 
 	# Launch sysbox-pod test-suite.
 	./tests/pods/pods.sh
+
+	printf "\nExecuting security tests ... \n"
+	bats --tap tests/security
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
@@ -253,6 +259,9 @@ function test_with_docker_userns_remap() {
 		bats --tap tests/kind/kind-flannel.bats
 		docker system prune -a -f
 	fi
+
+	printf "\nExecuting security tests ... \n"
+	bats --tap tests/security
 
 	printf "\nSysbox health checking ...\n"
 	bats --tap tests/health/sysbox-health.bats
