@@ -607,13 +607,13 @@ EOF
   sv_runc exec syscont sh -c "stat /proc/sys/kernel/cap_last_cap"
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "File: /proc/sys/kernel/cap_last_cap" ]]
-  [[ "${lines[1]}" =~ "Size: 0 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular empty file" ]]
+  [[ "${lines[1]}" =~ "Size: 1024 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular file" ]]
   [[ "${lines[3]}" =~ "Access: (0444/-r--r--r--)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
 
   sv_runc exec syscont sh -c "stat /proc/sys/kernel/hostname"
   [ "$status" -eq 0 ]
   [[ "${lines[0]}" =~ "File: /proc/sys/kernel/hostname" ]]
-  [[ "${lines[1]}" =~ "Size: 0 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular empty file" ]]
+  [[ "${lines[1]}" =~ "Size: 4096 ".+"Blocks: 0 ".+"IO Block: 1024 ".+"regular file" ]]
   [[ "${lines[3]}" =~ "Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)" ]]
 }
 
