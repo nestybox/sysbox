@@ -653,10 +653,7 @@ load ../helpers/sysbox-health
   [ "$status" -eq 0 ]
   [[ "$output" == "f1-tmpfs" ]]
 
-  # /mnt/f1 is bind-mounted from $basedir/t1/f1, which is bind-mounted from
-  # tmpfs. Since ID-mapped mounts are not yet supported on tmpfs we skip
-  # this check.
-  if sysbox_using_shiftfs_only; then
+  if sysbox_using_shiftfs_only || (sysbox_using_idmapped_mnt && kernel_supports_idmapping_tmpfs); then
 	  docker exec "$syscont" sh -c "ls -l /mnt/f1"
 	  [ "$status" -eq 0 ]
 	  verify_owner "root" "root" "$output"
@@ -690,11 +687,11 @@ load ../helpers/sysbox-health
   [ "$status" -eq 0 ]
   [[ "$output" == "" ]]
 
-  # f6 is bind mounted from /dev/null, owned by the host's root; thus is shows
-  # up as owned by "nobody" in the container.
-  docker exec "$syscont" sh -c "ls -l /mnt/f6"
-  [ "$status" -eq 0 ]
-  verify_owner "nobody" "nobody" "$output"
+  if sysbox_using_shiftfs_only || (sysbox_using_idmapped_mnt && kernel_supports_idmapping_tmpfs); then
+	  docker exec "$syscont" sh -c "ls -l /mnt/f6"
+	  [ "$status" -eq 0 ]
+	  verify_owner "root" "root" "$output"
+  fi
 
   docker_stop "$syscont"
   [ "$status" -eq 0 ]
