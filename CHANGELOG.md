@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.4] - 2024-04-06
+### Added
+  * Fix to allowing running x86 apps in Sysbox containers (issue #350).
+  * Fix sysbox-fs nsenter mount leak.
+  * Fix sysbox emulation of /proc and /sys in containers for kernels 6.5+.
+  * Add hardening against CVE-2024-21626.
+  * Fix ordering of mounts under /run for containers with systemd (issue #767).
+
 ## [0.6.3] - 2024-01-08
 ### Added
   * Fix to ensure "docker --net=host" works inside Sysbox containers (issue #712).
