@@ -51,7 +51,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: sysbox-deploy-k8s
-        image: registry.nestybox.com/nestybox/sysbox-deploy-k8s:v0.6.3
+        image: registry.nestybox.com/nestybox/sysbox-deploy-k8s:v0.6.4
         imagePullPolicy: Always
         command: [ "bash", "-c", "/opt/sysbox/scripts/sysbox-deploy-k8s.sh ce install" ]
         env:
