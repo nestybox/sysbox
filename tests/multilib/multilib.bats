@@ -41,3 +41,23 @@ function teardown() {
   # cleanup
   docker_stop "$syscont"
 }
+
+@test "i386 container in amd64 system" {
+
+  # Test basic functionality of a container based on a i386 image
+
+  # this test is only valid on amd64 systems
+  if [[ $(get_platform) != "amd64" ]]; then
+    skip "multilib testcase supported only in amd64 architecture"
+  fi
+
+  # launch sys container
+  local syscont=$(docker_run --rm docker.io/i386/alpine:latest tail -f /dev/null)
+
+  # mount a tmpfs to test that the mount syscall works
+  docker exec "$syscont" mount -t tmpfs none /mnt
+  [ "$status" -eq 0 ]
+
+  # cleanup
+  docker_stop "$syscont"
+}
