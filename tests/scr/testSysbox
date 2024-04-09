@@ -45,8 +45,8 @@ function run_all_tests() {
 	bats --tap tests/apps/l1
 	printf "\nExecuting app tests (l2) ... \n"
 	bats --tap tests/apps/l2
-	printf "\nExecuting multi-platform ... \n"
-	bats --tap tests/multilib
+	printf "\nExecuting multi-arch tests ... \n"
+	bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
 	bats --tap tests/buildx/basic.bats
 
@@ -82,8 +82,8 @@ function run_ci_tests() {
 	bats --tap tests/dind
 	printf "\nExecuting app tests (l1) ... \n"
 	bats --tap tests/apps/l1
-	printf "\nExecuting multi-platform ... \n"
-	bats --tap tests/multilib
+	printf "\nExecuting multi-arch tests ... \n"
+	bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
 	bats --tap tests/buildx/basic.bats
 	printf "\nExecuting xattr syscall tests ... \n"
