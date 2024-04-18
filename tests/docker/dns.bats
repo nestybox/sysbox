@@ -260,7 +260,7 @@ function teardown() {
   local custom_dns="1.0.0.1"
   local syscont=$(docker_run --rm --dns $custom_dns ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf | cut -d ' ' -f 2"
+  docker exec "$syscont" sh -c "grep \"^nameserver\" /etc/resolv.conf | cut -d ' ' -f 2"
   [ "$status" -eq 0 ]
   local syscont_dns=$output
 

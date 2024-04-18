@@ -48,7 +48,7 @@ function run_all_tests() {
 	printf "\nExecuting multi-arch tests ... \n"
 	bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
-	bats --tap tests/buildx/basic.bats
+	bats --tap tests/buildx
 
 	# Launch syscall interception test-suite.
 	./tests/syscall/syscall.sh
