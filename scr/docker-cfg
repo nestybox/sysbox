@@ -103,6 +103,7 @@ function dockerd_manual_restart() {
 
 		sleep 1
 
+		echo "Restarting Docker ..."
 		$dockerd_cmd > /var/log/dockerd.log 2>&1 &
 
 		retry 15 2 dockerd_running
@@ -367,6 +368,7 @@ function docker_config_network() {
  }
 
  function docker_notify() {
+	 export DOCKER_BUILDKIT_RUNC_COMMAND=/usr/bin/sysbox-runc
 
 	 # Restart docker if disruptive changes have been made.
 	 if [[ ${docker_userns_config_changed} = "true" ]] ||

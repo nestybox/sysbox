@@ -281,7 +281,9 @@ function main() {
 	fi
 
 	# Start docker (without systemd, we must start Docker manually)
+	export DOCKER_BUILDKIT_RUNC_COMMAND=/usr/bin/sysbox-runc
 	if ! systemd_env; then
+		echo "Starting Docker ..."
 		dockerd=$(which dockerd)
 		$dockerd >/var/log/dockerd.log 2>&1 &
 	fi
