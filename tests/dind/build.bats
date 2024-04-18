@@ -17,12 +17,8 @@ image="test_nginx"
 # This dockerfile will be passed into the system containers via a bind-mount.
 file="/root/Dockerfile"
 
-# Testcase #1.
-#
-# Test basic buildx operations within a sys container. In this scenario, we
-# are relying on docker's extended functionality (buildx's default driver), so
-# no external buildkit component is utilized here.
-@test "L1 buildx + L1 docker-engine (docker driver)" {
+# Test docker build inside a sysbox container.
+@test "docker build inside sysbox container" {
 
   cat << EOF > ${file}
 FROM ${CTR_IMG_REPO}/alpine
@@ -52,11 +48,9 @@ EOF
   rm $file
 }
 
-# Testcase #2.
-#
-# Test basic buildkit features when this one is launched by Sysbox (i.e.,
-# buildkit runs at L1 level).
-@test "L0 buildx + L1 buildkit container (docker-container driver)" {
+# Tests docker build using the docker-container driver and sysbox runtime (i.e.,
+# the build happens inside a sysbox container).
+@test "docker build with sysbox-backed docker-container driver" {
 
   docker buildx version
   if [ "$status" -ne 0 ]; then
@@ -100,11 +94,9 @@ EOF
   rm $file
 }
 
-# Testcase #3.
-#
 # Test basic buildkit features when this one is launched within a sysbox container
 # (i.e., buildkit runs at L2 level).
-@test "L0 buildx + L2 buildkit container (docker-container driver)" {
+@test "test docker container driver inside a sysbox container" {
 
   docker buildx version
   if [ "$status" -ne 0 ]; then
@@ -125,7 +117,7 @@ EOF
   wait_for_inner_dockerd $syscont
 
   # Obtain sys container's ip address.
-  docker exec $syscont bash -c "ip address show dev eth0 | grep inet | cut -d\"/\" -f1 | awk '{print \$2}'"
+  docker exec $syscont bash -c "ip address show dev eth0 | grep -w inet | cut -d\"/\" -f1 | awk '{print \$2}'"
   [ "$status" -eq 0 ]
   local syscont_ip=${output}
 
