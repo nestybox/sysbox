@@ -35,7 +35,7 @@ EOF
   local syscont=$(docker_run --rm testimg tail -f /dev/null)
 
   # Run the container, verify all is good
-  docker exec -d "$syscont" sh -c "findmnt | grep sysbox-fs"
+  docker exec "$syscont" sh -c "findmnt | grep sysboxfs"
   [ "$status" -eq 0 ]
 
   docker_stop $syscont
