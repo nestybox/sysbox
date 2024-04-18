@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 #
-# Basic tests for buildx / buildkit scenarios.
+# Basic tests for running Docker builds inside Sysbox containers.
 #
 
 load ../helpers/crictl

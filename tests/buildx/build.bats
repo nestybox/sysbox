@@ -1,7 +1,11 @@
 #!/usr/bin/env bats
 
 #
-# Test for creating sys containers images with docker images inside
+# Test for building container images with Sysbox.
+#
+# NOTE: assumes Docker is configured to use Sysbox as the runtime
+# for builds. This is done by setting env var "DOCKER_BUILDKIT_RUNC_COMMAND=/usr/bin/sysbox-runc"
+# when starting Docker Engine inside the Sysbox test conatainer (supported since Docker Engine v25.0).
 #
 
 load ../helpers/run
@@ -15,7 +19,35 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "build with inner images" {
+@test "basic build with sysbox" {
+  local file=$(mktemp)
+
+  cat << EOF > ${file}
+FROM ${CTR_IMG_REPO}/alpine
+MAINTAINER Nestybox
+RUN cat /proc/self/gid_map /proc/self/uid_map | awk '{if(\$1==\$2) exit 1}'
+RUN apk update && apk add findmnt
+EOF
+
+  docker build . -t testimg -f ${file} --no-cache
+  [ "$status" -eq 0 ]
+
+  local syscont=$(docker_run --rm testimg tail -f /dev/null)
+
+  # Run the container, verify all is good
+  docker exec -d "$syscont" sh -c "findmnt | grep sysbox-fs"
+  [ "$status" -eq 0 ]
+
+  docker_stop $syscont
+  retry 5 1 "docker ps | grep -v $syscont"
+
+  docker image rm testimg
+  [ "$status" -eq 0 ]
+
+  rm ${file}
+}
+
+@test "build syscont with inner images" {
 
   if sysbox_using_rootfs_cloning; then
 	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
@@ -26,19 +58,7 @@ function teardown() {
 	  skip "requires host in cgroup v1"
   fi
 
-  # Reconfigure Docker's default runtime to sysbox-runc
-  #
-  # Note: for some reason this does not work on bats. I worked-around
-  # it by configuring the docker daemon in the sysbox test container
-  # to use the sysbox-runc as it's default runtime.
-  #
-  # dockerd_stop
-  # cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
-  # (cat /etc/docker/daemon.json 2>/dev/null || echo '{}') | jq '. + {"default-runtime": "sysbox-runc"}' > /tmp/tmp.json
-  # mv /tmp/tmp.json /etc/docker/daemon.json
-  # dockerd_start
-
-  # do a docker build with appropriate dockerfile
+  # Do a docker build with appropriate dockerfile
   pushd .
   cd tests/dind
   DOCKER_BUILDKIT=0 docker build --no-cache -t sc-with-inner-img:latest .
@@ -109,7 +129,7 @@ function teardown() {
   # dockerd_start
 }
 
-@test "commit with inner images" {
+@test "commit syscont with inner images" {
 
   if sysbox_using_rootfs_cloning; then
 	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
@@ -219,7 +239,7 @@ function teardown() {
   docker image rm image-commit
 }
 
-@test "commit with removed inner image" {
+@test "commit syscont after removing inner image" {
 
   if sysbox_using_rootfs_cloning; then
 	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
