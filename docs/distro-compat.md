@@ -47,6 +47,12 @@ methods supported, and any other requirements:
     we expect Sysbox to work fine on other Linux distros too, particularly with
     kernel >= 5.12.
 
+## Supported Kubernetes Distros
+
+See [here](user-guide/install-k8s.md#kubernetes-distro-requirements) for the list of supported
+K8s distros, and [here](user-guide/install-k8s.md#kubernetes-version-requirements) for the list
+of supported K8s versions.
+
 ## Supported Platform Architectures
 
 * See [here](arch-compat.md) for a list of supported platform architectures
