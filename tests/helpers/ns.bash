@@ -30,8 +30,7 @@ PROC_SYS_NS=('e=(/proc/sys/net/ipv4/ip_default_ttl INT)' \
 PROC_SYS_NON_NS=('e=(/proc/sys/debug/exception-trace BOOL) '\
                  'e=(/proc/sys/fs/pipe-max-size INT) '\
                  'e=(/proc/sys/fs/mount-max INT)' \
-                 'e=(/proc/sys/fs/mqueue/msg_max INT)'
-                 'e=(/proc/sys/kernel/shmmni INT)' \
+                 'e=(/proc/sys/fs/mqueue/msg_max INT)' \
                  'e=(/proc/sys/kernel/threads-max INT) '\
                  'e=(/proc/sys/kernel/keys/maxkeys INT)' \
                  'e=(/proc/sys/vm/swappiness INT)' \
