@@ -291,6 +291,7 @@ function teardown() {
 	[[ "$output" =~ "created 39 symlinks in user environment" ]]
 
 	docker_stop "$syscont"
+	sleep 2
 }
 
 @test "disable allow-trusted-xattr" {

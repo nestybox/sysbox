@@ -20,6 +20,11 @@ function teardown() {
 }
 
 @test "basic build with sysbox" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
+
   local file=$(mktemp)
 
   cat << EOF > ${file}

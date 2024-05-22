@@ -10,6 +10,7 @@ load ../helpers/dind
 load ../helpers/sysbox
 load ../helpers/environment
 load ../helpers/sysbox-health
+load ../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
@@ -199,6 +200,10 @@ EOF
 }
 
 @test "dind docker with non-default data-root" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
 
   # Create a new docker image with a custom docker config.
   pushd .
