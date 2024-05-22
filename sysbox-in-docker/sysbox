@@ -99,14 +99,30 @@ function check_distro() {
 	fi
 }
 
+# compares versions and checks if the first is greater or equal to the second
+function geq_version() {
+	currentver=$1
+	requiredver=$2
+	if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then 
+			# Greater than or equal to $requiredver
+			true
+	else
+			# Less than $requiredver
+			false
+	fi
+}
+
 # Ensures unprivileged user-ns's are allowed.
 function userns_setup() {
 
   local distro=$1
-
-  if [[ "${distro}" == "ubuntu" ]] ||
-     [[ "${distro}" == "debian" ]]; then
-      echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+  local kver=$2
+  
+  if ! geq_version "$kver" 6.6.0 ; then
+    if [[ "${distro}" == "ubuntu" ]] ||
+      [[ "${distro}" == "debian" ]]; then
+        echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+    fi
   fi
 
   # Setting user-ns max value.
@@ -272,10 +288,28 @@ function sysfs_mount_setup() {
   fi
 }
 
+function geq_version() {
+	currentver=$1
+	requiredver=$2
+	if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then 
+			# Greater than or equal to $requiredver
+			true
+	else
+			# Less than $requiredver
+			false
+	fi
+}
+
+# Returns linux kernel version in the system.
+function get_kernel_version() {
+	echo $(uname -r)
+}
+
 # Completes Sysbox's setup process.
 function sysbox_setup() {
 
   local distro=$(get_host_distro)
+  local kver=$(get_kernel_version)
 
   check_distro "$distro"
 
@@ -284,7 +318,7 @@ function sysbox_setup() {
   fi
 
   setup_sysbox_user
-  userns_setup "$distro"
+  userns_setup "$distro" "$kver"
   kernel_config_setup "$distro"
   sysfs_mount_setup
   docker_setup
