@@ -42,7 +42,7 @@ function teardown() {
   [ "$status" -ne 0 ]
 
   # verify DNS resolution
-  docker exec "$syscont" sh -c "dig nestybox.com"
+  docker exec "$syscont" sh -c "dig google.com"
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
@@ -136,7 +136,7 @@ function teardown() {
 
   # verify DNS resolution
 
-  docker exec "$syscont" sh -c "dig nestybox.com"
+  docker exec "$syscont" sh -c "dig google.com"
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
@@ -172,7 +172,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
@@ -191,7 +191,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner2 host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
 
   # cleanup
@@ -228,7 +228,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
@@ -247,7 +247,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner2 host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
 
   # cleanup
@@ -280,7 +280,7 @@ function teardown() {
   [ "$status" -ne 0 ]
 
   # verify DNS resolution
-  docker exec "$syscont" sh -c "dig nestybox.com"
+  docker exec "$syscont" sh -c "dig google.com"
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
@@ -315,7 +315,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (on inner user-defined bridge)
@@ -334,7 +334,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner2 host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
 
   # cleanup
@@ -371,7 +371,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (launched with --dns on a user-defined bridge)
@@ -390,7 +390,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner2 host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
 
   # cleanup
@@ -430,7 +430,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
 
   # verify DNS in inner container (launched with --dns on a user-defined bridge)
@@ -449,7 +449,7 @@ function teardown() {
   docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" sh -c "docker exec inner2 host nestybox.com"
+  docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
 
   # cleanup
