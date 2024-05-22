@@ -295,9 +295,11 @@ function main() {
 	if [ -n "$DEBUG_ON" ]; then
 		echo "Starting sysbox in debug mode ..."
 		sysbox -d -t
+		[ $? -eq 0 ] || exit 1
 	else
 		echo "Starting sysbox in test mode ..."
 		sysbox -t
+		[ $? -eq 0 ] || exit 1
 	fi
 
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
