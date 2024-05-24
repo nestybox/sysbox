@@ -19,11 +19,14 @@ function teardown() {
   sysbox_log_check
 }
 
-@test "basic build with sysbox" {
+@test "buildx with sysbox" {
 
   if sysbox_using_rootfs_cloning; then
 	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
   fi
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
 
   local file=$(mktemp)
 
@@ -46,10 +49,79 @@ EOF
   docker_stop $syscont
   retry 5 1 "docker ps | grep -v $syscont"
 
+  # Cleanup
   docker image rm testimg
   [ "$status" -eq 0 ]
 
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
   rm ${file}
+}
+
+@test "buildx bake with sysbox" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  local tmpdir=$(mktemp -d)
+  local bakefile=${tmpdir}/test.hcl
+  local dockerfile=${tmpdir}/Dockerfile
+
+  pushd ${tmpdir}
+
+  cat << EOF > ${bakefile}
+group default {
+  targets = [
+    "_packages",
+  ]
+}
+
+target _base {
+  output   = ["type=docker"]
+  contexts = {
+    alpine                = "docker-image://alpine:3.19@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b"
+    "docker/dockerfile:1" = "docker-image://docker/dockerfile:1.7@sha256:dbbd5e059e8a07ff7ea6233b213b36aa516b4c53c645f1817a4dd18b83cbea56"
+  }
+}
+
+target _packages {
+  name       = tgt
+  tags       = ["test/\${tgt}:0"]
+  dockerfile = "Dockerfile"
+  inherits   = ["_base"]
+
+  matrix = {
+    tgt = [
+      "init",
+    ]
+  }
+}
+EOF
+
+cat << EOF > ${dockerfile}
+# syntax=docker/dockerfile:1
+FROM alpine
+RUN apk add gcc libc-dev linux-headers make
+EOF
+
+  docker buildx bake -f test.hcl
+  [ "$status" -eq 0 ]
+
+  popd
+
+  # cleanup
+  docker image rm test/init:0
+  [ "$status" -eq 0 ]
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  rm -r ${tmpdir}
 }
 
 @test "build syscont with inner images" {
