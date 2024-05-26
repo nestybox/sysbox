@@ -6,9 +6,7 @@ load ../helpers/sysbox
 load ../helpers/shell
 load ../helpers/environment
 load ../helpers/sysbox-health
-
-# Container name.
-SYSCONT_NAME=""
+load ../helpers/docker
 
 function setup() {
   setup_busybox
@@ -189,4 +187,38 @@ function teardown() {
     [ "$status" -ne 0 ]
     [[ "${output}" =~ "Permission denied" ]]
   done
+}
+
+# Verify the proper operation of the sysKernel handler for the non-emulated
+# /sys/kernel/btf/* files.
+@test "/sys/kernel/btf/* file ops" {
+
+	docker volume create testvol
+	[ "$status" -eq 0 ]
+
+	local sc=$(docker_run --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine tail -f /dev/null)
+
+	docker exec $sc sh -c "bpftool btf dump file /sys/kernel/btf/vmlinux format c > /mnt/vmlinux.h.sysbox"
+	[ "$status" -eq 0 ]
+
+	docker_stop $sc
+	[ "$status" -eq 0 ]
+
+	docker run --runtime=runc --name cont -d --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine tail -f /dev/null
+
+	docker exec cont sh -c "bpftool btf dump file /sys/kernel/btf/vmlinux format c > /mnt/vmlinux.h.runc"
+	[ "$status" -eq 0 ]
+
+	# compare the vmlinux.h created by sysbox and runc (should match)
+	docker exec cont sh -c "diff -q /mnt/vmlinux.h.sysbox /mnt/vmlinux.h.runc"
+	[ "$status" -eq 0 ]
+
+	docker_stop cont
+	[ "$status" -eq 0 ]
+
+	# cleanup
+	sleep 1
+
+	docker volume rm testvol
+	[ "$status" -eq 0 ]
 }
