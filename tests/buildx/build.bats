@@ -59,6 +59,47 @@ EOF
   rm ${file}
 }
 
+@test "buildx stages with sysbox" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  local file=$(mktemp)
+
+  cat << EOF > ${file}
+FROM ${CTR_IMG_REPO}/alpine AS stage1
+RUN echo "test" > /root/testfile
+
+FROM ${CTR_IMG_REPO}/alpine
+RUN --mount=type=bind,from=stage1,source=/root/testfile,target=/mnt/testfile cp /mnt/testfile /testfile
+EOF
+
+  docker build . -t testimg -f ${file} --no-cache
+  [ "$status" -eq 0 ]
+
+  local syscont=$(docker_run --rm testimg tail -f /dev/null)
+
+  docker exec "$syscont" sh -c "cat /testfile"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "test" ]]
+
+  docker_stop $syscont
+  retry 5 1 "docker ps | grep -v $syscont"
+
+  # Cleanup
+  docker image rm testimg
+  [ "$status" -eq 0 ]
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  rm ${file}
+}
+
 @test "buildx bake with sysbox" {
 
   if sysbox_using_rootfs_cloning; then
