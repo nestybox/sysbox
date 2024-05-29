@@ -103,19 +103,6 @@ function check_distro_support() {
 	fi
 }
 
-# compares versions and checks if the first is greater or equal to the second
-function geq_version() {
-	currentver=$1
-	requiredver=$2
-	if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then 
-			# Greater than or equal to $requiredver
-			true
-	else
-			# Less than $requiredver
-			false
-	fi
-}
-
 # Ensures unprivileged user-ns's are allowed.
 function setup_userns() {
 	local distro=$1
@@ -124,9 +111,11 @@ function setup_userns() {
 	local out=$(echo "$kver" | grep -q "WSL")
 	local isWSL=$?
 
-	if [ $isWSL -ne 0 ] && ! geq_version "$kver" 6.6.0 ; then
+	if [ $isWSL -ne 0 ]; then
 		if [[ "${distro}" == "ubuntu" ]] ||[[ "${distro}" == "debian" ]]; then
-			echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+			if [ -f "/proc/sys/kernel/unprivileged_userns_clone" ]; then
+				echo "1" > /proc/sys/kernel/unprivileged_userns_clone
+			fi
 		fi
 	fi
 
