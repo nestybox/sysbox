@@ -1,0 +1,205 @@
+#
+# Sysbox Test Container Dockerfile (Rocky-9 image)
+#
+# This Dockerfile creates the sysbox test container image. The image
+# contains all dependencies needed to build, run, and test sysbox.
+#
+# The image does not contain sysbox itself; the sysbox repo
+# must be bind mounted into the image. It can then be built,
+# installed, and executed within the container.
+#
+# The image must be run as a privileged container (i.e., docker run --privileged ...)
+# Refer to the sysbox Makefile test targets.
+#
+# This Dockerfile is based on a similar Dockerfile in the OCI runc
+# github repo, but adapted to sysbox testing.
+#
+# Instructions:
+#
+# docker build -t sysbox-test .
+#
+
+FROM rockylinux:9
+
+ARG k8s_version=v1.18.2
+
+# Desired platform architecture to build upon.
+ARG sys_arch
+#ARG sys_arch=amd64
+ENV SYS_ARCH=${sys_arch}
+ARG target_arch
+#ARG target_arch=amd64
+ENV TARGET_ARCH=${target_arch}
+
+# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
+# introduces rootless pod support (via the Linux user-ns)
+ARG crio_version=1.28
+ARG crio_os=CentOS_8
+ARG crictl_version=v1.20.0
+
+ARG kubernetes_version=1.28
+
+RUN dnf update -y && dnf install -y \
+    acl \
+    yum-utils \
+    automake \
+    autoconf \
+    libtool \
+    procps-ng \
+    psmisc \
+    nano \
+    less \
+    curl-minimal \
+    sudo \
+    gawk \
+    git \
+    iptables-nft \
+    jq \
+    pkgconf-pkg-config \
+    libaio-devel \
+    libcap-devel \
+    libnl3-devel \
+    libseccomp \
+    libseccomp-devel \
+    --enablerepo=devel libseccomp-static \
+    python3 \
+    kmod \
+    unzip \
+    time \
+    net-tools \
+    wget \
+    lsof \
+    iputils \
+    ca-certificates \
+    iproute \
+    # sysbox deps
+    fuse \
+    rsync \
+    bash-completion \
+    attr \
+    tree \
+    strace \
+    # Package required to build local test sysbox image
+    --enablerepo=crb glibc-static \
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
+    && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
+
+# Install Golang
+RUN wget https://go.dev/dl/go1.21.3.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.21.3.linux-${sys_arch}.tar.gz && \
+    /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN go env -w GONOSUMDB=/root/nestybox && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    chmod -R 777 "$GOPATH"
+
+# Add a dummy user for the rootless integration tests; needed by the
+# `git clone` operations below.
+RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+
+# install bats
+RUN cd /tmp \
+    && git clone https://github.com/sstephenson/bats.git \
+    && cd bats \
+    && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f \
+    && ./install.sh /usr/local \
+    && rm -rf /tmp/bats
+
+# install protoc compiler for gRPC
+RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$sys_arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${sys_arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip \
+    && mv include /usr/bin \
+    && go install github.com/golang/protobuf/protoc-gen-go@latest \
+    && export PATH="$PATH:$(go env GOPATH)/bin"
+
+# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in K8s (L2) nodes.
+#
+# TODO: Define a mechanism in our testing-framework to allow K8s version to be
+# configured in a centralized location, so that the installed K8s components
+# (both inside privileged test-container and within L2 K8s image) are all
+# matching the same K8s release.
+RUN echo -e "\
+[kubernetes] \n\
+name=Kubernetes \n\
+baseurl=https://pkgs.k8s.io/core:/stable:/v${kubernetes_version}/rpm/\n\
+enabled=1 \n\
+gpgcheck=1 \n\
+repo_gpgcheck=1 \n\
+gpgkey=https://pkgs.k8s.io/core:/stable:/v${kubernetes_version}/rpm/repodata/repomd.xml.key \
+" > /etc/yum.repos.d/kubernetes.repo \
+    && dnf update -y \
+    && dnf install -y kubectl --nobest
+
+# CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
+RUN curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/devel:kubic:libcontainers:stable.repo \
+    && curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${crio_version}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${crio_version}/${crio_os}/devel:kubic:libcontainers:stable:cri-o:${crio_version}.repo \
+    && dnf install -y conntrack cri-o
+
+# install Docker (used by most sysbox tests to launch sys containers)
+RUN dnf update -y \
+    && dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo \
+    && dnf config-manager --set-disabled docker-ce-stable \
+    && rpm --install --nodeps --replacefiles --excludepath=/usr/bin/runc https://download.docker.com/linux/centos/8/x86_64/stable/Packages/containerd.io-1.4.12-3.1.el8.x86_64.rpm \
+    && dnf install -y --enablerepo=docker-ce-stable docker-ce --nobest
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker \
+    /etc/bash_completion.d/docker.sh
+
+# Go Dlv for debugging
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in the K8s-in-docker nodes (L2).
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${sys_arch}/kubectl \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+RUN curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl_version}/crictl-${crictl_version}-linux-${sys_arch}.tar.gz --output crictl-${crictl_version}-linux-${sys_arch}.tar.gz \
+    && tar zxvf crictl-${crictl_version}-linux-${sys_arch}.tar.gz -C /usr/local/bin \
+    && rm -f crictl-${crictl_version}-linux-${sys_arch}.tar.gz
+
+# Container CNIs (needed by CRI-O)
+RUN cd /root \
+    && git clone https://github.com/containernetworking/plugins \
+    && cd plugins \
+    && git checkout -b v0.9.1 v0.9.1 \
+    && ./build_linux.sh \
+    && mkdir -p /opt/cni/bin \
+    && cp bin/* /opt/cni/bin/
+
+# Dasl (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
+RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${sys_arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${sys_arch} dasel && chmod +x dasel \
+    && mv ./dasel /usr/local/bin/dasel
+
+# Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
+#
+# This is needed because the definition changed in the mainline kernel
+# on 06/2020 (from SECCOMP_IOR -> SECCOMP_IOW), and some distros we
+# support have picked it up in their latest releases / kernels
+# updates. The kernel change was backward compatible, so by using the
+# old definition, we are guaranteed it will work on kernels before and
+# after the change. On the other hand, if we were to use the new
+# definition, seccomp notify would fail when sysbox runs in old
+# kernels.
+RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
+
+# sysbox env
+RUN useradd sysbox
+
+# test scripts
+COPY scr/testContainerInit /usr/bin
+COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
+COPY scr/sindTestContainerInit /usr/bin
+COPY bin/userns_child_exec_${sys_arch} /usr/bin
+
+RUN mkdir -p /root/nestybox
+WORKDIR /root/nestybox/sysbox
+CMD /bin/bash
