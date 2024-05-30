@@ -107,6 +107,10 @@ function teardown() {
 # soft-link nodes within the "/sys/devices/virtual/block" hierarchy.
 @test "/sys/devices/virtual/block file ops softlink nodes" {
 
+  if ! ls -l /sys/devices/virtual/block | egrep -q loop0; then
+    skip "loop0 block is not present"
+  fi
+
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
