@@ -196,7 +196,7 @@ function teardown() {
 	docker volume create testvol
 	[ "$status" -eq 0 ]
 
-	local sc=$(docker_run --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine tail -f /dev/null)
+	local sc=$(docker_run --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine-test tail -f /dev/null)
 
 	docker exec $sc sh -c "bpftool btf dump file /sys/kernel/btf/vmlinux format c > /mnt/vmlinux.h.sysbox"
 	[ "$status" -eq 0 ]
@@ -204,7 +204,7 @@ function teardown() {
 	docker_stop $sc
 	[ "$status" -eq 0 ]
 
-	docker run --runtime=runc --name cont -d --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine tail -f /dev/null
+	docker run --runtime=runc --name cont -d --rm -v testvol:/mnt ${CTR_IMG_REPO}/alpine-test tail -f /dev/null
 
 	docker exec cont sh -c "bpftool btf dump file /sys/kernel/btf/vmlinux format c > /mnt/vmlinux.h.runc"
 	[ "$status" -eq 0 ]
