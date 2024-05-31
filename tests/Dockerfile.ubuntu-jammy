@@ -157,6 +157,7 @@ RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version}/bin/linux/amd6
 # Install the upstream CRI-O so we get the cri-o binary plus all config files,
 # etc. Later we will replace the binary with our forked Nestybox CRI-O that
 # works with Sysbox.
+RUN apt-get update && apt-get install -y gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
     && echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list \
     && mkdir -p /usr/share/keyrings \
