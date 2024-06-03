@@ -120,17 +120,17 @@ function teardown() {
      [[ "$output" == "$gateway" ]]
 
      # DNAT
-     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"ip daddr ${gateway} tcp\""
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"ip daddr ${gateway} tcp|tcp ip daddr ${gateway}\""
      [ "$status" -eq 0 ]
 
-     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"ip daddr ${gateway} udp\""
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_OUTPUT | egrep -q \"ip daddr ${gateway} udp|udp ip daddr ${gateway}\""
      [ "$status" -eq 0 ]
 
      # SNAT
-     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"ip saddr 127.0.0.11 tcp\""
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"ip saddr 127.0.0.11 tcp|tcp ip saddr 127.0.0.11\""
      [ "$status" -eq 0 ]
 
-     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"ip saddr 127.0.0.11 udp\""
+     docker exec "$syscont" sh -c "nft list chain nat DOCKER_POSTROUTING | egrep -q \"ip saddr 127.0.0.11 udp|udp ip saddr 127.0.0.11\""
      [ "$status" -eq 0 ]
   fi
 
