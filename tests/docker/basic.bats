@@ -8,6 +8,8 @@ load ../helpers/run
 load ../helpers/fs
 load ../helpers/docker
 load ../helpers/dind
+load ../helpers/sysbox
+load ../helpers/sysbox-cfg
 load ../helpers/environment
 load ../helpers/sysbox-health
 
@@ -39,7 +41,6 @@ function teardown() {
 }
 
 @test "docker --oom-score-adj" {
-
   # Sysbox sys containers have this oom adj range
   local oom_min_val=-999
   local oom_max_val=1000
@@ -73,7 +74,6 @@ function teardown() {
 }
 
 @test "docker --read-only" {
-
 	local syscont=$(docker_run --rm --read-only ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	# Verify rootfs is read-only
@@ -127,8 +127,73 @@ function teardown() {
 	docker_stop "$syscont"
 }
 
-@test "docker pause & unpause" {
+@test "docker --read-only with relaxed-read-only" {
+	declare -a curr_flags
+	declare -a new_flags
 
+	# Get the current sysbox-mgr cmd line flags
+	sysbox_get_cmdline_flags sysbox-mgr curr_flags
+	sysbox_rm_cmdline_flags curr_flags --log /var/log/sysbox-mgr.log
+	new_flags=${orig_flags[@]}
+
+	# Add the --subid-range-size flag and restart sysbox
+	sysbox_add_cmdline_flags new_flags --relaxed-read-only=true
+	sysbox_stop
+	sysbox_start ${new_flags[@]}
+
+	local syscont=$(docker_run --rm --read-only ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+
+	# Verify rootfs is read-only
+	docker exec "$syscont" sh -c 'mount | grep "on / " | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	# Verify /sys is read-write
+	docker exec "$syscont" sh -c 'mount | grep "on /sys " | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	# Verify that /sys/fs/cgroup is also read-write (required for DinD operation).
+	docker exec "$syscont" sh -c 'mount | grep "on /sys/fs/cgroup" | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	# Verify all sysbox special/implicit mounts are also read-only
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/docker" | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/kubelet" | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/rancher/k3s" | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs" | grep "rw,"'
+	[ "$status" -eq 0 ]
+
+	docker exec "$syscont" sh -c 'mount | grep "on /lib/modules" | grep "ro,"'
+	[ "$status" -eq 0 ]
+
+	# Verify mounts under /proc backed by sysbox-fs are read-only
+	docker exec "$syscont" sh -c 'mount | grep "on /proc/" | grep "sysboxfs on"'
+	[ "$status" -eq 0 ]
+
+	for line in "${lines[@]}"; do
+
+		# XXX: skip /proc/sys for now, as it's not getting remounted read-only for
+		# some reason.
+		if [[ "$line" =~ "/proc/sys" ]]; then
+			continue
+		fi
+
+		echo "$line" | grep "ro,"
+	done
+
+	# Restart sysbox with the prior config
+	sysbox_stop
+	sysbox_start ${curr_flags[@]}
+
+	docker_stop "$syscont"
+}
+
+@test "docker pause & unpause" {
 	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	docker exec "$syscont" sh -c "touch /root/test-file.txt"
@@ -178,7 +243,6 @@ function teardown() {
 }
 
 @test "docker stop & restart" {
-
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	docker exec "$syscont" sh -c "touch /root/test-file.txt"

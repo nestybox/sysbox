@@ -30,6 +30,7 @@ SET_SECCOMP_FD_REL=0
 FSUID_MAP_FAIL_ON_ERR=0
 ALLOW_IMMUTABLE_UNMOUNTS="true"
 ALLOW_IMMUTABLE_REMOUNTS="false"
+RELAXED_READ_ONLY="false"
 
 # Max number of user-namespaces to configure in distros supporting this knob.
 SYSBOX_MAX_USER_NS=10000
@@ -284,6 +285,10 @@ function sysbox_mgr_set_cmdline_opts() {
 		options+=("--fsuid-map-fail-on-error")
 	fi
 
+	if [ $RELAXED_READ_ONLY -eq 1 ]; then
+		options+=("--relaxed-read-only")
+	fi
+
 	options+=("--log /var/log/sysbox-mgr.log")
 }
 
@@ -422,7 +427,7 @@ function show_usage() {
 }
 
 function parse_args() {
-	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-shiftfs-precheck,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,allow-trusted-xattr,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
+	options=$(getopt -o tdh -l test-mode,debug,disable-shiftfs,disable-shiftfs-on-fuse,disable-shiftfs-precheck,disable-idmapped-mount,disable-ovfs-on-idmapped-mount,disable-rootfs-cloning,disable-inner-image-preload,ignore-sysfs-chown,honor-caps,syscont-mode:,relaxed-read-only:,allow-trusted-xattr,data-root:,seccomp-fd-release:,fsuid-map-fail-on-error,allow-immutable-remounts:,allow-immutable-unmounts:,help -- "$@")
 	eval set -- "$options"
 
 	while true; do
@@ -491,6 +496,10 @@ function parse_args() {
 			--allow-immutable-remounts)
 				shift
 				ALLOW_IMMUTABLE_REMOUNTS=$1
+				;;
+			--relaxed-read-only)
+				shift
+				RELAXED_READ_ONLY=$1
 				;;
 			--)
 				shift
