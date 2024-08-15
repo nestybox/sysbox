@@ -34,7 +34,7 @@ function teardown() {
 	local k8s_worker_pod=$(crictl_cont_get_pod $k8s_worker_syscont)
 
 	# Wait for systemd to boot on the nodes
-	sleep 20
+	sleep 40
 
 	run crictl exec $k8s_master_syscont sh -c "systemctl status"
 	[ "$status" -eq 0 ]
