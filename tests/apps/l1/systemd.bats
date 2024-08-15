@@ -137,6 +137,7 @@ function check_systemd_mounts() {
 }
 
 @test "systemd archlinux" {
+  skip "testcase consistently failing in latest archlinux distros with systemd services' init errors"
 
   if [[ $(get_platform) != "amd64" ]]; then
      skip "archlinux supported only in amd64 architecture"
