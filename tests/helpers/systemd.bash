@@ -40,7 +40,7 @@ function wait_for_systemd_init() {
 	#retry 10 1 __docker exec "$syscont" \
 		#    sh -c "ps -ef | egrep systemd | wc -l | egrep [4-9]+"
 
-	sleep 20
+	sleep 40
 }
 
 # Waits for systemd to boot inside a system container

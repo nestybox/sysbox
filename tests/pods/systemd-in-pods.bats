@@ -30,7 +30,7 @@ function teardown() {
 	# We need a better way to wait for systemd; I tried "retry run" with "crictl
 	# exec" to check for "systemctl status", but it does not work (i.e., the
 	# retry_run returns earlier than expected, when systemd is still no ready).
-	sleep 20
+	sleep 40
 
 	run crictl exec $syscont sh -c "systemctl status"
 	[ "$status" -eq 0 ]
