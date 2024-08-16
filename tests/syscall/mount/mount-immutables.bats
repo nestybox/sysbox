@@ -780,3 +780,28 @@ function teardown() {
 
   docker_stop ${syscont}
 }
+
+# Testcase #15.
+#
+# Ensure that targets with a softlink along their path can be properly unmounted (see docker/sysbox-fs
+# PR #17). For this testcase to be relevant, the 'allow-immutable-umount=false' config knob must be set.
+@test "allow umount of softlinked mountpoints" {
+
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+
+  # Create a mountpoint whose target contains a softlink.
+  docker exec ${syscont} sh -c "mkdir /var/test2 /var/test3 && ln -sf /var/test2 /var/test1 && mount -o bind /var/test1 /var/test3"
+  [ "$status" -eq 0 ]
+
+  # Verify that the target is properly mounted reflecting the softlink destination (/var/test2) as the
+  # source of the bindmount.
+  docker exec ${syscont} sh -c "cat /proc/self/mountinfo | egrep -q \"/var/test2 /var/test3\""
+  [ "$status" -eq 0 ]
+
+  # Verify that the unmount operation can be successfully executed when using the softlink destination as
+  # the target of the unmount.
+  docker exec ${syscont} sh -c "umount /var/test3"
+  [ "$status" -eq 0 ]
+
+  docker_stop ${syscont}
+}
