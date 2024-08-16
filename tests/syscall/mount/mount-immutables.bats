@@ -803,5 +803,9 @@ function teardown() {
   docker exec ${syscont} sh -c "umount /var/test3"
   [ "$status" -eq 0 ]
 
+  # Verify that the target was unmounted.
+  docker exec ${syscont} sh -c "cat /proc/self/mountinfo | egrep -q \"/var/test2 /var/test3\""
+  [ "$status" -ne 0 ]
+
   docker_stop ${syscont}
 }
