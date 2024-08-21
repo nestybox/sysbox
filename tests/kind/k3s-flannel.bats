@@ -90,10 +90,10 @@ spec:
     image: ${CTR_IMG_REPO}/nginx
 EOF
 
-	k8s_create_pod $cluster $controller "$test_dir/basic-pod.yaml"
+	k8s_create_pod "$test_dir/basic-pod.yaml"
 	retry_run 40 2 "k8s_pod_ready nginx"
 
-	local pod_ip=$(k8s_pod_ip $cluster $controller nginx)
+	local pod_ip=$(k8s_pod_ip nginx)
 
 	docker exec $controller sh -c "curl -s $pod_ip | grep -q \"Welcome to nginx\""
 	[ "$status" -eq 0 ]
@@ -126,7 +126,7 @@ spec:
     args: ["-f", "/dev/null"]
 EOF
 
-	k8s_create_pod $cluster $controller "$test_dir/multi-cont-pod.yaml"
+	k8s_create_pod "$test_dir/multi-cont-pod.yaml"
 	retry_run 40 2 "k8s_pod_ready multi-cont"
 
 	# verify all containers in the pod are sharing the net ns
@@ -155,25 +155,25 @@ EOF
 	run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	# scale up
 	run kubectl scale --replicas=4 deployment nginx
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	# rollout new nginx image
 	run kubectl set image deployment/nginx nginx=${CTR_IMG_REPO}/nginx:1.17-alpine --record
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_rollout_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_rollout_ready default nginx"
 
 	# scale down
 	run kubectl scale --replicas=1 deployment nginx
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	# cleanup
 	run kubectl delete deployments.apps nginx
@@ -192,13 +192,13 @@ EOF
 	run kubectl scale --replicas=4 deployment nginx
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	# create a service and confirm it's there
 	run kubectl expose deployment/nginx --port 80
 	[ "$status" -eq 0 ]
 
-	local svc_ip=$(k8s_svc_ip $cluster $controller default nginx)
+	local svc_ip=$(k8s_svc_ip default nginx)
 
 	sleep 3
 
@@ -220,7 +220,7 @@ spec:
     - "1000000"
 EOF
 
-	k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
+	k8s_create_pod /tmp/alpine-sleep.yaml
 	retry_run 10 3 "k8s_pod_ready alpine-sleep"
 
 	run kubectl exec alpine-sleep -- sh -c "apk add curl"
@@ -259,7 +259,7 @@ EOF
 	run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	# create a nodePort service
 	run kubectl expose deployment/nginx --port 80 --type NodePort
@@ -300,7 +300,7 @@ spec:
     - "1000000"
 EOF
 
-	k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
+	k8s_create_pod /tmp/alpine-sleep.yaml
 	retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
 	run kubectl exec alpine-sleep -- sh -c "apk add curl"
@@ -361,7 +361,7 @@ spec:
       medium: Memory
 EOF
 
-	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
+	k8s_create_pod "$test_dir/pod.yaml"
 	retry_run 40 2 "k8s_pod_ready multi-cont"
 
 	# verify the emptyDir vol is shared correctly by containers (write
@@ -438,7 +438,7 @@ spec:
       type: File
 EOF
 
-	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
+	k8s_create_pod "$test_dir/pod.yaml"
 	retry_run 40 2 "k8s_pod_ready hp-test"
 
 	# verify the pod sees the host volumes
@@ -539,8 +539,8 @@ spec:
       storage: 5Mi
 EOF
 
-	k8s_apply $cluster $controller "$test_dir/pvol.yaml"
-	k8s_apply $cluster $controller "$test_dir/pvol-claim.yaml"
+	k8s_apply "$test_dir/pvol.yaml"
+	k8s_apply "$test_dir/pvol-claim.yaml"
 
 	# create a test pod that mounts the persistent vol; k8s will automatically
 	# schedule the pod on the node where the volume is created.
@@ -563,7 +563,7 @@ spec:
       claimName: pvol-claim
 EOF
 
-	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
+	k8s_create_pod "$test_dir/pod.yaml"
 	retry_run 40 2 "k8s_pod_ready pvol-test"
 
 	# verify pod can read/write volume
@@ -587,7 +587,7 @@ EOF
 	k8s_del_pod pvol-test
 
 	# create another instance of the pod
-	k8s_create_pod $cluster $controller "$test_dir/pod.yaml"
+	k8s_create_pod "$test_dir/pod.yaml"
 	retry_run 40 2 "k8s_pod_ready pvol-test"
 
 	# verify pod sees prior changes (volume is persistent)

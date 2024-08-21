@@ -74,17 +74,17 @@ function teardown() {
 	run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.16-alpine
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready inner-cluster k8s-master default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	run kubectl scale --replicas=4 deployment nginx
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready inner-cluster k8s-master default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	run kubectl scale --replicas=1 deployment nginx
 	[ "$status" -eq 0 ]
 
-	retry_run 40 2 "k8s_deployment_ready inner-cluster k8s-master default nginx"
+	retry_run 40 2 "k8s_deployment_ready default nginx"
 
 	run kubectl delete deployments.apps nginx
 	[ "$status" -eq 0 ]
