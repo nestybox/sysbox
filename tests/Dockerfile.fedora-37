@@ -94,8 +94,8 @@ RUN wget https://go.dev/dl/go1.21.3.linux-${sys_arch}.tar.gz && \
     tar -C /usr/local -xzf go1.21.3.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
-ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
 RUN go env -w GONOSUMDB=/root/nestybox && \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
     chmod -R 777 "$GOPATH"
