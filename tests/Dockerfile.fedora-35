@@ -139,6 +139,9 @@ ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/con
 # Go Dlv for debugging
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
+# K8s.io KinD
+RUN go install sigs.k8s.io/kind@v0.24.0
+
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
 # This is needed because the definition changed in the mainline kernel
