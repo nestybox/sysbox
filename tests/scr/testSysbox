@@ -54,6 +54,8 @@ function run_all_tests() {
 	./tests/syscall/syscall.sh
 
 	# Launch kind test-suite.
+	docker system prune -a -f
+	bats --tap tests/k8s-kind
 	./tests/kind/kind.sh
 
 	printf "\nExecuting security tests ... \n"
@@ -94,6 +96,7 @@ function run_ci_tests() {
 	# Launch kind test-suite.
 	printf "\n"
 	docker system prune -a -f
+	bats --tap tests/k8s-kind
 	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
 
 	# Launch sysbox-pod test-suite.
