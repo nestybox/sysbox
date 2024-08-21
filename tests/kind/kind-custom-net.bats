@@ -72,25 +72,25 @@ function remove_test_dir() {
   echo "kubeconfig = $(echo $KUBECONFIG)"
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # scale up
   run kubectl scale --replicas=4 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # rollout new nginx image
   run kubectl set image deployment/nginx nginx=${CTR_IMG_REPO}/nginx:1.17-alpine --record
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_rollout_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_rollout_ready default nginx"
 
   # scale down
   run kubectl scale --replicas=1 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # cleanup
   run kubectl delete deployments.apps nginx
@@ -105,13 +105,13 @@ function remove_test_dir() {
   run kubectl scale --replicas=3 deployment nginx
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # create a service and confirm it's there
   run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  local svc_ip=$(k8s_svc_ip $cluster $controller default nginx)
+  local svc_ip=$(k8s_svc_ip default nginx)
 
   sleep 3
 
@@ -133,7 +133,7 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
+  k8s_create_pod /tmp/alpine-sleep.yaml
   retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
@@ -143,7 +143,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # verify the kube-proxy is using iptables (does so by default)
-  k8s_check_proxy_mode $cluster $controller iptables
+  k8s_check_proxy_mode iptables
 
   # verify k8s has programmed iptables inside the sys container net ns
   docker exec $controller sh -c "iptables -L | grep -q KUBE"
@@ -171,7 +171,7 @@ EOF
   run kubectl create deployment nginx --image=${CTR_IMG_REPO}/nginx:1.17-alpine
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # create a nodePort service
   run kubectl expose deployment/nginx --port 80 --type NodePort
@@ -212,7 +212,7 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
+  k8s_create_pod /tmp/alpine-sleep.yaml
   retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   run kubectl exec alpine-sleep -- sh -c "apk add curl"
@@ -258,7 +258,7 @@ spec:
     - "1000000"
 EOF
 
-  k8s_create_pod $cluster $controller /tmp/alpine-sleep.yaml
+  k8s_create_pod /tmp/alpine-sleep.yaml
   retry_run 10 2 "k8s_pod_ready alpine-sleep"
 
   # find the cluster's DNS IP address

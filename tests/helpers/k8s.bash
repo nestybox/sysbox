@@ -18,8 +18,7 @@ function kubeadm_get_token() {
 
 # Sets up a proper k8s config in the node being passed.
 function k8s_config() {
-  local cluster_name=$1
-  local node=$2
+  local node=$1
 
   docker exec "$node" sh -c "mkdir -p /root/.kube && \
     cp -i /etc/kubernetes/admin.conf /root/.kube/config && \
@@ -61,27 +60,21 @@ function k8s_node_ip() {
 }
 
 function k8s_apply() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local yaml=$3
+  local yaml=$1
 
   run kubectl apply -f $yaml
   [ "$status" -eq 0 ]
 }
 
 function k8s_delete() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local yaml=$3
+  local yaml=$1
 
   run kubectl delete -f $yaml
   [ "$status" -eq 0 ]
 }
 
 function k8s_create_pod() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod_yaml=$3
+  local pod_yaml=$1
 
   run kubectl apply -f $pod_yaml
   echo "status = ${status}"
@@ -129,10 +122,7 @@ function k8s_pod_ready() {
 }
 
 # Determines readiness (Running) state of all pods within array.
-#  $1 - K8s cluster pods belong to
-#  $2 - k8s node to extract info from
-#  $3 - array of k8s pod to query
-#  $4 - k8s namespace where pods are expected (optional)
+#  $1 - array of k8s pod to query
 function k8s_pod_array_ready() {
   local pod_array=("$@")
   local pod
@@ -172,13 +162,11 @@ function k8s_all_pods_ready() {
 }
 
 function k8s_pod_absent() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
+  local pod=$1
   local ns=""
 
-  if [ $# -eq 4 ]; then
-    ns="-n $4"
+  if [ $# -eq 2 ]; then
+    ns="-n $2"
   fi
 
   run kubectl get pod $pod $ns
@@ -189,9 +177,7 @@ function k8s_pod_absent() {
 
 # Returns the IP address associated with a given pod
 function k8s_pod_ip() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
+  local pod=$1
 
   run kubectl get pod $pod -o wide
   [ "$status" -eq 0 ]
@@ -202,9 +188,7 @@ function k8s_pod_ip() {
 
 # Returns the node associated with a given pod
 function k8s_pod_node() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
+  local pod=$1
 
   run kubectl get pod $pod -o wide
   [ "$status" -eq 0 ]
@@ -215,10 +199,8 @@ function k8s_pod_node() {
 
 # Checks if a pod is scheduled on a given node
 function k8s_pod_in_node() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local pod=$3
-  local node=$4
+  local pod=$1
+  local node=$2
 
   # TODO: Find out why function doesn't behave as expected when using 'kubectl'
   # instead of 'docker exec' instruction; ideally, we want to avoid using
@@ -233,10 +215,8 @@ function k8s_pod_in_node() {
 
 # Returns the IP address associated with a given service
 function k8s_svc_ip() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local ns=$3
-  local svc=$4
+  local ns=$1
+  local svc=$2
 
   run kubectl --namespace $ns get svc $svc
   [ "$status" -eq 0 ]
@@ -246,9 +226,7 @@ function k8s_svc_ip() {
 }
 
 function k8s_check_proxy_mode() {
-  local cluster=$1
-  local controller=$2
-  local proxy_mode=$3
+  local proxy_mode=$1
 
   run sh -c "kubectl -n kube-system get pods | grep -m 1 kube-proxy | awk '{print \$1}'"
   echo "status1 = ${status}"
@@ -264,10 +242,8 @@ function k8s_check_proxy_mode() {
 }
 
 function k8s_deployment_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local ns=$3
-  local deployment=$4
+  local ns=$1
+  local deployment=$2
 
   kubectl --namespace $ns get deployment $deployment
   [ "$status" -eq 0 ]
@@ -284,10 +260,8 @@ function k8s_deployment_ready() {
 }
 
 function k8s_deployment_rollout_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local ns=$3
-  local deployment=$4
+  local ns=$1
+  local deployment=$2
 
   kubectl --namespace $ns rollout status deployment.v1.apps/$deployment
   [ "$status" -eq 0 ]
@@ -295,10 +269,8 @@ function k8s_deployment_rollout_ready() {
 }
 
 function k8s_daemonset_ready() {
-  local cluster_name=$1
-  local k8s_master=$2
-  local ns=$3
-  local ds=$4
+  local ns=$1
+  local ds=$2
 
   kubectl --namespace $ns get ds $ds
   [ "$status" -eq 0 ]
@@ -315,8 +287,6 @@ function k8s_daemonset_ready() {
 }
 
 function k8s_cluster_is_clean() {
-  local cluster_name=$1
-  local k8s_master=$2
 
   run kubectl get all
   [ "$status" -eq 0 ]
@@ -332,8 +302,7 @@ function k8s_cluster_is_clean() {
 
 # Install Helm v2.
 function helm_v2_install() {
-  local cluster_name=$1
-  local k8s_master=$2
+  local k8s_master=$1
 
   docker exec "$k8s_master" sh -c "curl -Os https://get.helm.sh/helm-v2.16.3-linux-amd64.tar.gz && \
     tar -zxvf helm-v2.16.3-linux-amd64.tar.gz && \
@@ -362,8 +331,6 @@ function helm_v2_install() {
 
 # Uninstall Helm v2.
 function helm_v2_uninstall() {
-  local cluster_name=$1
-  local k8s_master=$2
 
   # Obtain tiller's pod-name.
   run sh -c "kubectl get pods -o wide --all-namespaces | egrep \"tiller\""
@@ -375,7 +342,7 @@ function helm_v2_uninstall() {
   [ "$status" -eq 0 ]
 
   # Wait till tiller pod is fully destroyed.
-  retry_run 40 2 "k8s_pod_absent $cluster_name $k8s_master $tiller_pod kube-system"
+  retry_run 40 2 "k8s_pod_absent $tiller_pod kube-system"
 }
 
 # Uninstall Helm v3. Right, much simpler than v2 version above, as there's no need to
@@ -433,10 +400,8 @@ function istio_uninstall() {
 # Verifies an nginx ingress controller works; this function assumes
 # the nginx ingress-controller has been deployed to the cluster.
 function verify_nginx_ingress() {
-  local cluster=$1
-  local controller=$2
-  local ing_controller=$3
-  local ing_worker_node=$4
+  local ing_controller=$1
+  local ing_worker_node=$2
 
   # We need pods to serve our fake website / service; we use an nginx
   # server pod and create a service in front of it (note that we could
@@ -448,7 +413,7 @@ function verify_nginx_ingress() {
   run kubectl expose deployment/nginx --port 80
   [ "$status" -eq 0 ]
 
-  retry_run 40 2 "k8s_deployment_ready $cluster $controller default nginx"
+  retry_run 40 2 "k8s_deployment_ready default nginx"
 
   # create an ingress rule that maps nginx.nestykube -> nginx service;
   # this ingress rule is enforced by the nginx ingress controller.
@@ -510,9 +475,8 @@ EOF
 
 function kind_all_nodes_ready() {
   local cluster=$1
-  local controller=$2
-  local num_workers=$3
-  local delay=$4
+  local num_workers=$2
+  local delay=$3
 
   local timestamp=$(date +%s)
   local timeout=$(($timestamp + $delay))
