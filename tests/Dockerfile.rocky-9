@@ -178,6 +178,9 @@ RUN cd /root \
 RUN curl -s https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_${sys_arch} | cut -d '"' -f 4 | wget -qi - && mv dasel_linux_${sys_arch} dasel && chmod +x dasel \
     && mv ./dasel /usr/local/bin/dasel
 
+# K8s.io KinD
+RUN go install sigs.k8s.io/kind@v0.24.0
+
 # Use the old definition for SECCOMP_NOTIF_ID_VALID in /usr/include/linux/seccomp.h
 #
 # This is needed because the definition changed in the mainline kernel
