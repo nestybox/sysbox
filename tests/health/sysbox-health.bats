@@ -8,6 +8,7 @@
 #
 
 load ../helpers/sysbox-health
+load ../helpers/environment
 
 function setup() {
    local distro=$(get_distro)
