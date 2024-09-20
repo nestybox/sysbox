@@ -136,8 +136,8 @@ function teardown() {
 	sysbox_rm_cmdline_flags curr_flags --log /var/log/sysbox-mgr.log
 	new_flags=${orig_flags[@]}
 
-	# Add the --subid-range-size flag and restart sysbox
-	sysbox_add_cmdline_flags new_flags --relaxed-read-only=true
+	# Add the --relaxed-read-only flag and restart sysbox
+	sysbox_add_cmdline_flags new_flags --relaxed-read-only
 	sysbox_stop
 	sysbox_start ${new_flags[@]}
 
