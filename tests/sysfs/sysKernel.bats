@@ -19,7 +19,6 @@ function teardown() {
 
 # Verify proper operation of the Sys handler.
 @test "/sys file ops" {
-skip
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -51,7 +50,6 @@ skip
 # Verifies the proper beahvior of the sysKernel handler for "/sys/kernel"
 # path operations.
 @test "/sys/kernel file ops" {
-skip
   sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
   [ "$status" -eq 0 ]
 
@@ -207,7 +205,6 @@ skip
 # Verify the proper operation of the sysKernel handler for the non-emulated
 # /sys/kernel/btf/* files.
 @test "/sys/kernel/btf/* file ops" {
-skip
 	docker volume create testvol
 	[ "$status" -eq 0 ]
 
