@@ -107,8 +107,8 @@ RUN apt-get update && apt-get install -y \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
 # Install Golang
-RUN wget https://go.dev/dl/go1.21.3.linux-${sys_arch}.tar.gz && \
-    tar -C /usr/local -xzf go1.21.3.linux-${sys_arch}.tar.gz && \
+RUN wget https://go.dev/dl/go1.22.6.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.22.6.linux-${sys_arch}.tar.gz && \
     /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
 
 ENV GOPATH=/go
