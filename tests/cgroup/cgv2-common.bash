@@ -302,7 +302,7 @@ function test_cgroup_delegation() {
 	# Launch sys container with systemd
 	local syscont=$(docker_run --rm  ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
 
-	sleep 25
+	sleep 40
 
 	# Verify that systemd has been properly initialized (no major errors observed).
 	docker exec "$syscont" sh -c "systemctl status"
