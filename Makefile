@@ -15,7 +15,6 @@
 	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
 	test-img test-img-systemd test-cleanup \
 	test-sysbox-local test-sysbox-local-installer test-sysbox-local-ci test-fs-local test-mgr-local \
-	sysbox-in-docker sysbox-in-docker-local \
 	test-sind test-sind-local test-sind-shell \
 	lint lint-local lint-sysbox-local lint-tests-local shfmt \
 	sysbox-runc-recvtty \
@@ -72,7 +71,6 @@ SYSFS_DIR       := sysbox-fs
 SYSMGR_DIR      := sysbox-mgr
 SYSIPC_DIR      := sysbox-ipc
 SYSLIBS_DIR     := sysbox-libs
-SYSBOX_IN_DOCKER_DIR := sysbox-in-docker
 
 PROJECT := /root/nestybox/sysbox
 
@@ -509,37 +507,6 @@ test-mgr-local: sysbox-ipc
 	sleep 2
 	cd $(SYSMGR_DIR) && go test -buildvcs=false -timeout 3m -v $(mgrPkgs)
 
-
-##@ Sysbox-In-Docker targets
-
-sysbox-in-docker: ## Build sysbox-in-docker sandbox image
-sysbox-in-docker: sysbox
-	@cp -f sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr sysbox-in-docker/
-	@cp -f sysbox-runc/build/$(TARGET_ARCH)/sysbox-runc sysbox-in-docker/
-	@cp -f sysbox-fs/build/$(TARGET_ARCH)/sysbox-fs sysbox-in-docker/
-	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
-
-sysbox-in-docker-local: sysbox-local
-	@cp sysbox-mgr/build/$(TARGET_ARCH)/sysbox-mgr sysbox-in-docker/
-	@cp sysbox-runc/build/$(TAGET_ARCH)/sysbox-runc sysbox-in-docker/
-	@cp sysbox-fs/build/$(TAGET_ARCH)/sysbox-fs sysbox-in-docker/
-	@make -C $(SYSBOX_IN_DOCKER_DIR) $(filter-out $@,$(MAKECMDGOALS))
-
-test-sind: ## Run the sysbox-in-docker integration tests
-test-sind: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		sindTestContainerInit && make test-sind-local"
-
-test-sind-local:
-	$(TEST_DIR)/scr/testSysboxInDocker $(TESTPATH)
-
-test-sind-shell: ## Get a shell in the test container for sysbox-in-docker (useful for debug)
-test-sind-shell: test-img
-	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
-	$(DOCKER_RUN_TTY) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
-		sindTestContainerInit && /bin/bash"
-
 ##@ Code Hygiene targets
 
 lint: ## Runs lint checker on sysbox source code and tests
@@ -614,10 +581,6 @@ distclean:
 	cd $(SYSMGR_DIR) && make distclean
 	cd $(SYSIPC_DIR) && make distclean
 	rm -rf ./build
-
-clean-sysbox-in-docker: ## Clean sysbox-in-docker
-clean-sysbox-in-docker:
-	cd $(SYSBOX_IN_DOCKER_DIR) && rm -f sysbox-fs sysbox-runc sysbox-mgr
 
 # memoize all packages once
 

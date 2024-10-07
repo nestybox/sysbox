@@ -1,4 +1,0 @@
-#!/usr/bin/execlineb -P
-
-# Launch dockerd and redirect its stdout/stderr.
-redirfd -w 2 /var/log/dockerd.log /usr/bin/dockerd

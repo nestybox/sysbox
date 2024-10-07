@@ -75,11 +75,6 @@ Usage:
     test-sysbox             Run sysbox integration tests
     ...
 
-  Sysbox-In-Docker targets
-    sysbox-in-docker        Build sysbox-in-docker sandbox image
-    test-sind               Run the sysbox-in-docker integration tests
-    ...
-
   Code Hygiene targets
     lint                    Runs lint checker on sysbox source code and tests
     shfmt                   Formats shell scripts in the repo; requires shfmt.
@@ -87,7 +82,6 @@ Usage:
   Cleaning targets
     clean                   Eliminate sysbox binaries
     clean-libseccomp        Clean libseccomp
-    clean-sysbox-in-docker  Clean sysbox-in-docker
 ```
 
 ## Building & Installing from Source

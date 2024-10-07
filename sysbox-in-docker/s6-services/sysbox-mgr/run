@@ -1,3 +1,0 @@
-#!/usr/bin/execlineb -P
-
-/usr/bin/sysbox-mgr --log /var/log/sysbox-mgr.log
