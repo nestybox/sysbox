@@ -5,7 +5,7 @@
 #
 # NOTE: assumes Docker is configured to use Sysbox as the runtime
 # for builds. This is done by setting env var "DOCKER_BUILDKIT_RUNC_COMMAND=/usr/bin/sysbox-runc"
-# when starting Docker Engine inside the Sysbox test conatainer (supported since Docker Engine v25.0).
+# when starting Docker Engine inside the Sysbox test container (supported since Docker Engine v25.0).
 #
 
 load ../helpers/run

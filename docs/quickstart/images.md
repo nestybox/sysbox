@@ -27,8 +27,10 @@ The following sections show examples of each.
 
 Below are the steps:
 
-1.  Reconfigure the host's Docker daemon to use `sysbox-runc` as it's default
-    runtime by editing the `/etc/docker/daemon.json` file and restarting Docker:
+1.  Reconfigure the host's Docker daemon to use `sysbox-runc` for builds.
+
+Set the default-runtime to "sysbox-runc" by editing the
+`/etc/docker/daemon.json` file as follows:
 
 ```console
 # more /etc/docker/daemon.json
@@ -97,8 +99,11 @@ separate script and call it from the `RUN` instruction.
 
 3.  Do a `docker build` on this Dockerfile:
 
+**NOTE:** set env var `DOCKER_BUILDKIT=0` to use the legacy builder, as the
+process does not yet work with the newer Docker builder (buildkit).
+
 ```console
-$ docker build -t nestybox/syscont-with-inner-containers:latest .
+$ DOCKER_BUILDKIT=0 docker build -t nestybox/syscont-with-inner-containers:latest .
 
 Sending build context to Docker daemon  3.072kB
 Step 1/3 : FROM nestybox/alpine-docker
