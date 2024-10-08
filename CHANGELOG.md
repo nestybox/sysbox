@@ -1,6 +1,29 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2024-11-08
+### Added
+  * Update to Golang 1.22.
+  * Implement 'relaxed-read-only' mode to ease the bind-mount requirements of read-only containers.
+  * Enhance sysbox-fs emulation to allow writes to '/proc/sys/kernel/shm*' paths.
+  * Fix emulation of /proc/sys/kernel/random (sysbox issue #785).
+  * Fix bug in sysbox-fs that resulted in left-over nsenter mounts of procfs and sysfs (sysbox issue #829).
+  * Fix issue causing Sysbox to slow down due to the accumulation of large numbers of mountpoints when '--allow-immutable-unmounts' knob is set to 'false'.
+  * Skip dns change when default route doesn't exists (fix for sysbox issue #834).
+  * Fix issue breaking read() operations over '/sys/kernel' nodes with non-zero offsets.
+  * Return error for disallowed unmount of sysbox-fs managed mountpoint (sysbox issue #808).
+  * sysbox-deploy-k8s: add support for K8s v1.29 and v1.30.
+  * sysbox-deploy-k8s: deprecate support of K8s v1.26.
+  * sysbox-deploy-k8s: add support for incremental Sysbox upgrades.
+  * sysbox-deploy-k8s: introduce logic to config Sysbox's daemons through a configMap.
+  * sysbox-deploy-k8s: increase 'vm.max_map_count' to satisfy mmap-demanding apps (Elastic).
+  * sysbox-deploy-k8s: enhance logic to detect Sysbox's config-environment changes (sysctl vars).
+  * sysbox-deploy-k8s: fix issue preventing Sysbox installation from concluding during upgrades.
+  * sysbox-deploy-k8s: fix for race-condition in GKE clusters.
+  * sysbox-deploy-k8s: fix for 'sysbox-installer-helper' to workaround dpkg error.
+  * sysbox-deploy-k8s: check for existence of 'unprivileged_userns_clone' procfs node before attempting to write().
+  * sysbox-deploy-k8s: delete preexisting sysbox pods during upgrade or re-installation process.
+
 ## [0.6.4] - 2024-04-06
 ### Added
   * Fix to allowing running x86 apps in Sysbox containers (issue #350).
