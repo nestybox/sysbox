@@ -508,10 +508,10 @@ function teardown() {
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should ignore the unmount)
+  # try to unmount procfs sysbox-fs backed submounts (sysbox-fs should block this)
   for node in "${PROCFS_EMU[@]}"; do
     docker exec "$syscont" bash -c "umount /proc/$node"
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
   done
 
   verify_syscont_procfs_mnt $syscont /proc
@@ -527,10 +527,10 @@ function teardown() {
 
   verify_syscont_procfs_mnt $syscont $mnt_path
 
-  # try to unmount procfs submounts (sysbox-fs should ignore the unmount)
+  # try to unmount procfs submounts (sysbox-fs should block this)
   for node in "${PROCFS_EMU[@]}"; do
     docker exec "$syscont" bash -c "umount $mnt_path/$node"
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
   done
 
   verify_syscont_procfs_mnt $syscont $mnt_path
@@ -761,10 +761,6 @@ function teardown() {
   docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
-
-  # unmount be also ignored
-  docker exec "$syscont" bash -c "umount $node"
-  [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
   [ "$status" -eq 0 ]
