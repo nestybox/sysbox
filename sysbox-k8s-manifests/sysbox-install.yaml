@@ -27,6 +27,15 @@ subjects:
   name: sysbox-label-node
   namespace: kube-system
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sysbox-operational-attributes
+  namespace: kube-system
+data:
+  SYSBOX_MGR_CONFIG: ""
+  SYSBOX_FS_CONFIG: ""
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -59,6 +68,16 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: SYSBOX_MGR_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: sysbox-operational-attributes
+              key: SYSBOX_MGR_CONFIG
+        - name: SYSBOX_FS_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: sysbox-operational-attributes
+              key: SYSBOX_FS_CONFIG
         securityContext:
           privileged: true
         volumeMounts:
