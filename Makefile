@@ -11,14 +11,13 @@
 	install uninstall \
 	test \
 	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer \
-	test-runc test-fs test-mgr \
+	test-runc test-fs test-mgr test-sysbox-libs \
 	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
 	test-img test-img-systemd test-cleanup \
-	test-sysbox-local test-sysbox-local-installer test-sysbox-local-ci test-fs-local test-mgr-local \
-	test-sind test-sind-local test-sind-shell \
+	test-sysbox-local test-sysbox-local-installer test-sysbox-local-ci test-fs-local test-mgr-local test-sysbox-libs-local \
 	lint lint-local lint-sysbox-local lint-tests-local shfmt \
 	sysbox-runc-recvtty \
-	listRuncPkgs listFsPkgs listMgrPkgs \
+	listRuncPkgs listFsPkgs listMgrPkgs listSysboxLibsPkgs \
 	clean
 
 export SHELL=bash
@@ -341,7 +340,7 @@ DOCKER_STOP := docker stop -t0 sysbox-test
 ##@ Testing targets
 
 test: ## Run all sysbox test suites
-test: test-fs test-mgr test-runc test-sysbox test-sysbox-systemd
+test: test-fs test-mgr test-runc test-sysbox-libs test-sysbox test-sysbox-systemd
 
 test-sysbox: ## Run sysbox integration tests
 test-sysbox: test-prereq test-img
@@ -392,6 +391,13 @@ test-mgr: ## Run sysbox-mgr unit tests
 test-mgr: test-prereq test-img
 	@printf "\n** Running sysbox-mgr unit tests **\n\n"
 	$(DOCKER_RUN) /bin/bash -c "make --no-print-directory test-mgr-local"
+
+test-sysbox-libs: test-prereq sysbox
+	@printf "\n** Running sysbox-libs unit tests **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN) /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		testContainerInit && \
+		make --no-print-directory test-sysbox-libs-local"
 
 test-shell: ## Get a shell in the test container (useful for debug)
 test-shell: test-prereq test-img
@@ -507,6 +513,13 @@ test-mgr-local: sysbox-ipc
 	sleep 2
 	cd $(SYSMGR_DIR) && go test -buildvcs=false -timeout 3m -v $(mgrPkgs)
 
+test-sysbox-libs-local:
+	@for dir in $(sysboxLibsPkgDirs); do \
+		pushd $$dir > /dev/null; \
+		go test ./... || break; \
+		popd > /dev/null; \
+	done
+
 ##@ Code Hygiene targets
 
 lint: ## Runs lint checker on sysbox source code and tests
@@ -552,6 +565,9 @@ listFsPkgs:
 listMgrPkgs:
 	@echo $(mgrPkgs)
 
+listSysboxLibsPkgs:
+	@echo $(sysboxLibsPkgs)
+
 #
 # cleanup targets
 #
@@ -592,3 +608,6 @@ fsPkgs = $(if $(__fsPkgs),,$(eval __fsPkgs := $$(_fsPkgs)))$(__fsPkgs)
 
 _mgrPkgs = $(shell cd $(SYSMGR_DIR) && go list -buildvcs=false ./... | grep -v vendor)
 mgrPkgs = $(if $(__mgrPkgs),,$(eval __mgrPkgs := $$(_mgrPkgs)))$(__mgrPkgs)
+
+sysboxLibsPkgDirs := $(shell find $(SYSLIBS_DIR) -type f -name "go.mod" -exec dirname {} \;)
+sysboxLibsPkgs := $(foreach dir,$(sysboxLibsPkgDirs),$(shell cd $(dir); go list ./...; cd ..))
