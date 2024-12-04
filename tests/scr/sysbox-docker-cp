@@ -59,84 +59,84 @@ ARCHIVE=""
 FOLLOW_LINK=""
 
 function show_usage() {
-	 printf "This tool is a wrapper for \"docker cp\" for containers created with Docker + Sysbox.\n"
-	 printf "It's needed to copy with correct user:group ID's within the Sysbox container's \n"
-	 printf "user-namespace (\"docker cp\" does not do this). Usage is similar to \"docker cp\".\n"
-	 printf "\n"
-	 printf "To copy from container to the host:\n"
-	 printf "sysbox-docker-cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-\n"
-	 printf "\n"
-	 printf "To copy from the host to the container, you must use sudo:\n"
-	 printf "sudo sysbox-docker-cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH\n"
-	 printf "\n"
-	 printf "Options are identical to \"docker cp\"; refer to the \"docker cp --help\" for further info.\n"
-	 printf "\n"
+    printf "This tool is a wrapper for \"docker cp\" for containers created with Docker + Sysbox.\n"
+    printf "It's needed to copy with correct user:group ID's within the Sysbox container's \n"
+    printf "user-namespace (\"docker cp\" does not do this). Usage is similar to \"docker cp\".\n"
+    printf "\n"
+    printf "To copy from container to the host:\n"
+    printf "sysbox-docker-cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-\n"
+    printf "\n"
+    printf "To copy from the host to the container, you must use sudo:\n"
+    printf "sudo sysbox-docker-cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH\n"
+    printf "\n"
+    printf "Options are identical to \"docker cp\"; refer to the \"docker cp --help\" for further info.\n"
+    printf "\n"
 }
 
 function parse_opt() {
-	options=$(getopt -o aLh -l archive,follow-link,help -- "$@")
+    options=$(getopt -o aLh -l archive,follow-link,help -- "$@")
 
-	eval set -- "$options"
+    eval set -- "$options"
 
-	while true; do
-		case "$1" in
-			-h | --help)
-				show_usage
-				exit 1
-				;;
-			-a | --archive)
-				ARCHIVE="-a"
-				;;
-			-L | --follow-link)
-				FOLLOW_LINK="-L"
-				;;
-			--)
-				shift
-				break
-				;;
-			-*)
-				show_usage
-				exit 1
-				;;
-			*)
-				show_usage
-				exit 1
-				;;
-		esac
-		shift
-	done
-
-	if [[ $# != 2 ]]; then
+    while true; do
+	case "$1" in
+	    -h | --help)
 		show_usage
 		exit 1
-	fi
+		;;
+	    -a | --archive)
+		ARCHIVE="-a"
+		;;
+	    -L | --follow-link)
+		FOLLOW_LINK="-L"
+		;;
+	    --)
+		shift
+		break
+		;;
+	    -*)
+		show_usage
+		exit 1
+		;;
+	    *)
+		show_usage
+		exit 1
+		;;
+	esac
+	shift
+    done
 
-	ARG1=$1
-	ARG2=$2
+    if [[ $# != 2 ]]; then
+	show_usage
+	exit 1
+    fi
+
+    ARG1=$1
+    ARG2=$2
 }
 
 function parse_args() {
-	if [[ "$ARG1" == *":"* ]]; then
-		COPY_TO_CONTAINER=false
-		CONT_NAME=$(echo $ARG1 | cut -d ":" -f1)
-		SRC_PATH=$(echo $ARG1 | cut -d ":" -f2)
-		DST_PATH=$ARG2
-	elif [[ "$ARG2" == *":"* ]]; then
-		COPY_TO_CONTAINER=true
-		CONT_NAME=$(echo $ARG2 | cut -d ":" -f1)
-		DST_PATH=$(echo $ARG2 | cut -d ":" -f2)
-		SRC_PATH=$ARG1
-	else
-		printf "\nError: incorrect argument; was the container specified?\n"
-		exit 1
-	fi
+    if [[ "$ARG1" == *":"* ]]; then
+	COPY_TO_CONTAINER=false
+	CONT_NAME=$(echo $ARG1 | cut -d ":" -f1)
+	SRC_PATH=$(echo $ARG1 | cut -d ":" -f2)
+	DST_PATH=$ARG2
+    elif [[ "$ARG2" == *":"* ]]; then
+	COPY_TO_CONTAINER=true
+	CONT_NAME=$(echo $ARG2 | cut -d ":" -f1)
+	DST_PATH=$(echo $ARG2 | cut -d ":" -f2)
+	SRC_PATH=$ARG1
+    else
+	printf "\nError: incorrect argument; was the container specified?\n"
+	exit 1
+    fi
 }
 
 function docker_cp() {
-	docker cp ${ARCHIVE} ${FOLLOW_LINK} ${ARG1} ${ARG2}
-	if [[ $? != 0 ]]; then
-		exit 1
-	fi
+    docker cp ${ARCHIVE} ${FOLLOW_LINK} ${ARG1} ${ARG2}
+    if [[ $? != 0 ]]; then
+	exit 1
+    fi
 }
 
 function is_sysbox_container() {
@@ -145,7 +145,7 @@ function is_sysbox_container() {
 }
 
 function sysbox_rootfs_cloned() {
-	stat ${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID} > /dev/null 2>&1
+    stat ${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID} > /dev/null 2>&1
 }
 
 function sysbox_rootfs_idmapped() {
@@ -163,51 +163,51 @@ function sysbox_rootfs_shiftfs() {
 }
 
 function get_container_uid() {
-	cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $1}'
+    cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $1}'
 
 }
 
 function chown_container_file() {
-	local file_path="${ROOTFS}/${DST_PATH}"
+    local file_path="${ROOTFS}/${DST_PATH}"
 
-	if [[ -d ${file_path} ]]; then
-		local src_base=$(basename ${SRC_PATH})
-		file_path="${file_path}/${src_base}"
-	fi
+    if [[ -d ${file_path} ]]; then
+	local src_base=$(basename ${SRC_PATH})
+	file_path="${file_path}/${src_base}"
+    fi
 
-	orig_uid=$(stat -c %u $file_path)
-	if [ "$?" -ne 0 ]; then
-	    exit 1
-	fi
-	orig_gid=$(stat -c %u $file_path)
-	if [ "$?" -ne 0 ]; then
-	    exit 1
-	fi
+    orig_uid=$(stat -c %u $file_path)
+    if [ "$?" -ne 0 ]; then
+	exit 1
+    fi
+    orig_gid=$(stat -c %u $file_path)
+    if [ "$?" -ne 0 ]; then
+	exit 1
+    fi
 
-	new_uid=$(($orig_uid + $CONT_HOST_UID))
-	new_gid=$(($orig_gid + $CONT_HOST_GID))
+    new_uid=$(($orig_uid + $CONT_HOST_UID))
+    new_gid=$(($orig_gid + $CONT_HOST_GID))
 
-	# if dir, chown recursively
-	ret=$(chown $new_uid:$new_gid $file_path)
-	if [[ $? != 0 ]]; then
-		exit 1
-	fi
+    # if dir, chown recursively
+    ret=$(chown $new_uid:$new_gid $file_path)
+    if [[ $? != 0 ]]; then
+	exit 1
+    fi
 }
 
 function chown_local_file() {
-	local local_path=${DST_PATH}
+    local local_path=${DST_PATH}
 
-	if [[ -d ${local_path} ]]; then
-		local src_base=$(basename ${SRC_PATH})
-		local_path="${local_path}/${src_base}"
-	fi
+    if [[ -d ${local_path} ]]; then
+	local src_base=$(basename ${SRC_PATH})
+	local_path="${local_path}/${src_base}"
+    fi
 
-	real_user_uid=$(id -u)
-	real_user_gid=$(id -g)
-	ret=$(chown ${real_user_uid}:${real_user_gid} $local_path)
-	if [[ $? != 0 ]]; then
-		exit 1
-	fi
+    real_user_uid=$(id -u)
+    real_user_gid=$(id -g)
+    ret=$(chown ${real_user_uid}:${real_user_gid} $local_path)
+    if [[ $? != 0 ]]; then
+	exit 1
+    fi
 }
 
 function docker_using_userns_remap() {
@@ -216,55 +216,54 @@ function docker_using_userns_remap() {
 }
 
 function get_container_info() {
-	CONT_ID=$(docker inspect --format '{{.Id}}' $CONT_NAME)
-	CONT_INIT_PID=$(docker inspect -f '{{.State.Pid}}' $CONT_ID)
-	CONT_HOST_UID=$(cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $2}')
-	CONT_HOST_GID=$(cat /proc/${CONT_INIT_PID}/gid_map | awk '{print $2}')
+    CONT_ID=$(docker inspect --format '{{.Id}}' $CONT_NAME)
+    CONT_INIT_PID=$(docker inspect -f '{{.State.Pid}}' $CONT_ID)
+    CONT_HOST_UID=$(cat /proc/${CONT_INIT_PID}/uid_map | awk '{print $2}')
+    CONT_HOST_GID=$(cat /proc/${CONT_INIT_PID}/gid_map | awk '{print $2}')
 
-	# order is important here
-	if docker_using_userns_remap; then
-	    SYSBOX_ROOTFS_TYPE="unmapped"
-	    ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
-	elif sysbox_rootfs_cloned; then
-	    SYSBOX_ROOTFS_TYPE="cloned"
-	    ROOTFS="${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID}/overlay2/merged/"
-	elif sysbox_rootfs_idmapped; then
-	    SYSBOX_ROOTFS_TYPE="idmapped"
-	    ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.UpperDir}}' $CONT_NAME)
-	elif sysbox_rootfs_shiftfs; then
-	    SYSBOX_ROOTFS_TYPE="shiftfs"
-	    ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
-	else
-	    SYSBOX_ROOTFS_TYPE="unmapped"
-	    ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
-	fi
+    # order is important here
+    if docker_using_userns_remap; then
+	SYSBOX_ROOTFS_TYPE="unmapped"
+	ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
+    elif sysbox_rootfs_cloned; then
+	SYSBOX_ROOTFS_TYPE="cloned"
+	ROOTFS="${SYSBOX_DATA_ROOT}/rootfs/${CONT_ID}/overlay2/merged/"
+    elif sysbox_rootfs_idmapped; then
+	SYSBOX_ROOTFS_TYPE="idmapped"
+	ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.UpperDir}}' $CONT_NAME)
+    elif sysbox_rootfs_shiftfs; then
+	SYSBOX_ROOTFS_TYPE="shiftfs"
+	ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
+    else
+	SYSBOX_ROOTFS_TYPE="unmapped"
+	ROOTFS=$(docker container inspect --format '{{.GraphDriver.Data.MergedDir}}' $CONT_NAME)
+    fi
 }
 
 function main() {
+    parse_opt "$@"
+    parse_args
 
-	parse_opt "$@"
-	parse_args
+    get_container_info
 
-	get_container_info
+    if ! is_sysbox_container; then
+	printf "\nError: ${CONT_NAME} is not a Sysbox container. Exiting.\n"
+	exit 1
+    fi
 
-	if ! is_sysbox_container; then
-		printf "\nError: ${CONT_NAME} is not a Sysbox container. Exiting.\n"
-		exit 1
+    docker_cp
+
+    # If sysbox is using rootfs cloning or ID-mapped mounts, we
+    # need to chown the copied file.
+    if [[ $SYSBOX_ROOTFS_TYPE == "cloned" ]] || [[ $SYSBOX_ROOTFS_TYPE == "idmapped" ]]; then
+	if [[ $COPY_TO_CONTAINER == true ]]; then
+	    chown_container_file
+	else
+	    chown_local_file
 	fi
+    fi
 
-	docker_cp
-
-        # If sysbox is using rootfs cloning or ID-mapped mounts, we
-        # need to chown the copied file.
-	if [[ $SYSBOX_ROOTFS_TYPE == "cloned" ]] || [[ $SYSBOX_ROOTFS_TYPE == "idmapped" ]]; then
-	    if [[ $COPY_TO_CONTAINER == true ]]; then
-		chown_container_file
-	    else
-		chown_local_file
-	    fi
-	fi
-
-	exit 0
+    exit 0
 }
 
 main "$@"
