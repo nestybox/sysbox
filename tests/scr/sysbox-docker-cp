@@ -167,44 +167,60 @@ function get_container_uid() {
 
 }
 
+function chown_recursive() {
+  local path="$1"
+  local uid_offset="$2"
+  local gid_offset="$3"
+
+  # Get current UID and GID
+  current_uid=$(stat -c "%u" "$path")
+  current_gid=$(stat -c "%g" "$path")
+
+  # Calculate new UID and GID
+  new_uid=$((current_uid + uid_offset))
+  new_gid=$((current_gid + gid_offset))
+
+  # Change ownership of the current path
+  chown "$new_uid:$new_gid" "$path"
+
+  # If it's a directory, recurse into its contents
+  if [[ -d "$path" ]]; then
+    for item in "$path"/*; do
+      # Skip if the directory is empty
+      [[ -e "$item" ]] || continue
+
+      # Recursively process the item
+      chown_recursive "$item" $CONT_HOST_UID $CONT_HOST_GID
+    done
+  fi
+}
+
 function chown_container_file() {
-  local file_path="${ROOTFS}/${DST_PATH}"
+  local path="${ROOTFS}/${DST_PATH}"
 
-  if [[ -d ${file_path} ]]; then
-	  local src_base=$(basename ${SRC_PATH})
-	  file_path="${file_path}/${src_base}"
+  # if the DST_PATH ends with ".", then append to it the copied file/dir
+  if [[ "$DST_PATH" =~ \.$ ]]; then
+    local src_base=$(basename ${SRC_PATH})
+    path="${ROOTFS}/${DST_PATH}/${src_base}"
   fi
 
-  orig_uid=$(stat -c %u $file_path)
-  if [ "$?" -ne 0 ]; then
-	  exit 1
-  fi
-  orig_gid=$(stat -c %u $file_path)
-  if [ "$?" -ne 0 ]; then
-	  exit 1
-  fi
-
-  new_uid=$(($orig_uid + $CONT_HOST_UID))
-  new_gid=$(($orig_gid + $CONT_HOST_GID))
-
-  # if dir, chown recursively
-  ret=$(chown $new_uid:$new_gid $file_path)
-  if [[ $? != 0 ]]; then
-	  exit 1
-  fi
+  chown_recursive $path $CONT_HOST_UID $CONT_HOST_GID
 }
 
 function chown_local_file() {
   local local_path=${DST_PATH}
 
-  if [[ -d ${local_path} ]]; then
-	  local src_base=$(basename ${SRC_PATH})
-	  local_path="${local_path}/${src_base}"
+  # if the DST_PATH ends with ".", then append to it the copied file/dir
+  if [[ "$DST_PATH" =~ \.$ ]]; then
+    local src_base=$(basename ${SRC_PATH})
+    local_path="${DST_PATH}/${src_base}"
   fi
 
   real_user_uid=$(id -u)
   real_user_gid=$(id -g)
-  ret=$(chown ${real_user_uid}:${real_user_gid} $local_path)
+
+  # Chown the copied files (recursively) to the user's ID.
+  ret=$(chown -R ${real_user_uid}:${real_user_gid} $local_path)
   if [[ $? != 0 ]]; then
 	  exit 1
   fi
@@ -247,9 +263,18 @@ function main() {
   get_container_info
 
   if ! is_sysbox_container; then
-	  printf "\nError: ${CONT_NAME} is not a Sysbox container. Exiting.\n"
+	  printf "Error: ${CONT_NAME} is not a Sysbox container.\n"
 	  exit 1
   fi
+
+  if [[ $COPY_TO_CONTAINER == "true" ]]; then
+    stat -c ${ROOTFS} > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      printf "Error: must have root access (e.g., sudo) to copy to container.\n"
+      exit 1
+    fi
+  fi
+
 
   docker_cp
 
