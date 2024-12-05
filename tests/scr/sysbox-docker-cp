@@ -268,7 +268,7 @@ function main() {
   fi
 
   if [[ $COPY_TO_CONTAINER == "true" ]]; then
-    stat -c ${ROOTFS} > /dev/null 2>&1
+    stat ${ROOTFS} > /dev/null 2>&1
     if [ $? -ne 0 ]; then
       printf "Error: must have root access (e.g., sudo) to copy to container.\n"
       exit 1
