@@ -73,3 +73,23 @@ function teardown() {
     fi
   done
 }
+
+@test "no left-over nsenter dirs after access to /proc" {
+
+  #
+  # Verify container access to /proc dirs emulated by sysbox-fs does not result
+  # in left-over .sysbox-procfs-* dirs (see https://github.com/nestybox/sysbox/issues/829)
+  #
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c 'ls -la / | grep .sysbox-procfs && exit 1 || exit 0'
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /proc/sys"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c 'ls -la / | grep .sysbox-procfs && exit 1 || exit 0'
+  [ "$status" -eq 0 ]
+}
