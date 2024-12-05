@@ -16,6 +16,26 @@ function teardown() {
   sysbox_log_check
 }
 
+@test "no left-over nsenter dirs after access to /sys" {
+
+  #
+  # Verify container access to /sys dirs emulated by sysbox-fs does not result
+  # in left-over .sysbox-procfs-* dirs (see https://github.com/nestybox/sysbox/issues/829)
+  #
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c 'ls -la / | grep .sysbox-sysfs && exit 1 || exit 0'
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c "ls -l /sys/kernel"
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont sh -c 'ls -la / | grep .sysbox-sysfs && exit 1 || exit 0'
+  [ "$status" -eq 0 ]
+}
+
 # Verify that /sys controls for non-namespaced kernel resources
 # can't be modified from within a sys container.
 @test "/sys non-namespaced resources" {
