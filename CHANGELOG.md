@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.6] - 2025-01-03
+### Added
+  * Ensure latest OCI runc works inside Sysbox containers (issue #879).
+  * Retry fix for bug in sysbox-fs that resulted in left-over nsenter mounts of procfs and sysfs (issue #829).
+  * Fix bug in parsing of subid limits in /etc/login.defs (issue #870).
+  * Fix bug in Sysbox shiftfs checker that was causing false negatives.
+
 ## [0.6.5] - 2024-11-08
 ### Added
   * Update to Golang 1.22.
