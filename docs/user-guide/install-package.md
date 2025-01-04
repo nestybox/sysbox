@@ -57,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.5/sysbox-ce_0.6.5-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.6/sysbox-ce_0.6.6-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.6.5-0.linux_amd64.deb
-f02ffb48eae99d6c884c9aa0378070cc716d028f58e87deec5ae00a41b706fe8 sysbox-ce_0.6.5-0.linux_amd64.deb
+$ sha256sum sysbox-ce_0.6.6-0.linux_amd64.deb
+87cfa5cad97dc5dc1a243d6d88be1393be75b93a517dc1580ecd8a2801c2777a  sysbox-ce_0.6.6-0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -85,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.6.5-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.6.6-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -94,39 +94,38 @@ NOTE: the `jq` tool is used by the Sysbox installer.
     associated daemons are properly running:
 
 ```console
-$ sudo systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Sat 2024-11-09 23:04:09 UTC; 6h ago
+     Active: active (running) since Fri 2025-01-03 19:09:54 PST; 11s ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 2982521 (sh)
-      Tasks: 2 (limit: 19170)
-     Memory: 388.0K
-        CPU: 23ms
+   Main PID: 3695341 (sh)
+      Tasks: 2 (limit: 38085)
+     Memory: 384.0K
+        CPU: 13ms
      CGroup: /system.slice/sysbox.service
-             ├─2982521 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
-             └─2982541 /bin/sleep infinity
+             ├─3695341 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
+             └─3695361 /bin/sleep infinity
 
-Nov 09 23:04:09 ip-172-31-0-219 systemd[1]: Started Sysbox container runtime.
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]: sysbox-runc
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         edition:         Community Edition (CE)
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         version:         0.6.5
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         commit:         1b440ff266841f3d2d296e664122a9e29ceb9fd8
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         built at:         Sat Nov  9 06:09:34 UTC 2024
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         built by:         Rodny Molina
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982522]:         oci-specs:         1.1.0+dev
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]: sysbox-mgr
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]:         edition:         Community Edition (CE)
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]:         version:         0.6.5
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]:         commit:         1159d228eac8402efa63bd2cb18cdf9e404ea130
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]:         built at:         Sat Nov  9 06:10:05 UTC 2024
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982529]:         built by:         Rodny Molina
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]: sysbox-fs
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]:         edition:         Community Edition (CE)
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]:         version:         0.6.5
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]:         commit:         aeba775e52cc6385fa4807c594fc7ee164ad624c
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]:         built at:         Sat Nov  9 06:10:01 UTC 2024
-Nov 09 23:04:09 ip-172-31-0-219 sh[2982535]:         built by:         Rodny Molina
+Jan 03 19:09:54 lenovo systemd[1]: Started Sysbox container runtime.
+Jan 03 19:09:54 lenovo sh[3695342]: sysbox-runc
+Jan 03 19:09:54 lenovo sh[3695342]:         edition:         Community Edition (CE)
+Jan 03 19:09:54 lenovo sh[3695342]:         version:         0.6.6
+Jan 03 19:09:54 lenovo sh[3695342]:         commit:         1b440ff266841f3d2d296e664122a9e29ceb9fd8
+Jan 03 19:09:54 lenovo sh[3695342]:         built at:         Sat Jan  4 00:00:49 UTC 2025
+Jan 03 19:09:54 lenovo sh[3695342]:         built by:         Cesar Talledo
+Jan 03 19:09:54 lenovo sh[3695342]:         oci-specs:         1.1.0+dev
+Jan 03 19:09:54 lenovo sh[3695349]: sysbox-mgr
+Jan 03 19:09:54 lenovo sh[3695349]:         edition:         Community Edition (CE)
+Jan 03 19:09:54 lenovo sh[3695349]:         version:         0.6.6
+Jan 03 19:09:54 lenovo sh[3695349]:         commit:         648c6e1d867e09f71bfb1303fa3e5af5cb6ebb54
+Jan 03 19:09:54 lenovo sh[3695349]:         built at:         Sat Jan  4 00:00:59 UTC 2025
+Jan 03 19:09:54 lenovo sh[3695349]:         built by:         Cesar Talledo
+Jan 03 19:09:54 lenovo sh[3695355]: sysbox-fs
+Jan 03 19:09:54 lenovo sh[3695355]:         edition:         Community Edition (CE)
+Jan 03 19:09:54 lenovo sh[3695355]:         version:         0.6.6
+Jan 03 19:09:54 lenovo sh[3695355]:         commit:         2d853ebf2592f79ae8cb0bfd1524f1163a0a9175
+Jan 03 19:09:54 lenovo sh[3695355]:         built at:         Sat Jan  4 00:00:58 UTC 2025
+Jan 03 19:09:54 lenovo sh[3695355]:         built by:         Cesar Talledo
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
@@ -453,7 +452,7 @@ To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
 
 You can find the latest versions of Sysbox here:
 
--   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.5.2).
+-   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.6.6).
 -   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.2).
 
 Note that you must stop all Sysbox containers on the host prior to uninstalling
