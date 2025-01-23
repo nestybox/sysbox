@@ -29,13 +29,13 @@ ENV TARGET_ARCH=${target_arch}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG k8s_version=v1.20.2
+ARG k8s_version=v1.28.2
 
-# CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
+# CRI-O & crictl version for testing sysbox pods; CRI-O > 1.20 is required as it
 # introduces rootless pod support (via the Linux user-ns)
-ARG crio_version=1.20
+ARG crio_version=1.28
 ARG crio_os=Debian_10
-ARG crictl_version=v1.20.0
+ARG crictl_version=v1.28.0
 
 RUN apt-get update && apt-get install -y \
     acl \
@@ -143,16 +143,6 @@ RUN curl -fsSL https://get.docker.com -o get-docker.sh \
     && sh get-docker.sh
 ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker /etc/bash_completion.d/docker.sh
 
-# Install Kubectl for K8s integration-testing. Notice that we are explicitly
-# stating the kubectl version to download, which should match the K8s release
-# deployed in K8s (L2) nodes.
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
-    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
-    && apt-get update \
-    && apt-get install kubectl="${k8s_version#v}"-00 \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
-
 # shellcheck for lint of shell scripts
 RUN apt-get update && apt-get install -y shellcheck
 
@@ -162,12 +152,9 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 # Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in the K8s-in-docker nodes (L2).
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -  \
-    && echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
-    && apt-get update \
-    && apt-get install kubectl:${sys_arch}="${k8s_version#v}"-00 \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm /tmp/kubectl
 
 # CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
 RUN echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /"| tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \

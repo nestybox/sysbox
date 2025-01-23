@@ -21,7 +21,7 @@
 
 FROM rockylinux:8.5
 
-ARG k8s_version=v1.18.2
+ARG k8s_version=v1.28.2
 
 # Desired platform architecture to build upon.
 ARG sys_arch
@@ -31,9 +31,9 @@ ENV TARGET_ARCH=${target_arch}
 
 # CRI-O & crictl version for testing sysbox pods; CRI-O 1.20 is required as it
 # introduces rootless pod support (via the Linux user-ns)
-ARG crio_version=1.22
+ARG crio_version=1.28
 ARG crio_os=CentOS_8
-ARG crictl_version=v1.20.0
+ARG crictl_version=v1.28.0
 
 RUN dnf update -y && dnf install -y \
     acl \
@@ -112,25 +112,12 @@ RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
     && go install github.com/golang/protobuf/protoc-gen-go@latest \
     && export PATH="$PATH:$(go env GOPATH)/bin"
 
-# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
-# deployed in K8s (L2) nodes.
-#
-# TODO: Define a mechanism in our testing-framework to allow K8s version to be
-# configured in a centralized location, so that the installed K8s components
-# (both inside privileged test-container and within L2 K8s image) are all
-# matching the same K8s release.
-RUN echo -e "\
-[kubernetes] \n\
-name=Kubernetes \n\
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64 \n\
-enabled=1 \n\
-gpgcheck=1 \n\
-repo_gpgcheck=1 \n\
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
-" > /etc/yum.repos.d/kubernetes.repo \
-    && yum update -y \
-    && yum install -y kubectl --nobest
+# deployed in the K8s-in-docker nodes (L2).
+RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm /tmp/kubectl
 
 # CRI-O and crictl for testing deployment of pods with sysbox (aka "sysbox pods")
 RUN curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/devel:kubic:libcontainers:stable.repo \
