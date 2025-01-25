@@ -123,6 +123,79 @@ access to all host resources.
 This is a unique and key security feature of Sysbox: it allows you to run privileged
 containers inside a system container without risking host security.
 
+## Inner Docker Multi-Arch Builds \[ v0.6.7+ ]
+
+Starting with Sysbox v0.6.7, and in hosts with Linux kernel 6.7 or later, it's possible
+for a Docker instance running inside a Sysbox container to build multi-arch images.
+
+This is because Linux kernel 6.7 introduces user-namespacing on the `binfmt_misc` filesystem,
+thanks to [this kernel commit](https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/commit/?h=vfs.binfmt_misc&id=ecddcab2d1b15fea782889237093bd069979c8c7) by the excellent Christian Brauner.
+This means that each Sysbox container has a dedicated `binfmt_misc` filesystem that is
+independent and isolated from the `binfmt_misc` filesystems on the host or in other
+Sysbox containers.
+
+Sysbox v0.6.7 detects if the kernel supports `binfmt_misc` namespacing and if so
+it auto-mounts it inside each Sysbox container at `/proc/sys/fs/binfmt_misc`.
+
+This in turn enables applications such as Docker running inside the Sysbox
+container to leverage this filesystem for multi-arch use cases, for example
+building an arm64 image on an amd64 host as in the example below.
+
+1) Start a Sysbox container that comes with Docker inside:
+
+```
+$ docker run --runtime=sysbox-runc -it --rm nestybox/ubuntu-jammy-systemd-docker
+```
+
+Now, inside the Sysbox container:
+
+2) Tell the inner Docker to install QEMU for emulation:
+
+```
+$ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+```
+
+3) Verify the installation succeeded:
+
+```
+$ docker buildx inspect --bootstrap
+Name:   default
+Driver: docker
+
+Nodes:
+Name:      default
+Endpoint:  default
+Status:    running
+Platforms: linux/amd64, linux/386, linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/arm/v7, linux/arm/v6
+```
+
+4) Tell the inner Docker to build the image (assumes you have a Dockerfile somewhere):
+
+```
+$ docker buildx build --platform linux/arm64 -t alpine-arm-test:arm64 .
+```
+
+5) Run the newly built image:
+
+```
+$ docker run --rm --platform linux/arm64 alpine-arm-test:arm64 uname -m
+aarch64
+```
+
+Note that steps (2) -> (5) above occur inside the Sysbox container, and they are
+exactly the same steps you would do on a normal Linux host. This makes sense
+since the environment inside the Sysbox container resembles a Linux VM.
+
+Also, the installation of QEMU for emulation occurs entirely inside the Sysbox
+container, and it does not affect the host or other containers (because
+`binfmt_misc` is namespaced per Sysbox container).
+
+Finally, as noted above, this requires a Linux kernel version 6.7 or later. On
+earlier Linux kernels, Sysbox will not auto-mount `binfmt_misc` inside the
+container and in fact trying to mount it manually inside the container
+(e.g., `mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc`) will
+result in a "permission denied" error.
+
 ## Limitations for the Inner Docker
 
 Most Docker functionality works perfectly inside the system container.
