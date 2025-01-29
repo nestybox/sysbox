@@ -37,7 +37,7 @@ ARG crio_version=1.28
 ARG crio_os=CentOS_8
 ARG crictl_version=v1.20.0
 
-ARG kubernetes_version=1.28
+ARG kubernetes_version=1.29
 
 RUN dnf update -y && dnf install -y \
     acl \
