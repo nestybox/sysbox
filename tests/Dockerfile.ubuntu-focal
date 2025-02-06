@@ -209,6 +209,12 @@ RUN go install sigs.k8s.io/kind@v0.24.0
 # kernels.
 RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
+# Paketo buildpacks
+RUN apt-get update && apt-get install -y software-properties-common
+RUN add-apt-repository ppa:cncf-buildpacks/pack-cli \
+    && apt-get update \
+    && apt-get install -y pack-cli
+
 # sysbox env
 RUN useradd sysbox \
     && mkdir -p /var/lib/sysboxfs
