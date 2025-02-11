@@ -53,7 +53,7 @@ function teardown() {
 	  skip "docker commit with sysbox does not work without shiftfs or kernel 5.19+"
   fi
 
-  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu-jammy-docker:latest tail -f /dev/null)
 
   docker exec -d "$syscont" sh -c "containerd > /var/log/containerd.log 2>&1"
   [ "$status" -eq 0 ]
