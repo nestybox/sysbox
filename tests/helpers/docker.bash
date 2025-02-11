@@ -11,6 +11,7 @@ load $(dirname ${BASH_SOURCE[0]})/systemd.bash
 function __docker() {
   command docker "$@"
 }
+
 # Wrapper for docker using bats
 function docker() {
   run __docker "$@"
@@ -114,16 +115,33 @@ function docker_root_gid_map() {
   echo $gid
 }
 
+# Indicates if docker is using the containerd image store
+function docker_containerd_image_store() {
+  __docker info -f '{{json .DriverStatus}}' | egrep -q "driver-type.+io.containerd.snapshotter.v1"
+}
+
 function docker_cont_rootfs() {
   local cont=$1
-  local rootfs=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.MergedDir | tr -d '"')
+  if docker_containerd_image_store; then
+    local id=$(docker_cont_full_id $cont)
+    local driver=$(__docker info -f '{{json .Driver}}' |  tr -d '"')
+    local rootfs="/var/lib/docker/rootfs/$driver/$id"
+  else
+    local rootfs=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.MergedDir | tr -d '"')
+  fi
+
   echo $rootfs
 }
 
 function docker_cont_rootfs_upper_dir() {
   local cont=$1
-  local rootfs=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.UpperDir | tr -d '"')
-  echo $rootfs
+  if docker_containerd_image_store; then
+    local rootfs=$(docker_cont_rootfs $cont)
+    local upperdir=$(mount | grep $rootfs | grep -oP '(?<=upperdir=)[^,)]*')
+  else
+    local upperdir=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.UpperDir | tr -d '"')
+  fi
+  echo $upperdir
 }
 
 function docker_cont_pid() {
