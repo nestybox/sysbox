@@ -294,7 +294,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
-  local syscont_dns=$output
+  local syscont_dns="${lines[0]}"
 
   # start inner docker
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -308,7 +308,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf\""
   [ "$status" -eq 0 ]
-  local inner_dns=$output
+  local inner_dns="${lines[0]}"
 
   [[ "$inner_dns" == "$syscont_dns" ]]
 
@@ -327,7 +327,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
   [ "$status" -eq 0 ]
-  local inner2_dns=$output
+  local inner2_dns="${lines[0]}"
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
@@ -348,7 +348,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
-  local syscont_dns=$output
+  local syscont_dns="${lines[0]}"
 
   # start inner docker
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -363,7 +363,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
   [ "$status" -eq 0 ]
-  local inner_dns=$output
+  local inner_dns="${lines[0]}"
 
   [[ "$inner_dns" == "$inner_custom_dns" ]]
   [[ "$inner_dns" != "$syscont_dns" ]]
@@ -383,7 +383,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
   [ "$status" -eq 0 ]
-  local inner2_dns=$output
+  local inner2_dns="${lines[0]}"
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
@@ -407,7 +407,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "grep nameserver /etc/resolv.conf"
   [ "$status" -eq 0 ]
-  local syscont_dns=$output
+  local syscont_dns="${lines[0]}"
 
   # start inner docker
   docker exec -d "$syscont" sh -c "dockerd > /var/log/dockerd.log 2>&1"
@@ -422,7 +422,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
   [ "$status" -eq 0 ]
-  local inner_dns=$output
+  local inner_dns="${lines[0]}"
 
   [[ "$inner_dns" == "$inner_custom_dns" ]]
   [[ "$inner_dns" != "$syscont_dns" ]]
@@ -442,7 +442,7 @@ function teardown() {
 
   docker exec "$syscont" sh -c "docker exec inner2 sh -c \"grep nameserver /etc/resolv.conf | cut -d ' ' -f2\""
   [ "$status" -eq 0 ]
-  local inner2_dns=$output
+  local inner2_dns="${lines[0]}"
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
