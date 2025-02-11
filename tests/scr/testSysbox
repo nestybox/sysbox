@@ -236,6 +236,42 @@ function test_with_rootfs_cloning() {
 	return 0
 }
 
+# Test sysbox when Docker is configured with the containerd image store
+function test_with_containerd_image_store() {
+
+	# TODO: ideally we should run all tests with the containerd image store, but
+	# we first need to adjust several helper functions for this. For now, just run
+	# a subset of tests to verify the base functionality is good.
+
+	printf "\n"
+	printf "Executing Docker containerd image store + Sysbox tests \n"
+	printf -- "--------------------------------------------------------\n"
+
+	printf "\nConfiguring Docker with the containerd image store\n"
+	docker-cfg --containerd-image-store=true
+
+	bats --tap tests/buildx
+
+	# Try again with Sysbox using rootfs cloning
+	printf "\nDisabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
+
+	declare -a sysbox_cmdline
+	sysbox_cmdline+=("--disable-shiftfs")
+	sysbox_cmdline+=("--disable-ovfs-on-idmapped-mount")
+	restart_sysbox sysbox_cmdline
+
+	bats --tap tests/sysmgr/rootfsCloning.bats
+	bats --tap tests/buildx
+
+	# Cleanup
+	printf "\nRe-enabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
+	sysbox_cmdline=("")
+	restart_sysbox sysbox_cmdline
+
+	printf "\nConfiguring Docker with the default image store\n"
+	docker-cfg --containerd-image-store=false
+}
+
 # Test sysbox when Docker is configured with userns-remap mode.
 function test_with_docker_userns_remap() {
 
@@ -323,9 +359,11 @@ function main() {
 		test_with_idmapped_only
 		test_with_shiftfs_only
 		test_with_rootfs_cloning
+		test_with_containerd_image_store
 		test_with_docker_userns_remap
 		test_sysbox_config
 		test_sysbox_lifecycle
+
 	fi
 }
 
