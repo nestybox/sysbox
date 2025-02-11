@@ -284,6 +284,21 @@ function docker_config_network() {
 	 fi
  }
 
+ function docker_config_image_store() {
+	 if [[ "$containerd_image_store" == "true" ]]; then
+		 jq ".features[\"containerd-snapshotter\"] = true" \
+				${tmpCfgFile} > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
+		 log "Docker config: set image store to containerd.\n"
+		 docker_image_store_config_changed="true"
+
+	 elif [[ "$containerd_image_store" == "false" ]]; then
+		 jq ".features[\"containerd-snapshotter\"] = false" \
+				${tmpCfgFile} > ${tmpJqFile} && cp ${tmpJqFile} ${tmpCfgFile}
+		 log "Docker config: set image store to docker.\n"
+		 docker_image_store_config_changed="true"
+	 fi
+ }
+
  function docker_config_cgroup_driver() {
 
 	 # NOTE: for some reason configuring the cgroup-driver via the
@@ -374,6 +389,7 @@ function docker_config_network() {
 	 if [[ ${docker_userns_config_changed} = "true" ]] ||
 			 [[ ${docker_network_config_changed} = "true" ]] ||
 			 [[ ${docker_cgroup_config_changed} = "true" ]] ||
+			 [[ ${docker_image_store_config_changed} = "true" ]] ||
 			 [[ ${force_restart} -eq 1 ]]; then
 
 		 # Check if Docker is running; otherwise skip
@@ -445,6 +461,7 @@ function docker_config_network() {
 	 docker_config_userns
 	 docker_config_runtime
 	 docker_config_default_runtime
+	 docker_config_image_store
 	 docker_config_cgroup_driver
 	 docker_config_network
 
@@ -484,22 +501,23 @@ function docker_config_network() {
 	 printf 'config without actually changing the config.\n'
 	 printf "\n"
 	 printf "Options:\n"
-	 printf "      --sysbox-runtime=<enable|disable>   Adds or removes the Sysbox runtime to the Docker daemon config and restarts Docker. If omitted, no change to the runtime config occurs.\n"
-	 printf "      --userns-remap=<enable|disable>     Adds or removes userns-remap mode to the Docker daemon config and restarts Docker. If omitted, no change to the userns-remap config occurs.\n"
-	 printf "      --default-runtime=<runtime>         Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If omitted, no change to the Docker default runtime is made.\n"
-	 printf "      --bip=<ip-addr>                     Configures the IP address for the docker0 bridge (e.g., 172.20.0.1/16).\n"
-	 printf "      --default-address-pool=<ip-addr>    Configures the starting IP address for user-defined Docker networks (e.g., 172.25.0.0/16).\n"
-	 printf "      --cgroup-driver=<cgroupfs|systemd>  Configures the cgroup driver to be used. If omitted, no change to the Docker cgroup driver is made.\n"
-	 printf "  -c, --config-only                       Writes to the Docker daemon config file but does not restart Docker. Docker will not pick up the new config until it's restarted.\n"
-	 printf "  -f, --force-restart                     Forces restart of the Docker daemon (even if no config changes have occurred). This will stop and remove any existing Docker containers.\n"
-	 printf "      --dry-run                           Does not modify the Docker config; instead outputs the changes to stdout.\n"
-	 printf "  -v, --verbose                           Enables verbose logging (useful for debugging).\n"
-	 printf "  -h, --help                              Display usage.\n"
+	 printf "      --sysbox-runtime=<enable|disable>     Adds or removes the Sysbox runtime to the Docker daemon config and restarts Docker. If omitted, no change to the runtime config occurs.\n"
+	 printf "      --userns-remap=<enable|disable>       Adds or removes userns-remap mode to the Docker daemon config and restarts Docker. If omitted, no change to the userns-remap config occurs.\n"
+	 printf "      --default-runtime=<runtime>           Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If omitted, no change to the Docker default runtime is made.\n"
+	 printf "      --containerd-image-store=<true|false> Configures Docker with the containerd image store. If omitted, use the Docker image store.\n"
+	 printf "      --bip=<ip-addr>                       Configures the IP address for the docker0 bridge (e.g., 172.20.0.1/16).\n"
+	 printf "      --default-address-pool=<ip-addr>      Configures the starting IP address for user-defined Docker networks (e.g., 172.25.0.0/16).\n"
+	 printf "      --cgroup-driver=<cgroupfs|systemd>    Configures the cgroup driver to be used. If omitted, no change to the Docker cgroup driver is made.\n"
+	 printf "  -c, --config-only                         Writes to the Docker daemon config file but does not restart Docker. Docker will not pick up the new config until it's restarted.\n"
+	 printf "  -f, --force-restart                       Forces restart of the Docker daemon (even if no config changes have occurred). This will stop and remove any existing Docker containers.\n"
+	 printf "      --dry-run                             Does not modify the Docker config; instead outputs the changes to stdout.\n"
+	 printf "  -v, --verbose                             Enables verbose logging (useful for debugging).\n"
+	 printf "  -h, --help                                Display usage.\n"
 	 printf "\n"
  }
 
  function parse_args() {
-	 options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,bip:,default-address-pool:,default-runtime:,sysbox-runtime:,userns-remap:,cgroup-driver: -- "$@")
+	 options=$(getopt -o cvhf -l verbose,help,config-only,dry-run,force-restart,bip:,default-address-pool:,default-runtime:,containerd-image-store:,sysbox-runtime:,userns-remap:,cgroup-driver: -- "$@")
 
 	 eval set -- "$options"
 
@@ -556,6 +574,10 @@ function docker_config_network() {
 			 --default-runtime)
 				 shift;
 				 default_runtime=$1
+				 ;;
+			 --containerd-image-store)
+				 shift;
+				 containerd_image_store=$1
 				 ;;
 			 -f | --force-restart)
 				 force_restart=1
