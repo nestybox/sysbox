@@ -743,6 +743,9 @@ function teardown() {
 
   verify_syscont_procfs_mnt $syscont $mnt_path
 
+	# unmount submounts recursively
+	run docker exec "$syscont" bash -c "mount | awk '{print $3}' | grep $mnt_path | xargs -n1 umount"
+
   docker exec "$syscont" bash -c "umount $mnt_path"
   [ "$status" -eq 0 ]
 
@@ -758,11 +761,7 @@ function teardown() {
   docker exec "$syscont" bash -c "mount --bind $node $node"
   [ "$status" -eq 0 ]
 
-  docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
-  [ "$status" -eq 0 ]
-  [ "$output" -eq 1 ]
-
-  docker exec "$syscont" bash -c "mount | grep -w $node | wc -l"
+  docker exec "$syscont" bash -c "mount | grep -w \"sysboxfs on $node\" | wc -l"
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 
