@@ -23,18 +23,18 @@ FROM ubuntu:jammy
 
 # K8s version for k8s-in-docker (i.e., this should be equal or greater than the
 # version of K8s running inside the k8s-in-docker container).
-ARG k8s_version=v1.28.2
+ARG k8s_version=v1.28
+ARG k8s_version_full=v1.28.2
+
+# CRI-O & crictl version for testing sysbox pods; should match K8s version.
+ARG crio_version=v1.28
+ARG crictl_version=v1.28.0
 
 # Desired platform architecture to build upon.
 ARG sys_arch
 ENV SYS_ARCH=${sys_arch}
 ARG target_arch
 ENV TARGET_ARCH=${target_arch}
-
-# CRI-O & crictl version for testing sysbox pods; should match K8s version.
-ARG crio_version=1.28
-ARG crio_os=xUbuntu_22.04
-ARG crictl_version=v1.28.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -150,27 +150,26 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 # Install Kubectl for k8s-in-docker integration-testing. Notice that we are explicitly
 # stating the kubectl version to download, which should match the K8s release
 # deployed in the K8s-in-docker nodes (L2).
-RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version}/bin/linux/amd64/kubectl" \
+RUN cd /tmp && curl -LO "https://dl.k8s.io/release/${k8s_version_full}/bin/linux/amd64/kubectl" \
     && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
     && rm /tmp/kubectl
 
 # Install the upstream CRI-O so we get the cri-o binary plus all config files,
 # etc. Later we will replace the binary with our forked Nestybox CRI-O that
 # works with Sysbox.
-RUN apt-get update && apt-get install -y gpg
-RUN echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
-    && echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list \
-    && mkdir -p /usr/share/keyrings \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${crio_os}/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}/${crio_os}/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg \
+#
+# Instructions: https://cri-o.io/
+RUN apt-get update && apt-get install -y gpg software-properties-common
+RUN curl -fsSL https://download.opensuse.org/repositories/isv:/cri-o:/stable:/${crio_version}/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/${crio_version}/deb/ /" | tee /etc/apt/sources.list.d/cri-o.list \
     && apt-get update \
-    && apt-get install -y cri-o cri-o-runc
+    && apt-get install -y cri-o
 
 # Build and install the Nestybox CRI-O (for testing deployment of pods with sysbox (aka "sysbox pods"))
 RUN apt-get update && apt-get install -y --no-install-recommends libgpgme-dev \
     && mkdir -p /tmp/crio-build \
     && git clone https://github.com/nestybox/cri-o.git /tmp/crio-build/cri-o \
-    && git -C /tmp/crio-build/cri-o checkout -b v${crio_version}-sysbox origin/v${crio_version}-sysbox \
+    && git -C /tmp/crio-build/cri-o checkout -b ${crio_version}-sysbox origin/${crio_version}-sysbox \
     && cd /tmp/crio-build/cri-o && make binaries \
     && mv /usr/bin/crio /usr/bin/crio.orig \
     && cp /tmp/crio-build/cri-o/bin/crio-static /usr/bin/crio \
@@ -181,13 +180,18 @@ RUN wget https://github.com/kubernetes-sigs/cri-tools/releases/download/${crictl
     && rm -f crictl-${crictl_version}-linux-${sys_arch}.tar.gz
 
 # Container CNIs (needed by CRI-O)
-RUN cd /root \
-    && git clone https://github.com/containernetworking/plugins \
-    && cd plugins \
-    && git checkout -b v1.3.0 v1.3.0 \
-    && ./build_linux.sh \
-    && mkdir -p /opt/cni/bin \
-    && cp bin/* /opt/cni/bin/
+RUN curl -fsSL https://pkgs.k8s.io/core:/stable:/${k8s_version}/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${k8s_version}/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list \
+    && apt-get update \
+    && apt-get install kubernetes-cni
+
+# RUN cd /root \
+#     && git clone https://github.com/containernetworking/plugins \
+#     && cd plugins \
+#     && git checkout -b v1.3.0 v1.3.0 \
+#     && ./build_linux.sh \
+#     && mkdir -p /opt/cni/bin \
+#     && cp bin/* /opt/cni/bin/
 
 # Dasel (for yaml, toml, json parsing) (https://github.com/TomWright/dasel)
 # Note: manually download Dasel v1 as our testContainerInit script does not yet support Dasel v2.
@@ -210,7 +214,6 @@ RUN go install sigs.k8s.io/kind@v0.24.0
 RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
 # Paketo buildpacks
-RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:cncf-buildpacks/pack-cli \
     && apt-get update \
     && apt-get install -y pack-cli
