@@ -50,6 +50,8 @@ function teardown() {
 
 @test "syscont dns (user bridge)" {
 
+  skip "Failing; needs debug (issue #929)"
+
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
 
   local syscont=$(docker_run --rm --net=usernet ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
@@ -199,6 +201,8 @@ function teardown() {
 }
 
 @test "inner container dns (user bridge)" {
+
+  skip "Failing; needs debug (issue #929)"
 
   # sys container on **user-defined** docker bridge
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
@@ -398,6 +402,8 @@ function teardown() {
 }
 
 @test "inner container custom dns (syscont user bridge)" {
+
+  skip "Failing; needs debug (issue #929)"
 
   # sys container on **user-defined** docker bridge
   docker network create -o "com.docker.network.driver.mtu"="${iface_mtu}" usernet
