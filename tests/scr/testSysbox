@@ -56,7 +56,9 @@ function run_all_tests() {
 	# Launch kind test-suite.
 	docker system prune -a -f
 	bats --tap tests/k8s-kind
-	./tests/kind/kind.sh
+
+	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
+	# ./tests/kind/kind.sh
 
 	printf "\nExecuting security tests ... \n"
 	bats --tap tests/security

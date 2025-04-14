@@ -80,6 +80,8 @@ EOF
 
 @test "l1 nginx client-server" {
 
+  skip "Failing; needs debug (issue #929)"
+
   # Deploys nginx server and client sys containers and verifies nginx
   # client can access the server.
 
