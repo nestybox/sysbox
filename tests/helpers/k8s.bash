@@ -562,7 +562,7 @@ function kindbox_all_nodes_ready() {
 # The master node sys container is called k8s-master and the worker nodes are
 # called k8s-worker-0, k8s-worker-1, etc.
 #
-# usage: k8s_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
+# usage: kindbox_cluster_setup <cluster_name> <num_workers> <network> <node_image> <k8s_version>
 #
 # cluster: name of the cluster; nodes in the cluster are named "<cluster_name>-master",
 #          "<cluster-name>-worker-0", "<cluster-name>-worker-1", etc.
