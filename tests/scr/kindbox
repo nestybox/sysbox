@@ -154,7 +154,8 @@ function flannel_config() {
   local node=$1
   local output
 
-  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml\"" 2>&1)
+  modprobe br_netfilter
+  output=$(sh -c "docker exec ${node} sh -c \"kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml\"" 2>&1)
   if [[ $? -ne 0 ]]; then
     echo "$output"
     return 1
