@@ -227,69 +227,69 @@ function sysbox_stop() {
 }
 
 function sysbox_mgr_set_cmdline_opts() {
-	local -n options=$1
+	local varname=$1
 
 	if [ $DEBUG_MODE -eq 1 ]; then
-		options+=("--log-level=debug")
+		eval "$varname+=(\"--log-level=debug\")"
 	fi
 
 	if [ $NO_SHIFTFS -eq 1 ]; then
-		options+=("--disable-shiftfs")
+		eval "$varname+=(\"--disable-shiftfs\")"
 	fi
 
 	if [ $NO_SHIFTFS_ON_FUSE -eq 1 ]; then
-		options+=("--disable-shiftfs-on-fuse")
+		eval "$varname+=(\"--disable-shiftfs-on-fuse\")"
 	fi
 
 	if [ $NO_SHIFTFS_PRECHECK -eq 1 ]; then
-		options+=("--disable-shiftfs-precheck")
+		eval "$varname+=(\"--disable-shiftfs-precheck\")"
 	fi
 
 	if [ $NO_IDMAPPED_MOUNT -eq 1 ]; then
-		options+=("--disable-idmapped-mount")
+		eval "$varname+=(\"--disable-idmapped-mount\")"
 	fi
 
 	if [ $NO_OVFS_ON_IDMAPPED_MOUNT -eq 1 ]; then
-		options+=("--disable-ovfs-on-idmapped-mount")
+		eval "$varname+=(\"--disable-ovfs-on-idmapped-mount\")"
 	fi
 
 	if [ $NO_ROOTFS_CLONING -eq 1 ]; then
-		options+=("--disable-rootfs-cloning")
+		eval "$varname+=(\"--disable-rootfs-cloning\")"
 	fi
 
 	if [ $NO_INNER_IMG_PRELOAD -eq 1 ]; then
-		options+=("--disable-inner-image-preload")
+		eval "$varname+=(\"--disable-inner-image-preload\")"
 	fi
 
 	if [ $IGNORE_SYSFS_CHOWN -eq 1 ]; then
-		options+=("--ignore-sysfs-chown")
+		eval "$varname+=(\"--ignore-sysfs-chown\")"
 	fi
 
 	if [ $HONOR_CAPS -eq 1 ]; then
-		options+=("--honor-caps")
+		eval "$varname+=(\"--honor-caps\")"
 	fi
 
 	if [ $SYSCONT_MODE == "false" ]; then
-		options+=("--syscont-mode=false")
+		eval "$varname+=(\"--syscont-mode=false\")"
 	fi
 
 	if [[ $ALLOW_TRUSTED_XATTR -eq 1 ]]; then
-		options+=("--allow-trusted-xattr")
+		eval "$varname+=(\"--allow-trusted-xattr\")"
 	fi
 
 	if [ $SET_DATA_ROOT -eq 1 ]; then
-		options+=("--data-root ${DATA_ROOT}")
+		eval "$varname+=(\"--data-root ${DATA_ROOT}\")"
 	fi
 
 	if [ $FSUID_MAP_FAIL_ON_ERR -eq 1 ]; then
-		options+=("--fsuid-map-fail-on-error")
+		eval "$varname+=(\"--fsuid-map-fail-on-error\")"
 	fi
 
 	if [ $RELAXED_READ_ONLY -eq 1 ]; then
-		options+=("--relaxed-read-only")
+		eval "$varname+=(\"--relaxed-read-only\")"
 	fi
 
-	options+=("--log /var/log/sysbox-mgr.log")
+	eval "$varname+=(\"--log /var/log/sysbox-mgr.log\")"
 }
 
 function sysbox_mgr_start() {
@@ -311,29 +311,29 @@ function sysbox_mgr_start() {
 }
 
 function sysbox_fs_set_cmdline_opts() {
-	local -n options=$1
+	local varname=$1
 
 	if [ $DEBUG_MODE -eq 1 ]; then
-		options+=("--log-level=debug")
+		eval "$varname+=(\"--log-level=debug\")"
 	fi
 
 	if [ $TEST_MODE -eq 1 ]; then
-		options+=("--ignore-handler-errors")
+		eval "$varname+=(\"--ignore-handler-errors\")"
 	fi
 
 	if [ $SET_SECCOMP_FD_REL -eq 1 ]; then
-		options+=("--seccomp-fd-release=${SECCOMP_FD_REL}")
+		eval "$varname+=(\"--seccomp-fd-release=${SECCOMP_FD_REL}\")"
 	fi
 
 	if [ $ALLOW_IMMUTABLE_UNMOUNTS == "false" ]; then
-		options+=("--allow-immutable-unmounts=false")
+		eval "$varname+=(\"--allow-immutable-unmounts=false\")"
 	fi
 
 	if [ $ALLOW_IMMUTABLE_REMOUNTS == "true" ]; then
-		options+=("--allow-immutable-remounts=true")
+		eval "$varname+=(\"--allow-immutable-remounts=true\")"
 	fi
 
-	options+=("--log /var/log/sysbox-fs.log")
+	eval "$varname+=(\"--log /var/log/sysbox-fs.log\")"
 }
 
 function sysbox_fs_start() {
