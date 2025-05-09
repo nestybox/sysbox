@@ -94,6 +94,7 @@ NOTE: the `jq` tool is used by the Sysbox installer.
     associated daemons are properly running:
 
 ```console
+$ sudo systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
      Active: active (running) since Fri 2025-01-03 19:09:54 PST; 11s ago
