@@ -56,10 +56,10 @@ untouched.
 
 Sysbox is supported on the following Kubernetes versions:
 
--   Kubernetes v1.28.\*
 -   Kubernetes v1.29.\*
 -   Kubernetes v1.30.\*
 -   Kubernetes v1.31.\*
+-   Kubernetes v1.32.\*
 
 For consistency purposes, we strive to match the official Kubernetes' release
 cadence as closely as possible. This translates into previously supported
@@ -75,6 +75,7 @@ EOL releases:
 -   Kubernetes v1.25.\*
 -   Kubernetes v1.26.\*
 -   Kubernetes v1.27.\*
+-   Kubernetes v1.28.\*
 
 Other versions of Kubernetes are not supported.
 
@@ -83,7 +84,7 @@ Other versions of Kubernetes are not supported.
 Prior to installing Sysbox, ensure each K8s worker node where you will install
 Sysbox meets the following requirement:
 
--   The node's OS must be Ubuntu Jammy, Focal, or Bionic (with a 5.4+ kernel).
+-   The node's OS must be Ubuntu Noble, Jammy, Focal, or Bionic (with a 5.4+ kernel).
 
 -   The node's platform architecture must match one of the Sysbox's [supported architectures](../arch-compat.md).
 
