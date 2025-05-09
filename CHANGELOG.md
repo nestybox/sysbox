@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.6.7] - 2025-05-09
+### Added
+  * Add support for binfmt_misc namespacing inside Sysbox containers (kernel 6.7+); issue #592.
+  * Add edition and version info in sysbox-mgr and sysbox-fs logs.
+  * Fix bug when starting/stopping containers with large number of layers, on kernels without idmapping or shiftfs.
+  * Fix bug when unmounting fuse device inside Sysbox container (issue #854).
+  * Fix bug causing failure to open /proc/sys/kernel/shm inside Sysbox container (issues #903, #909).
+  * Fix bug causing false-negatives when checking for shiftfs support in hosts (issue #922)
+  * Fix bug causing sysbox-mgr to consume CPU cycles when idle (issue #915).
+  * sysbox-deploy-k8s: add support for K8s v1.32 and deprecated support for K8s v1.28.
+
 ## [0.6.6] - 2025-01-03
 ### Added
   * Add support for k8s v1.31 and deprecate k8s v1.27.
