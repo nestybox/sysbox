@@ -59,6 +59,47 @@ EOF
   rm ${file}
 }
 
+@test "buildx #2 with sysbox" {
+
+  if sysbox_using_rootfs_cloning; then
+	  skip "docker build with sysbox does not work without shiftfs or kernel 5.19+"
+  fi
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  local tdir=/mnt/scratch/test
+
+  mkdir -p ${tdir}
+  pushd ${tdir}
+
+  echo "test-data" > test-file
+
+  cat << EOF > Dockerfile
+FROM ${CTR_IMG_REPO}/alpine
+WORKDIR /test1
+COPY test-file test-file-1
+ADD --chown=1000:1000 test-file /test2/test-file-2
+RUN apk add findmnt
+RUN mkdir /vol
+RUN echo "vol data" > /vol/test-vol.txt
+VOLUME /vol
+EOF
+
+  docker build . -t testimg --no-cache
+  [ "$status" -eq 0 ]
+
+  # Cleanup
+  docker image rm testimg
+  [ "$status" -eq 0 ]
+
+  docker buildx prune -af
+  [ "$status" -eq 0 ]
+
+  popd
+  rm -rf ${tdir}
+}
+
 @test "buildx stages with sysbox" {
 
   if sysbox_using_rootfs_cloning; then
