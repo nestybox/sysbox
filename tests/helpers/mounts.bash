@@ -89,16 +89,16 @@ function list_container_ro_mounts() {
 
   if [[ ${pid} != "0" ]] && [[ ${chrootpath} != "/" ]]; then
     __docker exec "$sc" sh -c \
-      "nsenter -t ${pid} -a chroot ${chrootpath} mount | grep \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "nsenter -t ${pid} -a chroot ${chrootpath} mount | awk -F '[()]' '\$2 ~ /(^|,)ro(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   elif [[ ${pid} != "0" ]]; then
     __docker exec "$sc" sh -c \
-      "nsenter -t ${pid} -a mount | grep \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "nsenter -t ${pid} -a mount | awk -F '[()]' '\$2 ~ /(^|,)ro(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   elif [[ ${chrootpath} != "/" ]]; then
     __docker exec "$sc" sh -c \
-      "chroot ${chrootpath} mount | grep \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "chroot ${chrootpath} mount | awk -F '[()]' '\$2 ~ /(^|,)ro(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   else
     __docker exec "$sc" sh -c \
-      "mount | grep \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "mount | awk -F '[()]' '\$2 ~ /(^|,)ro(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   fi
 }
 
@@ -109,16 +109,16 @@ function list_container_rw_mounts() {
 
   if [[ ${pid} != "0" ]] && [[ ${chrootpath} != "/" ]]; then
     __docker exec "$sc" sh -c \
-      "nsenter -t ${pid} -a chroot ${chrootpath} mount | grep -v \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "nsenter -t ${pid} -a chroot ${chrootpath} mount | awk -F '[()]' '\$2 ~ /(^|,)rw(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   elif [[ ${pid} != "0" ]]; then
     __docker exec "$sc" sh -c \
-      "nsenter -t ${pid} -a mount | grep -v \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "nsenter -t ${pid} -a mount | awk -F '[()]' '\$2 ~ /(^|,)rw(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   elif [[ ${chrootpath} != "/" ]]; then
     __docker exec "$sc" sh -c \
-      "chroot ${chrootpath} mount | grep -v \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "chroot ${chrootpath} mount | awk -F '[()]' '\$2 ~ /(^|,)rw(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   else
     __docker exec "$sc" sh -c \
-      "mount | grep -v \"ro,\" | awk '{print \$3}' | grep -w -v \"/\""
+      "mount | awk -F '[()]' '\$2 ~ /(^|,)rw(,|$)/' | awk '{print \$3}' | grep -w -v \"/\""
   fi
 }
 
