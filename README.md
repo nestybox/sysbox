@@ -148,7 +148,7 @@ Sysbox solves problems such as:
 </p>
 
 Sysbox [installs easily](#installation) on Linux hosts (bare-metal, VM, on-prem, cloud, etc.). It
-works on all mayor cloud-based IaaS and Kubernetes services (e.g., EC2, GCP, GKE,
+works on all major cloud-based IaaS and Kubernetes services (e.g., EC2, GCP, GKE,
 EKS, AKS, Rancher, etc.)
 
 Once installed, Sysbox works under the covers: you use Docker, Kubernetes, etc.
