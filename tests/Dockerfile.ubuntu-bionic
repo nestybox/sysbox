@@ -92,7 +92,7 @@ RUN apt-get update && apt-get install -y \
     shellcheck \
     gperf \
     # sysbox deps
-    fuse \
+    fuse3 \
     rsync \
     bash-completion \
     attr \
