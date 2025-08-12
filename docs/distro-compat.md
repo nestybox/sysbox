@@ -25,6 +25,7 @@ methods supported, and any other requirements:
 | Alma Linux (8, 9)     | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | CentOS Stream         | WIP             | WIP         | ✓                 | 5.12+      | No | |
 | Amazon Linux 2        | WIP             | WIP         | ✓                 | 5.12+      | No | [Kernel upgrade notes](https://repost.aws/knowledge-center/amazon-linux-2-kernel-upgrade) |
+| Amazon Linux 2023     | WIP             | WIP         | ✓                 | 6.1+       | No | |
 | RedHat Enterprise     | WIP             | WIP         |                   | 5.12+      | No | Sysbox-EE only |
 | Flatcar               | ✓               | ✓           |                   | 5.10+      | If kernel < 5.12  | Sysbox-EE only; see [here](user-guide/install-flatcar.md). |
 
