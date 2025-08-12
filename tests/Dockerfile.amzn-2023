@@ -1,0 +1,133 @@
+#
+# Sysbox Test Container Dockerfile (Amazonlinux-2023 image)
+#
+# This Dockerfile creates the sysbox test container image. The image
+# contains all dependencies needed to build, run, and test sysbox.
+#
+# The image does not contain sysbox itself; the sysbox repo
+# must be bind mounted into the image. It can then be built,
+# installed, and executed within the container.
+#
+# The image must be run as a privileged container (i.e., docker run --privileged ...)
+# Refer to the sysbox Makefile test targets.
+#
+# This Dockerfile is based on a similar Dockerfile in the OCI runc
+# github repo, but adapted to sysbox testing.
+#
+# Instructions:
+#
+# docker build -t sysbox-test .
+#
+
+FROM amazonlinux:2023
+
+# Desired platform architecture to build upon.
+ARG sys_arch
+ENV SYS_ARCH=${sys_arch}
+ARG target_arch
+ENV TARGET_ARCH=${target_arch}
+
+ARG k8s_version=v1.32.0
+
+RUN dnf install -y \
+    acl \
+    yum-utils \
+    automake \
+    autoconf \
+    libtool \
+    procps \
+    psmisc \
+    nano \
+    less \
+    sudo \
+    git \
+    iptables \
+    iproute \
+    jq \
+    pkg-config \
+    libaio-devel \
+    libcap-devel \
+    libnl3-devel \
+    libseccomp \
+    libseccomp-devel \
+    libseccomp-static \
+    kernel-headers \
+    python3 \
+    kmod \
+    unzip \
+    time \
+    net-tools \
+    wget \
+    lsof \
+    iputils \
+    bc \
+    hostname \
+    # sysbox deps
+    fuse \
+    rsync \
+    glibc-static \
+    bash-completion \
+    attr \
+    tree \
+    strace \
+    && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
+    && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
+    && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
+
+# Install Golang
+RUN wget https://go.dev/dl/go1.22.6.linux-${sys_arch}.tar.gz && \
+    tar -C /usr/local -xzf go1.22.6.linux-${sys_arch}.tar.gz && \
+    /usr/local/go/bin/go env -w GONOSUMDB=/root/nestybox
+
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+RUN go env -w GONOSUMDB=/root/nestybox && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    chmod -R 777 "$GOPATH"
+
+# Add a dummy user for the rootless integration tests; needed by the
+# `git clone` operations below.
+RUN useradd -u1000 -m -d/home/rootless -s/bin/bash rootless
+
+# install bats
+RUN cd /tmp \
+    && git clone https://github.com/sstephenson/bats.git \
+    && cd bats \
+    && git reset --hard 03608115df2071fff4eaaff1605768c275e5f81f \
+    && ./install.sh /usr/local \
+    && rm -rf /tmp/bats
+
+# install protoc compiler for gRPC
+RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
+    elif [ "$sys_arch" = "arm64" ]; then arch_str="aarch_64"; \
+    else echo "Unsupported platform: ${sys_arch}"; exit; fi \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
+    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
+    && export PATH="$PATH:$HOME/.local/bin" \
+    && ln -s $HOME/.local/bin/protoc /usr/local/bin/protoc \
+    && go install github.com/golang/protobuf/protoc-gen-go@latest \
+    && export PATH="$PATH:$(go env GOPATH)/bin"
+
+# Install Kubectl for K8s integration-testing. Notice that we are explicitly
+# stating the kubectl version to download, which should match the K8s release
+# deployed in K8s (L2) nodes.
+RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${sys_arch}/kubectl \
+    && install -o root -g root -m 0755 kubectl /usr/bin/kubectl
+
+# Go Dlv for debugging
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# sysbox env
+RUN useradd sysbox \
+    && mkdir -p /var/lib/sysboxfs
+
+# test scripts
+COPY scr/testContainerInit /usr/bin
+COPY scr/testContainerCleanup /usr/bin
+COPY scr/buildContainerInit /usr/bin
+COPY bin/userns_child_exec_${sys_arch} /usr/bin
+
+RUN mkdir -p /root/nestybox
+WORKDIR /root/nestybox/sysbox
+
+CMD /usr/bin/bash
