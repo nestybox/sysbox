@@ -70,7 +70,7 @@ RUN dnf install -y \
     attr \
     tree \
     strace \
-    && echo ". /etc/bash_completion" >> /etc/bash.bashrc \
+    && echo ". /etc/profile.d/bash_completion.sh" >> /etc/.bashrc \
     && ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa \
     && echo "    StrictHostKeyChecking accept-new" >> /etc/ssh/ssh_config
 
@@ -113,6 +113,11 @@ RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
 # deployed in K8s (L2) nodes.
 RUN curl -LO https://dl.k8s.io/release/${k8s_version}/bin/linux/${sys_arch}/kubectl \
     && install -o root -g root -m 0755 kubectl /usr/bin/kubectl
+
+# Install Docker (used by most sysbox tests to launch sys containers)
+RUN dnf install -y docker
+ADD https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker \
+    /etc/bash_completion.d/docker.sh
 
 # Go Dlv for debugging
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
