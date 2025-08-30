@@ -63,7 +63,7 @@ RUN dnf install -y \
     bc \
     hostname \
     # sysbox deps
-    fuse \
+    fuse3 \
     rsync \
     glibc-static \
     bash-completion \
