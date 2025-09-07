@@ -87,7 +87,12 @@ else
 INSTALL_DIR := ${DESTDIR}
 endif
 
-IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
+# Assume the default distro if /etc/os-release is not present.
+ifeq ($(wildcard /etc/os-release),)
+	IMAGE_BASE_DISTRO := $(DEFAULT_DISTRO)
+else
+	IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
+endif
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
@@ -99,7 +104,7 @@ export KERNEL_REL
 ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat almalinux rocky amzn))
 	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2 | tr -d '"' | cut -d "." -f1)
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
-else
+else ifdef $(shell command -v lsb_release 2>/dev/null)
 	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_CODENAME" | cut -d "=" -f2)
 	ifeq ($(IMAGE_BASE_DISTRO),linuxmint)
 		IMAGE_BASE_DISTRO := ubuntu
