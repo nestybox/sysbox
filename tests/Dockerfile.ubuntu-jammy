@@ -133,15 +133,9 @@ RUN cd /tmp \
     && ./install.sh /usr/local \
     && rm -rf /tmp/bats
 
-# install protoc compiler for gRPC
-RUN if [ "$sys_arch" = "amd64" ] ; then arch_str="x86_64"; \
-    elif [ "$sys_arch" = "arm64" ]; then arch_str="aarch_64"; \
-    else echo "Unsupported platform: ${sys_arch}"; exit; fi \
-    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-${arch_str}.zip \
-    && unzip protoc-3.15.8-linux-${arch_str}.zip -d $HOME/.local \
-    && export PATH="$PATH:$HOME/.local/bin" \
-    && go install github.com/golang/protobuf/protoc-gen-go@latest \
-    && export PATH="$PATH:$(go env GOPATH)/bin"
+# install Go protoc plugins for gRPC (use apt-installed protoc)
+RUN GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
+    && GOBIN=/usr/local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 # Install Docker
 RUN curl -fsSL https://get.docker.com -o get-docker.sh \
@@ -241,4 +235,4 @@ COPY bin/userns_child_exec_${sys_arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
-CMD /bin/bash
+CMD ["/bin/bash"]
