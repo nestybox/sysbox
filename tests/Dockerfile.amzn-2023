@@ -27,7 +27,7 @@ ENV SYS_ARCH=${sys_arch}
 ARG target_arch
 ENV TARGET_ARCH=${target_arch}
 
-ARG k8s_version=v1.32.0
+ARG k8s_version=v1.33.0
 
 RUN dnf install -y \
     acl \
