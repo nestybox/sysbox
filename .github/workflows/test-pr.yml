@@ -1,0 +1,60 @@
+name: Sysbox Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - 'MAINTAINERS'
+      - 'OSS_DISCLOSURES.md'
+
+jobs:
+  test:
+    name: Run Sysbox Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo docker system prune -af
+          df -h
+
+      - name: Build test container image
+        run: |
+          make test-img
+
+      - name: Prepare test volumes
+        run: |
+          sudo mkdir -p /var/tmp/sysbox-test-var-lib
+          sudo mkdir -p /var/tmp/sysbox-test-scratch
+          sudo mkdir -p /var/tmp/sysbox-test-run-sysbox
+
+      - name: Run Sysbox CI tests in container
+        run: |
+          make test-sysbox-ci
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          docker logs sysbox-test 2>&1 | tail -n 1000 || true
+          docker ps -a
+
+      - name: Cleanup
+        if: always()
+        run: |
+          make test-cleanup || true
+          docker system prune -a -f || true

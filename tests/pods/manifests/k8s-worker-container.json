@@ -3,7 +3,7 @@
       "name": "k8s-worker"
   },
   "image":{
-      "image": "ghcr.io/nestybox/k8s-node-test:v1.21.12"
+      "image": "ghcr.io/nestybox/k8s-node-test:v1.32.9"
   },
   "command": [
       "/sbin/init"
