@@ -50,7 +50,7 @@ function teardown() {
 	crictl exec $k8s_worker_syscont sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
 
 	# Initialize the K8s master pod
-	crictl exec $k8s_master_syscont sh -c "kubeadm init --kubernetes-version=v1.21.12 --pod-network-cidr=10.244.0.0/16"
+	crictl exec $k8s_master_syscont sh -c "kubeadm init --kubernetes-version=v1.32.9 --pod-network-cidr=10.244.0.0/16"
 
 	# Configure kubectl to talk to inner K8s cluster
 	crictl_kubectl_config $k8s_master_syscont "inner-cluster"
