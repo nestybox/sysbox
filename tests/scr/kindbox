@@ -173,6 +173,29 @@ function flannel_unconfig() {
   fi
 }
 
+function coredns_fix_loop() {
+  local node=$1
+  local output
+
+  # Fix CoreDNS loop detection issue by forwarding to external DNS (8.8.8.8) instead
+  # of /etc/resolv.conf. This is specific to running Kubernetes inside containers (like
+  # our kindbox setup) because the container's /etc/resolv.conf doesn't point to real
+  # external nameservers; instead, it points to Docker's internal DNS or localhost, which
+  # eventually loops back to CoreDNS itself.
+  output=$(sh -c "docker exec ${node} sh -c 'kubectl get configmap coredns -n kube-system -o yaml | sed \"s|forward . /etc/resolv.conf|forward . 8.8.8.8 8.8.4.4|g\" | kubectl apply -f -'" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+
+  # Restart CoreDNS pods to apply the new configuration.
+  output=$(sh -c "docker exec ${node} sh -c 'kubectl delete pods -n kube-system -l k8s-app=kube-dns'" 2>&1)
+  if [[ $? -ne 0 ]]; then
+    echo "$output"
+    return 1
+  fi
+}
+
 function weave_config() {
   local node=$1
   local output
@@ -336,6 +359,15 @@ function k8s_master_init() {
 
   if [[ $? -ne 0 ]]; then
    ERR="cni init failed on ${node}: ${output}"
+   return 1
+  fi
+
+  [[ $VERBOSE ]] && printf "  - Fixing CoreDNS loop detection on $node ...\n"
+
+  # Required to fix DNS forwarding loop
+  output=$(coredns_fix_loop ${node})
+  if [[ $? -ne 0 ]]; then
+   ERR="coredns fix failed on ${node}: ${output}"
    return 1
   fi
 

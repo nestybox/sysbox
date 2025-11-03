@@ -365,7 +365,6 @@ function main() {
 		test_with_docker_userns_remap
 		test_sysbox_config
 		test_sysbox_lifecycle
-
 	fi
 }
 
