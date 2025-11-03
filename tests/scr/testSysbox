@@ -89,7 +89,7 @@ function run_ci_tests() {
 	printf "\nExecuting multi-arch tests ... \n"
 	bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
-	bats --tap tests/buildx/basic.bats
+	bats --tap tests/buildx/build.bats
 	printf "\nExecuting xattr syscall tests ... \n"
 	bats --tap tests/syscall/xattr
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
@@ -358,11 +358,17 @@ function main() {
 		fi
 
 		test_with_idmapped_and_shiftfs
-		test_with_idmapped_only
-		test_with_shiftfs_only
-		test_with_rootfs_cloning
-		test_with_containerd_image_store
-		test_with_docker_userns_remap
+
+		# Skip all this scenarios when running CI workflows to keep execution time
+		# under 1h.
+		if [ -z "$TEST_SYSBOX_CI" ]; then
+			test_with_idmapped_only
+			test_with_shiftfs_only
+			test_with_rootfs_cloning
+			test_with_containerd_image_store
+			test_with_docker_userns_remap
+		fi
+
 		test_sysbox_config
 		test_sysbox_lifecycle
 	fi
