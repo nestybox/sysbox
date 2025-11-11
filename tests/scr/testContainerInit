@@ -305,7 +305,7 @@ function main() {
 	fi
 
 	# Configure Docker to use Sysbox (leveraging the docker-cfg script)
-	common_opt="--config-only --sysbox-runtime=enable --default-runtime=sysbox-runc"
+	common_opt="--config-only --sysbox-runtime=enable --default-runtime=sysbox-runc --containerd-image-store=false"
 
 	docker-cfg -v $common_opt
 	[ $? -eq 0 ] || exit 1

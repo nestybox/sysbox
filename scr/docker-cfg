@@ -504,7 +504,7 @@ function docker_config_network() {
 	 printf "      --sysbox-runtime=<enable|disable>     Adds or removes the Sysbox runtime to the Docker daemon config and restarts Docker. If omitted, no change to the runtime config occurs.\n"
 	 printf "      --userns-remap=<enable|disable>       Adds or removes userns-remap mode to the Docker daemon config and restarts Docker. If omitted, no change to the userns-remap config occurs.\n"
 	 printf "      --default-runtime=<runtime>           Configures the Docker default runtime (e.g., sysbox-runc, runc, etc.) If omitted, no change to the Docker default runtime is made.\n"
-	 printf "      --containerd-image-store=<true|false> Configures Docker with the containerd image store. If omitted, use the Docker image store.\n"
+	 printf "      --containerd-image-store=<true|false> Configures Docker with the containerd image store. If omitted, uses the Docker default image store (containerd-snapshotter).\n"
 	 printf "      --bip=<ip-addr>                       Configures the IP address for the docker0 bridge (e.g., 172.20.0.1/16).\n"
 	 printf "      --default-address-pool=<ip-addr>      Configures the starting IP address for user-defined Docker networks (e.g., 172.25.0.0/16).\n"
 	 printf "      --cgroup-driver=<cgroupfs|systemd>    Configures the cgroup driver to be used. If omitted, no change to the Docker cgroup driver is made.\n"
