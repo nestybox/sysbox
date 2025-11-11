@@ -186,4 +186,4 @@ COPY bin/userns_child_exec_${sys_arch} /usr/bin
 
 RUN mkdir -p /root/nestybox
 WORKDIR /root/nestybox/sysbox
-CMD /bin/bash
+CMD ["/bin/bash"]
