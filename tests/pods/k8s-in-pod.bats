@@ -24,6 +24,8 @@ function teardown() {
 # Verify K8s works correctly inside a sysbox pod
 @test "k8s-in-pod" {
 
+	skip "needs k8s version update"
+
 	k8s_check_sufficient_storage
 
 	# Create the k8s master and worker nodes
