@@ -188,4 +188,4 @@ WORKDIR /root/nestybox/sysbox
 
 # The newly installed bash is under /usr/local/bin
 RUN rm /usr/bin/bash && ln -s /usr/local/bin/bash /usr/bin/bash
-CMD /usr/local/bin/bash
+CMD ["/usr/local/bin/bash"]
