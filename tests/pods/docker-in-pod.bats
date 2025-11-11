@@ -89,9 +89,9 @@ function teardown() {
 
 # Launch two pods, one with docker CLI and the other with Docker's dind image,
 # and verify all is good.
-@test "docker-cli + dind 20.10 pods" {
+@test "docker-cli + dind 29.0 pods" {
 
-	local eng=$(crictl_run ${POD_MANIFEST_DIR}/dind-20.10-container.json ${POD_MANIFEST_DIR}/dind-pod.json)
+	local eng=$(crictl_run ${POD_MANIFEST_DIR}/dind-29.0-container.json ${POD_MANIFEST_DIR}/dind-pod.json)
 	local pod1=$(crictl_cont_get_pod $eng)
 
 	local cli=$(crictl_run ${POD_MANIFEST_DIR}/docker-cli-container.json ${POD_MANIFEST_DIR}/docker-cli-pod.json)
