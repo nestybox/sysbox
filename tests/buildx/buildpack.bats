@@ -19,6 +19,8 @@ function teardown() {
 
 @test "paketo build basic" {
 
+	skip "fails with Error response from daemon: client version 1.38 is too old. Minimum supported API version is 1.44, please upgrade your client to a newer version"
+
 	if ! command -v pack &> /dev/null; then
 	  skip "requires the Paketo pack cli to be installed"
 	fi
