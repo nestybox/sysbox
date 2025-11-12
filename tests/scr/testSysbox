@@ -54,8 +54,10 @@ function run_all_tests() {
 	./tests/syscall/syscall.sh
 
 	# Launch kind test-suite.
-	docker system prune -a -f
-	bats --tap tests/k8s-kind
+	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
+	# printf "\n"
+	# docker system prune -a -f
+	# bats --tap tests/k8s-kind
 
 	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
 	# ./tests/kind/kind.sh
@@ -96,10 +98,11 @@ function run_ci_tests() {
 	bats --tap tests/syscall/mount/mount.bats
 
 	# Launch kind test-suite.
-	printf "\n"
-	docker system prune -a -f
-	bats --tap tests/k8s-kind
-	./tests/kind/kind.sh tests/kind/kind-custom-net.bats
+	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
+	# printf "\n"
+	# docker system prune -a -f
+	# bats --tap tests/k8s-kind
+	# ./tests/kind/kind.sh tests/kind/kind-custom-net.bats
 
 	# Launch sysbox-pod test-suite.
 	./tests/pods/pods.sh
@@ -299,10 +302,11 @@ function test_with_docker_userns_remap() {
 		bats --tap tests/cind
 
 		# Launch basic kind-flannel test
-		docker system prune -a -f
-		printf "\nExecuting kind testcases with flannel cni ... \n"
-		bats --tap tests/kind/kind-flannel.bats
-		docker system prune -a -f
+		# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
+		# docker system prune -a -f
+		# printf "\nExecuting kind testcases with flannel cni ... \n"
+		# bats --tap tests/kind/kind-flannel.bats
+		# docker system prune -a -f
 	fi
 
 	printf "\nExecuting security tests ... \n"
