@@ -214,7 +214,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "$output" -eq 2 ]
 
-	inner_docker_graphdriver=$(get_inner_docker_graphdriver)
+	local inner_docker_graphdriver=$(get_inner_docker_graphdriver)
 
 	for i in $(seq 1 4); do
 		docker pause "$syscont"
