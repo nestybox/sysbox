@@ -25,14 +25,14 @@ bats --tap tests/syscall/xattr
 printf "\nExecuting basic mount syscall-interception tests ... \n"
 bats --tap tests/syscall/mount/mount.bats
 
+printf "\nExecuting mount syscall-interception tests for overlayfs resources ... \n"
+bats --tap tests/syscall/mount/mount-overlayfs.bats
+
 printf "\nExecuting mount syscall-interception tests for procfs resources ... \n"
 bats --tap tests/syscall/mount/mount-procfs.bats
 
 printf "\nExecuting mount syscall-interception tests for sysfs resources ... \n"
 bats --tap tests/syscall/mount/mount-sysfs.bats
-
-printf "\nExecuting mount syscall-interception tests for overlayfs resources ... \n"
-bats --tap tests/syscall/mount/mount-overlayfs.bats
 
 printf "\nExecuting mount syscall-interception tests for immutable resources ... \n"
 bats --tap tests/syscall/mount/mount-immutables.bats
