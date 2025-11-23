@@ -23,6 +23,7 @@ function retry() {
 
 # containerd start
 containerd > /var/log/containerd.log 2>&1 &
+sleep 3
 retry 10 1 "ctr -v"
 
 # pull inner images
