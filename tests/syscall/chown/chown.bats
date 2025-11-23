@@ -130,7 +130,7 @@ function verify_sys_chown {
 }
 
 @test "chown inner container" {
-   local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker)
+   local syscont=$(docker_run --rm -e "SYSBOX_IGNORE_SYSFS_CHOWN=TRUE" ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker)
    wait_for_inner_dockerd "$syscont"
 
    docker exec "$syscont" sh -c "docker run -d --rm ${CTR_IMG_REPO}/alpine tail -f /dev/null"
