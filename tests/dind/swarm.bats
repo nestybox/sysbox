@@ -14,6 +14,7 @@ function teardown() {
 }
 
 function basic_test {
+
    net=$1
 
    # Launch swarm manager sys container
@@ -79,16 +80,18 @@ function basic_test {
 }
 
 @test "swarm-in-docker basic" {
-   basic_test bridge
+	skip "hangs with latest docker version (28.3.3) inside alpine-docker-dbg"
+	basic_test bridge
  }
 
 @test "swarm-in-docker custom net" {
+	 skip "hangs with latest docker version (28.3.3) inside alpine-docker-dbg"
 
-   docker network create test-net
-   [ "$status" -eq 0 ]
+	 docker network create test-net
+	 [ "$status" -eq 0 ]
 
-   basic_test test-net
+	 basic_test test-net
 
-   docker network rm test-net
-   [ "$status" -eq 0 ]
+	 docker network rm test-net
+	 [ "$status" -eq 0 ]
 }
