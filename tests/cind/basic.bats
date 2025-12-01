@@ -77,13 +77,18 @@ function teardown() {
   docker_stop "$syscont"
   docker image prune -f
 
-  # verify the committed image has an appropriate size (slightly
-  # bigger than the base image since it includes inner containerd busybox & alpine images)
-  local unique_size=$(__docker system df -v --format '{{json .}}' | jq '.Images[] | select(.Repository == "image-commit") | .UniqueSize' | tr -d '"' | grep -Eo '[[:alpha:]]+|[0-9]+')
-  local num=$(echo $unique_size | awk '{print $1}')
-  local unit=$(echo $unique_size | awk '{print $3}')
-  [ "$num" -lt "15" ]
-  [ "$unit" == "MB" ]
+  # verify the committed image has an appropriate size (slightly bigger than the
+  # base image since it includes inner containerd busybox & alpine images).
+  #
+  # note: this check only works when Docker is using the Docker image store, as
+  # otherwise docker system df does not report the image's unique size.
+  if docker_containerd_image_store; then
+		local unique_size=$(__docker system df -v --format '{{json .}}' | jq '.Images[] | select(.Repository == "image-commit") | .UniqueSize' | tr -d '"' | grep -Eo '[[:alpha:]]+|[0-9]+')
+		local num=$(echo $unique_size | awk '{print $1}')
+		local unit=$(echo $unique_size | awk '{print $3}')
+		[ "$num" -lt "15" ]
+		[ "$unit" == "MB" ]
+	fi
 
   # launch a sys container with the committed image
   syscont=$(docker_run --rm image-commit)

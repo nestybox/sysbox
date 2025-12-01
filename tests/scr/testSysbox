@@ -241,21 +241,25 @@ function test_with_rootfs_cloning() {
 	return 0
 }
 
-# Test sysbox when Docker is configured with the containerd image store
-function test_with_containerd_image_store() {
-
-	# TODO: ideally we should run all tests with the containerd image store, but
-	# we first need to adjust several helper functions for this. For now, just run
-	# a subset of tests to verify the base functionality is good.
+# Test sysbox when Docker is configured with the (legacy) docker image store
+# (default is containerd image store)
+function test_with_docker_image_store() {
 
 	printf "\n"
-	printf "Executing Docker containerd image store + Sysbox tests \n"
+	printf "Executing Docker image store + Sysbox tests \n"
 	printf -- "--------------------------------------------------------\n"
 
-	printf "\nConfiguring Docker with the containerd image store\n"
-	docker-cfg --containerd-image-store=true
+	printf "\nConfiguring Docker with the (legacy) image store\n"
+	docker-cfg --containerd-image-store=false
 
+	bats --tap tests/sysmgr
+	bats --tap tests/sysfs
+	bats --tap tests/docker
+	bats --tap tests/dind
+	bats --tap tests/cind
+	bats --tap tests/apps/l1
 	bats --tap tests/buildx
+	./tests/pods/pods.sh
 
 	# Try again with Sysbox using rootfs cloning
 	printf "\nDisabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
@@ -266,6 +270,8 @@ function test_with_containerd_image_store() {
 	restart_sysbox sysbox_cmdline
 
 	bats --tap tests/sysmgr/rootfsCloning.bats
+	bats --tap tests/docker
+	bats --tap tests/dind
 	bats --tap tests/buildx
 
 	# Cleanup
@@ -274,7 +280,7 @@ function test_with_containerd_image_store() {
 	restart_sysbox sysbox_cmdline
 
 	printf "\nConfiguring Docker with the default image store\n"
-	docker-cfg --containerd-image-store=false
+	docker-cfg --containerd-image-store=true
 }
 
 # Test sysbox when Docker is configured with userns-remap mode.
@@ -365,7 +371,7 @@ function main() {
 		test_with_idmapped_only
 		test_with_shiftfs_only
 		test_with_rootfs_cloning
-		test_with_containerd_image_store
+		test_with_docker_image_store
 		test_with_docker_userns_remap
 		test_sysbox_config
 		test_sysbox_lifecycle
