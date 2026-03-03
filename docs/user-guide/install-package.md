@@ -57,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.6.7/sysbox-ce_0.6.7-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.7.0/sysbox-ce_0.7.0-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-$ sha256sum sysbox-ce_0.6.7-0.linux_amd64.deb
-b7ac389e5a19592cadf16e0ca30e40919516128f6e1b7f99e1cb4ff64554172e  sysbox-ce_0.6.7.linux_amd64.deb
+sha256sum sysbox-ce_0.7.0.linux_amd64.deb
+eeff273671467b8fa351ab3d40709759462dc03d9f7b50a1b207b37982ce40a9  sysbox-ce_0.7.0.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -85,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.6.7-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.7.0-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -94,39 +94,39 @@ NOTE: the `jq` tool is used by the Sysbox installer.
     associated daemons are properly running:
 
 ```console
-$ sudo systemctl status sysbox -n20
+$ systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Fri 2025-05-09 14:17:55 PDT; 35min ago
+     Active: active (running) since Tue 2026-03-03 14:08:14 PST; 22min ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 133990 (sh)
-      Tasks: 2 (limit: 38083)
-     Memory: 444.0K
+   Main PID: 1159354 (sh)
+      Tasks: 2 (limit: 38079)
+     Memory: 400.0K
         CPU: 13ms
      CGroup: /system.slice/sysbox.service
-             ├─133990 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
-             └─134010 /bin/sleep infinity
+             ├─1159354 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
+             └─1159374 /bin/sleep infinity
 
-May 09 14:17:55 lenovo systemd[1]: Started Sysbox container runtime.
-May 09 14:17:55 lenovo sh[133991]: sysbox-runc
-May 09 14:17:55 lenovo sh[133991]:         edition:         Community Edition (CE)
-May 09 14:17:55 lenovo sh[133991]:         version:         0.6.7
-May 09 14:17:55 lenovo sh[133991]:         commit:         c58eba1be027c762c495bc4eeba7c0984beda1ab
-May 09 14:17:55 lenovo sh[133991]:         built at:         Fri May  9 21:14:55 UTC 2025
-May 09 14:17:55 lenovo sh[133991]:         built by:         Cesar Talledo
-May 09 14:17:55 lenovo sh[133991]:         oci-specs:         1.1.0+dev
-May 09 14:17:55 lenovo sh[133998]: sysbox-mgr
-May 09 14:17:55 lenovo sh[133998]:         edition:         Community Edition (CE)
-May 09 14:17:55 lenovo sh[133998]:         version:         0.6.7
-May 09 14:17:55 lenovo sh[133998]:         commit:         aaeff6c5dc70c137e62166474a309ca5fc42d044
-May 09 14:17:55 lenovo sh[133998]:         built at:         Fri May  9 21:15:06 UTC 2025
-May 09 14:17:55 lenovo sh[133998]:         built by:         Cesar Talledo
-May 09 14:17:55 lenovo sh[134004]: sysbox-fs
-May 09 14:17:55 lenovo sh[134004]:         edition:         Community Edition (CE)
-May 09 14:17:55 lenovo sh[134004]:         version:         0.6.7
-May 09 14:17:55 lenovo sh[134004]:         commit:         6a8d71f54e7570e5297af89ff24ed3bafa61659f
-May 09 14:17:55 lenovo sh[134004]:         built at:         Fri May  9 21:15:04 UTC 2025
-May 09 14:17:55 lenovo sh[134004]:         built by:         Cesar Talledo
+Mar 03 14:08:14 lenovo systemd[1]: Started Sysbox container runtime.
+Mar 03 14:08:14 lenovo sh[1159355]: sysbox-runc
+Mar 03 14:08:14 lenovo sh[1159355]:         edition:         Community Edition (CE)
+Mar 03 14:08:14 lenovo sh[1159355]:         version:         0.7.0
+Mar 03 14:08:14 lenovo sh[1159355]:         commit:          a4dd414f7b9b7455c0fbf0d5e5db7bcfe30645bc
+Mar 03 14:08:14 lenovo sh[1159355]:         built at:         Tue Mar  3 21:51:47 UTC 2026
+Mar 03 14:08:14 lenovo sh[1159355]:         built by:         Cesar Talledo
+Mar 03 14:08:14 lenovo sh[1159355]:         oci-specs:         1.1.0+dev
+Mar 03 14:08:14 lenovo sh[1159362]: sysbox-mgr
+Mar 03 14:08:14 lenovo sh[1159362]:         edition:         Community Edition (CE)
+Mar 03 14:08:14 lenovo sh[1159362]:         version:         0.7.0
+Mar 03 14:08:14 lenovo sh[1159362]:         commit:          bff3721f86e737cfa129dfe9fe2e7933692aba26
+Mar 03 14:08:14 lenovo sh[1159362]:         built at:         Tue Mar  3 21:52:05 UTC 2026
+Mar 03 14:08:14 lenovo sh[1159362]:         built by:         Cesar Talledo
+Mar 03 14:08:14 lenovo sh[1159368]: sysbox-fs
+Mar 03 14:08:14 lenovo sh[1159368]:         edition:         Community Edition (CE)
+Mar 03 14:08:14 lenovo sh[1159368]:         version:         0.7.0
+Mar 03 14:08:14 lenovo sh[1159368]:         commit:          b70bd38bbf72bf0e759c5f7d8c38925d717068ae
+Mar 03 14:08:14 lenovo sh[1159368]:         built at:         Tue Mar  3 21:52:03 UTC 2026
+Mar 03 14:08:14 lenovo sh[1159368]:         built by:         Cesar Talledo
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
@@ -193,17 +193,23 @@ Docker. See the [Quickstart Guide](../quickstart/README.md) for examples.
 **NOTE:** either Sysbox or Sysbox Enterprise must be installed on a given host,
 never both.
 
-## Installing Shiftfs
+## Installing Shiftfs (for Linux kernels < 6.3)
 
 Shiftfs is a kernel module that Sysbox uses to ensure host volumes mounted
 into the (fake-root) container show up with proper user and group IDs.
 
-Installing shiftfs on the host is required when running on hosts with Linux
-kernel < 5.12.
+Installing shiftfs on hosts with Linux kernel >= 6.3+ is not necessary, as
+the Linux kernel's ID-mapped mounts feature replaces it.
 
-Installing shiftfs on hosts with kernel >= 5.12 is not required, but nonetheless
-recommended, assuming your Linux distro supports shiftfs (e.g., Ubuntu, Debian,
-or Flatcar).
+Installing shiftfs on hosts with kernel >= 5.12 and < 6.3 is recommended
+but not required. While such kernels support ID-mapped mounts, it does not
+work with all filesystems yet (e.g., works with ext4 but not tmpfs), so shiftfs
+can be beneficial.
+
+Installing shiftfs on hosts with kernel < 5.12 is required for Sysbox to work
+properly. Such kernels do not support ID-mapped mounts.
+
+The following Linux distros supports shiftfs: Ubuntu, Debian, and Flatcar.
 
 The shiftfs module is included by default in Ubuntu desktop and server images,
 but generally not included in Ubuntu-based cloud VMs and other Linux distros.
@@ -453,8 +459,8 @@ To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
 
 You can find the latest versions of Sysbox here:
 
--   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.6.7).
--   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.2).
+-   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.7.0).
+-   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.2) [DEPRECATED]
 
 Note that you must stop all Sysbox containers on the host prior to uninstalling
 Sysbox (see previous section).
