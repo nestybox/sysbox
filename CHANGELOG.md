@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2025-03-02
+### Added
+* Port runc security patches for CVE-2025-3133, CVE-2025-52881, CVE-52565.
+* Support volatile overlayfs remounting.
+* Add features command to sysbox-runc.
+* Enable newer versions of runc to run inside Sysbox containers properly by trapping openat2 system call to allow access to sysbox-fs mounts under /proc and /sys.
+* sysbox-deploy-k8s: add support for k8s v1.33, v1.34, and v1.35. Deprecate support for v1.29 to v1.31.
+* sysbox-deploy-k8s: enable compatibility with K8s user-namespaces (requires containerd v2.0.5+ or CRI-O).
+* sysbox-deploy-k8s: don't install CRI-O when K8s cluster has containerd 2.0.5+.
+* Update docs to indicate support for K8s user-namespaces (requires `hostUsers: false` directive in pod spec).
+
 ## [0.6.7] - 2025-05-09
 ### Added
   * Add support for binfmt_misc namespacing inside Sysbox containers (kernel 6.7+); issue #592.
