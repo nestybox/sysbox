@@ -25,7 +25,7 @@ Thus, there are some limitations at this time. The table below describes these.
 | --------      | --------------- | ----- | :--: |
 | mknod         | Fails with "operation not permitted". | Software that creates devices such as /dev/tun, /dev/tap, /dev/fuse, etc. | WIP |
 | binfmt-misc   | Fails with "permission denied". | Software that uses /proc/sys/fs/binfmt_misc inside the container (e.g., buildx+QEMU for multi-arch builds). | WIP |
-| Nested user-namespace | `unshare -U --mount-proc` fails with "invalid argument". | Software that uses the Linux user-namespace (e.g., Docker + userns-remap). Note that the Sysbox container is rootless already, so this implies nesting Linux user-namespaces. | Yes |
+| Nested user-namespace | `unshare -U --mount-proc` fails with "invalid argument". | Software that uses the Linux user-namespace (e.g., Docker + userns-remap). Note that the Sysbox container is fake-root already, so this implies nesting Linux user-namespaces. | Yes |
 | Host device access | Host devices exposed to the container (e.g., `docker run --devices ...`) show up with "nobody:nogroup" ownership. Thus, access to them will fail with "permission denied" unless the device grants read/write permissions to "others". | Software that needs access to hardware accelerators. | Yes |
 | rpc-pipefs    | Mounting rpc-pipefs fails with "permission denied". | Running an NFS server inside the Sysbox container. | Yes |
 | insmod        | Fails with "operation not permitted". | Can't load kernel modules from inside containers. | TBD |

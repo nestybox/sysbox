@@ -56,11 +56,10 @@ untouched.
 
 Sysbox is supported on the following Kubernetes versions:
 
--   Kubernetes v1.29.\*
--   Kubernetes v1.30.\*
--   Kubernetes v1.31.\*
 -   Kubernetes v1.32.\*
 -   Kubernetes v1.33.\*
+-   Kubernetes v1.34.\*
+-   Kubernetes v1.35.\*
 
 For consistency purposes, we strive to match the official Kubernetes' release
 cadence as closely as possible. This translates into previously supported
@@ -68,15 +67,10 @@ releases being eventually considered 'end-of-life' (EOL).
 
 EOL releases:
 
--   Kubernetes v1.20.\*
--   Kubernetes v1.21.\*
--   Kubernetes v1.22.\*
--   Kubernetes v1.23.\*
--   Kubernetes v1.24.\*
--   Kubernetes v1.25.\*
--   Kubernetes v1.26.\*
--   Kubernetes v1.27.\*
 -   Kubernetes v1.28.\*
+-   Kubernetes v1.29.\*
+-   Kubernetes v1.30.\*
+-   Kubernetes v1.31.\*
 
 Other versions of Kubernetes are not supported.
 
@@ -93,15 +87,25 @@ Sysbox meets the following requirement:
     of RAM in each worker node. Though this is not a hard requirement, smaller
     configurations may slow down Sysbox.
 
-## CRI-O Requirement
+## Containerd Requirement
 
-Sysbox currently requires the [CRI-O](https://cri-o.io/) runtime as it includes
-support for deploying Kubernetes pods with the Linux user namespace (for
-stronger isolation). Containerd does not yet include this support.
+Sysbox works best on K8s clusters with containerd v2.0 or later, as these support
+user-namespace isolated pods.
 
-**NOTE: You don't need to install CRI-O prior to installing Sysbox. The Sysbox
-installer for Kubernetes (see next section) automatically installs CRI-O on the
-desired Kubernetes worker nodes and configures the Kubelet appropriately.**
+**NOTE**: containerd v2.0.1 to v2.0.4 have a bug that prevents K8s from
+launching pods with user-namespaces properly when using alternative runtimes
+such as Sysbox. containerd v2.0.5 and above do not have this problem.
+
+The sysbox-deploy-k8s installer (see [next section](#installation-of-sysbox))
+will check if the K8s cluster has a containerd version that properly supports
+user-namespaces. If so, it will configure containerd to let it know that
+the Sysbox runtime is available on the K8s nodes. If not, the sysbox-deploy-k8s
+installer will install a customized CRI-O runtime (alternative to containerd)
+and configure K8s to use CRI-O instead of containerd.
+
+Usage of the customized CRI-O is not ideal and makes the Sysbox installation
+on the cluster slower. Thus we recommend that the K8s cluster have containerd v2.0.5
+or above. K8s clusters v1.34 and later typically carry such versions of containerd.
 
 ## Installation of Sysbox
 
@@ -120,8 +124,10 @@ kubectl label nodes <node-name> sysbox-install=yes
 kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox-k8s-manifests/sysbox-install.yaml
 ```
 
-**NOTE:** the above step will restart the Kubelet on all nodes where Sysbox is
-being installed, causing all pods on the node to be stopped and
+**NOTE:** On clusters with containerd versions below v2.0.5, the above step
+will cause the Sysbox installer to also install CRI-O on the node (see [prior section](#installation-of-sysbox)).
+This will in turn cause the Sysbox installer to restart the Kubelet on all nodes where
+Sysbox ibeing installed, causing all pods on the node to be stopped and
 re-created. Depending on the number of pods, this process can take anywhere from
 30 secs to 2 minutes. Wait for this process to complete before proceeding.
 
@@ -134,7 +140,7 @@ Additional notes:
     according to your needs.
 
 -   Installing Sysbox on a node does not imply all pods on the node are deployed
-    with Sysbox. You can choose which pods use Sysbox via the pod's spec (see
+    with Sysbox. You choose which pods use Sysbox via the pod's spec (see
     [Pod Deployment](#pod-deployment) below). Pods that don't use Sysbox
     continue to use the default low-level runtime (i.e., the OCI runc) or any
     other runtime you choose.
@@ -165,26 +171,47 @@ kubectl apply -f https://raw.githubusercontent.com/nestybox/sysbox/master/sysbox
 
 The K8s manifests used for setting up Sysbox can be found [here](../../sysbox-k8s-manifests).
 
-## Pod Deployment
+## Launching Pods on Sysbox
 
 Once Sysbox is installed it's easy to deploy pods with it.
 
-For example, here is a sample pod spec using the `ubuntu-bionic-systemd-docker`
-image. It creates a rootless pod that runs systemd as init (pid 1) and comes
+For example, here is a sample pod spec using the `ubuntu-focal-systemd-docker`
+image. It creates a fake-root pod that runs systemd as init (pid 1) and comes
 with Docker (daemon + CLI) inside:
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ubu-bio-systemd-docker
+  name: ubu-focal-systemd-docker
+spec:
+  runtimeClassName: sysbox-runc
+  hostUsers: false
+  containers:
+  - name: ubu-focal-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-focal-systemd-docker
+    command: ["/sbin/init"]
+  restartPolicy: Never
+```
+
+Notice the `runtimeClassName: sysbox-runc` and `hostUsers: false` lines. The former tells K8s to use
+Sysbox to start the pod. The latter tells K8s that the pod should be isolated within a user-namespace
+(root in the pod is an unprivileged user at host level).
+
+The `hostUsers: false` directive works on K8s clusters that [have formal support user-namespaces](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/#before-you-begin) (K8s v1.30+ with containerd v2.0.5+). For clusters that don't have formal support for user-namespaces, the `io.kubernetes.cri-o.userns-mode: "auto:size=65536"` (CRI-O specific) annotation is required in the pod spec:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubu-focal-systemd-docker
   annotations:
     io.kubernetes.cri-o.userns-mode: "auto:size=65536"
 spec:
   runtimeClassName: sysbox-runc
   containers:
-  - name: ubu-bio-systemd-docker
-    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+  - name: ubu-focal-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-focal-systemd-docker
     command: ["/sbin/init"]
   restartPolicy: Never
 ```

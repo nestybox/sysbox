@@ -196,7 +196,7 @@ never both.
 ## Installing Shiftfs
 
 Shiftfs is a kernel module that Sysbox uses to ensure host volumes mounted
-into the (rootless) container show up with proper user and group IDs.
+into the (fake-root) container show up with proper user and group IDs.
 
 Installing shiftfs on the host is required when running on hosts with Linux
 kernel < 5.12.

@@ -82,10 +82,7 @@ The cluster creation process on EKS takes a while (~25 min!).
 
 **NOTES:**
 
--   The installation of Sysbox (which also installs CRI-O on the desired K8s
-    worker nodes) takes between 2->3 minutes on EKS.
-
-    -   You can view it's progress by looking at the logs of the sysbox-deploy-k8s pod.
+-   You can view it's progress by looking at the logs of the sysbox-deploy-k8s pod.
 
 ```console
 $ kubectl -n kube-system logs -f pod/sysbox-deploy-<pod-id>
