@@ -29,7 +29,7 @@ EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker:latest tail -f /dev/null)
+  syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker:latest tail -f /dev/null)
 
   wait_for_inner_dockerd $syscont
 
@@ -112,7 +112,7 @@ EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  local syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-focal-systemd-docker:latest tail -f /dev/null)
+  local syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker:latest tail -f /dev/null)
 
   wait_for_inner_dockerd $syscont
 
