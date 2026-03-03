@@ -63,7 +63,7 @@ of supported K8s versions.
 ## Shiftfs Requirement
 
 Shiftfs is a Linux kernel module that Sysbox uses to ensure host volumes mounted
-into the (rootless) container show up with proper user and group IDs (rather
+into the (fake-root) container show up with proper user and group IDs (rather
 than `nobody:nogroup`); see the [User Guide's Design Chapter](user-guide/design.md)
 for more info.
 

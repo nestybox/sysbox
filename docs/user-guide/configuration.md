@@ -409,7 +409,7 @@ lots of chown syscalls).
 
 As mentioned in the [design chapter](design.md#id-mapped-mounts--v050-), Sysbox
 uses a Linux kernel feature called ID-mapped mounts (available in kernel >= 5.12)
-to expose host files inside the (rootless) container with proper permissions.
+to expose host files inside the (fake-root) container with proper permissions.
 
 While not usually required (except for testing or debugging), it's possible to
 disable Sysbox's usage of ID-mapped mounts by passing the
@@ -441,12 +441,12 @@ when creating the container.
 
 For example, normally when you create a bind-mount into a container, Sysbox will
 use ID-mapped-mounts or shiftfs to ensure the bind-mounted file shows up with
-proper ownership inside the rootless Sysbox container:
+proper ownership inside the fake-root Sysbox container:
 
 ```
 $ docker run --runtime=sysbox-runc -it --rm -v /path/to/somefile:/mnt/somefile alpine
 
-# This shows the container is rootless (root in container is unprivileged user 165536 on the host):
+# This shows the container uses a fake-root (root in container is unprivileged user 165536 on the host):
 / # cat /proc/self/uid_map
          0     165536      65536
 
@@ -466,7 +466,7 @@ In contrast, if we pass `-e SYSBOX_SKIP_UID_SHIFT=/mnt/somefile`, this happens:
 ```
 $ docker run --runtime=sysbox-runc -it --rm -v /path/to/somefile:/mnt/somefile -e SYSBOX_SKIP_UID_SHIFT=/mnt/somefile alpine
 
-# This shows the container is rootless:
+# This shows the container is using a fake-root:
 / # cat /proc/self/uid_map
          0     165536      65536
 

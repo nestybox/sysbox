@@ -83,10 +83,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ubu-bio-systemd-docker
-  annotations:
-    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
 spec:
   runtimeClassName: sysbox-runc
+  hostUsers: false
   containers:
   - name: ubu-bio-systemd-docker
     image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker

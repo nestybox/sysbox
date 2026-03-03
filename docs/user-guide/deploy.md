@@ -50,22 +50,21 @@ Assuming Sysbox is [installed](install-k8s.md) on the Kubernetes cluster,
 deploying pods with Sysbox is easy: you only need a couple of things in the pod
 spec.
 
-For example, here is a sample pod spec using the `ubuntu-bionic-systemd-docker`
-image. It creates a rootless pod that runs systemd as init (pid 1) and comes
+For example, here is a sample pod spec using the `ubuntu-focal-systemd-docker`
+image. It creates a fake-root pod that runs systemd as init (pid 1) and comes
 with Docker (daemon + CLI) inside:
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ubu-bio-systemd-docker
-  annotations:
-    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+  name: ubu-focal-systemd-docker
 spec:
   runtimeClassName: sysbox-runc
+  hostUsers: false
   containers:
   - name: ubu-bio-systemd-docker
-    image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-focal-systemd-docker
     command: ["/sbin/init"]
   restartPolicy: Never
 ```
@@ -76,10 +75,34 @@ There are two key pieces of the pod's spec that tie it to Sysbox:
     default OCI runc). The pods will be scheduled only on the nodes that support
     Sysbox.
 
--   **"io.kubernetes.cri-o.userns-mode":** Tells CRI-O to launch this as a rootless
-    pod (i.e., root user in the pod maps to an unprivileged user on the host)
-    and to allocate a range of 65536 Linux user-namespace user and group
-    IDs. This is required for Sysbox pods.
+-   **"hostUsers: false":** Tells K8s that the pod should have a dedicated user-namespace
+    for enhanced isolation (i.e., root in the pod maps to an unprivileged user at host level).
+    See the [K8s docs](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces) for more info.
+
+**NOTE**: The `hostUsers: false` directive only works on K8s clusters that have formal support user-namespaces (K8s v1.30+ with containerd v2.0.5+).
+
+For clusters that don't have formal support for user-namespaces, the non-standard `io.kubernetes.cri-o.userns-mode: "auto:size=65536"` annotation
+is required in the pod spec:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubu-focal-systemd-docker
+  annotations:
+    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+spec:
+  runtimeClassName: sysbox-runc
+  containers:
+  - name: ubu-focal-systemd-docker
+    image: registry.nestybox.com/nestybox/ubuntu-focal-systemd-docker
+    command: ["/sbin/init"]
+  restartPolicy: Never
+```
+
+The `io.kubernetes.cri-o.userns-mode` annotation tells CRI-O (containerd alternative installed by Sysbox on K8s clusters
+without user-namespaces support) to launch this as a fake-root pod (i.e., root user in the pod maps to an unprivileged
+user on the host) and to allocate a range of 65536 Linux user-namespace user and group IDs.
 
 Also, for Sysbox pods you typically want to avoid sharing the process (pid)
 namespace between containers in a pod. Thus, avoid setting
@@ -108,13 +131,12 @@ spec:
     metadata:
       labels:
         app: syscont
-      annotations:
-        io.kubernetes.cri-o.userns-mode: "auto:size=65536"
     spec:
       runtimeClassName: sysbox-runc
+      hostUsers: false
       containers:
-      - name: ubu-bio-systemd-docker
-        image: registry.nestybox.com/nestybox/ubuntu-bionic-systemd-docker
+      - name: ubu-focal-systemd-docker
+        image: registry.nestybox.com/nestybox/ubuntu-focal-systemd-docker
         command: ["/sbin/init"]
 ```
 

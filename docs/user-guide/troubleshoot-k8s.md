@@ -162,7 +162,7 @@ state for a long time (e.g., > 1 minute), then something is likely wrong.
 To debug, start by doing a `kubectl describe <pod-name>` to see what
 Kubernetes reports.
 
-Additionally, check the CRI-O and Kubelet logs on the node where
+Additionally, check the contained (or CRI-O) and Kubelet logs on the node where
 the pod was scheduled:
 
 ```console
@@ -180,28 +180,21 @@ $ journalctl -eu snap.kubelet-eks.daemon.service
 ```
 
 If the kubelet log shows an error such as `failed to find runtime handler sysbox-runc from runtime list`,
-then this means CRI-O has not recognized Sysbox for some reason.
+then this means containerd has not recognized Sysbox for some reason.
 
-In this case, double check that the CRI-O config has the Sysbox runtime
-directive in it (the sysbox-deploy-k8s daemonset should have set this config):
+In this case, double check that the containerd config has the Sysbox runtime
+directive in it (the sysbox-deploy-k8s daemonset should have added a config in
+there).
 
-```console
-$ cat /etc/crio/crio.conf
-...
-[crio.runtime.runtimes.sysbox-runc]
-allowed_annotations = ["io.kubernetes.cri-o.userns-mode"]
-runtime_path = "/usr/bin/sysbox-runc"
-runtime_type = "oci"
-...
-```
-
-If the sysbox runtime config is present, then try restarting CRI-O on the worker node:
+If the sysbox runtime config is present, then try restarting containerd on the worker node:
 
 ```console
-systemctl restart crio
+systemctl restart containerd
 ```
 
-Note that restarting CRI-O will cause all pods on the node to be restarted
+The same applies to K8s cluster where CRI-O is installed.
+
+Note that restarting containerd (or CRI-O) will cause all pods on the node to be restarted
 (including the kube-proxy and CNI pods).
 
 If the sysbox runtime config is not present, then [uninstall](install-k8s.md#uninstallation-of-sysbox-or-sysbox-enterprise)
