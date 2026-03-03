@@ -49,7 +49,7 @@ this document has only been tested in the following scenarios:
 Regardless of the elected Kubernetes distro and the pre-existing container
 runtime (i.e. containerd or docker), the Sysbox installation method presented
 below is the same: via the **"sysbox-deploy-k8s"** daemonset. This daemonset
-installs CRI-O and Sysbox on the desired Kubernetes nodes. Other nodes are left
+installs Sysbox on the desired Kubernetes nodes. Other nodes are left
 untouched.
 
 ## Kubernetes Version Requirements
@@ -89,7 +89,7 @@ Sysbox meets the following requirement:
 
 ## Containerd Requirement
 
-Sysbox works best on K8s clusters with containerd v2.0 or later, as these support
+Sysbox works best on K8s clusters with K8s v1.30+ and containerd v2.0+ or later, as these support
 user-namespace isolated pods.
 
 **NOTE**: containerd v2.0.1 to v2.0.4 have a bug that prevents K8s from
