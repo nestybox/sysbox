@@ -1,0 +1,20 @@
+Sysbox has been installed!
+
+1. Check that the Sysbox DaemonSet is running on your nodes:
+   kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "sysbox.name" . }}" -o wide
+
+2. Verify that the RuntimeClass has been created:
+   kubectl get runtimeclass sysbox-runc
+
+3. You can now deploy pods using Sysbox by adding the runtimeClassName:
+   
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: my-sysbox-pod
+   spec:
+     runtimeClassName: sysbox-runc
+     containers:
+     - name: system-container
+       image: ubuntu
+       command: ["sleep", "inf"]

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sysbox-operational-attributes
+  namespace: kube-system
+data:
+  SYSBOX_MGR_CONFIG: ""
+  SYSBOX_FS_CONFIG: ""
