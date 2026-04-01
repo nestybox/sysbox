@@ -143,7 +143,7 @@ function teardown() {
 @test "kubeletVolMgr sync-out" {
 
   SYSCONT_NAME=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$SYSCONT_NAME")
+  local rootfs=$(docker_cont_rootfs_upper_dir $SYSCONT_NAME)
 
   docker exec "$SYSCONT_NAME" sh -c "touch /var/lib/kubelet/dummyFile"
   [ "$status" -eq 0 ]

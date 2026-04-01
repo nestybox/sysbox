@@ -142,7 +142,7 @@ function teardown() {
 @test "containerdVolMgr sync-out" {
 
   local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-  local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
+  local rootfs=$(docker_cont_rootfs_upper_dir $syscont)
 
   docker exec "$syscont" sh -c "touch /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/dummyFile"
   [ "$status" -eq 0 ]

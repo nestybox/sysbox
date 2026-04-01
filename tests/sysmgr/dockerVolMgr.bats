@@ -118,7 +118,7 @@ function teardown() {
 @test "dockerVolMgr sync-out" {
 
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
-	local rootfs=$(command docker inspect -f '{{.GraphDriver.Data.UpperDir}}' "$syscont")
+	local rootfs=$(docker_cont_rootfs_upper_dir $syscont)
 
 	if docker_userns_remap; then
 		rootfs_uid=$(docker_root_uid_map $syscont)

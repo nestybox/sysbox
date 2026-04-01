@@ -137,7 +137,7 @@ function docker_cont_rootfs_upper_dir() {
   local cont=$1
   if docker_containerd_image_store; then
     local rootfs=$(docker_cont_rootfs $cont)
-    local upperdir=$(mount | grep $rootfs | grep -oP '(?<=upperdir=)[^,)]*')
+    local upperdir=$(mount | grep $rootfs | grep -oP '(?<=upperdir=)[^,)]*' | head -n1)
   else
     local upperdir=$(__docker inspect --format='{{json .GraphDriver}}' $cont | jq .Data.UpperDir | tr -d '"')
   fi
