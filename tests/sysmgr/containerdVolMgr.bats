@@ -7,6 +7,7 @@
 load ../helpers/run
 load ../helpers/docker
 load ../helpers/sysbox-health
+load ../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
@@ -40,7 +41,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # and that dir should have ownership matching the container's assigned uid (unless overlayfs on ID-mapping works)
-  if sysbox_using_overlayfs_on_idmapped_mnt; then
+  if ! sysbox_using_overlayfs_on_idmapped_mnt; then
 	  local syscont_uid=$(docker_root_uid_map $syscont)
 
 	  run sh -c "stat /var/lib/sysbox/containerd/\"$syscont\"* | grep Uid | grep \"$syscont_uid\""
