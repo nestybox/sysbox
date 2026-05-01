@@ -214,9 +214,9 @@ RUN go install sigs.k8s.io/kind@v0.24.0
 RUN sed -i 's/^#define SECCOMP_IOCTL_NOTIF_ID_VALID[ \t]*SECCOMP_IOW(2, __u64)/#define SECCOMP_IOCTL_NOTIF_ID_VALID   SECCOMP_IOR(2, __u64)/g' /usr/include/linux/seccomp.h
 
 # Paketo buildpacks
-RUN add-apt-repository ppa:cncf-buildpacks/pack-cli \
-    && apt-get update \
-    && apt-get install -y pack-cli
+RUN curl -LO https://github.com/buildpacks/pack/releases/download/v0.40.3/pack-v0.40.3-linux.tgz \
+    && tar -xvzf pack-v0.40.3-linux.tgz \
+    && sudo mv pack /usr/local/bin/
 
 # sysbox env
 RUN useradd sysbox \
