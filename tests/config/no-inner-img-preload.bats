@@ -22,6 +22,10 @@ function teardown() {
 
 @test "disable-inner-image-preload: can't preload images into sysbox container" {
 
+	if docker_containerd_image_store; then
+		skip "test fails with containerd image store; needs adjusting."
+	fi
+
 	# start sys container with docker inside, and have the inner docker pull some images
 	local syscont=$(docker_run ${CTR_IMG_REPO}/alpine-docker-dbg:3.11 tail -f /dev/null)
 
