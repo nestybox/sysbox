@@ -77,12 +77,16 @@ function teardown() {
   docker_stop "$syscont"
   docker image prune -f
 
-  # verify the committed image has an appropriate size (slightly bigger than the
-  # base image since it includes inner containerd busybox & alpine images).
-  #
-  # note: this check only works when Docker is using the Docker image store, as
-  # otherwise docker system df does not report the image's unique size.
-  if docker_containerd_image_store; then
+  # verify the committed image has an appropriate size (slightly
+  # bigger than the base image since it includes inner containerd busybox & alpine images)
+	#
+	# TODO: for some reason this size check works when Docker uses the legacy
+	# image store, but fails when Docker uses the containerd-snapshotter (i.e.,
+	# the unique size of the committed image is not small, suggest image layers of
+	# the committed image are not shared with the base image). Needs
+	# investigation; may not be a Sysbox bug but rather a containerd-snapshotter
+	# limitation.
+  if ! docker_containerd_image_store; then
 		local unique_size=$(__docker system df -v --format '{{json .}}' | jq '.Images[] | select(.Repository == "image-commit") | .UniqueSize' | tr -d '"' | grep -Eo '[[:alpha:]]+|[0-9]+')
 		local num=$(echo $unique_size | awk '{print $1}')
 		local unit=$(echo $unique_size | awk '{print $3}')
