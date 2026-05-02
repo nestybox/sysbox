@@ -372,7 +372,8 @@ function main() {
 		test_with_shiftfs_only
 		test_with_rootfs_cloning
 		test_with_docker_image_store
-		test_with_docker_userns_remap
+		# Skip docker userns-remap + sysbox tests (will deprecate feature as it has little use and is redundant with Sysbox)
+		#test_with_docker_userns_remap
 		test_sysbox_config
 		test_sysbox_lifecycle
 
