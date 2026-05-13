@@ -748,7 +748,7 @@ EOF
   [ "$status" -eq 0 ]
 
   # add a regular user in the inner container
-  docker exec "$syscont" bash -c "useradd -u 1000 someone"
+  docker exec "$syscont" bash -c "useradd -u 1001 someone"
   [ "$status" -eq 0 ]
 
   # build the fileDac program inside the inner container, and install it
@@ -764,18 +764,21 @@ EOF
 
   docker exec "$syscont" sh -c 'getcap /usr/bin/fileDac'
   [ "$status" -eq 0 ]
-  [[ "$output" == "/usr/bin/fileDac = cap_dac_override,cap_dac_read_search+p" ]]
+  # getcap output format varies by libcap version:
+  #   old:  "/usr/bin/fileDac = cap_dac_override,cap_dac_read_search+p"
+  #   new:  "/usr/bin/fileDac cap_dac_override,cap_dac_read_search=p"
+  [[ "$output" =~ ^/usr/bin/fileDac(\ =)?\ cap_dac_override,cap_dac_read_search[+=]p$ ]]
 
   # write to /proc/sys as a regular user; should fail
-  docker exec -u 1000:1000 "$syscont" bash -c "echo 0 > /proc/sys/net/ipv4/ip_forward"
+  docker exec -u 1001:1001 "$syscont" bash -c "echo 0 > /proc/sys/net/ipv4/ip_forward"
   [ "$status" -eq 1 ]
 
   # write to /proc/sys as a regular use, but using the fileDac program
   # (should pass because the program sets the DAC* caps).
-  docker exec -u 1000:1000 "$syscont" bash -c "fileDac write /proc/sys/net/ipv4/ip_forward 0"
+  docker exec -u 1001:1001 "$syscont" bash -c "fileDac write /proc/sys/net/ipv4/ip_forward 0"
   [ "$status" -eq 0 ]
 
-  docker exec -u 1000:1000 "$syscont" bash -c "fileDac read /proc/sys/net/ipv4/ip_forward"
+  docker exec -u 1001:1001 "$syscont" bash -c "fileDac read /proc/sys/net/ipv4/ip_forward"
   [ "$status" -eq 0 ]
   [ "$output" -eq 0 ]
 

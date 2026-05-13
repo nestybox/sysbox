@@ -136,10 +136,10 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # a non-root user can't mount (needs cap_sys_admin)
-  docker exec "$syscont" bash -c "useradd -m -u 1000 someone"
+  docker exec "$syscont" bash -c "useradd -m -u 1001 someone"
   [ "$status" -eq 0 ]
 
-  docker exec -u 1000:1000 "$syscont" bash -c "mkdir -p /home/someone/l1/l2/proc && mount -t proc proc /home/someone/l1/l2/proc"
+  docker exec -u 1001:1001 "$syscont" bash -c "mkdir -p /home/someone/l1/l2/proc && mount -t proc proc /home/someone/l1/l2/proc"
   [ "$status" -eq 1 ]
 
   docker_stop "$syscont"
@@ -161,7 +161,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # add a regular user in the inner container
-  docker exec "$syscont" bash -c "useradd -u 1000 someone"
+  docker exec "$syscont" bash -c "useradd -u 1001 someone"
   [ "$status" -eq 0 ]
 
   # build the mountProcDac program inside the inner container, and install it
@@ -195,7 +195,7 @@ function teardown() {
   [ "$status" -eq 0 ]
 
   # perform the mount with mountProcDac
-  docker exec -u 1000:1000 "$syscont" bash -c "mountProcDac $mnt_path"
+  docker exec -u 1001:1001 "$syscont" bash -c "mountProcDac $mnt_path"
   [ "$status" -eq 0 ]
 
   docker_stop "$syscont"
