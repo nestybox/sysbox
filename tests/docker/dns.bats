@@ -171,8 +171,9 @@ function teardown() {
   [[ "$inner_dns" == "$syscont_dns" ]]
 
   # NOTE: on WSL hosts, tests hungs here (networking issue)
-  docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
@@ -190,8 +191,9 @@ function teardown() {
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner2 apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
@@ -229,8 +231,9 @@ function teardown() {
 
   [[ "$inner_dns" == "$syscont_dns" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
@@ -248,8 +251,9 @@ function teardown() {
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner2 apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
@@ -316,8 +320,9 @@ function teardown() {
 
   [[ "$inner_dns" == "$syscont_dns" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
@@ -335,8 +340,9 @@ function teardown() {
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner2 apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
@@ -372,8 +378,9 @@ function teardown() {
   [[ "$inner_dns" == "$inner_custom_dns" ]]
   [[ "$inner_dns" != "$syscont_dns" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
@@ -391,8 +398,9 @@ function teardown() {
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner2 apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
@@ -433,8 +441,9 @@ function teardown() {
   [[ "$inner_dns" == "$inner_custom_dns" ]]
   [[ "$inner_dns" != "$syscont_dns" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner host google.com"
   [ "$status" -eq 0 ]
@@ -452,8 +461,9 @@ function teardown() {
 
   [[ "$inner2_dns" == "127.0.0.11" ]]
 
-  docker exec "$syscont" sh -c "docker exec inner2 apk add bind-tools"
-  [ "$status" -eq 0 ]
+  # Fetches over the live custom DNS server / external package repo; retry to
+  # ride out transient network/DNS blips unrelated to sysbox's behavior.
+  retry_run 3 3 eval "docker exec \"$syscont\" sh -c \"docker exec inner2 apk add bind-tools\""
 
   docker exec "$syscont" sh -c "docker exec inner2 host google.com"
   [ "$status" -eq 0 ]
