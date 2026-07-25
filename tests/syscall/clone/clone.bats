@@ -26,18 +26,18 @@ function teardown() {
   # Interface" book examples (Kerrisk)) performs a clone() into a configurable
   # set of new namespaces.
   #
-  # XXX: for some reason "docker cp" fails to copy to /usr/bin in this
-  # container; not sure why since there is nothing special about that dir (no
-  # mounts on it, no symlinks, etc.) I think it's a problem with "tar" used by
-  # docker cp, possibly related to an ID-mapped rootfs. To work-around this, we
-  # copy userns_child_exec to the container's "/" and then move it to "/usr/bin".
+  # XXX: "docker cp" into this container intermittently fails with "openat
+  # etc/resolv.conf: directory not empty" -- this reproduces even copying to
+  # "/" (not just "/usr/bin"), regardless of whether it runs before or after
+  # apt-get install above. It looks like a kernel/VFS interaction between
+  # containerd's tar-based archive extraction (which "docker cp" uses) and
+  # the idmapped mount sysbox sets up over /etc/resolv.conf. Avoid "docker
+  # cp" entirely by piping the binary in via "docker exec -i" instead, which
+  # doesn't hit this path.
 
   local arch=$(get_platform)
 
-  docker cp tests/bin/userns_child_exec_${arch} "$syscont:/userns_child_exec"
-  [ "$status" -eq 0 ]
-
-  docker exec "$syscont" bash -c "mv /userns_child_exec /usr/bin/."
+  run bash -c "docker exec -i \"$syscont\" sh -c 'cat > /usr/bin/userns_child_exec && chmod +x /usr/bin/userns_child_exec' < tests/bin/userns_child_exec_${arch}"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" bash -c "userns_child_exec -nmipuC echo success"
