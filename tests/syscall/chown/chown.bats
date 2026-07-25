@@ -117,14 +117,17 @@ function verify_sys_chown {
 
   docker exec "$syscont" sh -c "ls -l / | grep test"
   [ "$status" -eq 0 ]
-  verify_perm_owner "drwxr-xr-x" "root" "root" "${output}"
+  # Capture the perm bits mkdir actually produced (depends on the container's
+  # umask, which is not under test here) and verify chown leaves them intact.
+  local perm=$(echo "${output}" | awk '{print $1}')
+  verify_perm_owner "${perm}" "root" "root" "${output}"
 
   docker exec "$syscont" sh -c "chown daemon:daemon /test"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ls -l / | grep test"
   [ "$status" -eq 0 ]
-  verify_perm_owner "drwxr-xr-x" "daemon" "daemon" "${output}"
+  verify_perm_owner "${perm}" "daemon" "daemon" "${output}"
 
   docker_stop "$syscont"
 }
