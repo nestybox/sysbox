@@ -29,7 +29,17 @@ EXPOSE 8080
 CMD ["echo","Image created"]
 EOF
 
-  syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker:latest tail -f /dev/null)
+  # Retry: a transient registry pull failure here (e.g. connection reset)
+  # would otherwise leave $syscont empty and fail confusingly downstream in
+  # wait_for_inner_dockerd. Can't use retry_run since docker_run() calls
+  # bats' run() internally via the docker() wrapper, and nesting run() calls
+  # corrupts $output/$status.
+  for attempt in 1 2 3; do
+    syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker:latest tail -f /dev/null)
+    [ -n "$syscont" ] && break
+    sleep 3
+  done
+  [ -n "$syscont" ]
 
   wait_for_inner_dockerd $syscont
 
