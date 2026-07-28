@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] - 2026-07-28
+### Added
+* Support Sysbox on Ubuntu 24.04 with kernel 6.8+ under containerd 2.x; fixes sysfs mount failures ("mount through procfd: operation not permitted") during container/pod creation (issue #1013).
+* Fix bug where a container's requested `--ulimit nofile` soft value silently failed to apply when the hard limit exceeded Go's internal rlimit cache threshold (issue #1014).
+* Fix nil-pointer crash in sysbox-fs triggered when a container shares another container's network namespace via `docker run --network container:<id>`.
+* Fix deadlock in sysbox-fs that could occur when many Docker containers are started/stopped concurrently inside a Sysbox container (issue #998).
+* Fix sysbox-mgr serializing container registration behind a global lock unnecessarily, slowing down concurrent container restores when Docker is slow to respond.
+* Fix bind mounts failing (or silently landing in the wrong place) when a mount's destination is nested inside another pending mount via a symlink in the container image; affected K8s pods mounting a volume at `/run` on images with a `/var/run -> /run` symlink (issue #1026).
+* Update grpc dependency to pick up an HTTP/2 flood-protection fix.
+* Remove usage of deprecated Go standard library packages (e.g., `io/ioutil`) across Sysbox components.
+
 ## [0.7.0] - 2025-03-02
 ### Added
 * Port runc security patches for CVE-2025-3133, CVE-2025-52881, CVE-52565.
