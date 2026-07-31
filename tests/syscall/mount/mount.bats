@@ -157,7 +157,7 @@ function teardown() {
   local syscont=$(docker_run --rm -v ${SYSBOX_ROOT}/tests/scr/capRaise:/mnt/capRaise ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 
   # install required software inside the inner container
-  docker exec "$syscont" bash -c "apt-get update && apt-get install -y make gcc libcap-dev libcap2-bin"
+  docker exec "$syscont" bash -c "apt-get update && apt-get install -y make gcc libc6-dev libcap-dev libcap2-bin"
   [ "$status" -eq 0 ]
 
   # add a regular user in the inner container
