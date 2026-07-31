@@ -57,15 +57,15 @@ the installation instructions below.
 1.  Download the latest Sysbox package from the [release](https://github.com/nestybox/sysbox/releases) page:
 
 ```
-$ wget https://downloads.nestybox.com/sysbox/releases/v0.7.0/sysbox-ce_0.7.0-0.linux_amd64.deb
+$ wget https://downloads.nestybox.com/sysbox/releases/v0.7.1/sysbox-ce_0.7.1-0.linux_amd64.deb
 ```
 
 2.  Verify that the checksum of the downloaded file fully matches the
     expected/published one. For example:
 
 ```console
-sha256sum sysbox-ce_0.7.0.linux_amd64.deb
-eeff273671467b8fa351ab3d40709759462dc03d9f7b50a1b207b37982ce40a9  sysbox-ce_0.7.0.linux_amd64.deb
+sha256sum sysbox-ce_0.7.1.linux_amd64.deb
+9d6d5484f980d0a17f86c492c1262015c2afb66280bdb97215b79fde6a0261c5  sysbox-ce_0.7.1.linux_amd64.deb
 ```
 
 3.  If Docker is running on the host, we recommend stopping and removing all
@@ -85,7 +85,7 @@ below for more on this.
 
 ```console
 $ sudo apt-get install jq
-$ sudo apt-get install ./sysbox-ce_0.7.0-0.linux_amd64.deb
+$ sudo apt-get install ./sysbox-ce_0.7.1-0.linux_amd64.deb
 ```
 
 NOTE: the `jq` tool is used by the Sysbox installer.
@@ -97,36 +97,36 @@ NOTE: the `jq` tool is used by the Sysbox installer.
 $ systemctl status sysbox -n20
 ● sysbox.service - Sysbox container runtime
      Loaded: loaded (/lib/systemd/system/sysbox.service; enabled; vendor preset: enabled)
-     Active: active (running) since Tue 2026-03-03 14:08:14 PST; 22min ago
+     Active: active (running) since Fri 2026-07-31 15:31:43 PDT; 1h 21min ago
        Docs: https://github.com/nestybox/sysbox
-   Main PID: 1159354 (sh)
-      Tasks: 2 (limit: 38079)
-     Memory: 400.0K
-        CPU: 13ms
+   Main PID: 2369381 (sh)
+      Tasks: 2 (limit: 38074)
+     Memory: 396.0K
+        CPU: 12ms
      CGroup: /system.slice/sysbox.service
-             ├─1159354 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
-             └─1159374 /bin/sleep infinity
+             ├─2369381 /bin/sh -c "/usr/bin/sysbox-runc --version && /usr/bin/sysbox-mgr --version && /usr/bin/sysbox-fs --version && /bin/sleep infinity"
+             └─2369401 /bin/sleep infinity
 
-Mar 03 14:08:14 lenovo systemd[1]: Started Sysbox container runtime.
-Mar 03 14:08:14 lenovo sh[1159355]: sysbox-runc
-Mar 03 14:08:14 lenovo sh[1159355]:         edition:         Community Edition (CE)
-Mar 03 14:08:14 lenovo sh[1159355]:         version:         0.7.0
-Mar 03 14:08:14 lenovo sh[1159355]:         commit:          a4dd414f7b9b7455c0fbf0d5e5db7bcfe30645bc
-Mar 03 14:08:14 lenovo sh[1159355]:         built at:         Tue Mar  3 21:51:47 UTC 2026
-Mar 03 14:08:14 lenovo sh[1159355]:         built by:         Cesar Talledo
-Mar 03 14:08:14 lenovo sh[1159355]:         oci-specs:         1.1.0+dev
-Mar 03 14:08:14 lenovo sh[1159362]: sysbox-mgr
-Mar 03 14:08:14 lenovo sh[1159362]:         edition:         Community Edition (CE)
-Mar 03 14:08:14 lenovo sh[1159362]:         version:         0.7.0
-Mar 03 14:08:14 lenovo sh[1159362]:         commit:          bff3721f86e737cfa129dfe9fe2e7933692aba26
-Mar 03 14:08:14 lenovo sh[1159362]:         built at:         Tue Mar  3 21:52:05 UTC 2026
-Mar 03 14:08:14 lenovo sh[1159362]:         built by:         Cesar Talledo
-Mar 03 14:08:14 lenovo sh[1159368]: sysbox-fs
-Mar 03 14:08:14 lenovo sh[1159368]:         edition:         Community Edition (CE)
-Mar 03 14:08:14 lenovo sh[1159368]:         version:         0.7.0
-Mar 03 14:08:14 lenovo sh[1159368]:         commit:          b70bd38bbf72bf0e759c5f7d8c38925d717068ae
-Mar 03 14:08:14 lenovo sh[1159368]:         built at:         Tue Mar  3 21:52:03 UTC 2026
-Mar 03 14:08:14 lenovo sh[1159368]:         built by:         Cesar Talledo
+Jul 31 15:31:43 lenovo systemd[1]: Started Sysbox container runtime.
+Jul 31 15:31:43 lenovo sh[2369382]: sysbox-runc
+Jul 31 15:31:43 lenovo sh[2369382]:         edition:         Community Edition (CE)
+Jul 31 15:31:43 lenovo sh[2369382]:         version:         0.7.1
+Jul 31 15:31:43 lenovo sh[2369382]:         commit:         081856cc5d17e7095f066b08d0eca6bb0b515c47
+Jul 31 15:31:43 lenovo sh[2369382]:         built at:         Fri Jul 31 22:29:14 UTC 2026
+Jul 31 15:31:43 lenovo sh[2369382]:         built by:         Cesar Talledo
+Jul 31 15:31:43 lenovo sh[2369382]:         oci-specs:         1.1.0+dev
+Jul 31 15:31:43 lenovo sh[2369389]: sysbox-mgr
+Jul 31 15:31:43 lenovo sh[2369389]:         edition:         Community Edition (CE)
+Jul 31 15:31:43 lenovo sh[2369389]:         version:         0.7.1
+Jul 31 15:31:43 lenovo sh[2369389]:         commit:         2d45af01bcfd8641e6641f76104c6003bf501cd7
+Jul 31 15:31:43 lenovo sh[2369389]:         built at:         Fri Jul 31 22:29:34 UTC 2026
+Jul 31 15:31:43 lenovo sh[2369389]:         built by:         Cesar Talledo
+Jul 31 15:31:43 lenovo sh[2369395]: sysbox-fs
+Jul 31 15:31:43 lenovo sh[2369395]:         edition:         Community Edition (CE)
+Jul 31 15:31:43 lenovo sh[2369395]:         version:         0.7.1
+Jul 31 15:31:43 lenovo sh[2369395]:         commit:         c3d2ebc65102e32e74e383675f03b45556326888
+Jul 31 15:31:43 lenovo sh[2369395]:         built at:         Fri Jul 31 22:29:24 UTC 2026
+Jul 31 15:31:43 lenovo sh[2369395]:         built by:         Cesar Talledo
 ```
 
 This indicates all Sysbox components are running properly. If you are curious on
@@ -459,7 +459,7 @@ To upgrade Sysbox, first uninstall Sysbox and re-install the updated version.
 
 You can find the latest versions of Sysbox here:
 
--   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.7.0).
+-   [Sysbox Community Edition Releases](https://github.com/nestybox/sysbox/releases/tag/v0.7.1).
 -   [Sysbox Enterprise Edition Releases](https://github.com/nestybox/sysbox-ee/releases/tag/v0.5.2) [DEPRECATED]
 
 Note that you must stop all Sysbox containers on the host prior to uninstalling
