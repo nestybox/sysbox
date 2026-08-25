@@ -32,6 +32,11 @@ export PACKAGE := sysbox-ce
 export HOST_UID ?= $(shell id -u)
 export HOST_GID ?= $(shell id -g)
 
+# Set default distro-release for scenarios in which this can't be easily determined (e.g.,
+# '/etc/os-release' isn't available -- OSX).
+DEFAULT_DISTRO := ubuntu
+DEFAULT_DISTRO_RELEASE := jammy
+
 # Obtain the current system architecture.
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
@@ -42,6 +47,8 @@ else ifeq ($(UNAME_M),arm)
 	SYS_ARCH := armhf
 else ifeq ($(UNAME_M),armel)
 	SYS_ARCH := armel
+else
+	SYS_ARCH := $(UNAME_M)
 endif
 
 # Set target architecture if not explicitly defined by user.
@@ -80,7 +87,14 @@ else
 INSTALL_DIR := ${DESTDIR}
 endif
 
-IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
+# Determine the base distro of the host machine if '/etc/os-release' is available. If not,
+# assume the default-distro.
+OS_RELEASE_FILE := $(shell test -f /etc/os-release && echo /etc/os-release)
+ifeq ($(OS_RELEASE_FILE),)
+	IMAGE_BASE_DISTRO := $(DEFAULT_DISTRO)
+else
+	IMAGE_BASE_DISTRO := $(shell cat /etc/os-release | grep "^ID=" | cut -d "=" -f2 | tr -d '"')
+endif
 
 # Host kernel info
 KERNEL_REL := $(shell uname -r)
@@ -92,7 +106,7 @@ export KERNEL_REL
 ifeq ($(IMAGE_BASE_DISTRO),$(filter $(IMAGE_BASE_DISTRO),centos fedora redhat almalinux rocky amzn))
 	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_ID" | cut -d "=" -f2 | tr -d '"' | cut -d "." -f1)
 	KERNEL_HEADERS := kernels/$(KERNEL_REL)
-else
+else ifdef OS_RELEASE_FILE
 	IMAGE_BASE_RELEASE := $(shell cat /etc/os-release | grep "^VERSION_CODENAME" | cut -d "=" -f2)
 	ifeq ($(IMAGE_BASE_DISTRO),linuxmint)
 		IMAGE_BASE_DISTRO := ubuntu
@@ -105,6 +119,9 @@ else
 	endif
 	KERNEL_HEADERS := linux-headers-$(KERNEL_REL)
 	KERNEL_HEADERS_BASE := $(shell find /usr/src/$(KERNEL_HEADERS) -maxdepth 1 -type l -exec readlink {} \; | cut -d"/" -f2 | egrep -v "^\.\." | head -1)
+else
+	# If '/etc/os-release' isn't available, then assume the default-distro-release.
+	IMAGE_BASE_RELEASE := $(DEFAULT_DISTRO_RELEASE)
 endif
 
 TEST_DIR := $(CURDIR)/tests
@@ -117,15 +134,27 @@ TEST_SYSTEMD_DOCKERFILE := Dockerfile.systemd.$(IMAGE_BASE_DISTRO)
 TEST_FILES := $(shell find tests -type f | egrep "\.bats")
 TEST_SCR := $(shell grep -rwl -e '\#!/bin/bash' -e '\#!/bin/sh' tests/*)
 
-ifeq ($(KERNEL_HEADERS_BASE), )
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
-else
-	KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
-				 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+# Set the kernel-header mounts for the build/test containers. These are only added when the
+# corresponding host path actually exists (e.g., it won't on OSX).
+KERNEL_HEADERS_PRESENT := $(shell stat /usr/src/$(KERNEL_HEADERS) >/dev/null 2>&1; echo $$?)
+ifeq ($(KERNEL_HEADERS_PRESENT),0)
+	ifeq ($(KERNEL_HEADERS_BASE), )
+		KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro
+	else
+		KERNEL_HEADERS_MOUNTS := -v /usr/src/$(KERNEL_HEADERS):/usr/src/$(KERNEL_HEADERS):ro \
+					 -v /usr/src/$(KERNEL_HEADERS_BASE):/usr/src/$(KERNEL_HEADERS_BASE):ro
+	endif
 endif
 
 export KERNEL_HEADERS
 export KERNEL_HEADERS_MOUNTS
+
+# Set the lib-modules mount for the build/test containers. Only added when the host path
+# actually exists (e.g., it won't on OSX).
+LIBMODULES_PRESENT := $(shell stat /lib/modules/$(KERNEL_REL)/kernel >/dev/null 2>&1; echo $$?)
+ifeq ($(LIBMODULES_PRESENT),0)
+	LIBMODULES_MOUNTS := -v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro
+endif
 
 PACKAGE_FILE_PATH ?= sysbox-pkgr/deb/build/$(TARGET_ARCH)/$(IMAGE_BASE_DISTRO)-$(IMAGE_BASE_RELEASE)
 PACKAGE_FILE_NAME := $(PACKAGE)_$(VERSION).linux_$(TARGET_ARCH).deb
@@ -145,9 +174,13 @@ export TEST_VOL2
 export TEST_VOL3
 
 # In scenarios where the egress-interface's mtu is lower than expected (1500 bytes),
-# we must explicitly configure dockerd with such a value.
-EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
-EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
+# we must explicitly configure dockerd with such a value. Skip this when the 'ip' tool
+# isn't available (e.g., OSX).
+IP_CMD_PRESENT := $(shell command -v ip >/dev/null 2>&1; echo $$?)
+ifeq ($(IP_CMD_PRESENT),0)
+	EGRESS_IFACE := $(shell ip route show | awk '/default via/ {print $$5}')
+	EGRESS_IFACE_MTU := $(shell ip link show dev $(EGRESS_IFACE) | awk '/mtu/ {print $$5}')
+endif
 
 # Ensure that a gitconfig file is always present.
 $(shell touch $(HOME)/.gitconfig)
@@ -174,7 +207,7 @@ DOCKER_SYSBOX_BLD := docker run --privileged --rm --runtime=runc      \
 			-v $(CURDIR):$(PROJECT)                       \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
+			$(LIBMODULES_MOUNTS) \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -293,8 +326,8 @@ DOCKER_RUN := docker run --privileged --rm --runtime=runc             \
 			-v $(TEST_VOL2):/mnt/scratch                  \
 			-v $(TEST_VOL3):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
+			$(LIBMODULES_MOUNTS) \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
@@ -309,8 +342,8 @@ DOCKER_RUN_TTY := docker run -it --privileged --rm --runtime=runc         \
 			-v $(TEST_VOL2):/mnt/scratch                  \
 			-v $(TEST_VOL3):/var/run                      \
 			-v $(GOPATH)/pkg/mod:/go/pkg/mod              \
-			-v /lib/modules/$(KERNEL_REL):/lib/modules/$(KERNEL_REL):ro \
 			-v $(HOME)/.gitconfig:/root/.gitconfig        \
+			$(LIBMODULES_MOUNTS) \
 			$(KERNEL_HEADERS_MOUNTS) \
 			$(TEST_IMAGE)
 
