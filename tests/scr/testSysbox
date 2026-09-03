@@ -33,6 +33,8 @@ function run_all_tests() {
 	bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
 	bats --tap tests/sysfs
+	printf "\nExecuting devices tests ... \n"
+	bats --tap tests/devices
 	printf "\nExecuting docker tests ... \n"
 	bats --tap tests/docker
 	printf "\nExecuting cgroup tests ... \n"

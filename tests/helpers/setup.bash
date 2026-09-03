@@ -165,3 +165,16 @@ function teardown_debian() {
   local container="$1"
   teardown_bundle "$DEBIAN_BUNDLE" "$container"
 }
+
+# Augments the spec of the Debian bundle with the device specified in the passed
+# json file.
+function setup_debian_spec_add_device() {
+  local device_config=$1
+  local container=$2
+
+  cd "$DEBIAN_BUNDLE"
+
+  # Add the passed device (in json format) to the spec.
+  jq '.linux.devices += [input]' config.json ${device_config} > config.json.tmp
+  mv config.json.tmp config.json
+}
