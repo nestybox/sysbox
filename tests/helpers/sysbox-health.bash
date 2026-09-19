@@ -34,6 +34,7 @@ function sysboxfs_log_check() {
 function sysboxfs_ps_check() {
   # verify sysbox-fs is alive
   local ret
+  local i
 
   ret=$(pidof $SYSBOX_FS_NAME > /dev/null)
   if [ $? -ne 0 ]; then
@@ -41,14 +42,20 @@ function sysboxfs_ps_check() {
     return 1
   fi
 
-  # verify sysbox-fs has no child processes
-  ret=$(pgrep -P $(pidof $SYSBOX_FS_NAME))
-  if [ $? -eq 0 ]; then
-    printf "sysbox-fs has unexpected child processes:\n $ret"
-    return 1
-  fi
+  # verify sysbox-fs has no child processes; sysbox-fs's nsenter reaper waits
+  # ~1s before reaping (see nsenter/reaper.go), so a just-finished nsenter
+  # agent may still be visible for a moment. Retry briefly rather than
+  # failing on that known, harmless delay.
+  for i in 1 2 3; do
+    ret=$(pgrep -P $(pidof $SYSBOX_FS_NAME))
+    if [ $? -ne 0 ]; then
+      return 0
+    fi
+    sleep 1
+  done
 
-  return 0
+  printf "sysbox-fs has unexpected child processes:\n $ret"
+  return 1
 }
 
 function sysboxfs_mnt_check() {
