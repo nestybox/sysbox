@@ -159,6 +159,9 @@ function docker_ssh_access() {
   local cont=$1
   local pubkey=$(cat ~/.ssh/id_rsa.pub)
 
+  # sshd's StrictModes (on by default) silently rejects pubkey auth if
+  # ~/.ssh or authorized_keys are group/world-writable, which they can be
+  # depending on the container image's default umask.
   __docker exec $cont bash -c "mkdir -p ~/.ssh && echo $pubkey > ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
 }
 

@@ -112,7 +112,10 @@ function verify_sys_chown {
 @test "chown other" {
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
-  docker exec "$syscont" sh -c "mkdir /test"
+  # Set an explicit umask: relying on the ambient umask of whatever process
+  # services "docker exec" (dockerd/containerd) is not reliable across
+  # environments.
+  docker exec "$syscont" sh -c "umask 0022 && mkdir /test"
   [ "$status" -eq 0 ]
 
   docker exec "$syscont" sh -c "ls -l / | grep test"
