@@ -736,3 +736,166 @@ function teardown() {
 
   docker_stop ${syscont}
 }
+
+# Testcases #13-15.
+#
+# sysbox's kernel-header and kernel-module mounts (/usr/src/*,
+# /lib/modules/<kernel>) are the only immutable mounts whose read-only
+# attribute is enforced by the kernel itself (via MNT_LOCK_READONLY, set up
+# by sysbox-mgr) rather than by sysbox-fs's own mount(2)/umount2(2) syscall
+# mediation. See tests/syscall/mount/mount-immutables.bats for background;
+# these testcases verify the protection also holds from within an inner
+# mount namespace (unshare(mnt)), i.e. that a container process can't shed
+# the kernel lock by giving itself a private copy of the mount table. They
+# target *only* the kernel-header/module mounts, unlike the general
+# "immutable ro mount can't be remounted rw" testcase above: other
+# immutable mounts are not kernel-locked and would not survive a
+# mount_setattr(2) attempt.
+
+# Testcase #13.
+#
+# Build the mount-setattr-test helper binary; it issues mount_setattr(2)
+# directly, bypassing sysbox-fs's mount(2)/umount2(2) syscall mediation
+# entirely.
+@test "mount-setattr-test prep -- unshare(mnt)" {
+  pushd tests/syscall/mount/mount-setattr-test
+  make
+  popd
+}
+
+# Testcase #14.
+#
+# Ensure that, from within an inner mount namespace, a kernel header/module
+# mount can't have its read-only attribute cleared via mount_setattr(2).
+# Unlike the legacy mount(2) remount path (mediated by sysbox-fs, and
+# gated by its 'allow-immutable-remounts' knob), this protection comes
+# from a kernel guarantee (MNT_LOCK_READONLY) that sysbox-mgr sets up
+# when anchoring the mount, and holds unconditionally -- sysbox-mgr has
+# no 'allow-immutable-remounts' knob of its own to gate it with.
+@test "kernel header/module mounts can't be unlocked via mount_setattr(2) -- unshare(mnt)" {
+
+  local syscont=$(docker_run --rm \
+    -v ${SYSBOX_ROOT}/tests/syscall/mount/mount-setattr-test:/mnt/mount-setattr-test \
+    ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+
+  local test_bin=/mnt/mount-setattr-test/mount-setattr-test
+
+  docker exec ${syscont} sh -c "[ -x ${test_bin} ]"
+  [ "$status" -eq 0 ]
+
+  docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
+  [ "$status" -eq 0 ]
+
+  docker exec ${syscont} sh -c "pidof sleep"
+  [ "$status" -eq 0 ]
+  local inner_pid=$output
+
+  local kernel_rel=$(__docker exec ${syscont} sh -c "uname -r")
+  local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
+
+  local targets=()
+  if grep -qxF "/usr/lib/modules/${kernel_rel}" <<< "${immutable_ro_mounts}"; then
+    targets+=("/usr/lib/modules/${kernel_rel}")
+  fi
+  for m in ${immutable_ro_mounts}; do
+    if [[ ${m} == "/usr/src/"* ]]; then
+      targets+=("${m}")
+    fi
+  done
+
+  if [ ${#targets[@]} -eq 0 ]; then
+    docker_stop ${syscont}
+    skip "no kernel header/module mounts present in this container"
+  fi
+
+  for m in "${targets[@]}"; do
+    printf "\ntesting mount_setattr(2) clear of read-only on ${m}\n"
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} ${test_bin} ${m}"
+    [ "$status" -ne 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${m}/canary"
+    [ "$status" -ne 0 ]
+  done
+
+  docker_stop ${syscont}
+}
+
+# Testcase #15.
+#
+# Same as above, but targeting a bind-mount of the kernel header/module
+# mount rather than the mount itself.
+@test "bind-mount of kernel header/module mount can't be unlocked via mount_setattr(2) -- unshare(mnt)" {
+
+  local syscont=$(docker_run --rm \
+    -v ${SYSBOX_ROOT}/tests/syscall/mount/mount-setattr-test:/mnt/mount-setattr-test \
+    ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
+
+  local test_bin=/mnt/mount-setattr-test/mount-setattr-test
+
+  docker exec ${syscont} sh -c "[ -x ${test_bin} ]"
+  [ "$status" -eq 0 ]
+
+  docker exec -d ${syscont} sh -c "unshare -m bash -c \"sleep 1000\""
+  [ "$status" -eq 0 ]
+
+  docker exec ${syscont} sh -c "pidof sleep"
+  [ "$status" -eq 0 ]
+  local inner_pid=$output
+
+  local kernel_rel=$(__docker exec ${syscont} sh -c "uname -r")
+  local immutable_ro_mounts=$(list_container_ro_mounts ${syscont} ${inner_pid} "/")
+
+  local targets=()
+  if grep -qxF "/usr/lib/modules/${kernel_rel}" <<< "${immutable_ro_mounts}"; then
+    targets+=("/usr/lib/modules/${kernel_rel}")
+  fi
+  for m in ${immutable_ro_mounts}; do
+    if [[ ${m} == "/usr/src/"* ]]; then
+      targets+=("${m}")
+    fi
+  done
+
+  if [ ${#targets[@]} -eq 0 ]; then
+    docker_stop ${syscont}
+    skip "no kernel header/module mounts present in this container"
+  fi
+
+  local target=/root/target
+
+  for m in "${targets[@]}"; do
+    printf "\ntesting mount_setattr(2) clear of read-only on a bind-mount of ${m}\n"
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mkdir -p ${target}"
+    [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} mount --bind ${m} ${target}"
+    [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${target}"
+    [ "$status" -ne 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} ${test_bin} ${target}"
+    [ "$status" -ne 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} touch ${target}/canary"
+    [ "$status" -ne 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} umount ${target}"
+    [ "$status" -eq 0 ]
+
+    docker exec ${syscont} sh -c "nsenter -a -t ${inner_pid} rm -rf ${target}"
+    [ "$status" -eq 0 ]
+  done
+
+  docker_stop ${syscont}
+}
+
+# Testcase #16.
+#
+# Clean up the mount-setattr-test helper binary.
+@test "mount-setattr-test cleanup -- unshare(mnt)" {
+  pushd tests/syscall/mount/mount-setattr-test
+  make clean
+  popd
+}
