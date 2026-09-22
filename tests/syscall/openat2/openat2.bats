@@ -10,6 +10,7 @@ load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/sysbox
 load ../../helpers/sysbox-health
+load ../../helpers/uid-shift
 
 # Table of files to test openat2() within a sys container
 # Format: "filesystem:filepath:expected_value"
@@ -27,6 +28,10 @@ TEST_FILES=(
 )
 
 function setup() {
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
+		skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+	fi
+
 	# build the openat2-test binary (tests the openat2 syscall)
 	pushd tests/syscall/openat2
 	make openat2-test

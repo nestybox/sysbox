@@ -10,9 +10,14 @@ load ../../helpers/syscall
 load ../../helpers/docker
 load ../../helpers/sysbox
 load ../../helpers/environment
+load ../../helpers/uid-shift
 
 function umount_root_test() {
 	local withUnshare=$1
+
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
+		skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+	fi
 
 	local subuid=$(sysbox_get_subuid_range_start)
 
