@@ -9,13 +9,17 @@ load ../../helpers/run
 load ../../helpers/docker
 load ../../helpers/environment
 load ../../helpers/sysbox-health
-load ../../helpers/environment
+load ../../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
 }
 
 @test "clone new namespaces" {
+
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+		skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+  fi
 
   local syscont=$(docker_run --rm ${CTR_IMG_REPO}/ubuntu:latest tail -f /dev/null)
 

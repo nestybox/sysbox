@@ -12,6 +12,7 @@ load ../helpers/ns
 load ../helpers/docker
 load ../helpers/sysbox
 load ../helpers/sysbox-health
+load ../helpers/uid-shift
 
 disable_ipv6=/proc/sys/net/ipv6/conf/all/disable_ipv6
 
@@ -282,6 +283,10 @@ function wait_for_inner_dockerd() {
 
 @test "/proc/sys concurrent intra-container access" {
 
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+    skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+  fi
+
   local num_workers=10
   local work_scr=/tmp/worker.sh
 
@@ -348,6 +353,10 @@ EOF
 }
 
 @test "/proc/sys concurrent inter-container access" {
+
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+    skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+  fi
 
   num_sc=5
   iter=20
@@ -430,6 +439,10 @@ EOF
 # containers in this testcase are spawn as 'privileged' to allow write
 # operations to succeed (i.e. procfs mounted as RW).
 @test "/proc/sys concurrent l2 inter-container access (privileged)" {
+
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+    skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+  fi
 
   num_ac=5
   iter=20
@@ -525,6 +538,10 @@ EOF
 # point we are leaving user-ns out due to a pending issue preventing procfs
 # mounts to succeed.
 @test "/proc/sys concurrent l2 inter-container access (unshare)" {
+
+  if sysbox_using_overlayfs_on_idmapped_mnt; then
+    skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+  fi
 
   num_un=5
   iter=20
