@@ -10,7 +10,9 @@ load ../helpers/sysbox
 load ../helpers/sysbox-health
 
 function setup() {
-  setup_busybox
+  # The debian bundle (not busybox) is used here because the rewind test
+  # below needs perl to issue a real lseek() on an already-open fd.
+  setup_debian
 
   # Obtain the container creation time.
   run cat /proc/uptime
@@ -20,7 +22,7 @@ function setup() {
 }
 
 function teardown() {
-  teardown_busybox syscont
+  teardown_debian syscont
   sysbox_log_check
 }
 
@@ -57,4 +59,29 @@ function teardown() {
   echo "cntrStartPlusUptime = ${cntrStartPlusUptime}"
   echo "hostUptime = ${hostUptime}"
   [ $cntrStartPlusUptime -le $hostUptime ]
+}
+
+# Read operation on an already-open fd that is rewound with lseek(0).
+#
+# This is the libprocps access pattern: open /proc/uptime once, then seek
+# back to zero before each sample. With FOPEN_NONSEEKABLE the seek failed
+# with ESPIPE and every read after the first came back empty, so top
+# reported "bad data in /proc/uptime" (sysbox issue #1045).
+@test "procUptime read() operation after rewind" {
+
+  sv_runc run -d --console-socket $CONSOLE_SOCKET syscont
+  [ "$status" -eq 0 ]
+
+  sv_runc exec syscont perl -e '
+    open(my $fh, "<", "/proc/uptime") or die "open: $!";
+    my $first = <$fh>;
+    seek($fh, 0, 0) or die "seek: $!";
+    my $second = <$fh>;
+    chomp($first); chomp($second);
+    print "$first;$second\n";'
+  [ "$status" -eq 0 ]
+
+  # Both samples must be complete uptime lines.
+  local re='^[0-9]+\.[0-9]{2} [0-9]+\.[0-9]{2};[0-9]+\.[0-9]{2} [0-9]+\.[0-9]{2}$'
+  [[ "${lines[0]}" =~ $re ]]
 }
