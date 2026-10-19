@@ -165,3 +165,52 @@ EOF
 
   rm $file
 }
+
+# Test docker buildx SBOM generation inside a sysbox container.
+#
+# The sbom scanner receives the scanned snapshot as an overlay mount in its OCI
+# spec. runc init applies that mount after unsharing its pid-ns and before
+# mounting a new procfs, so the sysbox-fs nsenter agent serving it sees a /proc
+# that belongs to the parent pid-ns. That used to make the agent fail to load
+# its capabilities and panic, and the mount came back EINVAL. See
+# nestybox/sysbox#1048.
+@test "docker buildx build with sbom inside sysbox container" {
+
+  cat << EOF > ${file}
+FROM ${CTR_IMG_REPO}/alpine
+RUN apk update
+CMD ["echo","Image created"]
+EOF
+
+  local syscont=$(docker_run --rm --mount type=bind,source=${file},target=/mnt/Dockerfile ${CTR_IMG_REPO}/ubuntu-jammy-systemd-docker:latest tail -f /dev/null)
+
+  wait_for_inner_dockerd $syscont
+
+  docker exec $syscont sh -c "docker buildx version"
+  if [ "$status" -ne 0 ]; then
+	  docker_stop $syscont
+	  rm $file
+	  skip "docker buildx not supported by the inner docker"
+  fi
+
+  # The sbom scanner only runs under a buildkit-in-a-container builder; the
+  # default "docker" driver rejects attestations outright.
+  docker exec $syscont sh -c "docker buildx create --name sbom-builder --driver docker-container --use"
+  [ "$status" -eq 0 ]
+
+  docker exec $syscont sh -c "docker buildx inspect --bootstrap"
+  [ "$status" -eq 0 ]
+
+  # Output to cacheonly: attestations can't be loaded into the classic image
+  # store, and the scan (the part under test) runs either way.
+  docker exec $syscont sh -c "cd /mnt && docker buildx build --sbom=true -o type=cacheonly ."
+  [ "$status" -eq 0 ]
+  [[ ! "$output" =~ "invalid argument" ]]
+
+  docker exec $syscont sh -c "docker buildx rm sbom-builder"
+  [ "$status" -eq 0 ]
+
+  docker_stop $syscont
+
+  rm $file
+}
