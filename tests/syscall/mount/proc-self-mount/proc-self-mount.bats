@@ -6,6 +6,7 @@
 
 load ../../../helpers/run
 load ../../../helpers/docker
+load ../../../helpers/uid-shift
 
 @test "proc-self-mount test prep" {
 	# build the pivot-root-test binary
@@ -15,6 +16,10 @@ load ../../../helpers/docker
 }
 
 @test "proc-self-mount test" {
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
+		skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+	fi
+
 	local syscont=$(docker_run --rm ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
 
 	# copy the test binary into the container

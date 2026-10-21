@@ -12,6 +12,7 @@ load ../../helpers/mounts
 load ../../helpers/userns
 load ../../helpers/sysbox
 load ../../helpers/sysbox-health
+load ../../helpers/uid-shift
 
 function teardown() {
   sysbox_log_check
@@ -87,6 +88,10 @@ function teardown() {
 }
 
 @test "f*xattr & l*xattr" {
+
+	if sysbox_using_overlayfs_on_idmapped_mnt; then
+		skip "test uses docker cp; does not work with ovfs on idmapped mnt"
+	fi
 
 	# build the xattr-test binary (tests the f*xattr and l*xattr syscalls)
 	pushd tests/syscall/xattr

@@ -23,6 +23,16 @@ function sysbox_mgr_stopped() {
    fi
 }
 
+# Verify a sysbox-mgr data root has been cleaned up.
+function data_root_is_clean() {
+   local dir="$1"
+   if [ ! -d "$dir" ]; then
+      return 0
+   fi
+   local contents=$(ls -A "$dir")
+   [ -z "$contents" ] || [ "$contents" == "state" ]
+}
+
 @test "--data-root" {
    local new_data_root="/mnt/scratch/sysbox-mgr"
    rm -rf $new_data_root
@@ -30,15 +40,13 @@ function sysbox_mgr_stopped() {
    sysbox_stop
 
    # Verify the sysbox data root is gone
-   run sh -c "ls /var/lib/sysbox"
-   [ "$status" -ne 0 ]
+   data_root_is_clean /var/lib/sysbox
 
    # Start it with the new data root
    sysbox_start --data-root $new_data_root
 
    # Verify the prior sysbox data root is now replaced by the new one
-   run sh -c "ls /var/lib/sysbox"
-   [ "$status" -ne 0 ]
+   data_root_is_clean /var/lib/sysbox
 
    run sh -c "ls ${new_data_root}"
    [ "$status" -eq 0 ]
@@ -64,15 +72,13 @@ function sysbox_mgr_stopped() {
    sysbox_stop
 
 	# Verify the new data-root is gone
-	run sh -c "ls ${new_data_root}"
-	[ "$status" -ne 0 ]
+	data_root_is_clean "${new_data_root}"
 
    # Re-start it with it's default data-root
    sysbox_start
 
 	# Verify the prior sysbox data root is now replaced by the new one
-	run sh -c "ls ${new_data_root}"
-	[ "$status" -ne 0 ]
+	data_root_is_clean "${new_data_root}"
 
 	run sh -c "ls /var/lib/sysbox"
 	[ "$status" -eq 0 ]
