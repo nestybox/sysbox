@@ -15,8 +15,38 @@ source "$helpersDir/uid-shift.bash"
 # failing suite doesn't hide the others; failures are reported at the end.
 failed_suites=()
 
+# Space-separated lists, set by the caller, to skip test suites (substrings of
+# the suite command, e.g., "tests/pods/pods.sh") and scenarios (e.g.,
+# "rootfs_cloning").
+TEST_SYSBOX_SKIP_SUITES=${TEST_SYSBOX_SKIP_SUITES:-}
+TEST_SYSBOX_SKIP_SCENARIOS=${TEST_SYSBOX_SKIP_SCENARIOS:-}
+
 function run_suite() {
+	local suite="$*"
+	local skip
+
+	for skip in ${TEST_SYSBOX_SKIP_SUITES}; do
+		if [[ "${suite}" == *"${skip}"* ]]; then
+			printf "\nNOTE: Skipping suite '%s' (TEST_SYSBOX_SKIP_SUITES)\n" "${suite}"
+			return 0
+		fi
+	done
+
 	"$@" || failed_suites+=("$*")
+}
+
+# Runs scenario function $2 unless scenario name $1 is in
+# TEST_SYSBOX_SKIP_SCENARIOS.
+function scenario() {
+	local name=$1
+	shift
+
+	if [[ " ${TEST_SYSBOX_SKIP_SCENARIOS} " == *" ${name} "* ]]; then
+		printf "\nNOTE: Skipping scenario '%s' (TEST_SYSBOX_SKIP_SCENARIOS)\n" "${name}"
+		return 0
+	fi
+
+	"$@"
 }
 
 function usage() {
@@ -377,15 +407,15 @@ function main() {
 			printf "********************************************\n"
 		fi
 
-		test_with_idmapped_and_shiftfs
-		test_with_idmapped_only
-		test_with_shiftfs_only
-		test_with_rootfs_cloning
-		test_with_docker_image_store
+		scenario idmapped_and_shiftfs test_with_idmapped_and_shiftfs
+		scenario idmapped_only test_with_idmapped_only
+		scenario shiftfs_only test_with_shiftfs_only
+		scenario rootfs_cloning test_with_rootfs_cloning
+		scenario docker_image_store test_with_docker_image_store
 		# Skip docker userns-remap + sysbox tests (will deprecate feature as it has little use and is redundant with Sysbox)
 		#test_with_docker_userns_remap
-		test_sysbox_config
-		test_sysbox_lifecycle
+		scenario sysbox_config test_sysbox_config
+		scenario lifecycle test_sysbox_lifecycle
 
 	fi
 }
