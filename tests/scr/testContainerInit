@@ -219,8 +219,18 @@ function install_sysbox_pkg() {
 
 	# Install sysbox; the --reinstall flag ensures the test container need not be
 	# cleaned up between executions of the testContainerInit script.
+	#
+	# The install must be non-interactive: a conffile prompt (e.g., for
+	# /etc/fuse.conf, which the test image already has) would otherwise make
+	# dpkg leave the package unconfigured. A failed install must also abort
+	# the test run, rather than silently testing an unconfigured package.
 	echo "Installing ${SB_PACKAGE} package at ${SB_PACKAGE_FILE}"
-	apt-get install --reinstall -y --no-install-recommends "${PWD}/${SB_PACKAGE_FILE}"
+	DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y \
+		--no-install-recommends -o Dpkg::Options::="--force-confold" \
+		"${PWD}/${SB_PACKAGE_FILE}" || {
+		echo "Failed to install ${SB_PACKAGE} package at ${SB_PACKAGE_FILE}"
+		exit 1
+	}
 }
 
 function build_sysbox() {
