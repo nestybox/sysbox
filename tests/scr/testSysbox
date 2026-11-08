@@ -11,6 +11,14 @@ helpersDir="${progDir}/../helpers/"
 
 source "$helpersDir/uid-shift.bash"
 
+# Test suites that failed. Suites keep running after a failure so that a single
+# failing suite doesn't hide the others; failures are reported at the end.
+failed_suites=()
+
+function run_suite() {
+	"$@" || failed_suites+=("$*")
+}
+
 function usage() {
 	printf "\nUsage: $progName [testName]\n"
 	exit 1
@@ -30,90 +38,90 @@ function restart_sysbox() {
 
 function run_all_tests() {
 	printf "\nExecuting sysbox-mgr tests ... \n"
-	bats --tap tests/sysmgr
+	run_suite bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
-	bats --tap tests/sysfs
+	run_suite bats --tap tests/sysfs
 	printf "\nExecuting devices tests ... \n"
-	bats --tap tests/devices
+	run_suite bats --tap tests/devices
 	printf "\nExecuting docker tests ... \n"
-	bats --tap tests/docker
+	run_suite bats --tap tests/docker
 	printf "\nExecuting cgroup tests ... \n"
-	bats --tap tests/cgroup
+	run_suite bats --tap tests/cgroup
 	printf "\nExecuting dind tests ... \n"
-	bats --tap tests/dind
+	run_suite bats --tap tests/dind
 	printf "\nExecuting cind tests ... \n"
-	bats --tap tests/cind
+	run_suite bats --tap tests/cind
 	printf "\nExecuting app tests (l1) ... \n"
-	bats --tap tests/apps/l1
+	run_suite bats --tap tests/apps/l1
 	printf "\nExecuting app tests (l2) ... \n"
-	bats --tap tests/apps/l2
+	run_suite bats --tap tests/apps/l2
 	printf "\nExecuting multi-arch tests ... \n"
-	bats --tap tests/multi-arch
+	run_suite bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
-	bats --tap tests/buildx
+	run_suite bats --tap tests/buildx
 
 	# Launch syscall interception test-suite.
-	./tests/syscall/syscall.sh
+	run_suite ./tests/syscall/syscall.sh
 
 	# Launch kind test-suite.
 	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
 	# printf "\n"
 	# docker system prune -a -f
-	# bats --tap tests/k8s-kind
+	# run_suite bats --tap tests/k8s-kind
 
 	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
 	# ./tests/kind/kind.sh
 
 	printf "\nExecuting security tests ... \n"
-	bats --tap tests/security
+	run_suite bats --tap tests/security
 
 	printf "\nExecuting perf tests ... \n"
-	bats --tap tests/perf
+	run_suite bats --tap tests/perf
 
 	# Launch sysbox-pod test-suite.
-	./tests/pods/pods.sh
+	run_suite ./tests/pods/pods.sh
 
 	printf "\nSysbox health checking ...\n"
-	bats --tap tests/health/sysbox-health.bats
+	run_suite bats --tap tests/health/sysbox-health.bats
 
 	docker system prune -a -f
 }
 
 function run_ci_tests() {
 	printf "\nExecuting sysbox-mgr tests ... \n"
-	bats --tap tests/sysmgr
+	run_suite bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
-	bats --tap tests/sysfs
+	run_suite bats --tap tests/sysfs
 	printf "\nExecuting docker tests ... \n"
-	bats --tap tests/docker
+	run_suite bats --tap tests/docker
 	printf "\nExecuting dind tests ... \n"
-	bats --tap tests/dind
+	run_suite bats --tap tests/dind
 	printf "\nExecuting app tests (l1) ... \n"
-	bats --tap tests/apps/l1
+	run_suite bats --tap tests/apps/l1
 	printf "\nExecuting multi-arch tests ... \n"
-	bats --tap tests/multi-arch
+	run_suite bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
-	bats --tap tests/buildx/basic.bats
+	run_suite bats --tap tests/buildx/basic.bats
 	printf "\nExecuting xattr syscall tests ... \n"
-	bats --tap tests/syscall/xattr
+	run_suite bats --tap tests/syscall/xattr
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
-	bats --tap tests/syscall/mount/mount.bats
+	run_suite bats --tap tests/syscall/mount/mount.bats
 
 	# Launch kind test-suite.
 	# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
 	# printf "\n"
 	# docker system prune -a -f
-	# bats --tap tests/k8s-kind
+	# run_suite bats --tap tests/k8s-kind
 	# ./tests/kind/kind.sh tests/kind/kind-custom-net.bats
 
 	# Launch sysbox-pod test-suite.
-	./tests/pods/pods.sh
+	run_suite ./tests/pods/pods.sh
 
 	printf "\nExecuting security tests ... \n"
-	bats --tap tests/security
+	run_suite bats --tap tests/security
 
 	printf "\nSysbox health checking ...\n"
-	bats --tap tests/health/sysbox-health.bats
+	run_suite bats --tap tests/health/sysbox-health.bats
 
 	docker system prune -a -f
 }
@@ -254,14 +262,14 @@ function test_with_docker_image_store() {
 	printf "\nConfiguring Docker with the (legacy) image store\n"
 	docker-cfg --containerd-image-store=false
 
-	bats --tap tests/sysmgr
-	bats --tap tests/sysfs
-	bats --tap tests/docker
-	bats --tap tests/dind
-	bats --tap tests/cind
-	bats --tap tests/apps/l1
-	bats --tap tests/buildx
-	./tests/pods/pods.sh
+	run_suite bats --tap tests/sysmgr
+	run_suite bats --tap tests/sysfs
+	run_suite bats --tap tests/docker
+	run_suite bats --tap tests/dind
+	run_suite bats --tap tests/cind
+	run_suite bats --tap tests/apps/l1
+	run_suite bats --tap tests/buildx
+	run_suite ./tests/pods/pods.sh
 
 	# Try again with Sysbox using rootfs cloning
 	printf "\nDisabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
@@ -271,10 +279,10 @@ function test_with_docker_image_store() {
 	sysbox_cmdline+=("--disable-ovfs-on-idmapped-mount")
 	restart_sysbox sysbox_cmdline
 
-	bats --tap tests/sysmgr/rootfsCloning.bats
-	bats --tap tests/docker
-	bats --tap tests/dind
-	bats --tap tests/buildx
+	run_suite bats --tap tests/sysmgr/rootfsCloning.bats
+	run_suite bats --tap tests/docker
+	run_suite bats --tap tests/dind
+	run_suite bats --tap tests/buildx
 
 	# Cleanup
 	printf "\nRe-enabling Sysbox shiftfs and overlayfs on ID-mapped mounts.\n"
@@ -297,31 +305,31 @@ function test_with_docker_userns_remap() {
 	docker-cfg --userns-remap=enable
 
 	printf "\nExecuting sysbox-mgr tests ... \n"
-	bats --tap tests/sysmgr
+	run_suite bats --tap tests/sysmgr
 	printf "\nExecuting sysbox-fs tests ... \n"
-	bats --tap tests/sysfs
+	run_suite bats --tap tests/sysfs
 	printf "\nExecuting docker tests ... \n"
-	bats --tap tests/docker
+	run_suite bats --tap tests/docker
 	printf "\nExecuting dind tests ... \n"
-	bats --tap tests/dind
+	run_suite bats --tap tests/dind
 
 	if [ -z "$TEST_SYSBOX_CI" ]; then
 		printf "\nExecuting cind tests ... \n"
-		bats --tap tests/cind
+		run_suite bats --tap tests/cind
 
 		# Launch basic kind-flannel test
 		# XXX: tests fail (likely due to old k8s version; need updating). Tracked by issue #929.
 		# docker system prune -a -f
 		# printf "\nExecuting kind testcases with flannel cni ... \n"
-		# bats --tap tests/kind/kind-flannel.bats
+		# run_suite bats --tap tests/kind/kind-flannel.bats
 		# docker system prune -a -f
 	fi
 
 	printf "\nExecuting security tests ... \n"
-	bats --tap tests/security
+	run_suite bats --tap tests/security
 
 	printf "\nSysbox health checking ...\n"
-	bats --tap tests/health/sysbox-health.bats
+	run_suite bats --tap tests/health/sysbox-health.bats
 
 	docker system prune -a -f
 
@@ -339,14 +347,14 @@ function test_sysbox_config() {
 	printf "\n"
 	printf "Executing sysbox config tests\n"
 	printf -- "-----------------------------\n"
-	bats --tap tests/config
+	run_suite bats --tap tests/config
 }
 
 function test_sysbox_lifecycle() {
 	printf "\n"
 	printf "\nExecuting life-cycle tests ... \n"
 	printf -- "--------------------------------\n"
-	bats --tap tests/lifecycle
+	run_suite bats --tap tests/lifecycle
 }
 
 function main() {
@@ -354,7 +362,7 @@ function main() {
 	# argument testName is optional; if present, only that test is executed.
 	if [ $# -eq 1 ]; then
 		printf "\nExecuting $1 ... \n"
-		bats --tap $1
+		run_suite bats --tap $1
 	else
 
 		if [ -n "$TEST_SYSBOX_CI" ]; then
@@ -383,3 +391,9 @@ function main() {
 }
 
 main "$@"
+
+if [ ${#failed_suites[@]} -gt 0 ]; then
+	printf "\nFAILED test suites:\n"
+	printf "  %s\n" "${failed_suites[@]}"
+	exit 1
+fi
