@@ -410,6 +410,11 @@ test-sysbox-installer: test-prereq test-img-systemd
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 
+# Space-separated scenarios and suites to skip in the CI installer test (see
+# tests/scr/testSysbox).
+TEST_SYSBOX_SKIP_SCENARIOS ?=
+TEST_SYSBOX_SKIP_SUITES ?=
+
 test-sysbox-installer-ci: ## Run sysbox integration tests (CI subset) in a test container with systemd and the sysbox installer
 test-sysbox-installer-ci: test-prereq test-img-systemd
 	@printf "\n** Running sysbox integration tests (CI, with systemd + the sysbox installer) **\n\n"
@@ -417,6 +422,7 @@ test-sysbox-installer-ci: test-prereq test-img-systemd
 	$(DOCKER_RUN_SYSTEMD)
 	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
 		export SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
+		export TEST_SYSBOX_SKIP_SCENARIOS=\"$(TEST_SYSBOX_SKIP_SCENARIOS)\" TEST_SYSBOX_SKIP_SUITES=\"$(TEST_SYSBOX_SKIP_SUITES)\" && \
 		testContainerInit && \
 		make test-sysbox-local-ci TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
