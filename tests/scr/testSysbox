@@ -101,7 +101,7 @@ function run_ci_tests() {
 	printf "\nExecuting multi-arch tests ... \n"
 	run_suite bats --tap tests/multi-arch
 	printf "\nExecuting buildx + buildkit tests ... \n"
-	run_suite bats --tap tests/buildx/basic.bats
+	run_suite bats --tap tests/buildx/build.bats
 	printf "\nExecuting xattr syscall tests ... \n"
 	run_suite bats --tap tests/syscall/xattr
 	printf "\nExecuting basic mount syscall-interception tests ... \n"
