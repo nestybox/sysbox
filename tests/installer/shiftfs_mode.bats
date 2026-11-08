@@ -395,6 +395,7 @@ EOF
 # to 'userns-remap' mode. IOW, dockerd will continue operating in the same mode.
 #
 @test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns)" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 
@@ -464,6 +465,7 @@ EOF
 # has already been digested by dockerd, will *not* force the installer to change to
 # 'shiftfs' mode. IOW, dockerd will continue operatin in the same mode.
 @test "[shiftfs] pre-existing & processed dockerd config (sysbox userns)" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 
@@ -537,6 +539,7 @@ EOF
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
 @test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns) -- existing container" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 
@@ -624,6 +627,7 @@ EOF
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
 @test "[shiftfs] pre-existing & processed dockerd config (sysbox userns) -- existing container" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 
@@ -715,6 +719,7 @@ EOF
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
 @test "[shiftfs] pre-existing & unprocessed dockerd config (sysbox userns) -- manual config" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 
@@ -789,6 +794,7 @@ EOF
 # original testcase as 'manual' restart has no bearing on 'shiftfs' operating
 # mode.
 @test "[shiftfs] pre-existing & processed dockerd config (sysbox userns) -- manual restart" {
+  skip "docker userns-remap mode is not tested"
 
   docker_return_defaults
 

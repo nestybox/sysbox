@@ -10,7 +10,7 @@
 	sysbox-ipc \
 	install uninstall \
 	test \
-	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer \
+	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer test-sysbox-installer-ci \
 	test-runc test-fs test-mgr test-sysbox-libs \
 	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
 	test-img test-img-systemd test-cleanup \
@@ -407,6 +407,18 @@ test-sysbox-installer: test-prereq test-img-systemd
 		export SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
 		testContainerInit && \
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
+		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
+	$(DOCKER_STOP)
+
+test-sysbox-installer-ci: ## Run sysbox integration tests (CI subset) in a test container with systemd and the sysbox installer
+test-sysbox-installer-ci: test-prereq test-img-systemd
+	@printf "\n** Running sysbox integration tests (CI, with systemd + the sysbox installer) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
+		testContainerInit && \
+		make test-sysbox-local-ci TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
 
