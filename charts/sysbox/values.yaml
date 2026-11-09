@@ -1,0 +1,10 @@
+image:
+  repository: registry.nestybox.com/nestybox/sysbox-deploy-k8s
+  tag: "v0.6.7-0"
+  pullPolicy: Always
+
+httpRoute:
+  enabled: false
+
+ingress:
+  enabled: false
