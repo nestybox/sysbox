@@ -32,6 +32,7 @@ func main() {
 		"/sys/fs/cgroup",
 		"/sys/devices/virtual",
 		"/sys/devices/virtual/powercap",
+		"/sys/devices/system/cpu/online",
 		"/sys/kernel",
 		"/sys/module/nf_conntrack/parameters",
 		"/sys",
@@ -48,6 +49,8 @@ func main() {
 		"/proc/swaps",
 		"/proc/sys",
 		"/proc/uptime",
+		"/proc/meminfo",
+		"/proc/cpuinfo",
 		"/proc",
 
 		"/dev/mqueue",

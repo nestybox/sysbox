@@ -10,15 +10,15 @@
 # sysbox-fs sys container "/proc" mounts
 SYSFS_PROC="/proc/uptime \
             /proc/sys \
-            /proc/swaps"
+            /proc/swaps \
+            /proc/meminfo \
+            /proc/cpuinfo"
 
 # In the future sysbox-fs will do these ones too ..
-# SYSFS_PROC="/proc/cpuinfo \
-#             /proc/cgroups \
+# SYSFS_PROC="/proc/cgroups \
 #             /proc/devices \
 #             /proc/diskstats \
 #             /proc/loadavg \
-#             /proc/meminfo \
 #             /proc/pagetypeinfo \
 #             /proc/partitions \
 #             /proc/stat"
