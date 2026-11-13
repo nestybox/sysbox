@@ -425,8 +425,8 @@ test-sysbox-installer-ci: test-prereq test-img-systemd
 		export TEST_SYSBOX_SKIP_SCENARIOS=\"$(TEST_SYSBOX_SKIP_SCENARIOS)\" TEST_SYSBOX_SKIP_SUITES=\"$(TEST_SYSBOX_SKIP_SUITES)\" && \
 		testContainerInit && \
 		make test-sysbox-local-ci TESTPATH=$(TESTPATH) && \
-		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
-	$(DOCKER_STOP)
+		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"; \
+	rc=$$?; $(DOCKER_STOP); exit $$rc
 
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: test-prereq sysbox
