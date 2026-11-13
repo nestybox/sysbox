@@ -14,6 +14,82 @@ function teardown() {
   sysbox_log_check
 }
 
+# In installer mode (SB_INSTALLER) sysbox-mgr and sysbox-fs run as systemd
+# units. sysbox.service is BindsTo= both of them and both are PartOf= it, so
+# stopping or killing either daemon makes systemd stop the other one too.
+#
+# Most of the tests below exercise the daemons' own pid-file and overlap
+# detection logic, which does not depend on who supervises them. To keep that
+# logic observable, they detach the daemons from systemd and drive them
+# directly. The tests whose description starts with "systemd:" exercise the
+# units instead, and the last one checks that systemd is back in charge.
+
+# Returns 0 if any of the sysbox systemd units is active.
+function sysboxUnitsActive() {
+    systemctl is-active --quiet sysbox.service sysbox-mgr.service sysbox-fs.service
+}
+
+# Waits (up to 15 seconds) until no sysbox daemon is running.
+function waitDaemonsGone() {
+    local i
+    for i in $(seq 1 15); do
+        if ! pgrep sysbox-mgr >/dev/null && ! pgrep sysbox-fs >/dev/null; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+# Waits (up to 20 seconds) until both daemons are running and have written
+# their pid files.
+function waitDaemonsUp() {
+    local i
+    for i in $(seq 1 20); do
+        if pgrep sysbox-mgr >/dev/null && pgrep sysbox-fs >/dev/null &&
+           [ -f ${sysboxRunDir}/sysmgr.pid ] && [ -f ${sysboxRunDir}/sysfs.pid ]; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+# Leaves both daemons running outside of systemd, whatever state a previous
+# test left them in.
+function ensureDaemonsRunning() {
+    if [ -n "$SB_INSTALLER" ] && sysboxUnitsActive; then
+        systemctl stop sysbox.service sysbox-mgr.service sysbox-fs.service
+        waitDaemonsGone
+    fi
+
+    pgrep sysbox-mgr >/dev/null || sysboxMgrStart
+    pgrep sysbox-fs >/dev/null || sysboxFsStart
+    waitDaemonsUp
+}
+
+# Leaves both daemons running under systemd, whatever state a previous test
+# left them in.
+function ensureSystemdRunning() {
+    if ! pgrep sysbox-mgr >/dev/null || ! pgrep sysbox-fs >/dev/null ||
+       ! sysboxUnitsActive; then
+        pkill sysbox-mgr
+        pkill sysbox-fs
+        waitDaemonsGone
+        systemctl start sysbox.service
+        waitDaemonsUp
+    fi
+}
+
+function setup() {
+    if [[ "$BATS_TEST_DESCRIPTION" == systemd:* ]]; then
+        [ -n "$SB_INSTALLER" ] || skip "sysbox daemons are not managed by systemd"
+        ensureSystemdRunning
+    else
+        ensureDaemonsRunning
+    fi
+}
+
 function checkSysboxPidFile() {
     local pidFile=$1
     local daemonPid=$2
@@ -183,7 +259,7 @@ function sysboxFsStart() {
     daemonStop "sysbox-fs" "false"
     run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
     [ "$status" -eq 0 ]
-    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid ]
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 
     # Re-initialize sysbox-fs and verify that the old pid file has been overwritten
@@ -235,5 +311,77 @@ function sysboxFsStart() {
     sysboxFsStart
     local newSysboxFsPid=$(pgrep sysbox-fs)
     run checkSysboxPidFile "sysfs.pid" $newSysboxFsPid
+    [ "$status" -eq 0 ]
+}
+
+# Verify that restarting the sysbox service renews both daemons and their pid
+# files.
+@test "systemd: sysbox.service restart renews the daemons" {
+
+    local oldMgrPid=$(pgrep sysbox-mgr)
+    local oldFsPid=$(pgrep sysbox-fs)
+
+    run systemctl restart sysbox.service
+    [ "$status" -eq 0 ]
+    run waitDaemonsUp
+    [ "$status" -eq 0 ]
+
+    local newMgrPid=$(pgrep sysbox-mgr)
+    local newFsPid=$(pgrep sysbox-fs)
+    [ "$newMgrPid" != "$oldMgrPid" ]
+    [ "$newFsPid" != "$oldFsPid" ]
+
+    run checkSysboxPidFile "sysmgr.pid" $newMgrPid
+    [ "$status" -eq 0 ]
+    run checkSysboxPidFile "sysfs.pid" $newFsPid
+    [ "$status" -eq 0 ]
+}
+
+# Verify that systemd takes the whole sysbox service down when one of the
+# daemons dies, and that starting the service again brings both back with
+# fresh pid files.
+@test "systemd: a killed daemon takes sysbox.service down and it recovers" {
+
+    local oldMgrPid=$(pgrep sysbox-mgr)
+
+    pkill -9 sysbox-mgr
+
+    # sysbox.service is BindsTo= the daemons: both daemons must go away.
+    run waitDaemonsGone
+    [ "$status" -eq 0 ]
+    run sysboxUnitsActive
+    [ "$status" -ne 0 ]
+
+    run systemctl start sysbox.service
+    [ "$status" -eq 0 ]
+    run waitDaemonsUp
+    [ "$status" -eq 0 ]
+
+    local newMgrPid=$(pgrep sysbox-mgr)
+    local newFsPid=$(pgrep sysbox-fs)
+    [ "$newMgrPid" != "$oldMgrPid" ]
+    run checkSysboxPidFile "sysmgr.pid" $newMgrPid
+    [ "$status" -eq 0 ]
+    run checkSysboxPidFile "sysfs.pid" $newFsPid
+    [ "$status" -eq 0 ]
+}
+
+# Verify that, at the end, systemd supervises both daemons again, leaving the
+# system as it was found.
+@test "systemd: sysbox daemons are supervised by systemd at the end" {
+
+    run sysboxUnitsActive
+    [ "$status" -eq 0 ]
+
+    for unit in sysbox.service sysbox-mgr.service sysbox-fs.service; do
+        run systemctl is-active $unit
+        [ "$output" = "active" ]
+    done
+
+    local sysboxMgrPid=$(pgrep sysbox-mgr)
+    local sysboxFsPid=$(pgrep sysbox-fs)
+    run checkSysboxPidFile "sysmgr.pid" $sysboxMgrPid
+    [ "$status" -eq 0 ]
+    run checkSysboxPidFile "sysfs.pid" $sysboxFsPid
     [ "$status" -eq 0 ]
 }
