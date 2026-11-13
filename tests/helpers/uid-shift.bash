@@ -15,7 +15,11 @@ function sysbox_mgr_log_search() {
 	# log since the last restart.
 
 	local search_term=$1
-	if [ -n "$SB_INSTALLER" ]; then
+
+	# In installer mode sysbox-mgr runs as a systemd service, but scr/sysbox
+	# always configures it to log to $SYSBOX_LOG_FILE, so the journal is only
+	# searched when that file has no content.
+	if [ -n "$SB_INSTALLER" ] && [ ! -s "$SYSBOX_LOG_FILE" ]; then
 		lastStartLine=$(journalctl -u sysbox-mgr | grep -n "Starting ..." | tail -1 | cut -f1 -d:)
 		journalctl -u sysbox-mgr | tail -n +$lastStartLine | grep -iq "$search_term"
 	else

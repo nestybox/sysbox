@@ -10,7 +10,7 @@
 	sysbox-ipc \
 	install uninstall \
 	test \
-	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer \
+	test-sysbox test-sysbox-ci test-sysbox-systemd test-sysbox-installer test-sysbox-installer-ci \
 	test-runc test-fs test-mgr test-sysbox-libs \
 	test-shell test-shell-debug test-shell-systemd test-shell-systemd-debug test-shell-installer test-shell-installer-debug \
 	test-img test-img-systemd test-cleanup \
@@ -409,6 +409,24 @@ test-sysbox-installer: test-prereq test-img-systemd
 		make test-sysbox-local TESTPATH=$(TESTPATH) && \
 		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"
 	$(DOCKER_STOP)
+
+# Space-separated scenarios and suites to skip in the CI installer test (see
+# tests/scr/testSysbox).
+TEST_SYSBOX_SKIP_SCENARIOS ?=
+TEST_SYSBOX_SKIP_SUITES ?=
+
+test-sysbox-installer-ci: ## Run sysbox integration tests (CI subset) in a test container with systemd and the sysbox installer
+test-sysbox-installer-ci: test-prereq test-img-systemd
+	@printf "\n** Running sysbox integration tests (CI, with systemd + the sysbox installer) **\n\n"
+	$(TEST_DIR)/scr/testContainerPre $(TEST_VOL1) $(TEST_VOL2) $(TEST_VOL3)
+	$(DOCKER_RUN_SYSTEMD)
+	docker exec sysbox-test /bin/bash -c "export PHY_EGRESS_IFACE_MTU=$(EGRESS_IFACE_MTU) && \
+		export SB_INSTALLER=true SB_PACKAGE=$(PACKAGE) SB_PACKAGE_FILE=$(PACKAGE_FILE_PATH)/$(PACKAGE_FILE_NAME) && \
+		export TEST_SYSBOX_SKIP_SCENARIOS=\"$(TEST_SYSBOX_SKIP_SCENARIOS)\" TEST_SYSBOX_SKIP_SUITES=\"$(TEST_SYSBOX_SKIP_SUITES)\" && \
+		testContainerInit && \
+		make test-sysbox-local-ci TESTPATH=$(TESTPATH) && \
+		make test-sysbox-local-installer TESTPATH=$(TESTPATH)"; \
+	rc=$$?; $(DOCKER_STOP); exit $$rc
 
 test-runc: ## Run sysbox-runc unit & integration tests
 test-runc: test-prereq sysbox
