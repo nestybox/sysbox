@@ -8,7 +8,7 @@
 #
 
 # List of files or dirs under procfs emulated by sysbox-fs
-PROCFS_EMU=( "swaps" "sys" "uptime" )
+PROCFS_EMU=( "swaps" "sys" "uptime" "meminfo" "cpuinfo" )
 
 # List of procfs files exposed as read-only by sysbox
 PROCFS_RDONLY=( "bus" "fs" "irq" "sysrq-trigger" )
@@ -22,7 +22,7 @@ PROCFS_MASKED=( "keys" "timer_list" "sched_debug" )
 PROCFS_TMPFS=( "acpi")
 
 # List of files or dirs under sysfs emulated by sysbox-fs
-SYSFS_EMU=( "kernel" "devices/virtual" "module/nf_conntrack/parameters" )
+SYSFS_EMU=( "kernel" "devices/virtual" "devices/system/cpu/online" "module/nf_conntrack/parameters" )
 
 # verifies the given sys container path contains a procfs mount backed by sysbox-fs
 function verify_syscont_procfs_mnt() {
