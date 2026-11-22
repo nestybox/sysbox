@@ -1,6 +1,84 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.7.2] - 2026-11-22
+### Added
+* tests: install libc6-dev for fileDac build in mount capability test
+* Makefile: adjust build to work on OSX + Docker Desktop
+* tests: add bats coverage for devMgr device-passthrough feature
+* Update sysbox k8s manifest to use release v0.7.1.
+* tests: verify /proc/uptime survives an lseek(0) rewind
+* tests: install protoc-gen-go-grpc and put protoc on PATH
+* tests: cover buildx sbom generation inside a sysbox container
+* Update sysbox pkg install docs to v0.7.1.
+* tests: add regression test for spoofed-fstype remount bypass (#91)
+* tests: fix two sysbox-fs integration test flakes/bugs (#93)
+* tests: fix environment-fragile integration test assumptions (#94)
+* tests: add mount_setattr(2) coverage for immutable/ro-anchor mounts (#95)
+* tests: skip docker-cp-based tests under overlayfs-on-ID-mapped-mounts (#96)
+* tests: make the sysbox package install non-interactive and fatal.
+* tests: add test-sysbox-installer-ci; skip docker-userns installer tests.
+* tests: search the sysbox-mgr log file in installer mode.
+* tests: keep running suites after a failure and report them at the end.
+* tests: fix the buildx test path in the CI test list.
+* tests: allow skipping scenarios and suites in the CI installer test.
+* tests: make the lifecycle tests work when sysbox runs under systemd.
+* Makefile: always stop the installer test container.
+* [sysbox-fs] mocks: regenerate NSenterServiceIface for uid/gid params
+* [sysbox-fs] state: don't hold the container-state lock across fuse mount/unmount
+* [sysbox-fs] Make /proc/uptime seekable so procps can refresh it.
+* [sysbox-fs] Keep the seccomp session open on a transient POLLERR
+* [sysbox-fs] Open log file without O_SYNC.
+* [sysbox-fs] seccomp: fix immutable-remount bypass via spoofed fstype
+* [sysbox-fs] fs: handle FUSE requests with unresolved (pid=0) requester (#33)
+* [sysbox-fs] seccomp: fix incorrect procfs/sysfs base-mount detection
+* [sysbox-fs] seccomp: clarify base-mount check comment
+* [sysbox-fs] Fix nsenter agent personality when its pid-ns doesn't match /proc.
+* [sysbox-fs] process: narrow the pid=0 substitution in initCapability
+* [sysbox-fs] process: don't panic in AdjustPersonality when caps aren't loaded
+* [sysbox-fs] process: return an error from GetEffCaps instead of empty caps
+* [sysbox-fs] Bump github.com/cilium/ebpf from 0.3.0 to 0.22.0
+* [sysbox-fs] Bump google.golang.org/grpc from 1.82.1 to 1.83.1
+* [sysbox-fs] Revert "Bump github.com/cilium/ebpf from 0.3.0 to 0.22.0"
+* [sysbox-fs] go mod tidy
+* [sysbox-fs] Honor kernel precedence for mount requests
+* [sysbox-fs] seccomp: execute authorized remounts instead of resuming via CONTINUE
+* [sysbox-fs] seccomp: update mount dispatch tests for directly executed remounts
+* [sysbox-ipc] gpu-passthrough: First devMgr implementation for gpu-passthrough and vpn-tunneling functionality
+* [sysbox-ipc] Transition Makefile's protoc invocations from the deprecated 'plugins=grpc' to the modern '--go_out' and '--go-grpc_out' form
+* [sysbox-ipc] (chore) go mod tidy
+* [sysbox-ipc] sysboxMgrGrpc: add source field to MountReqInfo for ro-anchor requests
+* [sysbox-libs] linuxUtils: treat a missing /proc/modules as module-not-present
+* [sysbox-mgr] First devMgr implementation for gpu-passthrough and vpn-tunneling functionality
+* [sysbox-mgr] Fix relative overlay paths from Docker overlay2
+* [sysbox-mgr] Open log file without O_SYNC.
+* [sysbox-mgr] tests: use a constant format string with t.Errorf.
+* [sysbox-mgr] (chore) go mod tidy
+* [sysbox-mgr] mgr: make kernel header/module mounts immune to mount_setattr(2)
+* [sysbox-mgr] mgr: anchor read-only bind mounts on demand, per-container
+* [sysbox-mgr] mgr: keep per-container ro-anchors under <data-root>/ro-anchors/<id>
+* [sysbox-mgr] volMgr: verify sync paths stay within their intended root
+* [sysbox-mgr] volMgr: do not follow symlinks at the special-dir path
+* [sysbox-mgr] volMgr: add unit tests for the path containment and symlink checks
+* [sysbox-pkgr] deb: fix changelog_convert.sh bullet regex
+* [sysbox-pkgr] Automate Sysbox release creation and add packaging CI.
+* [sysbox-pkgr] build: free up runner disk space before building.
+* [sysbox-pkgr] deb: install protoc-gen-go-grpc in the ubuntu-jammy build image.
+* [sysbox-pkgr] build: don't cancel the other architecture when one build fails.
+* [sysbox-pkgr] ci: only log in to ghcr.io when pushing images.
+* [sysbox-pkgr] release: keep tags maintainer-signed; parametrize repo/image; split token.
+* [sysbox-pkgr] ci: rename the workflow to package-ci.
+* [sysbox-pkgr] release: smoke-test the deb and verify the image and the uploads.
+* [sysbox-runc] gpu-passthrough: First drop
+* [sysbox-runc] go.mod: tidy
+* [sysbox-runc] Fix relative overlay paths from Docker overlay2
+* [sysbox-runc] Open log file without O_SYNC.
+* [sysbox-runc] chore(deps): github.com/sirupsen/logrus v1.10.2
+* [sysbox-runc] syscont: anchor read-only bind mounts against mount_setattr(2)
+* [sysbox-runc] shiftfs: mark read-only anchors' own dir instead of resolving past them
+* [sysbox-runc] syscont: sanitize special dir paths read from the image
+* [sysbox-runc] Revert "shiftfs: mark read-only anchors' own dir instead of resolving past them"
+
 ## [0.7.1] - 2026-07-28
 ### Added
 * Support Sysbox on Ubuntu 24.04 with kernel 6.8+ under containerd 2.x; fixes sysfs mount failures ("mount through procfd: operation not permitted") during container/pod creation (issue #1013).
