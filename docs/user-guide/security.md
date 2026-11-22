@@ -210,6 +210,32 @@ does to it are not seen in other system containers.
 Sysbox takes care of exposing and tracking the procfs contexts within each
 system container.
 
+### Memory and CPU Resources
+
+On hosts with cgroup v2, `/proc/meminfo`, `/proc/cpuinfo` and
+`/sys/devices/system/cpu/online` show the resources available to the
+process reading them, rather than the host's:
+
+-   `/proc/meminfo` reports the cgroup memory limit (`memory.max` of the
+    process' cgroup or its closest limited ancestor) as `MemTotal`, and derives
+    `MemFree`, `MemAvailable`, `Cached`, `Active`, `Inactive`, etc. from that
+    cgroup's usage and `memory.stat`. Swap is capped by `memory.swap.max`.
+    Fields without a cgroup equivalent keep their host values.
+
+-   `/proc/cpuinfo` and `/sys/devices/system/cpu/online` list the CPUs of the
+    process' effective cpuset, trimmed to its CPU quota (`cpu.max`) rounded up
+    to whole CPUs. CPUs keep their host numbering, and the `siblings` and
+    `cpu cores` fields of `/proc/cpuinfo` only count the CPUs listed.
+
+This way, programs that size themselves from these files (e.g., procps' `free`,
+glibc's `sysconf(_SC_NPROCESSORS_ONLN)`, thread pools, caches or AI model
+loaders) do so from the container's limits. When no limit applies, the host's
+values are shown.
+
+Programs that query the kernel directly instead (e.g., via the `sysinfo()` or
+`sched_getaffinity()` syscalls, as busybox's `free` and coreutils' `nproc` do)
+still see the host's memory and CPUs.
+
 ## Sysfs Virtualization
 
 Sysbox performs partial virtualization of sysfs inside the system container, for
