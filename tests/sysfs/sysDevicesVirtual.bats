@@ -159,3 +159,193 @@ function teardown() {
   sv_runc exec syscont sh -c "stat /sys/devices/virtual/net/lo/subsystem/lo/subsystem | egrep -q \"../../../../class/net\""
   [ "$status" -eq 0 ]
 }
+
+# Verifies the sysDevicesVirtual handler for the "/sys/devices/virtual/kfd"
+# hierarchy. AMD ROCm (libhsakmt) enumerates GPUs by reading the topology nodes
+# under it. The kernel gates reads of GPU-backed nodes on the device cgroup of
+# the reader, so these tests check that a sys container gets what its device
+# grants allow, and nothing more. Skipped unless the host has AMD KFD.
+#
+# Nesting: the kfd topology is not namespaced, and the only container context
+# the kernel consults is the reader's device cgroup. Docker inside a sys
+# container cannot attach device programs of its own, so the effective device
+# policy of an inner container is that of the outer sys container. The inner
+# container tests therefore compare against the outer container's own result,
+# and do not assume that an inner container without grants is denied.
+
+KFD_NODES="/sys/devices/virtual/kfd/kfd/topology/nodes"
+
+function kfd_skip_without_kfd() {
+  if [[ ! -e /sys/class/kfd/kfd || ! -e /dev/kfd ]]; then
+    skip "AMD KFD not present on this host (needs /sys/class/kfd/kfd and /dev/kfd)"
+  fi
+}
+
+# Prints the --device options that ROCm needs for the GPU.
+function kfd_device_opts() {
+  local opts="--device /dev/kfd"
+  for dev in /dev/dri/renderD*; do
+    [[ -e "$dev" ]] && opts+=" --device $dev"
+  done
+  echo "$opts"
+}
+
+# With the GPU devices granted, every topology node must read exactly as on the
+# host, GPU nodes included.
+@test "/sys/devices/virtual/kfd file ops with GPU devices (passthrough)" {
+
+  kfd_skip_without_kfd
+
+  local syscont
+  syscont=$(docker run -d --runtime=sysbox-runc $(kfd_device_opts) --rm ${CTR_IMG_REPO}/alpine:latest tail -f /dev/null)
+  [ "$?" -eq 0 ]
+
+  for node in $(ls $KFD_NODES); do
+    local props="$KFD_NODES/$node/properties"
+
+    run docker exec "$syscont" sh -c "cat $props"
+    [ "$status" -eq 0 ]
+    [[ -n "$output" ]]
+    [[ "$output" == "$(cat $props)" ]]
+
+    run docker exec "$syscont" sh -c "cat $KFD_NODES/$node/gpu_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "$(cat $KFD_NODES/$node/gpu_id)" ]]
+  done
+
+  docker_stop "$syscont"
+}
+
+# Without the GPU devices, the sys container must get the same outcome as a
+# plain runc container for every topology node: GPU nodes are denied with
+# EPERM, and the CPU node (not device-gated) is readable with the host content.
+@test "/sys/devices/virtual/kfd file ops without GPU devices (mirrors runc)" {
+
+  kfd_skip_without_kfd
+
+  local runcCont
+  runcCont=$(docker run -d --rm --runtime=runc ${CTR_IMG_REPO}/alpine:latest tail -f /dev/null)
+  [ "$?" -eq 0 ]
+
+  local syscont
+  syscont=$(docker run -d --rm --runtime=sysbox-runc ${CTR_IMG_REPO}/alpine:latest tail -f /dev/null)
+  [ "$?" -eq 0 ]
+
+  for node in $(ls $KFD_NODES); do
+    local props="$KFD_NODES/$node/properties"
+
+    run docker exec "$runcCont" sh -c "cat $props"
+    local runcStatus="$status"
+    local runcOutput="$output"
+
+    run docker exec "$syscont" sh -c "cat $props"
+    [ "$status" -eq "$runcStatus" ]
+
+    if [[ "$runcStatus" -eq 0 ]]; then
+      # Readable under runc: must be readable here with the host's content.
+      [[ "$output" == "$runcOutput" ]]
+      [[ "$output" == "$(cat $props)" ]]
+    else
+      # Denied under runc: must be denied here with the same errno.
+      [[ "$output" == *"Operation not permitted"* ]]
+    fi
+  done
+
+  docker_stop "$syscont"
+  docker_stop "$runcCont"
+}
+
+# Starts a sys container with the given device options, running dockerd inside
+# it. Prints the container id.
+function kfd_start_outer_with_docker() {
+  local devOpts="$1"
+
+  local outer
+  outer=$(docker run -d --rm --runtime=sysbox-runc $devOpts ${CTR_IMG_REPO}/alpine-docker-dbg:latest tail -f /dev/null)
+  [ "$?" -eq 0 ]
+
+  docker exec -d "$outer" sh -c "dockerd > /var/log/dockerd.log 2>&1"
+  [ "$?" -eq 0 ]
+
+  wait_for_inner_dockerd "$outer"
+
+  echo "$outer"
+}
+
+# An inner container granted the GPU devices (inside an outer sys container that
+# is also granted them) must read exactly as the host, GPU nodes included.
+@test "/sys/devices/virtual/kfd file ops in an inner container with GPU devices" {
+
+  kfd_skip_without_kfd
+
+  local outer
+  outer=$(kfd_start_outer_with_docker "$(kfd_device_opts)")
+
+  for node in $(ls $KFD_NODES); do
+    local props="$KFD_NODES/$node/properties"
+
+    run docker exec "$outer" sh -c "docker run --rm $(kfd_device_opts) ${CTR_IMG_REPO}/alpine:latest cat $props"
+    [ "$status" -eq 0 ]
+    [[ -n "$output" ]]
+    [[ "$output" == "$(cat $props)" ]]
+  done
+
+  docker_stop "$outer"
+}
+
+# An inner container without the GPU devices, inside an outer sys container that
+# is granted them, gets the outer container's result: the effective device
+# policy is the outer container's, since Docker inside a sys container cannot
+# attach its own device programs. The expectation is equality with the outer
+# result, not EPERM.
+@test "/sys/devices/virtual/kfd file ops in an inner container without GPU devices (outer granted)" {
+
+  kfd_skip_without_kfd
+
+  local outer
+  outer=$(kfd_start_outer_with_docker "$(kfd_device_opts)")
+
+  for node in $(ls $KFD_NODES); do
+    local props="$KFD_NODES/$node/properties"
+
+    run docker exec "$outer" sh -c "cat $props"
+    [ "$status" -eq 0 ]
+    local outerOutput="$output"
+
+    run docker exec "$outer" sh -c "docker run --rm ${CTR_IMG_REPO}/alpine:latest cat $props"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "$outerOutput" ]]
+  done
+
+  docker_stop "$outer"
+}
+
+# Same property with an outer sys container that is not granted the GPU: the
+# inner container must match the outer container for every node, GPU nodes
+# denied with EPERM and the CPU node readable.
+@test "/sys/devices/virtual/kfd file ops in an inner container without GPU devices (outer not granted)" {
+
+  kfd_skip_without_kfd
+
+  local outer
+  outer=$(kfd_start_outer_with_docker "")
+
+  for node in $(ls $KFD_NODES); do
+    local props="$KFD_NODES/$node/properties"
+
+    run docker exec "$outer" sh -c "cat $props"
+    local outerStatus="$status"
+    local outerOutput="$output"
+
+    run docker exec "$outer" sh -c "docker run --rm ${CTR_IMG_REPO}/alpine:latest cat $props"
+    [ "$status" -eq "$outerStatus" ]
+
+    if [[ "$outerStatus" -eq 0 ]]; then
+      [[ "$output" == "$outerOutput" ]]
+    else
+      [[ "$output" == *"Operation not permitted"* ]]
+    fi
+  done
+
+  docker_stop "$outer"
+}
